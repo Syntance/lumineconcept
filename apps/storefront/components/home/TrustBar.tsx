@@ -11,7 +11,7 @@ export function TrustBar() {
     <section className="bg-brand-50 py-8 overflow-hidden">
       <div className="container mx-auto px-4">
         <p className="text-center text-[10px] font-medium uppercase tracking-[0.25em] text-brand-400 mb-6">
-          Zaufały nam
+          Zaufali nam
         </p>
       </div>
 

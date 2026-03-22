@@ -10,7 +10,7 @@ import { SegmentCards } from "@/components/home/SegmentCards";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
-import { StickyCTABar } from "@/components/home/StickyCTABar";
+
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await sanityClient
@@ -66,9 +66,6 @@ export default function HomePage() {
       {/* Sekcja 4: Footer CTA + IG feed */}
       <FooterCTA />
 
-      <Suspense fallback={null}>
-        <StickyCTABar />
-      </Suspense>
     </>
   );
 }
