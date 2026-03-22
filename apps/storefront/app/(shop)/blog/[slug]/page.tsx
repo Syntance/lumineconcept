@@ -4,6 +4,7 @@ import { PortableText } from "next-sanity";
 import { sanityClient } from "@/lib/sanity/client";
 import { BLOG_POST_BY_SLUG_QUERY, BLOG_SLUGS_QUERY } from "@/lib/sanity/queries";
 import type { BlogPost } from "@/lib/sanity/types";
+import { buildMetadata } from "@/lib/sanity/metadata";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { formatDate, SITE_URL } from "@/lib/utils";
 
@@ -28,19 +29,15 @@ export async function generateMetadata({
 
   if (!post) return { title: "Artykuł nie znaleziony" };
 
-  return {
-    title: post.seoTitle ?? post.title,
-    description: post.seoDescription ?? post.excerpt,
-    openGraph: {
-      title: post.seoTitle ?? post.title,
-      description: post.seoDescription ?? post.excerpt,
-      type: "article",
-      publishedTime: post.publishedAt,
-      images: post.coverImage?.asset?.url
-        ? [{ url: post.coverImage.asset.url }]
-        : [],
-    },
-  };
+  return buildMetadata({
+    seo: post.seo,
+    fallbackTitle: post.title,
+    fallbackDescription: post.excerpt,
+    fallbackImage: post.coverImage?.asset?.url,
+    path: `/blog/${post.slug}`,
+    type: "article",
+    publishedTime: post.publishedAt,
+  });
 }
 
 export default async function BlogPostPage({

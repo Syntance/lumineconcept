@@ -16,6 +16,7 @@ export default defineConfig({
   },
   modules: [
     {
+      key: "przelewy24",
       resolve: "./src/modules/przelewy24",
       options: {
         merchantId: process.env.PRZELEWY24_MERCHANT_ID,
@@ -26,6 +27,7 @@ export default defineConfig({
       },
     },
     {
+      key: "paypo",
       resolve: "./src/modules/paypo",
       options: {
         apiKey: process.env.PAYPO_API_KEY,
@@ -33,6 +35,7 @@ export default defineConfig({
       },
     },
     {
+      key: "inpost",
       resolve: "./src/modules/inpost",
       options: {
         apiKey: process.env.INPOST_API_KEY,
@@ -41,6 +44,7 @@ export default defineConfig({
       },
     },
     {
+      key: "dpd",
       resolve: "./src/modules/dpd",
       options: {
         login: process.env.DPD_LOGIN,
@@ -49,6 +53,7 @@ export default defineConfig({
       },
     },
     {
+      key: "meilisearch",
       resolve: "./src/modules/meilisearch",
       options: {
         host: process.env.MEILISEARCH_HOST ?? "http://localhost:7700",
@@ -56,6 +61,7 @@ export default defineConfig({
       },
     },
     {
+      key: "cloudinary",
       resolve: "./src/modules/cloudinary",
       options: {
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,

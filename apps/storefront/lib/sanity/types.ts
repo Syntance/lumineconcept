@@ -12,6 +12,24 @@ export interface SanityImage {
   alt?: string;
 }
 
+export interface SanityImageRef {
+  asset: {
+    _id: string;
+    url: string;
+  };
+}
+
+export interface SeoMeta {
+  metaTitle?: string;
+  metaDescription?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: SanityImageRef;
+  canonicalUrl?: string;
+  noIndex?: boolean;
+  noFollow?: boolean;
+}
+
 export interface BlogPost {
   _id: string;
   title: string;
@@ -22,8 +40,7 @@ export interface BlogPost {
   category: string;
   author?: string;
   publishedAt: string;
-  seoTitle?: string;
-  seoDescription?: string;
+  seo?: SeoMeta;
 }
 
 export interface LandingPage {
@@ -38,11 +55,15 @@ export interface LandingPage {
     ctaLink?: string;
   };
   sections: ContentSection[];
-  seo?: {
-    title: string;
-    description: string;
-    image?: SanityImage;
-  };
+  seo?: SeoMeta;
+}
+
+export interface Page {
+  _id: string;
+  title: string;
+  slug: string;
+  body?: PortableTextBlock[];
+  seo?: SeoMeta;
 }
 
 export interface ContentSection {
@@ -90,4 +111,8 @@ export interface SiteSettings {
     tiktok?: string;
   };
   footerText?: string;
+  seo?: SeoMeta;
+  titleTemplate?: string;
+  defaultOgImage?: SanityImageRef;
+  googleSiteVerification?: string;
 }

@@ -1,63 +1,51 @@
 @import "tailwindcss";
 
+@source "../components/**/*.{ts,tsx}";
+@source "../app/**/*.{ts,tsx}";
+@source "../providers/**/*.{ts,tsx}";
+
 @theme {
-  --color-brand-50: #fdf8f6;
-  --color-brand-100: #f2e8e5;
-  --color-brand-200: #eaddd7;
-  --color-brand-300: #e0cec7;
-  --color-brand-400: #d2bab0;
-  --color-brand-500: #bfa094;
-  --color-brand-600: #a18072;
-  --color-brand-700: #977669;
-  --color-brand-800: #846358;
-  --color-brand-900: #43302b;
-  --color-accent: #c9a87c;
-  --color-accent-light: #dfc5a2;
-  --color-accent-dark: #b08d5e;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-playfair), Georgia, serif;
+  /* Brand palette — from brandbook */
+  --color-brand-50: #F7F3EF;
+  --color-brand-100: #EEE8E0;
+  --color-brand-200: #E2D8CE;
+  --color-brand-300: #D5BFAB;
+  --color-brand-400: #C29E88;
+  --color-brand-500: #AF7C61;
+  --color-brand-600: #946852;
+  --color-brand-700: #7E5A48;
+  --color-brand-800: #725750;
+  --color-brand-900: #4A3530;
+
+  /* Accent = brandbook copper #AF7C61 */
+  --color-accent: #AF7C61;
+  --color-accent-light: #D5BFAB;
+  --color-accent-dark: #725750;
+
+  /* Typography — from brandbook */
+  --font-sans: var(--font-gilroy), system-ui, sans-serif;
+  --font-serif: var(--font-chronicle), Georgia, serif;
+  --font-display: var(--font-binerka), Georgia, serif;
 }
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 20 14.3% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 20 14.3% 4.1%;
-    --primary: 30 40% 63%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 20 14.3% 96%;
-    --secondary-foreground: 24 9.8% 10%;
-    --muted: 20 14.3% 96%;
-    --muted-foreground: 25 5.3% 44.7%;
-    --accent: 20 14.3% 96%;
-    --accent-foreground: 24 9.8% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
-    --ring: 30 40% 63%;
-    --radius: 0.5rem;
-  }
-}
-
-@layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
-
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: #fff;
+    color: var(--color-brand-800);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2, h3 {
     font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
+  h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-weight: 500;
   }
 }
 
@@ -78,9 +66,33 @@
     width: auto;
     height: auto;
     padding: 1rem 2rem;
-    background: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
+    background: var(--color-accent);
+    color: #fff;
     z-index: 9999;
     font-size: 1rem;
   }
+
+  .trust-scroll {
+    display: flex;
+    animation: trust-scroll 30s linear infinite;
+    width: max-content;
+  }
+
+  .trust-scroll:hover {
+    animation-play-state: paused;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes trust-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }

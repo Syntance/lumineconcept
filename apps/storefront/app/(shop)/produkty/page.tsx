@@ -99,11 +99,11 @@ export default async function ProductsPage({
                   title={product.title}
                   thumbnail={product.thumbnail ?? null}
                   price={
-                    (product.variants?.[0] as Record<string, unknown>)
+                    (product.variants?.[0] as unknown as Record<string, unknown>)
                       ?.calculated_price
                       ? Number(
                           (
-                            (product.variants[0] as Record<string, unknown>)
+                            (product.variants![0] as unknown as Record<string, unknown>)
                               .calculated_price as Record<string, unknown>
                           )?.calculated_amount ?? 0,
                         )

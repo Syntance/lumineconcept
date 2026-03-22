@@ -1,3 +1,16 @@
+const SEO_PROJECTION = `{
+  metaTitle,
+  metaDescription,
+  ogTitle,
+  ogDescription,
+  ogImage {
+    asset-> { _id, url }
+  },
+  canonicalUrl,
+  noIndex,
+  noFollow
+}`;
+
 export const BLOG_POSTS_QUERY = `*[_type == "blogPost" && defined(slug.current)] | order(publishedAt desc) {
   _id,
   title,
@@ -13,8 +26,7 @@ export const BLOG_POSTS_QUERY = `*[_type == "blogPost" && defined(slug.current)]
   },
   category,
   publishedAt,
-  seoTitle,
-  seoDescription
+  seo ${SEO_PROJECTION}
 }`;
 
 export const BLOG_POST_BY_SLUG_QUERY = `*[_type == "blogPost" && slug.current == $slug][0] {
@@ -34,8 +46,7 @@ export const BLOG_POST_BY_SLUG_QUERY = `*[_type == "blogPost" && slug.current ==
   category,
   author,
   publishedAt,
-  seoTitle,
-  seoDescription
+  seo ${SEO_PROJECTION}
 }`;
 
 export const BLOG_SLUGS_QUERY = `*[_type == "blogPost" && defined(slug.current)] {
@@ -49,7 +60,20 @@ export const LANDING_PAGE_QUERY = `*[_type == "landingPage" && slug.current == $
   "slug": slug.current,
   hero,
   sections,
-  seo
+  seo ${SEO_PROJECTION}
+}`;
+
+export const PAGE_BY_SLUG_QUERY = `*[_type == "page" && slug.current == $slug][0] {
+  _id,
+  title,
+  "slug": slug.current,
+  body,
+  seo ${SEO_PROJECTION}
+}`;
+
+export const PAGE_SLUGS_QUERY = `*[_type == "page" && defined(slug.current)] {
+  "slug": slug.current,
+  _updatedAt
 }`;
 
 export const TESTIMONIALS_QUERY = `*[_type == "testimonial"] | order(_createdAt desc) {
@@ -77,5 +101,11 @@ export const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0] {
   description,
   announcementBar,
   socialLinks,
-  footerText
+  footerText,
+  titleTemplate,
+  googleSiteVerification,
+  seo ${SEO_PROJECTION},
+  defaultOgImage {
+    asset-> { _id, url }
+  }
 }`;

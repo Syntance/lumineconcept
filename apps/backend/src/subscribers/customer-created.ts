@@ -1,26 +1,20 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
-
-interface CustomerData {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-}
+import type { ICustomerModuleService } from "@medusajs/framework/types";
+import { Modules } from "@medusajs/framework/utils";
 
 export default async function customerCreatedHandler({
   event,
   container,
 }: SubscriberArgs<{ id: string }>) {
-  const customerService = container.resolve("customer") as {
-    retrieve: (id: string) => Promise<CustomerData>;
-  };
+  const customerService: ICustomerModuleService =
+    container.resolve(Modules.CUSTOMER);
 
-  const customer = await customerService.retrieve(event.data.id);
+  const customer = await customerService.retrieveCustomer(event.data.id);
 
   await syncToMailerLite(customer);
 }
 
-async function syncToMailerLite(customer: CustomerData) {
+async function syncToMailerLite(customer: { email: string; first_name: string | null; last_name: string | null }) {
   const apiKey = process.env.MAILERLITE_API_KEY;
   if (!apiKey) return;
 

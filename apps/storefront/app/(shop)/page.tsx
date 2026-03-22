@@ -1,43 +1,42 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { getProducts } from "@/lib/medusa/products";
+import { Suspense } from "react";
 import { sanityClient } from "@/lib/sanity/client";
-import { TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
-import type { Testimonial } from "@/lib/sanity/types";
-import { ProductCard } from "@/components/product/ProductCard";
-import { TrustBadges } from "@/components/marketing/TrustBadges";
-import { SocialProof } from "@/components/marketing/SocialProof";
-import { NewsletterForm } from "@/components/marketing/NewsletterForm";
+import { SITE_SETTINGS_QUERY } from "@/lib/sanity/queries";
+import type { SiteSettings } from "@/lib/sanity/types";
+import { buildMetadata } from "@/lib/sanity/metadata";
+import { SITE_URL } from "@/lib/utils";
+import { HeroSection } from "@/components/home/HeroSection";
+import { SegmentCards } from "@/components/home/SegmentCards";
+import { SocialProofSection } from "@/components/home/SocialProofSection";
+import { FooterCTA } from "@/components/home/FooterCTA";
+import { ReferralBanner } from "@/components/home/ReferralBanner";
+import { StickyCTABar } from "@/components/home/StickyCTABar";
 
-export const metadata: Metadata = {
-  title: "Lumine Concept — Plexi & Branding dla Salonów Beauty",
-  description:
-    "Produkty z plexi i rozwiązania brandingowe dla salonów beauty. Loga 3D, stojaki, organizery, tablice cennikowe. Darmowa dostawa od 250 zł.",
-  openGraph: {
-    title: "Lumine Concept — Plexi & Branding dla Salonów Beauty",
-    description:
-      "Produkty z plexi i rozwiązania brandingowe dla salonów beauty.",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await sanityClient
+    .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
+    .catch(() => null);
+
+  return buildMetadata({
+    seo: settings?.seo ?? undefined,
+    fallbackTitle:
+      "Lumine Concept — branding z plexi dla salonów beauty | Logo 3D, cenniki, oznaczenia",
+    fallbackDescription:
+      "Logo 3D, cenniki i oznaczenia z plexi. Matowe UV, LED z pilotem, 15+ kolorów. Express 72h. 6 000+ realizacji. Wyślij logo — wycena w 24h.",
+    siteSettings: settings,
+    path: "/",
+  });
+}
 
 export const revalidate = 60;
 
-export default async function HomePage() {
-  const [productsResponse, testimonials] = await Promise.all([
-    getProducts({ limit: 8, order: "-created_at" }).catch(() => null),
-    sanityClient
-      .fetch<Testimonial[]>(TESTIMONIALS_QUERY)
-      .catch(() => [] as Testimonial[]),
-  ]);
-
-  const products = productsResponse?.products ?? [];
-
+export default function HomePage() {
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Lumine Concept",
-    url: "https://lumine.syntance.dev",
-    logo: "https://lumine.syntance.dev/images/logo.png",
+    url: SITE_URL,
+    logo: `${SITE_URL}/images/logo.png`,
     sameAs: [
       "https://www.instagram.com/lumineconcept/",
       "https://www.facebook.com/lumineconcept/",
@@ -51,108 +50,25 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
       />
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-white py-20 lg:py-32">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-display text-4xl font-bold tracking-tight text-brand-900 sm:text-5xl lg:text-6xl">
-            Plexi & branding
-            <br />
-            <span className="text-accent">dla salonów beauty</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-brand-600">
-            Tworzymy produkty z plexi, które wyróżnią Twój salon. Loga 3D, stojaki
-            na produkty, organizery, tablice cennikowe i wiele więcej.
-          </p>
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link
-              href="/produkty"
-              className="rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white shadow hover:bg-accent-dark transition-colors"
-            >
-              Zobacz produkty
-            </Link>
-            <Link
-              href="/konfiguracja"
-              className="rounded-md border border-brand-300 px-8 py-3 text-sm font-semibold text-brand-900 hover:bg-brand-50 transition-colors"
-            >
-              Skonfiguruj własny
-            </Link>
-          </div>
-        </div>
-      </section>
+      <Suspense fallback={null}>
+        <ReferralBanner />
+      </Suspense>
 
-      <TrustBadges />
+      {/* Sekcja 1: Hero + Trust bar */}
+      <HeroSection />
 
-      {products.length > 0 && (
-        <section className="py-16">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="font-display text-2xl font-bold text-brand-900">
-                Nowości
-              </h2>
-              <Link
-                href="/produkty"
-                className="text-sm font-medium text-accent hover:text-accent-dark transition-colors"
-              >
-                Zobacz wszystkie
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  handle={product.handle ?? ""}
-                  title={product.title}
-                  thumbnail={product.thumbnail ?? null}
-                  price={
-                    (product.variants?.[0] as Record<string, unknown>)
-                      ?.calculated_price
-                      ? Number(
-                          (
-                            (product.variants[0] as Record<string, unknown>)
-                              .calculated_price as Record<string, unknown>
-                          )?.calculated_amount ?? 0,
-                        )
-                      : 0
-                  }
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Sekcja 2: Karty segmentowe + mini-galeria + trust bar + marka z twarzą */}
+      <SegmentCards />
 
-      <section className="bg-brand-900 py-16 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="font-display text-2xl font-bold">
-            Potrzebujesz logo 3D do swojego salonu?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-brand-300">
-            Prześlij swoje logo, a my przygotujemy wycenę i wizualizację 3D w
-            ciągu 24 godzin.
-          </p>
-          <Link
-            href="/logo-3d"
-            className="mt-8 inline-block rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors"
-          >
-            Prześlij logo
-          </Link>
-        </div>
-      </section>
+      {/* Sekcja 3: Social proof + 5 UVP ikon */}
+      <SocialProofSection />
 
-      {testimonials.length > 0 && <SocialProof testimonials={testimonials} />}
+      {/* Sekcja 4: Footer CTA + IG feed */}
+      <FooterCTA />
 
-      <section className="py-16">
-        <div className="container mx-auto max-w-xl px-4 text-center">
-          <h2 className="font-display text-2xl font-bold text-brand-900">
-            Bądź na bieżąco
-          </h2>
-          <p className="mt-2 text-brand-600">
-            Zapisz się do newslettera i otrzymaj 10% rabatu na pierwsze zamówienie.
-          </p>
-          <div className="mt-6">
-            <NewsletterForm />
-          </div>
-        </div>
-      </section>
+      <Suspense fallback={null}>
+        <StickyCTABar />
+      </Suspense>
     </>
   );
 }

@@ -1,40 +1,24 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
+import type { IOrderModuleService } from "@medusajs/framework/types";
+import { Modules } from "@medusajs/framework/utils";
 import crypto from "node:crypto";
-
-interface OrderData {
-  id: string;
-  email: string;
-  total: number;
-  currency_code: string;
-  items: Array<{
-    id: string;
-    title: string;
-    quantity: number;
-    unit_price: number;
-    variant: { id: string; title: string };
-  }>;
-}
 
 export default async function orderPlacedHandler({
   event,
   container,
 }: SubscriberArgs<{ id: string }>) {
-  const orderService = container.resolve("order") as {
-    retrieve: (
-      id: string,
-      config: { relations: string[] },
-    ) => Promise<OrderData>;
-  };
+  const orderService: IOrderModuleService =
+    container.resolve(Modules.ORDER);
 
-  const order = await orderService.retrieve(event.data.id, {
+  const order = await orderService.retrieveOrder(event.data.id, {
     relations: ["items", "items.variant"],
   });
 
-  await sendMetaCAPIEvent(order);
-  await sendPostHogEvent(order);
+  await sendMetaCAPIEvent(order as any);
+  await sendPostHogEvent(order as any);
 }
 
-async function sendMetaCAPIEvent(order: OrderData) {
+async function sendMetaCAPIEvent(order: any) {
   const pixelId = process.env.META_PIXEL_ID;
   const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
 
@@ -57,14 +41,14 @@ async function sendMetaCAPIEvent(order: OrderData) {
         custom_data: {
           currency: order.currency_code.toUpperCase(),
           value: order.total / 100,
-          content_ids: order.items.map((i) => i.variant.id),
+          content_ids: order.items.map((i: any) => i.variant.id),
           content_type: "product",
-          contents: order.items.map((i) => ({
+          contents: order.items.map((i: any) => ({
             id: i.variant.id,
             quantity: i.quantity,
             item_price: i.unit_price / 100,
           })),
-          num_items: order.items.reduce((sum, i) => sum + i.quantity, 0),
+          num_items: order.items.reduce((sum: number, i: any) => sum + i.quantity, 0),
           order_id: order.id,
         },
       },
@@ -85,7 +69,7 @@ async function sendMetaCAPIEvent(order: OrderData) {
   }
 }
 
-async function sendPostHogEvent(order: OrderData) {
+async function sendPostHogEvent(order: any) {
   const posthogKey = process.env.POSTHOG_API_KEY;
   if (!posthogKey) return;
 
@@ -102,7 +86,7 @@ async function sendPostHogEvent(order: OrderData) {
           total: order.total / 100,
           currency: order.currency_code,
           items_count: order.items.length,
-          items: order.items.map((i) => ({
+          items: order.items.map((i: any) => ({
             title: i.title,
             quantity: i.quantity,
             price: i.unit_price / 100,

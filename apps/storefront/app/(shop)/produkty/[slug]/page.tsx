@@ -45,15 +45,15 @@ export default async function ProductPage({
   if (!product) notFound();
 
   const images =
-    (product.images as Array<{ id: string; url: string; alt?: string }>) ?? [];
-  const variants = (product.variants ?? []) as Array<{
+    (product.images as unknown as Array<{ id: string; url: string; alt?: string }>) ?? [];
+  const variants = (product.variants ?? []) as unknown as Array<{
     id: string;
     title: string;
     options: Record<string, string>;
     calculated_price?: { calculated_amount: number };
     inventory_quantity: number;
   }>;
-  const options = (product.options ?? []) as Array<{
+  const options = (product.options ?? []) as unknown as Array<{
     id: string;
     title: string;
     values: Array<{ value: string }>;

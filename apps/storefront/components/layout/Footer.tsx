@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { NewsletterForm } from "../marketing/NewsletterForm";
 
 const FOOTER_LINKS = {
@@ -22,12 +23,18 @@ const FOOTER_LINKS = {
 
 export function Footer() {
   return (
-    <footer className="bg-brand-900 text-brand-200" role="contentinfo">
+    <footer className="bg-brand-800 text-brand-200" role="contentinfo">
       <div className="container mx-auto px-4 py-12 lg:px-8 lg:py-16">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div>
-            <Link href="/" className="font-display text-2xl font-bold text-white">
-              LUMINE
+            <Link href="/">
+              <Image
+                src="/images/logo.png"
+                alt="Lumine Concept"
+                width={140}
+                height={32}
+                className="h-8 w-auto brightness-0 invert"
+              />
             </Link>
             <p className="mt-4 text-sm text-brand-300 max-w-xs">
               Produkty plexi i branding dla salonów beauty. Tworzymy z pasją, dostarczamy z precyzją.
@@ -55,7 +62,7 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 border-t border-brand-800 pt-8">
+        <div className="mt-12 border-t border-brand-700 pt-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-md">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-white">

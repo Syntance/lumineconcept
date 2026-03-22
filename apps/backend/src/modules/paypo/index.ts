@@ -1,5 +1,6 @@
+import { Module } from "@medusajs/framework/utils";
 import PayPoPaymentService from "./service";
 
-export default {
+export default Module("paypo", {
   service: PayPoPaymentService,
-};
+});

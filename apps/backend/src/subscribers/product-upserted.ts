@@ -1,4 +1,6 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
+import type { IProductModuleService } from "@medusajs/framework/types";
+import { Modules } from "@medusajs/framework/utils";
 import type MeilisearchService from "../modules/meilisearch/service";
 
 export default async function productUpsertedHandler({
@@ -6,29 +8,12 @@ export default async function productUpsertedHandler({
   container,
 }: SubscriberArgs<{ id: string }>) {
   const meilisearch = container.resolve("meilisearch") as MeilisearchService;
-  const productService = container.resolve("product") as {
-    retrieve: (
-      id: string,
-      config: { relations: string[] },
-    ) => Promise<{
-      id: string;
-      title: string;
-      handle: string;
-      description: string;
-      thumbnail: string | null;
-      categories: Array<{ name: string }>;
-      tags: Array<{ value: string }>;
-      variants: Array<{
-        prices: Array<{ amount: number }>;
-      }>;
-      created_at: string;
-      updated_at: string;
-    }>;
-  };
+  const productService: IProductModuleService =
+    container.resolve(Modules.PRODUCT);
 
-  const product = await productService.retrieve(event.data.id, {
+  const product = await productService.retrieveProduct(event.data.id, {
     relations: ["variants", "variants.prices", "categories", "tags"],
-  });
+  }) as any;
 
   await meilisearch.upsertProduct({
     id: product.id,
@@ -36,10 +21,10 @@ export default async function productUpsertedHandler({
     handle: product.handle,
     description: product.description ?? "",
     thumbnail: product.thumbnail,
-    categories: product.categories?.map((c) => c.name) ?? [],
-    tags: product.tags?.map((t) => t.value) ?? [],
-    variant_prices: product.variants?.flatMap((v) =>
-      v.prices?.map((p) => p.amount) ?? [],
+    categories: product.categories?.map((c: any) => c.name) ?? [],
+    tags: product.tags?.map((t: any) => t.value) ?? [],
+    variant_prices: product.variants?.flatMap((v: any) =>
+      v.prices?.map((p: any) => p.amount) ?? [],
     ) ?? [],
     created_at: product.created_at,
     updated_at: product.updated_at,
