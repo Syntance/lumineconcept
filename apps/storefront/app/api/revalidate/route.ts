@@ -1,9 +1,12 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 
+const REVALIDATE_SECRET = process.env.SANITY_REVALIDATE_SECRET;
+
 export async function POST(request: NextRequest) {
   const secret = request.headers.get("x-webhook-secret");
-  if (secret !== process.env.SANITY_API_TOKEN) {
+
+  if (!REVALIDATE_SECRET || secret !== REVALIDATE_SECRET) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,7 +23,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (body._type === "landingPage") {
+    if (body._type === "landingPage" || body._type === "page") {
       if (body.slug?.current) {
         revalidatePath(`/${body.slug.current}`);
       }
@@ -30,7 +33,11 @@ export async function POST(request: NextRequest) {
       revalidatePath("/");
     }
 
-    revalidateTag("sanity");
+    if (body._type === "siteSettings") {
+      revalidatePath("/", "layout");
+    }
+
+    revalidateTag("sanity", "max");
 
     return NextResponse.json({ revalidated: true, now: Date.now() });
   } catch (error) {

@@ -2,36 +2,20 @@ import {
   createStep,
   createWorkflow,
   StepResponse,
+  WorkflowResponse,
 } from "@medusajs/framework/workflows-sdk";
+import { Modules } from "@medusajs/framework/utils";
+import type { IProductModuleService } from "@medusajs/framework/types";
 import type MeilisearchService from "../modules/meilisearch/service";
 
 const fetchAllProductsStep = createStep(
   "fetch-all-products",
   async (_, { container }) => {
-    const productService = container.resolve("product") as {
-      list: (
-        filters: Record<string, unknown>,
-        config: { relations: string[]; take: number },
-      ) => Promise<
-        Array<{
-          id: string;
-          title: string;
-          handle: string;
-          description: string;
-          thumbnail: string | null;
-          categories: Array<{ name: string }>;
-          tags: Array<{ value: string }>;
-          variants: Array<{
-            prices: Array<{ amount: number }>;
-          }>;
-          created_at: string;
-          updated_at: string;
-        }>
-      >;
-    };
+    const productService: IProductModuleService =
+      container.resolve(Modules.PRODUCT);
 
-    const products = await productService.list(
-      { status: "published" },
+    const products = await productService.listProducts(
+      { status: "published" as const },
       {
         relations: ["variants", "variants.prices", "categories", "tags"],
         take: 10000,
@@ -44,35 +28,19 @@ const fetchAllProductsStep = createStep(
 
 const indexProductsStep = createStep(
   "index-products-to-meilisearch",
-  async (
-    products: Array<{
-      id: string;
-      title: string;
-      handle: string;
-      description: string;
-      thumbnail: string | null;
-      categories: Array<{ name: string }>;
-      tags: Array<{ value: string }>;
-      variants: Array<{
-        prices: Array<{ amount: number }>;
-      }>;
-      created_at: string;
-      updated_at: string;
-    }>,
-    { container },
-  ) => {
+  async (products: any[], { container }) => {
     const meilisearch = container.resolve("meilisearch") as MeilisearchService;
 
-    const documents = products.map((product) => ({
+    const documents = products.map((product: any) => ({
       id: product.id,
       title: product.title,
       handle: product.handle,
       description: product.description ?? "",
       thumbnail: product.thumbnail,
-      categories: product.categories?.map((c) => c.name) ?? [],
-      tags: product.tags?.map((t) => t.value) ?? [],
+      categories: product.categories?.map((c: any) => c.name) ?? [],
+      tags: product.tags?.map((t: any) => t.value) ?? [],
       variant_prices:
-        product.variants?.flatMap((v) => v.prices?.map((p) => p.amount) ?? []) ?? [],
+        product.variants?.flatMap((v: any) => v.prices?.map((p: any) => p.amount) ?? []) ?? [],
       created_at: product.created_at,
       updated_at: product.updated_at,
     }));
@@ -87,6 +55,7 @@ export const syncProductsMeilisearchWorkflow = createWorkflow(
   "sync-products-meilisearch",
   () => {
     const products = fetchAllProductsStep();
-    return indexProductsStep(products);
+    const result = indexProductsStep(products);
+    return new WorkflowResponse(result);
   },
 );

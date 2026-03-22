@@ -111,13 +111,8 @@ export const landingPage = defineType({
     }),
     defineField({
       name: "seo",
-      title: "SEO",
-      type: "object",
-      fields: [
-        { name: "title", title: "Tytuł SEO", type: "string" },
-        { name: "description", title: "Opis SEO", type: "text", rows: 2 },
-        { name: "image", title: "Zdjęcie OG", type: "image" },
-      ],
+      title: "SEO & Meta",
+      type: "seo",
     }),
   ],
   preview: {

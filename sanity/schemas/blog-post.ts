@@ -88,19 +88,10 @@ export const blogPost = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
-      name: "seoTitle",
-      title: "SEO — Tytuł",
-      type: "string",
-      description: "Jeśli pusty, użyty zostanie tytuł artykułu",
-      validation: (rule) => rule.max(70),
-    }),
-    defineField({
-      name: "seoDescription",
-      title: "SEO — Opis",
-      type: "text",
-      rows: 2,
-      description: "Jeśli pusty, użyta zostanie zajawka",
-      validation: (rule) => rule.max(160),
+      name: "seo",
+      title: "SEO & Meta",
+      type: "seo",
+      description: "Jeśli puste, użyte zostaną tytuł artykułu i zajawka",
     }),
   ],
   orderings: [

@@ -14,20 +14,17 @@ const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "";
 export function initMetaPixel() {
   if (typeof window === "undefined" || !PIXEL_ID) return;
 
-  if (window.fbq) return;
+  if (typeof window.fbq === "function") return;
 
-  const fbq = function (
-    this: unknown,
-    ...args: [string, string, Record<string, unknown>?]
-  ) {
-    (fbq as unknown as { callMethod?: (...a: unknown[]) => void }).callMethod
-      ? (fbq as unknown as { callMethod: (...a: unknown[]) => void }).callMethod(
-          ...args,
-        )
-      : (fbq as unknown as { queue: unknown[] }).queue.push(args);
-  } as typeof window.fbq & { queue: unknown[]; loaded: boolean; version: string };
-
-  fbq.queue = [];
+  const queue: unknown[][] = [];
+  const fbq: any = function (...args: unknown[]) {
+    if (fbq.callMethod) {
+      fbq.callMethod(...args);
+    } else {
+      queue.push(args);
+    }
+  };
+  fbq.queue = queue;
   fbq.loaded = true;
   fbq.version = "2.0";
 

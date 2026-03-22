@@ -1,5 +1,6 @@
+import { Module } from "@medusajs/framework/utils";
 import InPostFulfillmentService from "./service";
 
-export default {
+export default Module("inpost", {
   service: InPostFulfillmentService,
-};
+});
