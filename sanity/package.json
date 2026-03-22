@@ -1,0 +1,22 @@
+{
+  "name": "@lumine/sanity",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "sanity dev",
+    "build": "sanity build",
+    "deploy": "sanity deploy",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@sanity/vision": "^3.68.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sanity": "^3.68.3",
+    "styled-components": "^6.1.13"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
