@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Star } from "lucide-react";
 
 const SEGMENTS = [
   {
@@ -28,12 +27,6 @@ const GALLERY_ITEMS = [
   "Organizer na kosmetyki",
   "Tabliczka na drzwi",
   "Stojak na wizytówki",
-];
-
-const SALON_LOGOS = [
-  "Salon Mia", "Beauty Lab", "Klinika Urody", "Studio Lashes",
-  "Hair Concept", "Nail Room", "Brow Bar", "Skin Studio",
-  "Beauty Point", "Glow Up", "Lash Queen", "Style Zone",
 ];
 
 export function SegmentCards() {
@@ -101,42 +94,6 @@ export function SegmentCards() {
               </Link>
             ))}
           </div>
-        </div>
-
-        {/* Trust bar repeat */}
-        <div className="mt-14 overflow-hidden">
-          <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-16 bg-linear-to-r from-white to-transparent z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-16 bg-linear-to-l from-white to-transparent z-10" />
-            <div className="trust-scroll">
-              {[...SALON_LOGOS, ...SALON_LOGOS].map((name, i) => (
-                <div
-                  key={`trust2-${name}-${i}`}
-                  className="mx-8 flex h-8 items-center opacity-30 hover:opacity-70 transition-opacity duration-300"
-                >
-                  <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-brand-500 whitespace-nowrap">
-                    {name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <p className="mt-4 text-center text-xs text-brand-400 flex items-center justify-center gap-1.5">
-            <Star className="h-3 w-3 fill-accent text-accent" />
-            <span className="font-medium text-brand-600">4.9</span>
-            na Google
-            <span className="mx-1 text-brand-300">&middot;</span>
-            430+ opinii
-          </p>
-        </div>
-
-        {/* Marka z twarzą */}
-        <div className="mt-14 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <div className="h-14 w-14 rounded-full bg-brand-200 shrink-0" />
-          <p className="text-sm text-brand-600 text-center sm:text-left max-w-sm">
-            <span className="font-semibold text-brand-800">Za Lumine stoją trzy siostry</span>
-            {" "}— od projektu do paczki, każdy produkt przechodzi przez nasze ręce.
-          </p>
         </div>
       </div>
     </section>

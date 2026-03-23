@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Instagram } from "lucide-react";
+
 
 const SALON_LOGOS = [
   "Salon Mia", "Beauty Lab", "Klinika Urody", "Studio Lashes",
@@ -47,7 +48,7 @@ export function HeroSection() {
               paddingBottom: "calc(4rem + 140px)",
             }}
           >
-            <h1 className="font-display text-4xl text-white tracking-[0.08em] sm:text-5xl lg:text-6xl">
+            <h1 className="font-binerka text-4xl text-white tracking-[0.08em] sm:text-5xl lg:text-6xl">
               CONCEPT
             </h1>
 
@@ -80,11 +81,11 @@ export function HeroSection() {
         </div>
       </section>
 
-      {/* Pasek Zaufali nam */}
+      {/* Pasek Zaufały nam */}
       <div className="bg-brand-50 py-7 overflow-hidden">
 
         <p className="text-center font-sans text-[10px] font-medium uppercase tracking-[0.25em] text-brand-400 mb-5">
-          Zaufali nam
+          Zaufały nam
         </p>
 
         <div className="relative">
@@ -105,12 +106,11 @@ export function HeroSection() {
           </div>
         </div>
 
-        <p className="mt-5 font-sans text-center text-xs text-brand-400 flex items-center justify-center gap-1.5">
-          <Star className="h-3 w-3 fill-accent text-accent" />
-          <span className="font-medium text-brand-600">4.9</span>
-          na Google
-          <span className="mx-1 text-brand-300">&middot;</span>
-          430+ opinii
+        <p className="mt-5 font-sans flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs text-brand-400">
+          <Instagram className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
+          <span className="font-medium text-brand-600">25 000+ obserwujących</span>
+          <span className="mx-1.5 text-brand-300">&middot;</span>
+          <span className="text-brand-600">6 000+ realizacji</span>
         </p>
       </div>
     </>

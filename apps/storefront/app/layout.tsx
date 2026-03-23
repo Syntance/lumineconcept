@@ -32,6 +32,7 @@ const chronicle = localFont({
 
 const binerka = localFont({
   src: "../public/fonts/Binerka.otf",
+  weight: "400",
   variable: "--font-binerka",
   display: "swap",
 });

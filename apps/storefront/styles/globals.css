@@ -25,7 +25,8 @@
   /* Typography — from brandbook */
   --font-sans: var(--font-gilroy), system-ui, sans-serif;
   --font-serif: var(--font-chronicle), Georgia, serif;
-  --font-display: var(--font-binerka), Georgia, serif;
+  /* Display z polskim tekstem = Chronicle (pełne glyphy). Binerka tylko przez klasę .font-binerka (np. CONCEPT). */
+  --font-display: var(--font-chronicle), Georgia, serif;
 }
 
 @layer base {
@@ -50,6 +51,16 @@
 }
 
 @layer utilities {
+  /* Binerka — tylko krótkie napisy bez PL znaków (np. CONCEPT); inaczej przeglądarka podstawia inny font i „pogrubia” diakrytyki */
+  .font-binerka {
+    font-family: var(--font-binerka), var(--font-chronicle), Georgia, serif;
+    font-synthesis: none;
+  }
+
+  .font-display {
+    font-synthesis: none;
+  }
+
   /* Jawny Chronicle (Next: --font-chronicle) — gdy ma być na pewno Chronicle, nie „generic serif” */
   .font-chronicle {
     font-family: var(--font-chronicle), Georgia, serif;

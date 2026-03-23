@@ -13,7 +13,7 @@ export async function BestsellersSection() {
   }> = [];
 
   try {
-    products = await getProductsByTag("bestseller", 6);
+    products = await getProductsByTag("bestseller", 4);
   } catch {
     return null;
   }
@@ -21,7 +21,7 @@ export async function BestsellersSection() {
   if (!products.length) return null;
 
   return (
-    <section className="bg-white py-16 lg:py-24">
+    <section className="bg-white pt-16 pb-10 lg:pt-24 lg:pb-10">
       <div className="container mx-auto px-4">
         {/* Nagłówek */}
         <div className="text-center mb-12">
@@ -31,12 +31,12 @@ export async function BestsellersSection() {
           <div className="mt-3 mx-auto h-px w-12 bg-accent" />
         </div>
 
-        {/* Carousel mobile / grid desktop */}
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-visible md:pb-0">
-          {products.map((product) => (
+        {/* 4 produkty — jednakowa wysokość w rzędzie (stretch + pełna szerokość karty) */}
+        <div className="grid grid-cols-2 items-stretch gap-4 md:grid-cols-4 md:gap-6">
+          {products.slice(0, 4).map((product) => (
             <div
               key={product.handle}
-              className="shrink-0 w-[70vw] snap-start sm:w-[45vw] md:w-auto"
+              className="flex h-full min-h-0 min-w-0 flex-col self-stretch"
             >
               <ProductCard
                 handle={product.handle}
@@ -59,18 +59,6 @@ export async function BestsellersSection() {
           >
             Zobacz cały sklep &rarr;
           </Link>
-        </div>
-
-        {/* Marka z twarzą */}
-        <div className="mt-16 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <div className="h-14 w-14 rounded-full bg-brand-200 shrink-0" />
-          <p className="text-sm text-brand-600 text-center sm:text-left max-w-sm">
-            <span className="font-semibold text-brand-800">
-              Za Lumine stoją trzy siostry
-            </span>
-            {" "}— od projektu do paczki, każdy produkt przechodzi przez nasze
-            ręce.
-          </p>
         </div>
       </div>
     </section>
