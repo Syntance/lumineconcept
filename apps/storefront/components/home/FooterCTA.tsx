@@ -25,23 +25,32 @@ export function FooterCTA() {
           </h2>
           <div className="mt-4 mx-auto h-[1px] w-12 bg-accent-light" />
 
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link
-              href="/logo-3d#formularz"
-              className="inline-flex items-center justify-center border border-white px-8 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900"
-            >
-              Wyślij logo — wycenę w 24h
-            </Link>
+          <div className="mt-10 flex justify-center">
             <Link
               href="/produkty"
-              className="text-[11px] font-medium uppercase tracking-[0.15em] text-brand-300 hover:text-white transition-colors"
+              className="inline-flex items-center justify-center border border-white px-8 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900"
             >
               Zobacz sklep &rarr;
             </Link>
           </div>
 
           <p className="mt-8 text-xs text-brand-400">
-            Wolisz napisać? kontakt@lumineconcept.pl &middot; @lumineconcept
+            Wolisz napisać?{" "}
+            <a
+              href="mailto:kontakt@lumineconcept.pl"
+              className="text-brand-200 underline-offset-2 transition-colors hover:text-white hover:underline"
+            >
+              kontakt@lumineconcept.pl
+            </a>
+            <span className="mx-1.5 text-brand-500">&middot;</span>
+            <a
+              href="https://ig.me/m/lumineconcept"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-200 underline-offset-2 transition-colors hover:text-white hover:underline"
+            >
+              @lumineconcept
+            </a>
           </p>
         </div>
       </section>

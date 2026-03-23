@@ -6,7 +6,6 @@ import type { SiteSettings } from "@/lib/sanity/types";
 import { buildMetadata } from "@/lib/sanity/metadata";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
-import { SegmentCards } from "@/components/home/SegmentCards";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
@@ -80,10 +79,7 @@ export default function HomePage() {
         <BestsellersSection />
       </Suspense>
 
-      {/* Sekcja 3: Karty segmentowe + mini-galeria + trust bar + marka z twarzą */}
-      <SegmentCards />
-
-      {/* Sekcja 3: Social proof + 5 UVP ikon */}
+      {/* Sekcja 3: UVP + opinia klientki */}
       <SocialProofSection />
 
       {/* Sekcja 4: Footer CTA + IG feed */}

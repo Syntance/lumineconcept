@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { NewsletterForm } from "../marketing/NewsletterForm";
 
 const FOOTER_LINKS = {
   Sklep: [
@@ -24,8 +23,8 @@ const FOOTER_LINKS = {
 export function Footer() {
   return (
     <footer className="bg-brand-800 text-brand-200" role="contentinfo">
-      <div className="container mx-auto px-4 py-12 lg:px-8 lg:py-16">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+      <div className="container mx-auto px-4 pb-2 pt-8 lg:px-8 lg:pb-3 lg:pt-10">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
           <div>
             <Link href="/">
               <Image
@@ -62,23 +61,10 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 border-t border-brand-700 pt-8">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-md">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
-                Newsletter
-              </h3>
-              <p className="mt-2 text-sm text-brand-300">
-                Zapisz się i otrzymaj 10% rabatu na pierwsze zamówienie.
-              </p>
-              <div className="mt-4">
-                <NewsletterForm variant="footer" />
-              </div>
-            </div>
-            <p className="text-xs text-brand-400">
-              &copy; {new Date().getFullYear()} Lumine Concept. Wszelkie prawa zastrzeżone.
-            </p>
-          </div>
+        <div className="mt-8 border-t border-brand-700 pt-3 lg:mt-10 lg:pt-4">
+          <p className="text-center text-xs text-brand-400 lg:text-left">
+            &copy; {new Date().getFullYear()} Lumine Concept. Wszelkie prawa zastrzeżone.
+          </p>
         </div>
       </div>
     </footer>

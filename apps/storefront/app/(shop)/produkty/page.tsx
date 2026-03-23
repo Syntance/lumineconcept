@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { SegmentCards } from "@/components/home/SegmentCards";
 import { SortSelect } from "./sort-select";
 
 export const metadata: Metadata = {
@@ -37,14 +38,19 @@ export default async function ProductsPage({
   const totalPages = Math.ceil(totalCount / limit);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Breadcrumbs
-        items={[
-          { label: "Strona główna", href: "/" },
-          { label: "Produkty" },
-        ]}
-      />
+    <>
+      <div className="container mx-auto px-4 pt-8">
+        <Breadcrumbs
+          items={[
+            { label: "Strona główna", href: "/" },
+            { label: "Produkty" },
+          ]}
+        />
+      </div>
 
+      <SegmentCards />
+
+      <div className="container mx-auto px-4 pb-8 pt-4 lg:pt-6">
       <div className="flex flex-col gap-6 lg:flex-row">
         <aside className="w-full lg:w-64 flex-shrink-0">
           <h2 className="font-display text-lg font-semibold text-brand-900 mb-4">
@@ -138,6 +144,7 @@ export default async function ProductsPage({
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
