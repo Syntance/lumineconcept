@@ -50,6 +50,11 @@
 }
 
 @layer utilities {
+  /* Jawny Chronicle (Next: --font-chronicle) — gdy ma być na pewno Chronicle, nie „generic serif” */
+  .font-chronicle {
+    font-family: var(--font-chronicle), Georgia, serif;
+  }
+
   .skip-to-content {
     position: absolute;
     left: -10000px;
