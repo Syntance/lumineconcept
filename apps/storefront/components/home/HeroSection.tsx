@@ -28,7 +28,7 @@ export function HeroSection() {
         {/* Lukowy cien (arch shadow) */}
         <div
           aria-hidden
-          className="pointer-events-none absolute top-0 z-[5] backdrop-blur-[6px]"
+          className="pointer-events-none absolute top-0 z-[5] backdrop-blur-[8px]"
           style={{
             left: "calc(5% + 60px)",
             width: "min(350px, 35%)",
@@ -51,13 +51,13 @@ export function HeroSection() {
               CONCEPT
             </h1>
 
-            <p className="mt-4 font-serif text-[1.175rem] uppercase tracking-[0.15em] text-white/80 leading-tight sm:text-[1.4rem] lg:text-[1.7rem]">
+            <p className="mt-4 font-sans text-[1.175rem] uppercase tracking-[0.15em] text-white/80 leading-tight sm:text-[1.4rem] lg:text-[1.7rem]">
               Twój salon zasługuje
               <br />
-              na zapamiętywany branding
+              na zapamiętywalny branding
             </p>
 
-            <p className="mt-4 font-serif text-sm tracking-[0.1em] text-white/80 sm:text-base">
+            <p className="mt-4 font-sans text-sm tracking-[0.1em] text-white/80 sm:text-base">
               Logo 3D, cenniki i oznaczenia z plexi
             </p>
 
@@ -65,13 +65,13 @@ export function HeroSection() {
             <div className="mt-7 inline-flex flex-col items-center">
               <Link
                 href="/produkty"
-                className="inline-flex items-center justify-center rounded border border-white/70 px-8 py-3 font-serif text-[11px] uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900 sm:text-xs"
+                className="inline-flex items-center justify-center rounded border border-white/70 px-8 py-3 font-sans text-[11px] uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900 sm:text-xs"
               >
                 Zobacz produkty
               </Link>
               <Link
                 href="/logo-3d"
-                className="mt-4 font-serif text-[11px] tracking-[0.15em] text-white/90 underline underline-offset-4 decoration-white/30 transition-colors hover:text-white hover:decoration-white/60 sm:text-xs"
+                className="mt-4 font-sans text-[11px] tracking-[0.15em] text-white/90 underline underline-offset-4 decoration-white/30 transition-colors hover:text-white hover:decoration-white/60 sm:text-xs"
               >
                 Logo 3D na zamówienie &rarr;
               </Link>
@@ -83,7 +83,7 @@ export function HeroSection() {
       {/* Pasek Zaufali nam */}
       <div className="bg-brand-50 py-7 overflow-hidden">
 
-        <p className="text-center text-[10px] font-medium uppercase tracking-[0.25em] text-brand-400 mb-5">
+        <p className="text-center font-sans text-[10px] font-medium uppercase tracking-[0.25em] text-brand-400 mb-5">
           Zaufali nam
         </p>
 
@@ -97,7 +97,7 @@ export function HeroSection() {
                 key={`${name}-${i}`}
                 className="mx-8 flex h-8 items-center opacity-40 hover:opacity-80 transition-opacity duration-300"
               >
-                <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-brand-600 whitespace-nowrap">
+                <span className="font-sans text-[10px] font-medium uppercase tracking-[0.15em] text-brand-600 whitespace-nowrap">
                   {name}
                 </span>
               </div>
@@ -105,7 +105,7 @@ export function HeroSection() {
           </div>
         </div>
 
-        <p className="mt-5 text-center text-xs text-brand-400 flex items-center justify-center gap-1.5">
+        <p className="mt-5 font-sans text-center text-xs text-brand-400 flex items-center justify-center gap-1.5">
           <Star className="h-3 w-3 fill-accent text-accent" />
           <span className="font-medium text-brand-600">4.9</span>
           na Google
