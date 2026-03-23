@@ -10,6 +10,7 @@ import { SegmentCards } from "@/components/home/SegmentCards";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
+import { BestsellersSection } from "@/components/home/BestsellersSection";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -37,10 +38,23 @@ export default function HomePage() {
     name: "Lumine Concept",
     url: SITE_URL,
     logo: `${SITE_URL}/images/logo.png`,
+    description: "Logo 3D, cenniki i oznaczenia z plexi dla salonów beauty. Matowe UV, LED z pilotem, 15+ kolorów.",
     sameAs: [
       "https://www.instagram.com/lumineconcept/",
       "https://www.facebook.com/lumineconcept/",
     ],
+  };
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Lumine Concept",
+    url: SITE_URL,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${SITE_URL}/produkty?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
   };
 
   return (
@@ -48,6 +62,10 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
 
       <Suspense fallback={null}>
@@ -57,7 +75,12 @@ export default function HomePage() {
       {/* Sekcja 1: Hero + Trust bar */}
       <HeroSection />
 
-      {/* Sekcja 2: Karty segmentowe + mini-galeria + trust bar + marka z twarzą */}
+      {/* Sekcja 2: Bestsellery */}
+      <Suspense fallback={null}>
+        <BestsellersSection />
+      </Suspense>
+
+      {/* Sekcja 3: Karty segmentowe + mini-galeria + trust bar + marka z twarzą */}
       <SegmentCards />
 
       {/* Sekcja 3: Social proof + 5 UVP ikon */}

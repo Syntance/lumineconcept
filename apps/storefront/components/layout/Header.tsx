@@ -11,8 +11,8 @@ import { SearchModal } from "../search/SearchModal";
 import { CartDrawer } from "../cart/CartDrawer";
 
 const NAV_LEFT = [
-  { href: "/salony-beauty", label: "Salony beauty" },
   { href: "/produkty", label: "Sklep" },
+  { href: "/salony-beauty", label: "Salony beauty" },
 ] as const;
 
 const NAV_RIGHT = [

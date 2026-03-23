@@ -22,14 +22,26 @@ export async function generateMetadata({
   const product = await getProductByHandle(slug).catch(() => null);
   if (!product) return { title: "Produkt nie znaleziony" };
 
+  const productUrl = `${SITE_URL}/produkty/${slug}`;
+
   return {
     title: product.title,
     description: product.description,
+    alternates: {
+      canonical: productUrl,
+    },
     openGraph: {
       title: product.title,
       description: product.description ?? "",
-      images: product.thumbnail ? [{ url: product.thumbnail }] : [],
+      images: product.thumbnail ? [{ url: product.thumbnail, width: 1200, height: 630 }] : [],
       type: "website",
+      url: productUrl,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.title,
+      description: product.description ?? "",
+      ...(product.thumbnail ? { images: [product.thumbnail] } : {}),
     },
   };
 }
