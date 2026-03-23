@@ -28,13 +28,13 @@ export function HeroSection() {
         {/* Lukowy cien (arch shadow) */}
         <div
           aria-hidden
-          className="pointer-events-none absolute top-0 z-[5] backdrop-blur-[8px]"
+          className="pointer-events-none absolute top-0 z-[5] backdrop-blur-[2px]"
           style={{
             left: "calc(5% + 60px)",
             width: "min(350px, 35%)",
             height: "calc(68% + 60px)",
             backgroundColor: "rgba(24, 18, 16, 0.5)",
-            borderRadius: "0 0 50% 50% / 0 0 30% 30%",
+            borderRadius: "0 0 50% 50% / 0 0 40% 40%",
           }}
         />
 
@@ -51,7 +51,7 @@ export function HeroSection() {
               CONCEPT
             </h1>
 
-            <p className="mt-4 font-sans text-[1.175rem] uppercase tracking-[0.15em] text-white/80 leading-tight sm:text-[1.4rem] lg:text-[1.7rem]">
+            <p className="mt-4 font-sans font-medium text-[1.175rem] uppercase tracking-[0.15em] text-white/80 leading-tight sm:text-[1.4rem] lg:text-[1.7rem]">
               Twój salon zasługuje
               <br />
               na zapamiętywalny branding
