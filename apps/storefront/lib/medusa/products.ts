@@ -1,5 +1,7 @@
 import { medusa } from "./client";
 
+const REGION_ID = process.env.NEXT_PUBLIC_MEDUSA_REGION_ID ?? "reg_01KMB8M6SRF1HNR7FN34FGNJ7V";
+
 export async function getProducts(params?: {
   limit?: number;
   offset?: number;
@@ -11,6 +13,7 @@ export async function getProducts(params?: {
     offset: params?.offset ?? 0,
     category_id: params?.category_id,
     order: params?.order,
+    region_id: REGION_ID,
     fields: "+variants.calculated_price",
   });
 
@@ -24,6 +27,11 @@ export async function getProductByHandle(handle: string) {
   });
 
   return response.products[0] ?? null;
+}
+
+export async function getProductsByTag(_tag: string, limit = 6) {
+  const response = await getProducts({ limit });
+  return response.products;
 }
 
 export async function getProductCategories() {

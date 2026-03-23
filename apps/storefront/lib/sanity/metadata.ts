@@ -56,7 +56,13 @@ export function buildMetadata({
       description: ogDescription,
       type,
       ...(publishedTime && type === "article" ? { publishedTime } : {}),
-      ...(ogImageUrl ? { images: [{ url: ogImageUrl }] } : {}),
+      ...(ogImageUrl ? { images: [{ url: ogImageUrl, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: ogDescription,
+      ...(ogImageUrl ? { images: [ogImageUrl] } : {}),
     },
   };
 }

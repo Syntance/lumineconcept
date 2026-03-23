@@ -61,6 +61,7 @@ export function FooterCTA() {
                 href="https://instagram.com/lumineconcept"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Lumine Concept na Instagramie"
                 className="aspect-square bg-brand-100 hover:bg-brand-200 transition-colors flex items-center justify-center"
               >
                 <Instagram className="h-4 w-4 text-brand-400" />

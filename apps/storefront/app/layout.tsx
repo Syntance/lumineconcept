@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Providers } from "@/providers/Providers";
 import { CookieConsent } from "@/components/common/CookieConsent";
@@ -47,6 +47,12 @@ async function getSiteSettings(): Promise<SiteSettings | null> {
   }
 }
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#4a3530",
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
 
@@ -71,14 +77,31 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       locale: "pl_PL",
       siteName: settings?.title || "Lumine Concept",
-      ...(ogImageUrl ? { images: [{ url: ogImageUrl }] } : {}),
+      url: SITE_URL,
+      ...(ogImageUrl ? { images: [{ url: ogImageUrl, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(ogImageUrl ? { images: [ogImageUrl] } : {}),
     },
     robots: {
       index: true,
       follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
     icons: {
       icon: "/favicon.ico",
+    },
+    alternates: {
+      canonical: SITE_URL,
     },
     ...(settings?.googleSiteVerification
       ? { verification: { google: settings.googleSiteVerification } }
