@@ -11,15 +11,20 @@ export function CartDrawer() {
   const { isOpen, closeCart, items, itemCount } = useCart();
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!isOpen) return;
+
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeCart();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
     return () => {
       document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, closeCart]);
 
   if (!isOpen) return null;
 
@@ -28,10 +33,7 @@ export function CartDrawer() {
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={closeCart}
-        onKeyDown={(e) => e.key === "Escape" && closeCart()}
-        role="button"
-        tabIndex={-1}
-        aria-label="Zamknij koszyk"
+        aria-hidden="true"
       />
       <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-xl flex flex-col">
         <div className="flex items-center justify-between border-b border-brand-100 p-4">

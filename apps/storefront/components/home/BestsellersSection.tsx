@@ -16,7 +16,8 @@ export async function BestsellersSection() {
 
   try {
     products = await getProductsByTag("bestseller", 4);
-  } catch {
+  } catch (err) {
+    console.error("[BestsellersSection] Failed to fetch products:", err);
     return null;
   }
 

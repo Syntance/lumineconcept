@@ -23,7 +23,7 @@ export function CheckoutForm() {
     inpostLockerId: "",
   });
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

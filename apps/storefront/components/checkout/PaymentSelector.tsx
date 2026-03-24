@@ -34,7 +34,6 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
 interface PaymentSelectorProps {
   selectedProviderId: string;
   onSelect: (providerId: string) => void;
-  cartTotal?: number;
 }
 
 export function PaymentSelector({
