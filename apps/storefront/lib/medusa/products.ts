@@ -37,7 +37,7 @@ export async function getProductByHandle(handle: string) {
 
 /**
  * Returns products tagged with `tag` (case-insensitive).
- * Fetches a broader set and filters in memory — appropriate for small catalogs.
+ * Falls back to the first `limit` products if none are tagged.
  */
 export async function getProductsByTag(tag: string, limit = 6) {
   const response = await medusa.store.product.list({
@@ -47,11 +47,13 @@ export async function getProductsByTag(tag: string, limit = 6) {
   });
 
   const normalised = tag.toLowerCase();
-  const filtered = response.products.filter((p) =>
+  const tagged = response.products.filter((p) =>
     p.tags?.some((t) => t.value?.toLowerCase() === normalised),
   );
 
-  return filtered.slice(0, limit);
+  // If no products have the tag yet, show the first available products
+  const result = tagged.length > 0 ? tagged : response.products;
+  return result.slice(0, limit);
 }
 
 export async function getProductCategories() {
