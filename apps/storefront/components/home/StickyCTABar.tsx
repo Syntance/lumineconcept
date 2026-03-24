@@ -25,7 +25,7 @@ export function StickyCTABar() {
       <div className="bg-white/95 backdrop-blur-sm border-t border-brand-100 px-4 py-3">
         <Link
           href="/logo-3d"
-          className="flex w-full items-center justify-center bg-brand-900 px-6 py-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white transition-colors hover:bg-brand-800"
+          className="flex w-full items-center justify-center bg-brand-800 px-6 py-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white transition-colors hover:bg-brand-700"
         >
           Wyślij logo — wycena w 24h
         </Link>

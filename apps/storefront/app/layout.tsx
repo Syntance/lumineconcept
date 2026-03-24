@@ -51,7 +51,7 @@ async function getSiteSettings(): Promise<SiteSettings | null> {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#4a3530",
+  themeColor: "#725750",
 };
 
 export async function generateMetadata(): Promise<Metadata> {

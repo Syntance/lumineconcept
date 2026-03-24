@@ -56,7 +56,7 @@ export function SocialProofSection() {
             ))}
           </div>
           <p className="font-display text-xl text-brand-900 leading-relaxed lg:text-2xl">
-            &ldquo;Zamówiłam logo z matowym UV — klientki pytają skąd mam&rdquo;
+            &ldquo;Zamówiłam logo z matowym UV — klientki nie przestają robić zdjęć&rdquo;
           </p>
           <footer className="mt-5">
             <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-brand-700">

@@ -54,7 +54,7 @@ export function SegmentCards() {
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
                   style={{ backgroundImage: `url('${seg.image}')` }}
                 />
-                <div className="absolute inset-0 bg-brand-900/10 group-hover:bg-brand-900/20 transition-colors duration-300" />
+                <div className="absolute inset-0 bg-brand-800/10 group-hover:bg-brand-800/20 transition-colors duration-300" />
               </div>
               <h3 className="mt-5 text-[11px] font-medium uppercase tracking-[0.2em] text-brand-700 group-hover:text-brand-900 transition-colors">
                 {seg.title}
@@ -86,7 +86,7 @@ export function SegmentCards() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="h-12 w-12 rounded-full bg-brand-200/60" />
                   </div>
-                  <div className="absolute inset-0 bg-brand-900/0 group-hover:bg-brand-900/10 transition-colors duration-300" />
+                  <div className="absolute inset-0 bg-brand-800/0 group-hover:bg-brand-800/10 transition-colors duration-300" />
                 </div>
                 <p className="mt-2 text-center text-[10px] text-brand-500 group-hover:text-brand-700 transition-colors">
                   {label}

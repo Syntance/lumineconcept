@@ -17,7 +17,7 @@ export function FooterCTA() {
             backgroundPosition: "center",
           }}
         />
-        <div className="absolute inset-0 bg-brand-900/75" />
+        <div className="absolute inset-0 bg-brand-800/75" />
 
         <div className="relative z-10 container mx-auto px-4 text-center">
           <h2 className="font-display text-3xl text-white tracking-[0.08em] lg:text-4xl">
