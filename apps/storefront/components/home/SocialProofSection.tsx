@@ -34,13 +34,13 @@ export function SocialProofSection() {
             const Icon = item.icon;
             return (
               <div key={item.title} className="text-center">
-                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 border border-brand-100">
-                  <Icon className="h-4 w-4 text-accent-dark" />
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 border border-brand-100">
+                  <Icon className="h-5 w-5 text-accent-dark" />
                 </div>
-                <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.1em] text-brand-800">
+                <p className="mt-3 text-sm font-medium uppercase tracking-widest text-brand-800">
                   {item.title}
                 </p>
-                <p className="mt-1 text-[10px] text-brand-500 leading-relaxed">
+                <p className="mt-1 text-[13px] text-brand-500 leading-relaxed">
                   {item.desc}
                 </p>
               </div>
@@ -49,20 +49,20 @@ export function SocialProofSection() {
         </div>
 
         {/* Opinia klientki */}
-        <blockquote className="mx-auto mt-20 max-w-xl text-center">
+        <blockquote className="mx-auto mt-20 max-w-2xl text-center">
           <div className="flex justify-center gap-0.5 mb-5">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+              <Star key={i} className="h-5 w-5 fill-accent text-accent" />
             ))}
           </div>
-          <p className="font-display text-xl text-brand-800 leading-relaxed lg:text-2xl">
-            &ldquo;Zamówiłam logo z matowym UV — klientki nie przestają robić zdjęć&rdquo;
+          <p className="font-display text-[1.375rem] text-brand-800 leading-relaxed lg:text-[1.625rem]">
+            &ldquo;Zamówiłam logo 3D — klientki nie przestają robić zdjęć&rdquo;
           </p>
           <footer className="mt-5">
-            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-brand-700">
+            <p className="text-sm font-medium uppercase tracking-[0.15em] text-brand-700">
               Ania
             </p>
-            <p className="text-xs text-brand-500">salon fryzjerski, Kraków</p>
+            <p className="text-sm text-brand-500">salon fryzjerski, Kraków</p>
           </footer>
         </blockquote>
 
@@ -70,7 +70,7 @@ export function SocialProofSection() {
         <div className="mt-12 text-center">
           <Link
             href="/dlaczego-lumine"
-            className="text-[11px] font-medium text-brand-500 hover:text-brand-900 transition-colors tracking-wide"
+            className="text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
           >
             Zobacz opinie i porównanie &rarr;
           </Link>

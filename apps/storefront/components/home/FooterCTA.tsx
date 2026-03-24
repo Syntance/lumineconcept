@@ -28,13 +28,13 @@ export function FooterCTA() {
           <div className="mt-10 flex justify-center">
             <Link
               href="/produkty"
-              className="inline-flex items-center justify-center border border-white px-8 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900"
+              className="inline-flex items-center justify-center border border-white px-10 py-3.5 text-[13.2px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900"
             >
               Zobacz sklep &rarr;
             </Link>
           </div>
 
-          <p className="mt-8 text-xs text-brand-400">
+          <p className="mt-8 text-base text-brand-400">
             Wolisz napisać?{" "}
             <a
               href="mailto:kontakt@lumineconcept.pl"
@@ -82,7 +82,7 @@ export function FooterCTA() {
             href="https://instagram.com/lumineconcept"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center gap-2 text-[11px] font-medium text-brand-500 hover:text-brand-900 transition-colors tracking-wide"
+            className="mt-6 inline-flex items-center gap-2 text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
           >
             Zobacz nasze realizacje &rarr;
           </a>
