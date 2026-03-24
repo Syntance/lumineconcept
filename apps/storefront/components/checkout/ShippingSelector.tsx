@@ -82,7 +82,7 @@ export function ShippingSelector({
                 <span className="text-sm font-medium text-brand-900">
                   {option.name}
                 </span>
-                <span className="text-sm font-semibold text-brand-900">
+                <span className="text-sm font-semibold tabular-nums text-brand-800">
                   {formatPrice(option.price)}
                 </span>
               </div>

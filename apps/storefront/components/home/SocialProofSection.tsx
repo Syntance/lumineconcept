@@ -55,7 +55,7 @@ export function SocialProofSection() {
               <Star key={i} className="h-4 w-4 fill-accent text-accent" />
             ))}
           </div>
-          <p className="font-display text-xl text-brand-900 leading-relaxed lg:text-2xl">
+          <p className="font-display text-xl text-brand-800 leading-relaxed lg:text-2xl">
             &ldquo;Zamówiłam logo z matowym UV — klientki nie przestają robić zdjęć&rdquo;
           </p>
           <footer className="mt-5">

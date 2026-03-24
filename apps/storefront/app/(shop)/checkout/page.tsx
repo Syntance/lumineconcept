@@ -17,7 +17,7 @@ export default function CheckoutPage() {
           { label: "Zamówienie" },
         ]}
       />
-      <h1 className="font-display text-2xl font-bold text-brand-900 mb-8">
+      <h1 className="font-display text-2xl font-bold text-brand-800 mb-8">
         Zamówienie
       </h1>
       <CheckoutForm />

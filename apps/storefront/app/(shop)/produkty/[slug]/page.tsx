@@ -118,7 +118,7 @@ export default async function ProductPage({
           />
 
           <div className="space-y-6">
-            <h1 className="font-display text-2xl font-bold text-brand-900 lg:text-3xl">
+            <h1 className="font-display text-2xl font-bold text-brand-800 lg:text-3xl">
               {product.title}
             </h1>
 
@@ -147,7 +147,7 @@ export default async function ProductPage({
 
             {product.description && (
               <div className="border-t border-brand-100 pt-6">
-                <h2 className="text-sm font-semibold text-brand-900 mb-2">
+                <h2 className="text-sm font-semibold text-brand-800 mb-2">
                   Opis produktu
                 </h2>
                 <div className="prose prose-sm text-brand-700">

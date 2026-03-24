@@ -41,7 +41,7 @@ export function CheckoutForm() {
     <div className="grid gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-8">
         <section>
-          <h2 className="font-display text-xl font-semibold text-brand-900 mb-6">
+          <h2 className="font-display text-xl font-semibold text-brand-800 mb-6">
             Dane kontaktowe
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -146,7 +146,7 @@ export function CheckoutForm() {
 
         {step !== "shipping" || formData.email ? (
           <section>
-            <h2 className="font-display text-xl font-semibold text-brand-900 mb-6">
+            <h2 className="font-display text-xl font-semibold text-brand-800 mb-6">
               Sposób dostawy
             </h2>
             <ShippingSelector
@@ -170,7 +170,7 @@ export function CheckoutForm() {
 
         {step === "payment" || step === "review" ? (
           <section>
-            <h2 className="font-display text-xl font-semibold text-brand-900 mb-6">
+            <h2 className="font-display text-xl font-semibold text-brand-800 mb-6">
               Płatność
             </h2>
             <PaymentSelector

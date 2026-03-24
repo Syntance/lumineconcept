@@ -36,7 +36,7 @@ export function MobileNav({ isOpen, onClose, links }: MobileNavProps) {
       />
       <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-brand-100">
-          <span className="font-display text-lg font-bold text-brand-900">
+          <span className="font-display text-lg font-bold text-brand-800">
             Menu
           </span>
           <button

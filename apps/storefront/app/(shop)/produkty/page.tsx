@@ -53,7 +53,7 @@ export default async function ProductsPage({
       <div className="container mx-auto px-4 pb-8 pt-4 lg:pt-6">
       <div className="flex flex-col gap-6 lg:flex-row">
         <aside className="w-full lg:w-64 flex-shrink-0">
-          <h2 className="font-display text-lg font-semibold text-brand-900 mb-4">
+          <h2 className="font-display text-lg font-semibold text-brand-800 mb-4">
             Kategorie
           </h2>
           <nav aria-label="Kategorie produktów">
@@ -90,7 +90,7 @@ export default async function ProductsPage({
 
         <div className="flex-1">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="font-display text-2xl font-bold text-brand-900">
+            <h1 className="font-display text-2xl font-bold text-brand-800">
               Produkty
             </h1>
             <SortSelect defaultValue={params.sort ?? "-created_at"} />

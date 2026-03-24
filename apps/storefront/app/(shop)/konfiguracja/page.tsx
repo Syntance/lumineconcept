@@ -17,7 +17,7 @@ export default function KonfiguracjaPage() {
         ]}
       />
       <div className="max-w-4xl mx-auto">
-        <h1 className="font-display text-3xl font-bold text-brand-900 text-center mb-4">
+        <h1 className="font-display text-3xl font-bold text-brand-800 text-center mb-4">
           Konfigurator produktu
         </h1>
         <p className="text-center text-brand-600 mb-12">

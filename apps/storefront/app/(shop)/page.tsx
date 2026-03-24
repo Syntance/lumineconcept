@@ -6,6 +6,7 @@ import type { SiteSettings } from "@/lib/sanity/types";
 import { buildMetadata } from "@/lib/sanity/metadata";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
+import { HomeTrustMarquee } from "@/components/home/HomeTrustMarquee";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
@@ -71,10 +72,13 @@ export default function HomePage() {
         <ReferralBanner />
       </Suspense>
 
-      {/* Sekcja 1: Hero + Trust bar */}
+      {/* Sekcja 1: Hero */}
       <HeroSection />
 
-      {/* Sekcja 2: Bestsellery */}
+      {/* Karuzela „Zaufały nam” (tło krem brand-50) */}
+      <HomeTrustMarquee />
+
+      {/* Sekcja 2: sygnet + Bestsellery (krem #EEE8E0) */}
       <Suspense fallback={null}>
         <BestsellersSection />
       </Suspense>

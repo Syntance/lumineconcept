@@ -27,7 +27,7 @@ export default async function BlogPage() {
           { label: "Blog" },
         ]}
       />
-      <h1 className="font-display text-3xl font-bold text-brand-900 mb-4">
+      <h1 className="font-display text-3xl font-bold text-brand-800 mb-4">
         Blog
       </h1>
       <p className="text-brand-600 max-w-2xl mb-12">
@@ -65,7 +65,7 @@ export default async function BlogPage() {
                     {formatDate(post.publishedAt)}
                   </time>
                 </div>
-                <h2 className="font-display text-lg font-semibold text-brand-900 group-hover:text-accent transition-colors">
+                <h2 className="font-display text-lg font-semibold text-brand-800 group-hover:text-accent transition-colors">
                   {post.title}
                 </h2>
                 <p className="mt-2 text-sm text-brand-600 line-clamp-2">

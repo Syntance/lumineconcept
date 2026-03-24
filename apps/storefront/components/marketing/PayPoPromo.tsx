@@ -21,7 +21,8 @@ export function PayPoPromo({ price }: PayPoPromoProps) {
           Kup teraz, zapłać za 30 dni
         </p>
         <p className="text-xs text-purple-600">
-          {formatPrice(price)} z PayPo — 0 zł odsetek
+          <span className="font-medium text-brand-800">{formatPrice(price)}</span>{" "}
+          z PayPo — 0 zł odsetek
         </p>
       </div>
     </div>

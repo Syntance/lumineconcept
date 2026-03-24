@@ -11,7 +11,7 @@ export default function OrderConfirmationPage() {
   return (
     <div className="container mx-auto px-4 py-16 text-center">
       <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-      <h1 className="mt-6 font-display text-3xl font-bold text-brand-900">
+      <h1 className="mt-6 font-display text-3xl font-bold text-brand-800">
         Dziękujemy za zamówienie!
       </h1>
       <p className="mx-auto mt-4 max-w-md text-brand-600">

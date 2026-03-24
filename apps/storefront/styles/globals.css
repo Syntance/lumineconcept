@@ -39,15 +39,18 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Nagłówki — kolor z brandbooka #725750 */
   h1, h2, h3 {
     font-family: var(--font-display);
     font-weight: 400;
     letter-spacing: 0.04em;
+    color: var(--color-brand-800);
   }
 
   h4, h5, h6 {
     font-family: var(--font-serif);
     font-weight: 500;
+    color: var(--color-brand-800);
   }
 }
 

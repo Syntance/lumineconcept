@@ -19,7 +19,7 @@ export function KoszykClient() {
         ]}
       />
 
-      <h1 className="font-display text-2xl font-bold text-brand-900 mb-8">
+      <h1 className="font-display text-2xl font-bold text-brand-800 mb-8">
         Koszyk ({itemCount})
       </h1>
 

@@ -18,7 +18,7 @@ export default function Logo3DPage() {
         ]}
       />
       <div className="max-w-2xl mx-auto">
-        <h1 className="font-display text-3xl font-bold text-brand-900 text-center mb-4">
+        <h1 className="font-display text-3xl font-bold text-brand-800 text-center mb-4">
           Logo 3D dla Twojego salonu
         </h1>
         <p className="text-center text-brand-600 mb-8">

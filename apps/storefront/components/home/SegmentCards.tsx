@@ -35,7 +35,7 @@ export function SegmentCards() {
       <div className="container mx-auto px-4">
         {/* Section heading */}
         <div className="text-center mb-14">
-          <h2 className="font-display text-3xl tracking-[0.1em] text-brand-900 lg:text-4xl">
+          <h2 className="font-display text-3xl tracking-[0.1em] text-brand-800 lg:text-4xl">
             Poznaj naszą ofertę
           </h2>
           <div className="mt-3 mx-auto h-[1px] w-12 bg-accent" />
@@ -56,7 +56,7 @@ export function SegmentCards() {
                 />
                 <div className="absolute inset-0 bg-brand-800/10 group-hover:bg-brand-800/20 transition-colors duration-300" />
               </div>
-              <h3 className="mt-5 text-[11px] font-medium uppercase tracking-[0.2em] text-brand-700 group-hover:text-brand-900 transition-colors">
+              <h3 className="mt-5 text-[11px] font-medium uppercase tracking-[0.2em] text-brand-800 group-hover:text-brand-900 transition-colors">
                 {seg.title}
               </h3>
             </Link>

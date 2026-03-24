@@ -48,7 +48,7 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
                   {product.description}
                 </p>
               </div>
-              <span className="text-sm font-semibold text-brand-900 tabular-nums">
+              <span className="text-sm font-semibold tabular-nums text-brand-800">
                 {minPrice > 0 ? `od ${formatPrice(minPrice)}` : "—"}
               </span>
             </Link>
