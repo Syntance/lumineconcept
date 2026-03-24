@@ -19,9 +19,9 @@ export function PriceDisplay({
     : 0;
 
   const sizeClasses = {
-    sm: "text-sm",
-    md: "text-base",
-    lg: "text-xl",
+    sm: "text-[0.9375rem]", // ~+7% względem text-sm
+    md: "text-[1.0625rem]", // ~+6% względem text-base
+    lg: "text-[1.3125rem]", // ~+6% względem text-xl
   };
 
   return (

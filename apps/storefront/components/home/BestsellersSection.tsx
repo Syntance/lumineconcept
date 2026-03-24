@@ -30,7 +30,7 @@ export async function BestsellersSection() {
         <div className="container mx-auto flex justify-center px-4">
           {/* Szerokość ~28% szerokości bloku tytułu (max ~17rem ≈ słowo „Bestsellery” w display) */}
           <div className="mx-auto flex w-full max-w-[17rem] justify-center">
-            <div className="relative aspect-[421/396] w-[28%] min-w-[2.62rem] max-w-[5rem]">
+            <div className="relative aspect-[421/396] w-[42%] min-w-[3.9375rem] max-w-[7.5rem]">
               {/* Krem #EEE8E0 od połowy wysokości sygnetu w dół (pełna szerokość ekranu) */}
               <div
                 className="pointer-events-none absolute left-1/2 top-1/2 bottom-0 z-0 w-screen -translate-x-1/2 bg-brand-50"
@@ -41,7 +41,7 @@ export async function BestsellersSection() {
                 alt="Sygnet Lumine Concept"
                 fill
                 className="relative z-10 object-contain object-center"
-                sizes="80px"
+                sizes="120px"
                 priority={false}
               />
             </div>
@@ -106,7 +106,7 @@ export async function BestsellersSection() {
         <div className="mt-10 text-center">
           <Link
             href="/produkty"
-            className="text-[11px] font-medium uppercase tracking-[0.18em] text-brand-500 hover:text-brand-900 transition-colors"
+            className="text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
           >
             Zobacz cały sklep &rarr;
           </Link>
