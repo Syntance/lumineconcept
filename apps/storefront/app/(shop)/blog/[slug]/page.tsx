@@ -93,7 +93,7 @@ export default async function BlogPostPage({
               {formatDate(post.publishedAt)}
             </time>
           </div>
-          <h1 className="font-display text-3xl font-bold text-brand-900 lg:text-4xl">
+          <h1 className="font-display text-3xl font-bold text-brand-800 lg:text-4xl">
             {post.title}
           </h1>
           {post.author && (

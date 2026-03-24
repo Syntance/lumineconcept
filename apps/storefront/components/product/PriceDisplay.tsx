@@ -28,7 +28,7 @@ export function PriceDisplay({
     <div className="flex items-center gap-2">
       <span
         className={`font-semibold ${sizeClasses[size]} ${
-          hasDiscount ? "text-red-600" : "text-brand-900"
+          hasDiscount ? "text-red-600" : "text-brand-800"
         }`}
       >
         {formatPrice(amount, currency)}

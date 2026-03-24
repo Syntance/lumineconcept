@@ -101,12 +101,22 @@ export function PaymentSelector({
                 <div className="mt-2 rounded bg-purple-50 px-3 py-2">
                   {isPayPoEligible ? (
                     <p className="text-xs text-purple-700">
-                      Zapłać {formatPrice(total)} za 30 dni — 0 zł odsetek
+                      Zapłać{" "}
+                      <span className="font-medium text-brand-800 tabular-nums">
+                        {formatPrice(total)}
+                      </span>{" "}
+                      za 30 dni — 0 zł odsetek
                     </p>
                   ) : (
                     <p className="text-xs text-purple-500">
-                      PayPo dostępne dla zamówień {formatPrice(PAYPO_MIN_AMOUNT)} –{" "}
-                      {formatPrice(PAYPO_MAX_AMOUNT)}
+                      PayPo dostępne dla zamówień{" "}
+                      <span className="font-medium text-brand-800 tabular-nums">
+                        {formatPrice(PAYPO_MIN_AMOUNT)}
+                      </span>
+                      {" – "}
+                      <span className="font-medium text-brand-800 tabular-nums">
+                        {formatPrice(PAYPO_MAX_AMOUNT)}
+                      </span>
                     </p>
                   )}
                 </div>

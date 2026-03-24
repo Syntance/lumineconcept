@@ -35,7 +35,7 @@ export function CartDrawer() {
       />
       <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-xl flex flex-col">
         <div className="flex items-center justify-between border-b border-brand-100 p-4">
-          <h2 className="font-display text-lg font-semibold text-brand-900">
+          <h2 className="font-display text-lg font-semibold text-brand-800">
             Koszyk ({itemCount})
           </h2>
           <button

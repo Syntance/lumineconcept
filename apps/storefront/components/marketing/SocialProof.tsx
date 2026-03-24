@@ -14,7 +14,7 @@ export function SocialProof({ testimonials }: SocialProofProps) {
   return (
     <section className="bg-brand-50 py-16">
       <div className="container mx-auto px-4">
-        <h2 className="font-display text-2xl font-bold text-brand-900 text-center mb-12">
+        <h2 className="font-display text-2xl font-bold text-brand-800 text-center mb-12">
           Co mówią nasi klienci
         </h2>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -39,7 +39,7 @@ export function SocialProof({ testimonials }: SocialProofProps) {
                 &ldquo;{testimonial.quote}&rdquo;
               </p>
               <footer className="mt-4">
-                <p className="text-sm font-medium text-brand-900">
+                <p className="text-sm font-medium text-brand-800">
                   {testimonial.name}
                 </p>
                 <p className="text-xs text-brand-500">

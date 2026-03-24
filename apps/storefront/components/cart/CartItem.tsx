@@ -54,7 +54,7 @@ export function CartItem({ item }: { item: CartItemData }) {
       </div>
       <div className="flex flex-1 flex-col justify-between">
         <div className="flex justify-between">
-          <h3 className="text-sm font-medium text-brand-900 line-clamp-2">
+          <h3 className="text-sm font-medium text-brand-800 line-clamp-2">
             {item.title}
           </h3>
           <button
@@ -95,7 +95,7 @@ export function CartItem({ item }: { item: CartItemData }) {
               +
             </button>
           </div>
-          <span className="text-sm font-medium text-brand-900">
+          <span className="text-sm font-medium tabular-nums text-brand-800">
             {formatPrice(item.total)}
           </span>
         </div>

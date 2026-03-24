@@ -57,7 +57,7 @@ export default async function DynamicPage({
       />
 
       <header className="max-w-3xl mx-auto mb-8">
-        <h1 className="font-display text-3xl font-bold text-brand-900 lg:text-4xl">
+        <h1 className="font-display text-3xl font-bold text-brand-800 lg:text-4xl">
           {page.title}
         </h1>
       </header>

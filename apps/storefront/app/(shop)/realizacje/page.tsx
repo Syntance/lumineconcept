@@ -16,7 +16,7 @@ export default function RealizacjePage() {
           { label: "Realizacje" },
         ]}
       />
-      <h1 className="font-display text-3xl font-bold text-brand-900 mb-4">
+      <h1 className="font-display text-3xl font-bold text-brand-800 mb-4">
         Nasze realizacje
       </h1>
       <p className="text-brand-600 max-w-2xl mb-12">

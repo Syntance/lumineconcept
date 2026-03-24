@@ -58,7 +58,7 @@ export function FooterCTA() {
       {/* Feed IG */}
       <section className="py-14 lg:py-20 bg-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="font-display text-2xl tracking-[0.1em] text-brand-900 lg:text-3xl">
+          <h2 className="font-display text-2xl tracking-[0.1em] text-brand-800 lg:text-3xl">
             Jesteśmy na Instagramie
           </h2>
           <div className="mt-3 mx-auto h-[1px] w-12 bg-accent" />

@@ -23,7 +23,7 @@ export function ProductVariantSelector({
     <div className="space-y-4">
       {options.map((option) => (
         <fieldset key={option.id}>
-          <legend className="text-sm font-medium text-brand-900">
+          <legend className="text-sm font-medium text-brand-800">
             {option.title}
           </legend>
           <div className="mt-2 flex flex-wrap gap-2">

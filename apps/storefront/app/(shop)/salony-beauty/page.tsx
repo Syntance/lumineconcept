@@ -21,7 +21,7 @@ export default function SalonyBeautyPage() {
             ]}
           />
           <div className="max-w-3xl">
-            <h1 className="font-display text-3xl font-bold text-brand-900 lg:text-5xl">
+            <h1 className="font-display text-3xl font-bold text-brand-800 lg:text-5xl">
               Wyróżnij swój salon
               <br />
               <span className="text-accent">dzięki produktom z plexi</span>
@@ -53,7 +53,7 @@ export default function SalonyBeautyPage() {
 
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="font-display text-2xl font-bold text-brand-900 text-center mb-12">
+          <h2 className="font-display text-2xl font-bold text-brand-800 text-center mb-12">
             Co oferujemy dla salonów beauty?
           </h2>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -87,7 +87,7 @@ export default function SalonyBeautyPage() {
                 key={item.title}
                 className="rounded-lg border border-brand-100 p-6 hover:shadow-md transition-shadow"
               >
-                <h3 className="font-display text-lg font-semibold text-brand-900">
+                <h3 className="font-display text-lg font-semibold text-brand-800">
                   {item.title}
                 </h3>
                 <p className="mt-2 text-sm text-brand-600">{item.desc}</p>

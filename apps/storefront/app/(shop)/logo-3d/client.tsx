@@ -21,7 +21,7 @@ export function Logo3DFormClient() {
     return (
       <div className="text-center py-12">
         <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-        <h2 className="mt-4 font-display text-xl font-semibold text-brand-900">
+        <h2 className="mt-4 font-display text-xl font-semibold text-brand-800">
           Dziękujemy!
         </h2>
         <p className="mt-2 text-brand-600">
