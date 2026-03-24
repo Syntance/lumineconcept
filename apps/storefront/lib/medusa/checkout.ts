@@ -32,8 +32,8 @@ export async function selectShippingOption(cartId: string, optionId: string) {
 
 export async function initPaymentSession(cartId: string, providerId: string) {
   const response = await medusa.store.payment.initiatePaymentSession(
-    { cart_id: cartId } as any,
-    { provider_id: providerId } as any,
+    { cart_id: cartId },
+    { provider_id: providerId },
   );
   return response;
 }

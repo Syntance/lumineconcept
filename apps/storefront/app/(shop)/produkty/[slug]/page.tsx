@@ -1,6 +1,10 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProductByHandle } from "@/lib/medusa/products";
+
+// Deduplicate within a single request: generateMetadata + Page share one fetch
+const getProductData = cache((slug: string) => getProductByHandle(slug));
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductVariantSelector } from "@/components/product/ProductVariantSelector";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
@@ -19,7 +23,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductByHandle(slug).catch(() => null);
+  const product = await getProductData(slug).catch(() => null);
   if (!product) return { title: "Produkt nie znaleziony" };
 
   const productUrl = `${SITE_URL}/produkty/${slug}`;
@@ -52,7 +56,7 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getProductByHandle(slug);
+  const product = await getProductData(slug);
 
   if (!product) notFound();
 

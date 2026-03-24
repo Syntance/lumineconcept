@@ -1,6 +1,12 @@
 import { medusa } from "./client";
 
-const REGION_ID = process.env.NEXT_PUBLIC_MEDUSA_REGION_ID ?? "reg_01KMB8M6SRF1HNR7FN34FGNJ7V";
+const REGION_ID = process.env.NEXT_PUBLIC_MEDUSA_REGION_ID;
+
+if (!REGION_ID && typeof window === "undefined") {
+  console.warn(
+    "[Medusa] NEXT_PUBLIC_MEDUSA_REGION_ID is not set — product prices may not display correctly.",
+  );
+}
 
 export async function getProducts(params?: {
   limit?: number;
@@ -29,9 +35,23 @@ export async function getProductByHandle(handle: string) {
   return response.products[0] ?? null;
 }
 
-export async function getProductsByTag(_tag: string, limit = 6) {
-  const response = await getProducts({ limit });
-  return response.products;
+/**
+ * Returns products tagged with `tag` (case-insensitive).
+ * Fetches a broader set and filters in memory — appropriate for small catalogs.
+ */
+export async function getProductsByTag(tag: string, limit = 6) {
+  const response = await medusa.store.product.list({
+    limit: 100,
+    region_id: REGION_ID,
+    fields: "+variants.calculated_price,+tags",
+  });
+
+  const normalised = tag.toLowerCase();
+  const filtered = response.products.filter((p) =>
+    p.tags?.some((t) => t.value?.toLowerCase() === normalised),
+  );
+
+  return filtered.slice(0, limit);
 }
 
 export async function getProductCategories() {

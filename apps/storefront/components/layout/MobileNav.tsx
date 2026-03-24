@@ -12,15 +12,20 @@ interface MobileNavProps {
 
 export function MobileNav({ isOpen, onClose, links }: MobileNavProps) {
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!isOpen) return;
+
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
     return () => {
       document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -29,10 +34,7 @@ export function MobileNav({ isOpen, onClose, links }: MobileNavProps) {
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
-        onKeyDown={(e) => e.key === "Escape" && onClose()}
-        role="button"
-        tabIndex={-1}
-        aria-label="Zamknij menu"
+        aria-hidden="true"
       />
       <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-brand-100">

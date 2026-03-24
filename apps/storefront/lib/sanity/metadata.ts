@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/utils";
 import type { SeoMeta, SiteSettings } from "./types";
 
 interface BuildMetadataOptions {
@@ -37,9 +38,7 @@ export function buildMetadata({
     fallbackImage ||
     siteSettings?.defaultOgImage?.asset?.url;
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumine.syntance.dev";
-  const canonical = seo?.canonicalUrl || (path ? `${siteUrl}${path}` : undefined);
+  const canonical = seo?.canonicalUrl || (path ? `${SITE_URL}${path}` : undefined);
 
   const robots: Metadata["robots"] = {
     index: !seo?.noIndex,
