@@ -53,25 +53,32 @@ export function HeroSection() {
               paddingBottom: "calc(4rem + 140px)",
             }}
           >
-            {/* ── Nagłówek „CONCEPT" ── */}
             <h1 className="font-display text-4xl text-white tracking-widest sm:text-5xl lg:text-6xl">
               CONCEPT
             </h1>
 
-            {/* ── Podtytuł ── */}
-            <p className="mt-3 font-serif text-[1.175rem] uppercase tracking-[0.15em] text-white/80 leading-tight sm:text-[1.4rem] lg:text-[1.7rem]">
-              Unikalne tabliczki na każdą okazję
+            <p className="mt-3 font-serif text-[1.175rem] uppercase tracking-[0.15em] text-white leading-tight sm:text-[1.4rem] lg:text-[1.7rem]">
+              Twój salon zasługuje
               <br />
-              i dla reklamy Twojej firmy
+              na zapamiętywalny branding
             </p>
 
-            {/* ── Przycisk CTA ── */}
-            <div className="mt-7">
+            <p className="mt-2 text-sm text-white/70 tracking-wide">
+              Logo 3D, cenniki i oznaczenia z plexi
+            </p>
+
+            <div className="mt-6 flex flex-col items-start gap-3">
               <Link
                 href="/produkty"
                 className="inline-flex items-center justify-center border border-white/80 px-8 py-3 font-serif text-[11px] uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900 sm:text-xs"
               >
                 Zobacz produkty
+              </Link>
+              <Link
+                href="/produkty/logo-3d"
+                className="text-[11px] uppercase tracking-[0.18em] text-white/70 hover:text-white transition-colors"
+              >
+                Logo 3D na zamówienie &rarr;
               </Link>
             </div>
           </div>

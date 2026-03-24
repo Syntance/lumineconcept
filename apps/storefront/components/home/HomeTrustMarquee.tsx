@@ -1,21 +1,11 @@
-import { Star } from "lucide-react";
+import { Instagram } from "lucide-react";
 
 const SALON_LOGOS = [
-  "Salon Mia",
-  "Beauty Lab",
-  "Klinika Urody",
-  "Studio Lashes",
-  "Hair Concept",
-  "Nail Room",
-  "Brow Bar",
-  "Skin Studio",
-  "Beauty Point",
-  "Glow Up",
-  "Lash Queen",
-  "Style Zone",
+  "Salon Mia", "Beauty Lab", "Klinika Urody", "Studio Lashes",
+  "Hair Concept", "Nail Room", "Brow Bar", "Skin Studio",
+  "Beauty Point", "Glow Up", "Lash Queen", "Style Zone",
 ];
 
-/** Karuzela „Zaufały nam” — pod hero, na tle brand-50 */
 export function HomeTrustMarquee() {
   return (
     <div className="bg-brand-50 pt-4 pb-2.5 overflow-hidden md:pt-5 md:pb-3">
@@ -41,12 +31,11 @@ export function HomeTrustMarquee() {
         </div>
       </div>
 
-      <p className="mt-3 text-center text-xs text-brand-400 flex items-center justify-center gap-1.5">
-        <Star className="h-3 w-3 fill-accent text-accent" aria-hidden />
-        <span className="font-medium text-brand-600">4.9</span>
-        na Google
-        <span className="mx-1 text-brand-300">&middot;</span>
-        430+ opinii
+      <p className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs text-brand-400">
+        <Instagram className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
+        <span className="font-medium text-brand-600">25 000+ obserwujących</span>
+        <span className="mx-1.5 text-brand-300">&middot;</span>
+        <span className="text-brand-600">6 000+ realizacji</span>
       </p>
     </div>
   );
