@@ -29,7 +29,7 @@ export function HeroSection() {
         {/* Lukowy cien (arch shadow) */}
         <div
           aria-hidden
-          className="pointer-events-none absolute top-0 z-[5] backdrop-blur-[2px]"
+          className="pointer-events-none absolute top-0 z-[5] backdrop-blur-[8px]"
           style={{
             left: "calc(5% + 60px)",
             width: "min(350px, 35%)",

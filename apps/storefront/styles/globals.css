@@ -5,19 +5,20 @@
 @source "../providers/**/*.{ts,tsx}";
 
 @theme {
-  /* Brand palette — from brandbook */
-  --color-brand-50: #F7F3EF;
+  /* Paleta z brandbooku (4 próbki): #EEE8E0 · #D5BFAB · #AF7C61 · #725750
+     50/100 = najjaśniejszy krem z PDF (#EEE8E0); pośrednie = interpolacja; 900 = bardzo ciemny brąz do tekstu/UI */
+  --color-brand-50: #EEE8E0;
   --color-brand-100: #EEE8E0;
-  --color-brand-200: #E2D8CE;
+  --color-brand-200: #E2D4C6;
   --color-brand-300: #D5BFAB;
-  --color-brand-400: #C29E88;
+  --color-brand-400: #C29E83;
   --color-brand-500: #AF7C61;
-  --color-brand-600: #946852;
-  --color-brand-700: #7E5A48;
+  --color-brand-600: #916956;
+  --color-brand-700: #816053;
   --color-brand-800: #725750;
   --color-brand-900: #4A3530;
 
-  /* Accent = brandbook copper #AF7C61 */
+  /* Accent = brandbook miedź #AF7C61 */
   --color-accent: #AF7C61;
   --color-accent-light: #D5BFAB;
   --color-accent-dark: #725750;
