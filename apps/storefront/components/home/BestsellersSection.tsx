@@ -60,7 +60,7 @@ export async function BestsellersSection() {
         </div>
 
         {/* Zdjęcie (wyższe) → nazwa → cena; cała kolumna to jeden link */}
-        <div className="grid grid-cols-2 items-start gap-x-4 gap-y-6 md:grid-cols-4 md:gap-x-6 md:gap-y-8">
+        <div className="mx-auto max-w-[90%] grid grid-cols-2 items-start gap-x-4 gap-y-6 md:grid-cols-4 md:gap-x-6 md:gap-y-8">
           {products.slice(0, 4).map((product, index) => {
             const frameVariant =
               index === 0
