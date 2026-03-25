@@ -1,12 +1,29 @@
+import Image from "next/image";
 import { Instagram } from "lucide-react";
 
-const SALON_LOGOS = [
-  "Salon Mia", "Beauty Lab", "Klinika Urody", "Studio Lashes",
-  "Hair Concept", "Nail Room", "Brow Bar", "Skin Studio",
-  "Beauty Point", "Glow Up", "Lash Queen", "Style Zone",
+type SalonEntry =
+  | { type: "text"; name: string }
+  | { type: "logo"; name: string; src: string };
+
+const SALONS: SalonEntry[] = [
+  { type: "logo", name: "Sabrija Store", src: "/images/logos/sabrija-store.png" },
+  { type: "text", name: "Salon Mia" },
+  { type: "text", name: "Beauty Lab" },
+  { type: "text", name: "Klinika Urody" },
+  { type: "text", name: "Studio Lashes" },
+  { type: "text", name: "Hair Concept" },
+  { type: "text", name: "Nail Room" },
+  { type: "text", name: "Brow Bar" },
+  { type: "text", name: "Skin Studio" },
+  { type: "text", name: "Beauty Point" },
+  { type: "text", name: "Glow Up" },
+  { type: "text", name: "Lash Queen" },
+  { type: "text", name: "Style Zone" },
 ];
 
 export function HomeTrustMarquee() {
+  const doubled = [...SALONS, ...SALONS];
+
   return (
     <div className="bg-brand-50 pt-4 pb-2.5 overflow-hidden md:pt-5 md:pb-3">
       <p className="text-center text-[10px] font-medium uppercase tracking-[0.25em] text-brand-400 mb-4">
@@ -18,14 +35,24 @@ export function HomeTrustMarquee() {
         <div className="absolute right-0 top-0 bottom-0 w-20 bg-linear-to-l from-brand-50 to-transparent z-10" />
 
         <div className="trust-scroll">
-          {[...SALON_LOGOS, ...SALON_LOGOS].map((name, i) => (
+          {doubled.map((salon, i) => (
             <div
-              key={`${name}-${i}`}
-              className="mx-8 flex h-8 items-center opacity-40 hover:opacity-80 transition-opacity duration-300"
+              key={`${salon.name}-${i}`}
+              className="mx-8 flex h-11 items-center opacity-40 hover:opacity-80 transition-opacity duration-300"
             >
-              <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-brand-600 whitespace-nowrap">
-                {name}
-              </span>
+              {salon.type === "logo" ? (
+                <Image
+                  src={salon.src}
+                  alt={salon.name}
+                  width={133}
+                  height={43}
+                  className="h-8 w-auto object-contain"
+                />
+              ) : (
+                <span className="text-[13.3px] font-medium uppercase tracking-[0.15em] text-brand-600 whitespace-nowrap">
+                  {salon.name}
+                </span>
+              )}
             </div>
           ))}
         </div>
