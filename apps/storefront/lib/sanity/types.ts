@@ -97,6 +97,20 @@ export interface FAQ {
   category?: string;
 }
 
+export interface SalonLogo {
+  _id: string;
+  name: string;
+  logo?: SanityImageRef;
+  order: number;
+}
+
+export interface InstagramPost {
+  _id: string;
+  image: SanityImage;
+  url?: string;
+  order: number;
+}
+
 export interface SiteSettings {
   title: string;
   description: string;

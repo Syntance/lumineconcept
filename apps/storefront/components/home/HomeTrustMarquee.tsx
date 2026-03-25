@@ -1,11 +1,14 @@
 import Image from "next/image";
 import { Instagram } from "lucide-react";
+import { sanityClient } from "@/lib/sanity/client";
+import { SALON_LOGOS_QUERY } from "@/lib/sanity/queries";
+import type { SalonLogo } from "@/lib/sanity/types";
 
 type SalonEntry =
   | { type: "text"; name: string }
   | { type: "logo"; name: string; src: string };
 
-const SALONS: SalonEntry[] = [
+const FALLBACK_SALONS: SalonEntry[] = [
   { type: "logo", name: "Sabrija Store", src: "/images/logos/sabrija-store.png" },
   { type: "text", name: "Salon Mia" },
   { type: "text", name: "Beauty Lab" },
@@ -21,8 +24,27 @@ const SALONS: SalonEntry[] = [
   { type: "text", name: "Style Zone" },
 ];
 
-export function HomeTrustMarquee() {
-  const doubled = [...SALONS, ...SALONS];
+function mapSanityToEntries(logos: SalonLogo[]): SalonEntry[] {
+  return logos.map((logo) =>
+    logo.logo?.asset?.url
+      ? { type: "logo" as const, name: logo.name, src: logo.logo.asset.url }
+      : { type: "text" as const, name: logo.name },
+  );
+}
+
+export async function HomeTrustMarquee() {
+  let salons: SalonEntry[] = FALLBACK_SALONS;
+
+  try {
+    const sanityLogos = await sanityClient.fetch<SalonLogo[]>(SALON_LOGOS_QUERY, {}, { next: { revalidate: 60 } });
+    if (sanityLogos && sanityLogos.length > 0) {
+      salons = mapSanityToEntries(sanityLogos);
+    }
+  } catch (err) {
+    console.error("[HomeTrustMarquee] Nie udało się pobrać logotypów z Sanity:", err);
+  }
+
+  const doubled = [...salons, ...salons];
 
   return (
     <div className="bg-brand-50 pt-4 pb-2.5 overflow-hidden md:pt-5 md:pb-3">

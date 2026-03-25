@@ -8,6 +8,8 @@ import { page } from "./schemas/page";
 import { faq } from "./schemas/faq";
 import { testimonial } from "./schemas/testimonial";
 import { siteSettings } from "./schemas/site-settings";
+import { salonLogo } from "./schemas/salon-logo";
+import { instagramPost } from "./schemas/instagram-post";
 
 export default defineConfig({
   name: "lumine-concept",
@@ -16,6 +18,16 @@ export default defineConfig({
   dataset: process.env.SANITY_STUDIO_DATASET ?? "production",
   plugins: [structureTool(), visionTool()],
   schema: {
-    types: [seo, blogPost, landingPage, page, faq, testimonial, siteSettings],
+    types: [
+      seo,
+      blogPost,
+      landingPage,
+      page,
+      faq,
+      testimonial,
+      siteSettings,
+      salonLogo,
+      instagramPost,
+    ],
   },
 });

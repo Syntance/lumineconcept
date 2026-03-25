@@ -96,6 +96,29 @@ export const FAQ_QUERY = `*[_type == "faq"] | order(order asc) {
   category
 }`;
 
+export const SALON_LOGOS_QUERY = `*[_type == "salonLogo"] | order(order asc) {
+  _id,
+  name,
+  logo {
+    asset-> { _id, url }
+  },
+  order
+}`;
+
+export const INSTAGRAM_POSTS_QUERY = `*[_type == "instagramPost"] | order(order asc) {
+  _id,
+  image {
+    asset-> {
+      _id,
+      url,
+      metadata { dimensions, lqip }
+    },
+    alt
+  },
+  url,
+  order
+}`;
+
 export const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0] {
   title,
   description,

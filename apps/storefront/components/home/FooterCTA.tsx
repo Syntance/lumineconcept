@@ -1,12 +1,32 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Instagram } from "lucide-react";
+import { sanityClient } from "@/lib/sanity/client";
+import { INSTAGRAM_POSTS_QUERY } from "@/lib/sanity/queries";
+import type { InstagramPost } from "@/lib/sanity/types";
 
-const IG_PLACEHOLDERS = [1, 2, 3, 4, 5, 6];
+const IG_PROFILE = "https://instagram.com/lumineconcept";
 
-export function FooterCTA() {
+async function getInstagramPosts(): Promise<InstagramPost[]> {
+  try {
+    const posts = await sanityClient.fetch<InstagramPost[]>(
+      INSTAGRAM_POSTS_QUERY,
+      {},
+      { next: { revalidate: 60 } },
+    );
+    return posts ?? [];
+  } catch (err) {
+    console.error("[FooterCTA] Nie udało się pobrać postów IG z Sanity:", err);
+    return [];
+  }
+}
+
+export async function FooterCTA() {
+  const posts = await getInstagramPosts();
+  const hasRealPosts = posts.length > 0;
+
   return (
     <>
-      {/* Footer CTA — ostatnia szansa na konwersję */}
       <section id="footer-cta" className="relative py-20 lg:py-28 overflow-hidden">
         <div
           className="absolute inset-0 bg-brand-800"
@@ -23,7 +43,7 @@ export function FooterCTA() {
           <h2 className="font-display text-3xl text-white tracking-[0.08em] lg:text-4xl">
             Gotowa na branding, który wyróżni Twój salon?
           </h2>
-          <div className="mt-4 mx-auto h-[1px] w-12 bg-accent-light" />
+          <div className="mt-4 mx-auto h-px w-12 bg-accent-light" />
 
           <div className="mt-10 flex justify-center">
             <Link
@@ -55,31 +75,52 @@ export function FooterCTA() {
         </div>
       </section>
 
-      {/* Feed IG */}
       <section className="py-14 lg:py-20 bg-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="font-display text-2xl tracking-[0.1em] text-brand-800 lg:text-3xl">
+          <h2 className="font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
             Jesteśmy na Instagramie
           </h2>
-          <div className="mt-3 mx-auto h-[1px] w-12 bg-accent" />
+          <div className="mt-3 mx-auto h-px w-12 bg-accent" />
 
           <div className="mt-10 grid grid-cols-3 gap-2 max-w-xl mx-auto sm:grid-cols-6">
-            {IG_PLACEHOLDERS.map((n) => (
-              <a
-                key={n}
-                href="https://instagram.com/lumineconcept"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Lumine Concept na Instagramie"
-                className="aspect-square bg-brand-100 hover:bg-brand-200 transition-colors flex items-center justify-center"
-              >
-                <Instagram className="h-4 w-4 text-brand-400" />
-              </a>
-            ))}
+            {hasRealPosts
+              ? posts.slice(0, 6).map((post) => (
+                  <a
+                    key={post._id}
+                    href={post.url ?? IG_PROFILE}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={post.image?.alt ?? "Post Lumine Concept na Instagramie"}
+                    className="group relative aspect-square overflow-hidden bg-brand-100"
+                  >
+                    <Image
+                      src={post.image.asset.url}
+                      alt={post.image.alt ?? ""}
+                      fill
+                      sizes="(max-width: 640px) 33vw, 96px"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      placeholder={post.image.asset.metadata?.lqip ? "blur" : "empty"}
+                      blurDataURL={post.image.asset.metadata?.lqip}
+                    />
+                    <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                  </a>
+                ))
+              : Array.from({ length: 6 }, (_, i) => (
+                  <a
+                    key={i}
+                    href={IG_PROFILE}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Lumine Concept na Instagramie"
+                    className="aspect-square bg-brand-100 hover:bg-brand-200 transition-colors flex items-center justify-center"
+                  >
+                    <Instagram className="h-4 w-4 text-brand-400" />
+                  </a>
+                ))}
           </div>
 
           <a
-            href="https://instagram.com/lumineconcept"
+            href={IG_PROFILE}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-6 inline-flex items-center gap-2 text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"

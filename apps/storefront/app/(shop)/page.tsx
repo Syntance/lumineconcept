@@ -21,9 +21,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     seo: settings?.seo ?? undefined,
     fallbackTitle:
-      "Lumine Concept — branding z plexi dla salonów beauty | Logo 3D, cenniki, oznaczenia",
+      "Lumine Concept \u2014 branding z plexi dla salon\u00f3w beauty | Logo 3D, cenniki, oznaczenia",
     fallbackDescription:
-      "Logo 3D, cenniki i oznaczenia z plexi. Matowe UV, LED z pilotem, 15+ kolorów. Express 72h. 6 000+ realizacji. Wyślij logo — wycena w 24h.",
+      "Logo 3D, cenniki i oznaczenia z plexi. Matowe UV, LED z pilotem, 15+ kolor\u00f3w. Express 72h. 6 000+ realizacji. Wy\u015blij logo \u2014 wycena w 24h.",
     siteSettings: settings,
     path: "/",
   });
@@ -38,7 +38,7 @@ export default function HomePage() {
     name: "Lumine Concept",
     url: SITE_URL,
     logo: `${SITE_URL}/images/logo.png`,
-    description: "Logo 3D, cenniki i oznaczenia z plexi dla salonów beauty. Matowe UV, LED z pilotem, 15+ kolorów.",
+    description: "Logo 3D, cenniki i oznaczenia z plexi dla salon\u00f3w beauty. Matowe UV, LED z pilotem, 15+ kolor\u00f3w.",
     sameAs: [
       "https://www.instagram.com/lumineconcept/",
       "https://www.facebook.com/lumineconcept/",
@@ -72,23 +72,21 @@ export default function HomePage() {
         <ReferralBanner />
       </Suspense>
 
-      {/* Sekcja 1: Hero */}
       <HeroSection />
 
-      {/* Karuzela „Zaufały nam” (tło krem brand-50) */}
-      <HomeTrustMarquee />
+      <Suspense fallback={null}>
+        <HomeTrustMarquee />
+      </Suspense>
 
-      {/* Sekcja 2: sygnet + Bestsellery (krem #EEE8E0) */}
       <Suspense fallback={null}>
         <BestsellersSection />
       </Suspense>
 
-      {/* Sekcja 3: UVP + opinia klientki */}
       <SocialProofSection />
 
-      {/* Sekcja 4: Footer CTA + IG feed */}
-      <FooterCTA />
-
+      <Suspense fallback={null}>
+        <FooterCTA />
+      </Suspense>
     </>
   );
 }
