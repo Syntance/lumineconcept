@@ -1,9 +1,11 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductCard } from "@/components/product/ProductCard";
-import { FilterBar, type ActiveFilters, type FilterConfig } from "@/components/product/FilterBar";
+import { FilterSidebar } from "@/components/product/FilterSidebar";
+import { FilterDrawer } from "@/components/product/FilterDrawer";
+import { SortBar } from "@/components/product/SortBar";
+import type { ActiveFilters, FilterConfig } from "@/components/product/filter-types";
 import { trackCategoryViewed, trackProductFiltered } from "@/lib/analytics/events";
 
 export interface SimpleProduct {
@@ -31,6 +33,8 @@ const PAGE_SIZE = 12;
 function extractFilterConfig(products: SimpleProduct[]): FilterConfig {
   const colorsSet = new Set<string>();
   const sizesSet = new Set<string>();
+  const materialsSet = new Set<string>();
+  const finishesSet = new Set<string>();
   let hasLed = false;
   let minPrice = Infinity;
   let maxPrice = 0;
@@ -41,6 +45,12 @@ function extractFilterConfig(products: SimpleProduct[]): FilterConfig {
     }
     if (p.options["Rozmiar"]) {
       for (const s of p.options["Rozmiar"]) sizesSet.add(s);
+    }
+    if (p.options["Materiał"]) {
+      for (const m of p.options["Materiał"]) materialsSet.add(m);
+    }
+    if (p.options["Wykończenie"]) {
+      for (const f of p.options["Wykończenie"]) finishesSet.add(f);
     }
     if (p.options["LED"] || p.tags.includes("led")) {
       hasLed = true;
@@ -54,6 +64,8 @@ function extractFilterConfig(products: SimpleProduct[]): FilterConfig {
   return {
     colors: Array.from(colorsSet).sort(),
     sizes: Array.from(sizesSet),
+    materials: Array.from(materialsSet).sort(),
+    finishes: Array.from(finishesSet).sort(),
     hasLed,
     minPrice: minPrice === Infinity ? 0 : minPrice,
     maxPrice,
@@ -65,6 +77,16 @@ function applyFilters(products: SimpleProduct[], filters: ActiveFilters): Simple
     if (filters.colors.length > 0) {
       const productColors = (p.options["Kolor"] ?? []).map((c) => c.toLowerCase());
       if (!filters.colors.some((fc) => productColors.includes(fc.toLowerCase()))) return false;
+    }
+
+    if (filters.materials.length > 0) {
+      const productMats = (p.options["Materiał"] ?? []).map((m) => m.toLowerCase());
+      if (!filters.materials.some((fm) => productMats.includes(fm.toLowerCase()))) return false;
+    }
+
+    if (filters.finishes.length > 0) {
+      const productFin = (p.options["Wykończenie"] ?? []).map((f) => f.toLowerCase());
+      if (!filters.finishes.some((ff) => productFin.includes(ff.toLowerCase()))) return false;
     }
 
     if (filters.led === true) {
@@ -84,6 +106,10 @@ function applyFilters(products: SimpleProduct[], filters: ActiveFilters): Simple
     if (filters.sizes.length > 0) {
       const productSizes = (p.options["Rozmiar"] ?? []).map((s) => s.toLowerCase());
       if (!filters.sizes.some((fs) => productSizes.includes(fs.toLowerCase()))) return false;
+    }
+
+    if (filters.tags.length > 0) {
+      if (!filters.tags.some((t) => p.tags.includes(t))) return false;
     }
 
     return true;
@@ -107,12 +133,16 @@ export function ShopGridClient({
   const [allProducts, setAllProducts] = useState<SimpleProduct[]>(initialProducts);
   const [hasMore, setHasMore] = useState(initialProducts.length < totalCount);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [filters, setFilters] = useState<ActiveFilters>({
     category: initialFilter,
     sort: initialSort,
     colors: [],
     sizes: [],
+    materials: [],
+    finishes: [],
+    tags: [],
   });
 
   useEffect(() => {
@@ -132,10 +162,14 @@ export function ShopGridClient({
       category: next.category,
       colors: next.colors,
       sizes: next.sizes,
+      materials: next.materials,
+      finishes: next.finishes,
+      tags: next.tags,
       led: next.led,
       priceMin: next.priceMin,
       priceMax: next.priceMax,
       sort: next.sort,
+      availability: next.availability,
     });
   }, []);
 
@@ -158,40 +192,43 @@ export function ShopGridClient({
     }
   };
 
-  const crossSellBannerIndex = 8;
-
   return (
-    <>
-      <FilterBar
+    <div className="lg:flex lg:gap-8">
+      {/* Desktop sidebar */}
+      <FilterSidebar
         categories={categories}
         activeFilters={filters}
         filterConfig={filterConfig}
-        resultCount={filteredProducts.length}
         onFiltersChange={handleFiltersChange}
       />
 
-      {/* Grid */}
-      {filteredProducts.length > 0 ? (
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-          {filteredProducts.map((product, index) => (
-            <Fragment key={product.id}>
-              {index === crossSellBannerIndex && (
-                <div className="col-span-2 lg:col-span-4 flex flex-col items-center justify-center gap-4 rounded-2xl bg-brand-50 px-6 py-10 text-center">
-                  <p className="text-lg font-display tracking-wide text-brand-800">
-                    Szukasz czegoś na zamówienie?
-                  </p>
-                  <p className="text-sm text-brand-600">
-                    Logo z własnym projektem, cennik pod wymiar — wycena w 24h
-                  </p>
-                  <Link
-                    href="/logo-3d/#formularz"
-                    className="inline-flex items-center justify-center rounded-md bg-brand-900 px-6 py-2.5 text-xs font-medium uppercase tracking-wider text-white transition-colors hover:bg-brand-800"
-                  >
-                    Zamów wycenę &rarr;
-                  </Link>
-                </div>
-              )}
-              <div className="relative">
+      {/* Main content */}
+      <div className="flex-1 min-w-0">
+        {/* Sort bar (sticky on mobile) */}
+        <SortBar
+          categories={categories}
+          activeFilters={filters}
+          resultCount={filteredProducts.length}
+          onFiltersChange={handleFiltersChange}
+          onOpenDrawer={() => setDrawerOpen(true)}
+        />
+
+        {/* Mobile filter drawer */}
+        <FilterDrawer
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          categories={categories}
+          activeFilters={filters}
+          filterConfig={filterConfig}
+          resultCount={filteredProducts.length}
+          onFiltersChange={handleFiltersChange}
+        />
+
+        {/* Product grid */}
+        {filteredProducts.length > 0 ? (
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+            {filteredProducts.map((product) => (
+              <div key={product.id} className="relative">
                 <ProductCard
                   handle={product.handle}
                   title={product.title}
@@ -203,54 +240,58 @@ export function ShopGridClient({
                   hasVariantPrices={product.hasVariantPrices}
                 />
               </div>
-            </Fragment>
-          ))}
-        </div>
-      ) : (
-        <div className="py-16 text-center">
-          <p className="text-brand-500">
-            Brak produktów spełniających kryteria.
-          </p>
-          <button
-            type="button"
-            onClick={() =>
-              setFilters({
-                sort: filters.sort,
-                colors: [],
-                sizes: [],
-                category: undefined,
-                led: undefined,
-                priceMin: undefined,
-                priceMax: undefined,
-              })
-            }
-            className="mt-3 text-sm text-accent underline underline-offset-2 hover:text-accent-dark"
-          >
-            Wyczyść filtry
-          </button>
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div className="py-16 text-center">
+            <p className="text-brand-500">
+              Brak produktów spełniających kryteria.
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                setFilters({
+                  sort: filters.sort,
+                  colors: [],
+                  sizes: [],
+                  materials: [],
+                  finishes: [],
+                  tags: [],
+                  category: undefined,
+                  led: undefined,
+                  priceMin: undefined,
+                  priceMax: undefined,
+                  availability: undefined,
+                })
+              }
+              className="mt-3 text-sm text-accent underline underline-offset-2 hover:text-accent-dark"
+            >
+              Wyczyść filtry
+            </button>
+          </div>
+        )}
 
-      {/* Load more */}
-      {hasMore && filteredProducts.length >= PAGE_SIZE && (
-        <div className="mt-10 text-center">
-          <button
-            type="button"
-            onClick={loadMore}
-            disabled={isLoadingMore}
-            className="inline-flex items-center justify-center rounded-md border border-brand-200 px-8 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-50"
-          >
-            {isLoadingMore ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
-                Ładowanie...
-              </span>
-            ) : (
-              "Pokaż więcej"
-            )}
-          </button>
-        </div>
-      )}
-    </>
+        {/* Load more */}
+        {hasMore && filteredProducts.length >= PAGE_SIZE && (
+          <div className="mt-10 text-center">
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={isLoadingMore}
+              className="inline-flex items-center justify-center rounded-md border border-brand-200 px-8 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-50"
+            >
+              {isLoadingMore ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+                  Ładowanie...
+                </span>
+              ) : (
+                "Pokaż więcej"
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
