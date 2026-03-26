@@ -127,13 +127,8 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          <CloudinaryImage
-            publicId={selectedImage.url}
-            alt={selectedImage.alt || productTitle}
-            width={1200}
-            height={1200}
-            priority
-            className="object-cover transition-transform duration-200"
+          <div
+            className="h-full w-full transition-transform duration-200"
             style={
               zoomed
                 ? {
@@ -142,7 +137,16 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                   }
                 : undefined
             }
-          />
+          >
+            <CloudinaryImage
+              publicId={selectedImage.url}
+              alt={selectedImage.alt || productTitle}
+              width={1200}
+              height={1200}
+              priority
+              className="object-cover"
+            />
+          </div>
           {/* Dot indicators mobile */}
           {images.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 lg:hidden">
