@@ -54,6 +54,11 @@ export function CheckoutForm() {
     }
   }, [formStarted]);
 
+  const isNipValid = /^\d{10}$/.test(formData.nip.replace(/[-\s]/g, ""));
+  const vatValid =
+    !formData.wantInvoice ||
+    (formData.companyName.trim() !== "" && isNipValid);
+
   const canGoToStep2 =
     formData.email.includes("@") &&
     formData.firstName.trim() !== "" &&
@@ -61,7 +66,8 @@ export function CheckoutForm() {
     formData.phone.trim() !== "" &&
     formData.address.trim() !== "" &&
     formData.city.trim() !== "" &&
-    formData.postalCode.trim() !== "";
+    formData.postalCode.trim() !== "" &&
+    vatValid;
 
   const canGoToStep3 = formData.shippingOptionId !== "";
 
@@ -232,28 +238,37 @@ export function CheckoutForm() {
                 <div className="grid gap-4 sm:grid-cols-2 pl-6">
                   <div>
                     <label htmlFor="companyName" className={LABEL_CLASS}>
-                      Nazwa firmy
+                      Nazwa firmy <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="companyName"
                       type="text"
+                      required
                       value={formData.companyName}
                       onChange={(e) => updateField("companyName", e.target.value)}
-                      className={INPUT_CLASS}
+                      className={`${INPUT_CLASS} ${formData.companyName.trim() === "" && formData.wantInvoice ? "border-red-300" : ""}`}
                     />
+                    {formData.companyName.trim() === "" && (
+                      <p className="mt-1 text-xs text-red-500">Pole wymagane</p>
+                    )}
                   </div>
                   <div>
                     <label htmlFor="nip" className={LABEL_CLASS}>
-                      NIP
+                      NIP <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="nip"
                       type="text"
+                      required
                       value={formData.nip}
                       onChange={(e) => updateField("nip", e.target.value)}
-                      className={INPUT_CLASS}
+                      className={`${INPUT_CLASS} ${formData.nip.length > 0 && !isNipValid ? "border-red-300" : ""}`}
                       placeholder="0000000000"
+                      maxLength={13}
                     />
+                    {formData.nip.length > 0 && !isNipValid && (
+                      <p className="mt-1 text-xs text-red-500">NIP musi zawierać 10 cyfr</p>
+                    )}
                   </div>
                 </div>
               )}

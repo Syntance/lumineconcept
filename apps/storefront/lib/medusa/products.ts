@@ -31,7 +31,7 @@ export async function getProducts(params?: {
     category_id: params?.category_id,
     order: params?.order,
     region_id: regionId,
-    fields: "+variants.calculated_price",
+    fields: "+variants.calculated_price,+options,+tags",
   });
 
   return response;

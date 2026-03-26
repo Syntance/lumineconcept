@@ -62,15 +62,26 @@ export default async function GotoweWzoryPage({
   const totalCount = productsResponse?.count ?? 0;
   const trustBar = settings?.trustBar;
 
-  const initialProducts = products.map((p) => ({
-    id: p.id,
-    handle: p.handle ?? "",
-    title: p.title,
-    thumbnail: p.thumbnail ?? null,
-    price: getMinPrice(p.variants as unknown[] | null),
-    hasVariantPrices: hasMultiplePrices(p.variants as unknown[] | null),
-    tags: (p.tags ?? []).map((t) => (t as unknown as { value: string }).value?.toLowerCase() ?? ""),
-  }));
+  const initialProducts = products.map((p) => {
+    const options = (p.options ?? []) as unknown as Array<{
+      title: string;
+      values: Array<{ value: string }>;
+    }>;
+    const optionsMap: Record<string, string[]> = {};
+    for (const opt of options) {
+      optionsMap[opt.title] = (opt.values ?? []).map((v) => v.value);
+    }
+    return {
+      id: p.id,
+      handle: p.handle ?? "",
+      title: p.title,
+      thumbnail: p.thumbnail ?? null,
+      price: getMinPrice(p.variants as unknown[] | null),
+      hasVariantPrices: hasMultiplePrices(p.variants as unknown[] | null),
+      tags: (p.tags ?? []).map((t) => (t as unknown as { value: string }).value?.toLowerCase() ?? ""),
+      options: optionsMap,
+    };
+  });
 
   const displayTestimonials = testimonials.slice(0, 2);
 
@@ -87,11 +98,18 @@ export default async function GotoweWzoryPage({
             ]}
           />
           <h1 className="font-display text-3xl tracking-[0.06em] text-brand-800 lg:text-4xl">
-            Gotowe wzory z plexi — cenniki, tabliczki, menu, QR
+            Gotowe wzory z plexi — kup od ręki, wysyłka w 48h
           </h1>
           <p className="mt-4 mx-auto max-w-2xl text-brand-600 leading-relaxed">
-            Wybierz gotowy wzór, zamów online i odbierz w ciągu 48h. Bez czekania na projekt.
+            Cenniki, tabliczki, oznaczenia, logo — gotowe wzory do Twojego salonu. Bez czekania na projekt.
           </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3 text-xs font-medium uppercase tracking-wider text-brand-500">
+            <span className="rounded-full border border-brand-200 px-4 py-1.5">Szybka wysyłka</span>
+            <span className="rounded-full border border-brand-200 px-4 py-1.5">Płatność online</span>
+            <span className="rounded-full border border-brand-200 px-4 py-1.5">
+              {trustBar?.realizations ?? "6 000+"} realizacji
+            </span>
+          </div>
         </div>
       </section>
 

@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { CloudinaryImage } from "../common/CloudinaryImage";
 import { PriceDisplay } from "./PriceDisplay";
 
-/** Jak łuk cienia w hero (40% elipsa); „w górę” = łuk u góry karty, „w dół” = łuk u dołu. */
 export type ProductCardFrameVariant = "square" | "arch-up" | "arch-down";
 
 interface ProductCardProps {
@@ -15,18 +14,32 @@ interface ProductCardProps {
   compareAtPrice?: number;
   currency?: string;
   frameVariant?: ProductCardFrameVariant;
-  /** Tylko zdjęcie (np. Bestsellery); tytuł i cena poza kartą */
   imageOnly?: boolean;
-  /** Domyślnie `aspect-square`; np. `aspect-[4/5]` — nieco wyższe zdjęcie */
   imageAspectClassName?: string;
-  /** Sam `<article>` bez `<Link>` — link owija rodzic (np. cała kolumna Bestsellerów) */
   linkless?: boolean;
-  /** Ostre kąty (radius 0) — tylko przy `frameVariant="square"`; przy łuku arch-up/arch-down ignorowane */
   sharpCorners?: boolean;
-  /** Tło pola zdjęcia (np. `bg-white` w Bestsellerach przy braku miniatury) */
   imageAreaClassName?: string;
-  /** Nadpisanie domyślnego linku `/sklep/${handle}` */
   href?: string;
+  badge?: "bestseller" | "nowość" | null;
+  colorSwatches?: string[];
+  hasVariantPrices?: boolean;
+}
+
+const COLOR_MAP: Record<string, string> = {
+  czarny: "#1a1a1a",
+  biały: "#ffffff",
+  złoty: "#D4AF37",
+  "rose gold": "#B76E79",
+  srebrny: "#C0C0C0",
+  przezroczysty: "transparent",
+  różowy: "#E8A0BF",
+  beżowy: "#D4C5B2",
+  szary: "#8B8B8B",
+  brązowy: "#6B4226",
+};
+
+function resolveSwatchColor(name: string): string {
+  return COLOR_MAP[name.toLowerCase()] ?? "#ccc";
 }
 
 export function ProductCard({
@@ -43,21 +56,18 @@ export function ProductCard({
   sharpCorners = false,
   imageAreaClassName = "bg-brand-50",
   href,
+  badge,
+  colorSwatches,
+  hasVariantPrices = false,
 }: ProductCardProps) {
   const sharpSquare = sharpCorners && frameVariant === "square";
 
   const archFrameStyle: CSSProperties | undefined = sharpSquare
     ? { borderRadius: 0 }
     : frameVariant === "arch-up"
-      ? {
-          /* Łuk u góry jak wcześniej; dolne rogi ostre (0) */
-          borderRadius: "50% 50% 0 0 / 40% 40% 0 0",
-        }
+      ? { borderRadius: "50% 50% 0 0 / 40% 40% 0 0" }
       : frameVariant === "arch-down"
-        ? {
-          /* Górne rogi ostre (0); łuk u dołu jak w hero */
-          borderRadius: "0 0 50% 50% / 0 0 40% 40%",
-        }
+        ? { borderRadius: "0 0 50% 50% / 0 0 40% 40%" }
         : undefined;
 
   const articleRadiusClass = sharpSquare
@@ -69,6 +79,9 @@ export function ProductCard({
   const imageIsPortrait = imageAspectClassName !== "aspect-square";
   const imageWidth = 600;
   const imageHeight = imageIsPortrait ? 750 : 600;
+
+  const visibleSwatches = colorSwatches?.slice(0, 5) ?? [];
+  const extraSwatchCount = (colorSwatches?.length ?? 0) - 5;
 
   const article = (
     <article
@@ -95,17 +108,43 @@ export function ProductCard({
             <span className="text-sm">Brak zdjęcia</span>
           </div>
         )}
+        {badge && (
+          <span
+            className={cn(
+              "absolute left-2 top-2 z-10 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white",
+              badge === "bestseller" ? "bg-accent" : "bg-green-600",
+            )}
+          >
+            {badge === "bestseller" ? "Bestseller" : "Nowość"}
+          </span>
+        )}
       </div>
       {!imageOnly && (
         <div className="flex min-h-0 flex-1 flex-col justify-between gap-2 p-4">
           <h3 className="min-h-11 shrink-0 text-sm font-medium leading-snug text-brand-800 line-clamp-2">
             {title}
           </h3>
+          {visibleSwatches.length > 0 && (
+            <div className="flex items-center gap-1">
+              {visibleSwatches.map((color) => (
+                <span
+                  key={color}
+                  className="inline-block h-3 w-3 rounded-full border border-brand-200"
+                  style={{ backgroundColor: resolveSwatchColor(color) }}
+                  title={color}
+                />
+              ))}
+              {extraSwatchCount > 0 && (
+                <span className="text-[10px] text-brand-400">+{extraSwatchCount}</span>
+              )}
+            </div>
+          )}
           <div className="shrink-0">
             <PriceDisplay
               amount={price}
               compareAtAmount={compareAtPrice}
               currency={currency}
+              prefix={hasVariantPrices ? "od" : undefined}
             />
           </div>
         </div>
