@@ -28,7 +28,7 @@ export function KoszykClient() {
           <ShoppingBag className="h-16 w-16 text-brand-200" />
           <p className="text-lg text-brand-500">Twój koszyk jest pusty</p>
           <Link
-            href="/produkty"
+            href="/sklep"
             className="mt-4 rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors"
           >
             Przeglądaj produkty

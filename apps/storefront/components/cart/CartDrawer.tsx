@@ -1,17 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { X, ShoppingBag } from "lucide-react";
-import { useEffect } from "react";
+import { X, ShoppingBag, Gift, Shield, Truck, RefreshCcw } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { CartItem } from "./CartItem";
 import { CartSummary } from "./CartSummary";
+import { CartUpsell } from "./CartUpsell";
+import { trackReferralApplied } from "@/lib/analytics/events";
 
 export function CartDrawer() {
-  const { isOpen, closeCart, items, itemCount } = useCart();
+  const { isOpen, closeCart, items, itemCount, applyDiscount } = useCart();
+
+  const [referralCode, setReferralCode] = useState("");
+  const [referralStatus, setReferralStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [referralMessage, setReferralMessage] = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
+
+    const savedCode = localStorage.getItem("lumine_referral");
+    if (savedCode && referralStatus === "idle") {
+      setReferralCode(savedCode);
+    }
 
     document.body.style.overflow = "hidden";
 
@@ -24,7 +35,24 @@ export function CartDrawer() {
       document.body.style.overflow = "";
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, closeCart]);
+  }, [isOpen, closeCart, referralStatus]);
+
+  const handleApplyReferral = useCallback(async () => {
+    if (!referralCode.trim()) return;
+    setReferralStatus("loading");
+    try {
+      if (applyDiscount) {
+        await applyDiscount(referralCode.trim());
+      }
+      localStorage.setItem("lumine_referral", referralCode.trim());
+      trackReferralApplied(referralCode.trim());
+      setReferralStatus("success");
+      setReferralMessage("Kod zastosowany!");
+    } catch {
+      setReferralStatus("error");
+      setReferralMessage("Nieprawidłowy kod");
+    }
+  }, [referralCode, applyDiscount]);
 
   if (!isOpen) return null;
 
@@ -68,8 +96,52 @@ export function CartDrawer() {
               {items.map((item) => (
                 <CartItem key={item.id} item={item} />
               ))}
+
+              {/* Upsell */}
+              <CartUpsell currentItemIds={items.map((i) => i.id)} />
+
+              {/* Referral code */}
+              <div className="rounded-lg border border-brand-100 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Gift className="h-4 w-4 text-brand-500" />
+                  <span className="text-xs font-medium text-brand-700">Kod polecający</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={referralCode}
+                    onChange={(e) => {
+                      setReferralCode(e.target.value);
+                      if (referralStatus !== "idle") setReferralStatus("idle");
+                    }}
+                    placeholder="Wpisz kod..."
+                    className="flex-1 rounded-md border border-brand-200 px-3 py-1.5 text-xs text-brand-700 placeholder:text-brand-400 focus:border-brand-400 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyReferral}
+                    disabled={referralStatus === "loading" || referralStatus === "success"}
+                    className="shrink-0 rounded-md bg-brand-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50 transition-colors"
+                  >
+                    {referralStatus === "loading" ? "..." : "Zastosuj"}
+                  </button>
+                </div>
+                {referralMessage && (
+                  <p className={`mt-1.5 text-[11px] ${referralStatus === "success" ? "text-green-600" : "text-red-600"}`}>
+                    {referralMessage}
+                  </p>
+                )}
+              </div>
             </div>
+
             <div className="border-t border-brand-100 p-4 space-y-4">
+              {/* Trust badges */}
+              <div className="flex justify-center gap-4 text-[11px] text-brand-500">
+                <span className="flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> Bezpieczna płatność</span>
+                <span className="flex items-center gap-1"><Truck className="h-3.5 w-3.5" /> Wysyłka 1-3 dni</span>
+                <span className="flex items-center gap-1"><RefreshCcw className="h-3.5 w-3.5" /> 14 dni zwrotu</span>
+              </div>
+
               <CartSummary />
               <Link
                 href="/koszyk"

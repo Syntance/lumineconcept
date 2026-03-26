@@ -23,7 +23,7 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
         return (
           <li key={product.id}>
             <Link
-              href={`/produkty/${product.handle}`}
+              href={`/sklep/gotowe-wzory/${product.handle}`}
               onClick={onSelect}
               className="flex items-center gap-4 rounded-lg p-3 hover:bg-brand-50 transition-colors"
             >

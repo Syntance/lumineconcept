@@ -3,7 +3,7 @@ import Image from "next/image";
 
 const FOOTER_LINKS = {
   Sklep: [
-    { href: "/produkty", label: "Wszystkie produkty" },
+    { href: "/sklep", label: "Wszystkie produkty" },
     { href: "/salony-beauty", label: "Salony Beauty" },
     { href: "/realizacje", label: "Realizacje" },
     { href: "/konfiguracja", label: "Konfigurator" },

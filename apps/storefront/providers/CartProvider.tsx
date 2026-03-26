@@ -40,6 +40,7 @@ interface CartContextType extends CartState {
   updateItem: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
   refreshCart: () => Promise<void>;
+  applyDiscount: (code: string) => Promise<void>;
 }
 
 const CART_ID_KEY = "lumine_cart_id";
@@ -165,6 +166,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await getOrCreateCart();
   }, [getOrCreateCart]);
 
+  const applyDiscount = useCallback(
+    async (code: string) => {
+      if (!cart.id) return;
+      setIsLoading(true);
+      try {
+        const updated = await cartApi.applyPromotionCode(cart.id, code);
+        updateCartState(updated as unknown as Record<string, unknown>);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [cart.id, updateCartState],
+  );
+
   const value = useMemo(
     () => ({
       ...cart,
@@ -176,8 +191,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateItem,
       removeItem,
       refreshCart,
+      applyDiscount,
     }),
-    [cart, isLoading, isOpen, addItem, updateItem, removeItem, refreshCart],
+    [cart, isLoading, isOpen, addItem, updateItem, removeItem, refreshCart, applyDiscount],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

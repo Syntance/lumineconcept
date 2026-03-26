@@ -25,6 +25,8 @@ interface ProductCardProps {
   sharpCorners?: boolean;
   /** Tło pola zdjęcia (np. `bg-white` w Bestsellerach przy braku miniatury) */
   imageAreaClassName?: string;
+  /** Nadpisanie domyślnego linku `/sklep/${handle}` */
+  href?: string;
 }
 
 export function ProductCard({
@@ -40,6 +42,7 @@ export function ProductCard({
   linkless = false,
   sharpCorners = false,
   imageAreaClassName = "bg-brand-50",
+  href,
 }: ProductCardProps) {
   const sharpSquare = sharpCorners && frameVariant === "square";
 
@@ -116,7 +119,7 @@ export function ProductCard({
 
   return (
     <Link
-      href={`/produkty/${handle}`}
+      href={href ?? `/sklep/gotowe-wzory/${handle}`}
       className="group flex h-full min-h-0 w-full min-w-0 flex-col"
       aria-label={imageOnly ? title : undefined}
     >

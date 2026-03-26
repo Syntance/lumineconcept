@@ -54,7 +54,7 @@ export function HeroSection() {
 
           <div className="mt-7 inline-flex flex-col items-center">
             <Link
-              href="/produkty"
+              href="/sklep"
               className="inline-flex items-center justify-center rounded border border-white/70 px-8 py-3 font-sans text-[11px] uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900 sm:text-xs"
             >
               Zobacz produkty

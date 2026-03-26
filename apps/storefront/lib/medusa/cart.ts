@@ -53,3 +53,10 @@ export async function removeLineItem(cartId: string, lineItemId: string) {
   const response = await medusa.store.cart.deleteLineItem(cartId, lineItemId);
   return response;
 }
+
+export async function applyPromotionCode(cartId: string, code: string) {
+  const response = await medusa.store.cart.update(cartId, {
+    promo_codes: [code],
+  });
+  return response.cart;
+}

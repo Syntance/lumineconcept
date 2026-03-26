@@ -17,6 +17,21 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  async redirects() {
+    return [
+      {
+        source: "/produkty",
+        destination: "/sklep",
+        permanent: true,
+      },
+      {
+        source: "/produkty/:path*",
+        destination: "/sklep/gotowe-wzory/:path*",
+        permanent: true,
+      },
+    ];
+  },
+
   async rewrites() {
     return [
       {

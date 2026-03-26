@@ -13,12 +13,14 @@ interface AddToCartButtonProps {
     currency: string;
   };
   disabled?: boolean;
+  compact?: boolean;
 }
 
 export function AddToCartButton({
   variantId,
   productData,
   disabled,
+  compact,
 }: AddToCartButtonProps) {
   const { addItemWithTracking } = useCart();
   const [isAdding, setIsAdding] = useState(false);
@@ -33,6 +35,24 @@ export function AddToCartButton({
       setIsAdding(false);
     }
   };
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={handleAddToCart}
+        disabled={disabled || !variantId || isAdding}
+        className="flex shrink-0 items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isAdding ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <ShoppingBag className="h-4 w-4" />
+        )}
+        Dodaj
+      </button>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3">

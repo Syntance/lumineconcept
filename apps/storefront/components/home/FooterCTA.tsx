@@ -47,7 +47,7 @@ export async function FooterCTA() {
 
           <div className="mt-10 flex justify-center">
             <Link
-              href="/produkty"
+              href="/sklep"
               className="inline-flex items-center justify-center border border-white px-10 py-3.5 text-[13.2px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900"
             >
               Zobacz sklep &rarr;

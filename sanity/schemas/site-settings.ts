@@ -88,6 +88,19 @@ export const siteSettings = defineType({
     }),
 
     defineField({
+      name: "trustBar",
+      title: "Trust Bar (statystyki)",
+      type: "object",
+      group: "general",
+      description: "Statystyki wyświetlane na HP, /sklep i innych podstronach",
+      fields: [
+        { name: "followers", title: "Obserwujący", type: "string", initialValue: "25 000+" },
+        { name: "realizations", title: "Realizacje", type: "string", initialValue: "6 000+" },
+        { name: "shippingLabel", title: "Label wysyłki", type: "string", initialValue: "Express wysyłka" },
+      ],
+    }),
+
+    defineField({
       name: "socialLinks",
       title: "Linki do social media",
       type: "object",
