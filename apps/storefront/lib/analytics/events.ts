@@ -109,3 +109,24 @@ export function trackReferralApplied(code: string) {
 export function trackCategoryViewed(category: string, path: string) {
   trackEvent("category_viewed", { category, path });
 }
+
+export function trackProductFiltered(filters: Record<string, unknown>) {
+  trackEvent("product_filtered", filters);
+}
+
+export function trackRemoveFromCart(item: {
+  id: string;
+  title: string;
+  price: number;
+}) {
+  capturePostHogEvent("remove_from_cart", item);
+  trackMetaCustomEvent("remove_from_cart", item);
+}
+
+export function trackCartViewed(itemIds: string[]) {
+  trackEvent("cart_viewed", { item_count: itemIds.length, item_ids: itemIds });
+}
+
+export function trackDiscountApplied(code: string, discountAmount?: number) {
+  trackEvent("discount_applied", { code, discount_amount: discountAmount });
+}

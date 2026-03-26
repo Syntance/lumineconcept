@@ -5,6 +5,7 @@ interface PriceDisplayProps {
   compareAtAmount?: number;
   currency?: string;
   size?: "sm" | "md" | "lg";
+  prefix?: string;
 }
 
 export function PriceDisplay({
@@ -12,6 +13,7 @@ export function PriceDisplay({
   compareAtAmount,
   currency = "PLN",
   size = "md",
+  prefix,
 }: PriceDisplayProps) {
   const hasDiscount = compareAtAmount && compareAtAmount > amount;
   const discountPercent = hasDiscount
@@ -26,6 +28,9 @@ export function PriceDisplay({
 
   return (
     <div className="flex items-center gap-2">
+      {prefix && (
+        <span className="text-xs text-brand-400">{prefix}</span>
+      )}
       <span
         className={`font-semibold ${sizeClasses[size]} ${
           hasDiscount ? "text-red-600" : "text-brand-800"

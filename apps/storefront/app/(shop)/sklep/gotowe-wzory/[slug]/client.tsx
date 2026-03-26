@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ProductVariantSelector } from "@/components/product/ProductVariantSelector";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
@@ -22,6 +23,7 @@ interface ProductPageClientProps {
 }
 
 export function ProductPageClient({ product }: ProductPageClientProps) {
+  const router = useRouter();
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     for (const option of product.options) {
@@ -66,6 +68,8 @@ export function ProductPageClient({ product }: ProductPageClientProps) {
     setSelectedOptions((prev) => ({ ...prev, [optionTitle]: value }));
   };
 
+  const qty = selectedVariant?.inventory_quantity ?? 0;
+
   return (
     <>
       <div className="space-y-6">
@@ -75,17 +79,27 @@ export function ProductPageClient({ product }: ProductPageClientProps) {
           onOptionChange={handleOptionChange}
         />
 
-        {selectedVariant && selectedVariant.inventory_quantity <= 5 && selectedVariant.inventory_quantity > 0 && (
-          <p className="text-sm text-orange-600">
-            Ostatnie {selectedVariant.inventory_quantity} szt. w magazynie!
+        {/* Stock indicator */}
+        {selectedVariant && qty > 5 && (
+          <p className="flex items-center gap-1.5 text-sm text-green-700">
+            <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+            W magazynie — wysyłka w 48h
+          </p>
+        )}
+        {selectedVariant && qty > 0 && qty <= 5 && (
+          <p className="flex items-center gap-1.5 text-sm text-orange-600 animate-pulse">
+            <span className="inline-block h-2 w-2 rounded-full bg-orange-500" />
+            Ostatnie {qty} szt. w magazynie!
+          </p>
+        )}
+        {selectedVariant && qty === 0 && (
+          <p className="flex items-center gap-1.5 text-sm text-red-600">
+            <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+            Produkt chwilowo niedostępny
           </p>
         )}
 
-        {selectedVariant && selectedVariant.inventory_quantity === 0 && (
-          <p className="text-sm text-red-600">Produkt chwilowo niedostępny</p>
-        )}
-
-        <div ref={ctaRef}>
+        <div ref={ctaRef} className="space-y-3">
           <AddToCartButton
             variantId={selectedVariant?.id ?? null}
             productData={{
@@ -94,8 +108,21 @@ export function ProductPageClient({ product }: ProductPageClientProps) {
               price: selectedVariant?.price ?? 0,
               currency: "PLN",
             }}
-            disabled={!selectedVariant || selectedVariant.inventory_quantity === 0}
+            disabled={!selectedVariant || qty === 0}
+            maxQuantity={qty > 0 ? qty : undefined}
           />
+          <button
+            type="button"
+            onClick={() => {
+              if (selectedVariant) {
+                router.push("/checkout");
+              }
+            }}
+            disabled={!selectedVariant || qty === 0}
+            className="w-full rounded-md border border-brand-300 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Kup teraz
+          </button>
         </div>
       </div>
 
@@ -117,7 +144,7 @@ export function ProductPageClient({ product }: ProductPageClientProps) {
                 price: selectedVariant?.price ?? 0,
                 currency: "PLN",
               }}
-              disabled={!selectedVariant || selectedVariant.inventory_quantity === 0}
+              disabled={!selectedVariant || qty === 0}
               compact
             />
           </div>

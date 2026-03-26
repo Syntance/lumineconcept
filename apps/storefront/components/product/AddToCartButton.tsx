@@ -14,6 +14,7 @@ interface AddToCartButtonProps {
   };
   disabled?: boolean;
   compact?: boolean;
+  maxQuantity?: number;
 }
 
 export function AddToCartButton({
@@ -21,6 +22,7 @@ export function AddToCartButton({
   productData,
   disabled,
   compact,
+  maxQuantity = 99,
 }: AddToCartButtonProps) {
   const { addItemWithTracking } = useCart();
   const [isAdding, setIsAdding] = useState(false);
@@ -60,6 +62,7 @@ export function AddToCartButton({
         <button
           type="button"
           onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+          disabled={quantity <= 1}
           className="px-3 py-2 text-brand-700 hover:text-brand-900 transition-colors"
           aria-label="Zmniejsz ilość"
         >
@@ -70,7 +73,8 @@ export function AddToCartButton({
         </span>
         <button
           type="button"
-          onClick={() => setQuantity((q) => q + 1)}
+          onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+          disabled={quantity >= maxQuantity}
           className="px-3 py-2 text-brand-700 hover:text-brand-900 transition-colors"
           aria-label="Zwiększ ilość"
         >

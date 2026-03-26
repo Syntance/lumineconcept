@@ -42,7 +42,7 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
         {suggestions.map((p) => (
           <Link
             key={p.id}
-            href={`/sklep/${p.handle}`}
+            href={`/sklep/gotowe-wzory/${p.handle}`}
             className="flex items-center gap-3 rounded-md p-1.5 transition-colors hover:bg-brand-50"
           >
             {p.thumbnail ? (

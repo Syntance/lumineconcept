@@ -24,6 +24,17 @@ export async function GET(request: NextRequest) {
         .map((v) => Number(v.calculated_price?.calculated_amount ?? 0))
         .filter((pr) => pr > 0);
 
+      const options = (p.options ?? []) as unknown as Array<{
+        id: string;
+        title: string;
+        values: Array<{ value: string }>;
+      }>;
+
+      const optionsMap: Record<string, string[]> = {};
+      for (const opt of options) {
+        optionsMap[opt.title] = (opt.values ?? []).map((v) => v.value);
+      }
+
       return {
         id: p.id,
         handle: p.handle ?? "",
@@ -34,6 +45,7 @@ export async function GET(request: NextRequest) {
         tags: (p.tags ?? []).map(
           (t) => ((t as unknown as { value: string }).value ?? "").toLowerCase(),
         ),
+        options: optionsMap,
       };
     });
 

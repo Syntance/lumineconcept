@@ -14,9 +14,9 @@ export async function generateMetadata({
   const product = await getProductData(slug).catch(() => null);
   if (!product) return { title: "Produkt nie znaleziony" };
 
-  const productUrl = `${SITE_URL}/sklep/pakiety/${slug}`;
+  const productUrl = `${SITE_URL}/sklep/certyfikaty/${slug}`;
   return {
-    title: `${product.title} — pakiet | Lumine Concept`,
+    title: `${product.title} | Lumine Concept`,
     description: product.description,
     alternates: { canonical: productUrl },
     openGraph: {
@@ -29,7 +29,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function PakietyProductPage({
+export default async function CertyfikatyProductPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -38,9 +38,9 @@ export default async function PakietyProductPage({
   return (
     <ProductPageLayout
       slug={slug}
-      basePath="/sklep/pakiety"
-      categoryLabel="Pakiety"
-      categoryHref="/sklep/pakiety"
+      basePath="/sklep/certyfikaty"
+      categoryLabel="Certyfikaty"
+      categoryHref="/sklep/certyfikaty"
       ProductPageClient={ProductPageClient}
     />
   );

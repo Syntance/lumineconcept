@@ -11,6 +11,9 @@ import { TrustBadges } from "@/components/marketing/TrustBadges";
 import { PayPoPromo } from "@/components/marketing/PayPoPromo";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { ProductCard } from "@/components/product/ProductCard";
+import { ShippingTimer } from "@/components/product/ShippingTimer";
+import { ProductTabs } from "@/components/product/ProductTabs";
+import { ProductReviews } from "@/components/product/ProductReviews";
 import { SITE_URL } from "@/lib/utils";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
@@ -98,17 +101,6 @@ export async function ProductPageLayout({
     })),
   };
 
-  const breadcrumbJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Strona główna", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Sklep", item: `${SITE_URL}/sklep` },
-      { "@type": "ListItem", position: 3, name: categoryLabel, item: `${SITE_URL}${categoryHref}` },
-      { "@type": "ListItem", position: 4, name: product.title, item: productUrl },
-    ],
-  };
-
   const faqJsonLd =
     faqs.length > 0
       ? {
@@ -127,7 +119,7 @@ export async function ProductPageLayout({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify([productJsonLd, breadcrumbJsonLd, ...(faqJsonLd ? [faqJsonLd] : [])]),
+          __html: JSON.stringify([productJsonLd, ...(faqJsonLd ? [faqJsonLd] : [])]),
         }}
       />
 
@@ -194,17 +186,8 @@ export async function ProductPageLayout({
         </div>
       </section>
 
-      {/* Reviews placeholder */}
-      <section className="border-t border-brand-100">
-        <div className="container mx-auto max-w-7xl px-4 py-10 lg:py-14 text-center">
-          <h2 className="font-display text-xl tracking-widest text-brand-800 mb-4">
-            Opinie klientów
-          </h2>
-          <p className="text-brand-500 text-sm">
-            Bądź pierwszą osobą, która podzieli się opinią o tym produkcie.
-          </p>
-        </div>
-      </section>
+      {/* Reviews */}
+      <ProductReviews />
 
       {/* Cross-sell */}
       {crossSellProducts.length > 0 && (
@@ -258,89 +241,6 @@ export async function ProductPageLayout({
         </section>
       )}
     </>
-  );
-}
-
-function ShippingTimer() {
-  const now = new Date();
-  const day = now.getDay();
-  const hour = now.getHours();
-
-  let label: string;
-  if (day === 0 || day === 6) {
-    label = "Zamów teraz — wysyłka w poniedziałek";
-  } else if (hour < 14) {
-    label = "Zamów do 14:00 — wysyłka dziś";
-  } else if (day === 5) {
-    label = "Zamów teraz — wysyłka w poniedziałek";
-  } else {
-    label = "Zamów teraz — wysyłka jutro";
-  }
-
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-green-100 bg-green-50 px-4 py-2.5 text-sm text-green-800">
-      <span aria-hidden="true">🚚</span>
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function ProductTabs({
-  description,
-  metadata,
-}: {
-  description: string | null;
-  metadata: Record<string, unknown>;
-}) {
-  const spec = metadata.specyfikacja as string | undefined;
-  const tabs: Array<{ title: string; content: React.ReactNode }> = [];
-
-  if (description) {
-    tabs.push({
-      title: "Opis",
-      content: <div className="prose prose-sm text-brand-700 max-w-none"><p>{description}</p></div>,
-    });
-  }
-
-  if (spec) {
-    tabs.push({
-      title: "Specyfikacja",
-      content: <div className="prose prose-sm text-brand-700 max-w-none"><p>{spec}</p></div>,
-    });
-  }
-
-  tabs.push({
-    title: "Wysyłka",
-    content: (
-      <div className="space-y-3 text-sm text-brand-700">
-        <p>Realizacja zamówienia: <strong>1-3 dni robocze</strong></p>
-        <p>Wysyłka kurierem InPost lub Paczkomaty 24/7.</p>
-        <p>Darmowa wysyłka od 299 PLN.</p>
-      </div>
-    ),
-  });
-
-  tabs.push({
-    title: "Zwroty",
-    content: (
-      <div className="space-y-3 text-sm text-brand-700">
-        <p>Masz <strong>14 dni</strong> na zwrot produktu bez podawania przyczyny.</p>
-        <p>Produkty personalizowane (na zamówienie) nie podlegają zwrotowi.</p>
-      </div>
-    ),
-  });
-
-  return (
-    <div className="space-y-6">
-      {tabs.map((tab, i) => (
-        <details key={tab.title} className="group" open={i === 0}>
-          <summary className="cursor-pointer border-b border-brand-200 pb-3 text-sm font-medium text-brand-500 group-open:text-brand-900 transition-colors">
-            {tab.title}
-          </summary>
-          <div className="pt-4">{tab.content}</div>
-        </details>
-      ))}
-    </div>
   );
 }
 

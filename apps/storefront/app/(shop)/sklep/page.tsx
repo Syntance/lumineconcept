@@ -4,11 +4,10 @@ import Image from "next/image";
 import { getProductsByTag } from "@/lib/medusa/products";
 import { sanityClient } from "@/lib/sanity/client";
 import {
-  SHOP_CATEGORIES_QUERY,
   TESTIMONIALS_QUERY,
   SITE_SETTINGS_QUERY,
 } from "@/lib/sanity/queries";
-import type { ShopCategory, Testimonial, SiteSettings } from "@/lib/sanity/types";
+import type { Testimonial, SiteSettings } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
@@ -29,36 +28,33 @@ function extractPrice(variant: unknown): number {
   return Number(cp?.calculated_amount ?? 0);
 }
 
-const CATEGORY_CARDS = [
+const CATEGORIES = [
   {
-    emoji: "🛒",
     title: "Gotowe wzory",
-    description: "Cenniki, tabliczki, menu, QR — wybierz i kup. Wysyłka w 48h.",
-    cta: "Zobacz produkty",
+    subtitle: "Kup od ręki · wysyłka w 48h",
+    description: "Cenniki, tabliczki, menu, kody QR — gotowe wzory do Twojego salonu.",
+    cta: "Przeglądaj gotowe wzory",
     href: "/sklep/gotowe-wzory",
   },
   {
-    emoji: "✨",
     title: "Logo 3D",
-    description: "Gotowe wzory logo 3D i LED. Twój salon — od ręki.",
-    cta: "Zobacz logo",
+    subtitle: "Plexi · LED · matowe UV",
+    description: "Gotowe wzory logo 3D. 15+ kolorów, montaż w cenie.",
+    cta: "Zobacz logo 3D",
     href: "/sklep/logo-3d",
   },
   {
-    emoji: "🎀",
-    title: "Pakiety brandingowe",
-    description: "Cennik + tabliczki + logo — wszystko w zestawie. Oszczędź do -10%.",
-    cta: "Zobacz pakiety",
-    href: "/sklep/pakiety",
+    title: "Certyfikaty",
+    subtitle: "Dyplomy · podziękowania · vouchery",
+    description: "Eleganckie certyfikaty z plexi dla Twoich klientek.",
+    cta: "Zobacz certyfikaty",
+    href: "/sklep/certyfikaty",
   },
 ] as const;
 
 export default async function ShopHubPage() {
-  const [bestsellers, sanityCategories, settings, testimonials] = await Promise.all([
+  const [bestsellers, settings, testimonials] = await Promise.all([
     getProductsByTag("bestseller", 4).catch(() => []),
-    sanityClient
-      .fetch<ShopCategory[]>(SHOP_CATEGORIES_QUERY, {}, { next: { revalidate: 120 } })
-      .catch(() => []),
     sanityClient
       .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
       .catch(() => null),
@@ -82,7 +78,7 @@ export default async function ShopHubPage() {
             name: "Sklep Lumine Concept",
             url: `${SITE_URL}/sklep`,
             numberOfItems: 3,
-            itemListElement: CATEGORY_CARDS.map((c, i) => ({
+            itemListElement: CATEGORIES.map((c, i) => ({
               "@type": "ListItem",
               position: i + 1,
               url: `${SITE_URL}${c.href}`,
@@ -93,78 +89,52 @@ export default async function ShopHubPage() {
       />
 
       {/* Hero */}
-      <section className="bg-brand-50 py-14 lg:py-20">
-        <div className="container mx-auto max-w-7xl px-4 text-center">
+      <section className="bg-white pt-10 lg:pt-14">
+        <div className="container mx-auto max-w-4xl px-4">
           <Breadcrumbs
             items={[
               { label: "Strona główna", href: "/" },
               { label: "Sklep" },
             ]}
           />
-          <h1 className="font-display text-3xl tracking-[0.06em] text-brand-800 lg:text-4xl">
-            Gotowe wzory z plexi — kup od ręki, wysyłka w 48h
-          </h1>
-          <p className="mt-4 mx-auto max-w-2xl text-brand-600 leading-relaxed">
-            Cenniki, tabliczki, oznaczenia, logo — gotowe wzory do Twojego salonu. Bez czekania na projekt.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3 text-xs font-medium uppercase tracking-wider text-brand-500">
-            <span className="rounded-full border border-brand-200 px-4 py-1.5">Szybka wysyłka</span>
-            <span className="rounded-full border border-brand-200 px-4 py-1.5">Płatność online</span>
-            <span className="rounded-full border border-brand-200 px-4 py-1.5">
-              {trustBar?.realizations ?? "6 000+"} realizacji
-            </span>
+          <div className="mt-8 text-center">
+            <h1 className="font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
+              Sklep
+            </h1>
+            <div className="mt-3 mx-auto h-px w-12 bg-accent" />
           </div>
         </div>
       </section>
 
-      {/* 3 category cards */}
-      <section className="bg-white py-14 lg:py-20">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="grid gap-6 md:grid-cols-3">
-            {CATEGORY_CARDS.map((card, i) => {
-              const sanCat = sanityCategories[i];
+      {/* Kategorie obok siebie */}
+      <section className="bg-white pb-16 pt-12 lg:pb-24 lg:pt-16">
+        <nav className="container mx-auto max-w-4xl px-4">
+          <div className="grid gap-6 sm:grid-cols-3">
+            {CATEGORIES.map((cat, i) => {
+              const align = i === 0 ? "items-end text-right pr-[15%]" : i === 2 ? "items-start text-left pl-[15%]" : "items-center text-center";
               return (
-                <Link
-                  key={card.href}
-                  href={card.href}
-                  className="group flex flex-col overflow-hidden rounded-xl border border-brand-100 bg-white shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <div className="relative aspect-4/3 bg-brand-100">
-                    {sanCat?.heroImage?.asset?.url ? (
-                      <Image
-                        src={sanCat.heroImage.asset.url}
-                        alt={sanCat.heroImage.alt ?? card.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        placeholder={sanCat.heroImage.asset.metadata?.lqip ? "blur" : "empty"}
-                        blurDataURL={sanCat.heroImage.asset.metadata?.lqip}
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-5xl">
-                        {card.emoji}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-1 flex-col p-6">
-                    <h2 className="font-display text-xl tracking-wide text-brand-800">
-                      {card.title}
-                    </h2>
-                    <p className="mt-2 flex-1 text-sm leading-relaxed text-brand-600">
-                      {card.description}
-                    </p>
-                    <span className="mt-4 inline-flex items-center text-sm font-medium text-brand-800 group-hover:text-brand-900">
-                      {card.cta} &rarr;
-                    </span>
-                  </div>
-                </Link>
+              <Link
+                key={cat.href}
+                href={cat.href}
+                className={`group flex flex-col ${align} border border-brand-300 bg-[#EEE8E0] px-6 py-14 transition-colors hover:border-brand-500 lg:py-18 ${i === 0 ? "rounded-tl-[50%]" : ""} ${i === CATEGORIES.length - 1 ? "rounded-br-[50%]" : ""}`}
+              >
+                <h2 className="font-display text-xl tracking-wide text-brand-800 group-hover:text-brand-900 lg:text-2xl">
+                  {cat.title}
+                </h2>
+                <p className="mt-5 text-base leading-relaxed text-brand-400">
+                  {cat.description}
+                </p>
+                <span className="mt-auto pt-10 text-xs font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:text-brand-900">
+                  {cat.cta} &rarr;
+                </span>
+              </Link>
               );
             })}
           </div>
-        </div>
+        </nav>
       </section>
 
-      {/* Bestsellery — identyczny layout jak na HP */}
+      {/* Bestsellery */}
       {bestsellers.length > 0 && (
         <section>
           <div className="bg-white pt-4 pb-0 md:pt-5">
@@ -196,7 +166,7 @@ export default async function ShopHubPage() {
                 <div className="mt-3 mx-auto h-px w-12 bg-accent" />
               </div>
 
-              <div className="mx-auto max-w-[90%] grid grid-cols-2 items-start gap-x-4 gap-y-6 md:grid-cols-4 md:gap-x-6 md:gap-y-8">
+              <div className="mx-auto grid grid-cols-2 items-start gap-x-4 gap-y-6 md:grid-cols-4 md:gap-x-6 md:gap-y-8">
                 {bestsellers.slice(0, 4).map((product, index) => {
                   const frameVariant =
                     index === 0
@@ -250,31 +220,29 @@ export default async function ShopHubPage() {
         </section>
       )}
 
-      {/* Banner cross-sell custom */}
-      <section className="bg-white py-12 lg:py-16">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex flex-col items-center gap-4 rounded-2xl bg-brand-50 px-6 py-12 text-center lg:px-16">
-            <p className="font-display text-xl tracking-wide text-brand-800 lg:text-2xl">
-              Szukasz czegoś na zamówienie?
-            </p>
-            <p className="max-w-lg text-sm text-brand-600">
-              Logo z własnym projektem, cennik pod wymiar — wycena w 24h
-            </p>
-            <Link
-              href="/logo-3d/#formularz"
-              className="mt-2 inline-flex items-center justify-center rounded-md bg-brand-900 px-6 py-2.5 text-xs font-medium uppercase tracking-wider text-white transition-colors hover:bg-brand-800"
-            >
-              Zamów wycenę &rarr;
-            </Link>
-          </div>
+      {/* Custom CTA */}
+      <section className="bg-white py-16 lg:py-20">
+        <div className="container mx-auto max-w-2xl px-4 text-center">
+          <p className="font-display text-xl tracking-wide text-brand-800 lg:text-2xl">
+            Szukasz czegoś na zamówienie?
+          </p>
+          <p className="mt-3 text-sm text-brand-500">
+            Logo z własnym projektem, cennik pod wymiar — wycena w 24h
+          </p>
+          <Link
+            href="/logo-3d/#formularz"
+            className="mt-6 inline-flex items-center justify-center rounded border border-brand-300 px-8 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-brand-700 transition-colors hover:bg-brand-50 hover:text-brand-900"
+          >
+            Zamów wycenę &rarr;
+          </Link>
         </div>
       </section>
 
       {/* Trust bar */}
       <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
-        <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-brand-600">
-            <span>📷 {trustBar?.followers ?? "25 000+"} obserwujących</span>
+        <div className="container mx-auto max-w-4xl px-4 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px] text-brand-500">
+            <span>{trustBar?.followers ?? "25 000+"} obserwujących</span>
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
             <span className="text-brand-300">·</span>
@@ -282,13 +250,13 @@ export default async function ShopHubPage() {
           </div>
 
           {displayTestimonials.length > 0 && (
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
               {displayTestimonials.map((t) => (
-                <blockquote key={t._id} className="rounded-xl bg-white p-6 text-left shadow-sm">
-                  <p className="text-sm italic text-brand-700 leading-relaxed">
+                <blockquote key={t._id} className="text-center">
+                  <p className="text-sm italic leading-relaxed text-brand-600">
                     &ldquo;{t.quote}&rdquo;
                   </p>
-                  <footer className="mt-3 text-xs text-brand-500">
+                  <footer className="mt-2 text-xs text-brand-400">
                     — {t.name}{t.company ? `, ${t.company}` : ""}
                   </footer>
                 </blockquote>
@@ -298,7 +266,7 @@ export default async function ShopHubPage() {
 
           <Link
             href="/dlaczego-lumine#opinie"
-            className="mt-8 inline-block text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
+            className="mt-8 inline-block text-[11px] font-medium uppercase tracking-[0.2em] text-brand-500 hover:text-brand-900 transition-colors"
           >
             Więcej opinii &rarr;
           </Link>
