@@ -119,10 +119,44 @@ export const INSTAGRAM_POSTS_QUERY = `*[_type == "instagramPost"] | order(order 
   order
 }`;
 
+export const PRODUCT_FAQ_QUERY = `*[_type == "productFaq" && productHandle == $handle] | order(order asc) {
+  _id,
+  question,
+  answer,
+  order
+}`;
+
+export const SHOP_CATEGORIES_QUERY = `*[_type == "shopCategory"] | order(order asc) {
+  _id,
+  name,
+  icon,
+  heroImage {
+    asset-> {
+      _id,
+      url,
+      metadata { dimensions, lqip }
+    },
+    alt
+  },
+  description,
+  medusaCategoryId,
+  order
+}`;
+
+export const INSTAGRAM_GALLERY_QUERY = `*[_type == "instagramGallery"][0] {
+  slot1 { image { asset-> { _id, url, metadata { lqip } }, alt }, url },
+  slot2 { image { asset-> { _id, url, metadata { lqip } }, alt }, url },
+  slot3 { image { asset-> { _id, url, metadata { lqip } }, alt }, url },
+  slot4 { image { asset-> { _id, url, metadata { lqip } }, alt }, url },
+  slot5 { image { asset-> { _id, url, metadata { lqip } }, alt }, url },
+  slot6 { image { asset-> { _id, url, metadata { lqip } }, alt }, url }
+}`;
+
 export const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0] {
   title,
   description,
   announcementBar,
+  trustBar,
   socialLinks,
   footerText,
   titleTemplate,

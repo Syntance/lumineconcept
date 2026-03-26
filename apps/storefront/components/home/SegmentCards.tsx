@@ -10,7 +10,7 @@ const SEGMENTS = [
   },
   {
     title: "Gotowe wzory",
-    href: "/produkty",
+    href: "/sklep",
     image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80&fit=crop",
   },
   {

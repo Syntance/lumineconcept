@@ -97,3 +97,15 @@ export function trackFormStart(formName: string) {
 export function trackFormSubmit(formName: string) {
   trackEvent("form_submit", { form_name: formName });
 }
+
+export function trackCheckoutStepCompleted(step: number, stepName: string) {
+  trackEvent("checkout_step_completed", { step, step_name: stepName });
+}
+
+export function trackReferralApplied(code: string) {
+  trackEvent("referral_applied", { code });
+}
+
+export function trackCategoryViewed(category: string, path: string) {
+  trackEvent("category_viewed", { category, path });
+}

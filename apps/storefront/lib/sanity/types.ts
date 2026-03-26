@@ -111,6 +111,46 @@ export interface InstagramPost {
   order: number;
 }
 
+export interface ProductFaq {
+  _id: string;
+  question: string;
+  answer: string;
+  order: number;
+}
+
+export interface ShopCategory {
+  _id: string;
+  name: string;
+  icon?: string;
+  heroImage?: SanityImage;
+  description?: string;
+  medusaCategoryId?: string;
+  order: number;
+}
+
+export interface InstagramGallerySlot {
+  image: {
+    asset: { _id: string; url: string; metadata?: { lqip?: string } };
+    alt?: string;
+  };
+  url?: string;
+}
+
+export interface InstagramGallery {
+  slot1?: InstagramGallerySlot;
+  slot2?: InstagramGallerySlot;
+  slot3?: InstagramGallerySlot;
+  slot4?: InstagramGallerySlot;
+  slot5?: InstagramGallerySlot;
+  slot6?: InstagramGallerySlot;
+}
+
+export interface TrustBar {
+  followers?: string;
+  realizations?: string;
+  shippingLabel?: string;
+}
+
 export interface SiteSettings {
   title: string;
   description: string;
@@ -119,6 +159,7 @@ export interface SiteSettings {
     text: string;
     link?: string;
   };
+  trustBar?: TrustBar;
   socialLinks?: {
     instagram?: string;
     facebook?: string;

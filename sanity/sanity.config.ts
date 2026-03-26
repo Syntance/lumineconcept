@@ -10,6 +10,9 @@ import { testimonial } from "./schemas/testimonial";
 import { siteSettings } from "./schemas/site-settings";
 import { salonLogo } from "./schemas/salon-logo";
 import { instagramPost } from "./schemas/instagram-post";
+import { productFaq } from "./schemas/product-faq";
+import { shopCategory } from "./schemas/shop-category";
+import { instagramGallery } from "./schemas/instagram-gallery";
 
 export default defineConfig({
   name: "lumine-concept",
@@ -28,6 +31,9 @@ export default defineConfig({
       siteSettings,
       salonLogo,
       instagramPost,
+      productFaq,
+      shopCategory,
+      instagramGallery,
     ],
   },
 });

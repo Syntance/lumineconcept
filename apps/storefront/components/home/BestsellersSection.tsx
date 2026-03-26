@@ -67,7 +67,7 @@ export async function BestsellersSection() {
             return (
               <Link
                 key={product.handle}
-                href={`/produkty/${product.handle}`}
+                href={`/sklep/gotowe-wzory/${product.handle}`}
                 className="group flex min-h-0 min-w-0 flex-col items-center gap-2.5 w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 <div className="w-full">
@@ -98,7 +98,7 @@ export async function BestsellersSection() {
         {/* CTA */}
         <div className="mt-10 text-center">
           <Link
-            href="/produkty"
+            href="/sklep"
             className="text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
           >
             Zobacz cały sklep &rarr;

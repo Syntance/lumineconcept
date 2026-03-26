@@ -20,7 +20,7 @@ export default function OrderConfirmationPage() {
       </p>
       <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         <Link
-          href="/produkty"
+          href="/sklep"
           className="rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors"
         >
           Kontynuuj zakupy

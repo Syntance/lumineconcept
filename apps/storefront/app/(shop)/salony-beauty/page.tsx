@@ -33,7 +33,7 @@ export default function SalonyBeautyPage() {
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link
-                href="/produkty"
+                href="/sklep"
                 className="rounded-md bg-accent px-8 py-3 text-center text-sm font-semibold text-white hover:bg-accent-dark transition-colors"
               >
                 Zobacz produkty

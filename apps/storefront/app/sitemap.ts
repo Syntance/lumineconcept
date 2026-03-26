@@ -13,10 +13,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     {
-      url: `${SITE_URL}/produkty`,
+      url: `${SITE_URL}/sklep`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/sklep/gotowe-wzory`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.85,
+    },
+    {
+      url: `${SITE_URL}/sklep/logo-3d`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.85,
+    },
+    {
+      url: `${SITE_URL}/sklep/pakiety`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
     {
       url: `${SITE_URL}/salony-beauty`,
@@ -54,7 +72,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const { products } = await medusa.store.product.list({ limit: 1000 });
     productPages = products.map((product) => ({
-      url: `${SITE_URL}/produkty/${product.handle}`,
+      url: `${SITE_URL}/sklep/gotowe-wzory/${product.handle}`,
       lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.8,

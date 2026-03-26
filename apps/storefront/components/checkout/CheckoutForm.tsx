@@ -1,15 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
-import { trackFormStart, trackFormSubmit } from "@/lib/analytics/events";
+import { trackFormStart, trackFormSubmit, trackCheckoutStepCompleted } from "@/lib/analytics/events";
 
-type CheckoutStep = "shipping" | "payment" | "review";
+type CheckoutStep = 1 | 2 | 3;
+
+const STEPS = [
+  { number: 1, label: "Dane" },
+  { number: 2, label: "Dostawa" },
+  { number: 3, label: "Płatność" },
+] as const;
+
+const INPUT_CLASS =
+  "w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors";
+const LABEL_CLASS = "block text-sm font-medium text-brand-700 mb-1";
 
 export function CheckoutForm() {
-  const [step, setStep] = useState<CheckoutStep>("shipping");
+  const [step, setStep] = useState<CheckoutStep>(1);
+  const [formStarted, setFormStarted] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -21,132 +32,265 @@ export function CheckoutForm() {
     shippingOptionId: "",
     paymentProviderId: "",
     inpostLockerId: "",
+    newsletter: false,
+    wantInvoice: false,
+    companyName: "",
+    nip: "",
+    acceptTerms: false,
+    acceptRodo: false,
   });
 
-  const updateField = (field: keyof typeof formData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const updateField = useCallback(
+    <K extends keyof typeof formData>(field: K, value: (typeof formData)[K]) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
 
-  const handleShippingSubmit = () => {
-    trackFormSubmit("checkout_shipping");
-    setStep("payment");
-  };
+  const handleFocus = useCallback(() => {
+    if (!formStarted) {
+      setFormStarted(true);
+      trackFormStart("checkout");
+    }
+  }, [formStarted]);
 
-  const handlePaymentSubmit = () => {
-    trackFormSubmit("checkout_payment");
-    setStep("review");
-  };
+  const canGoToStep2 =
+    formData.email.includes("@") &&
+    formData.firstName.trim() !== "" &&
+    formData.lastName.trim() !== "" &&
+    formData.phone.trim() !== "" &&
+    formData.address.trim() !== "" &&
+    formData.city.trim() !== "" &&
+    formData.postalCode.trim() !== "";
+
+  const canGoToStep3 = formData.shippingOptionId !== "";
+
+  const canSubmit =
+    formData.paymentProviderId !== "" &&
+    formData.acceptTerms &&
+    formData.acceptRodo;
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-8">
-        <section>
-          <h2 className="font-display text-xl font-semibold text-brand-800 mb-6">
-            Dane kontaktowe
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label htmlFor="email" className="block text-sm font-medium text-brand-700 mb-1">
-                Email
+        {/* Step indicator */}
+        <nav aria-label="Postęp zamówienia" className="flex items-center gap-1">
+          {STEPS.map((s, i) => (
+            <div key={s.number} className="flex items-center">
+              {i > 0 && (
+                <div
+                  className={`mx-2 h-px w-8 sm:w-12 transition-colors ${
+                    step >= s.number ? "bg-accent" : "bg-brand-200"
+                  }`}
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (s.number < step) setStep(s.number as CheckoutStep);
+                }}
+                disabled={s.number > step}
+                className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  step === s.number
+                    ? "bg-accent text-white"
+                    : step > s.number
+                      ? "bg-accent/10 text-accent-dark cursor-pointer"
+                      : "bg-brand-100 text-brand-400"
+                }`}
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[11px]">
+                  {step > s.number ? "✓" : s.number}
+                </span>
+                <span className="hidden sm:inline">{s.label}</span>
+              </button>
+            </div>
+          ))}
+        </nav>
+
+        {/* Step 1 — Contact info */}
+        {step === 1 && (
+          <section className="space-y-6">
+            <h2 className="font-display text-xl font-semibold text-brand-800">
+              Dane kontaktowe
+            </h2>
+
+            {/* Email first */}
+            <div>
+              <label htmlFor="email" className={LABEL_CLASS}>
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 id="email"
                 type="email"
                 required
+                autoFocus
                 value={formData.email}
-                onFocus={() => trackFormStart("checkout")}
+                onFocus={handleFocus}
                 onChange={(e) => updateField("email", e.target.value)}
-                className="w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none"
+                className={INPUT_CLASS}
                 placeholder="twoj@email.pl"
               />
             </div>
-            <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-brand-700 mb-1">
-                Imię
-              </label>
-              <input
-                id="firstName"
-                type="text"
-                required
-                value={formData.firstName}
-                onChange={(e) => updateField("firstName", e.target.value)}
-                className="w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none"
-              />
-            </div>
-            <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-brand-700 mb-1">
-                Nazwisko
-              </label>
-              <input
-                id="lastName"
-                type="text"
-                required
-                value={formData.lastName}
-                onChange={(e) => updateField("lastName", e.target.value)}
-                className="w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none"
-              />
-            </div>
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-brand-700 mb-1">
-                Telefon
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
-                className="w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none"
-                placeholder="+48 000 000 000"
-              />
-            </div>
-            <div>
-              <label htmlFor="postalCode" className="block text-sm font-medium text-brand-700 mb-1">
-                Kod pocztowy
-              </label>
-              <input
-                id="postalCode"
-                type="text"
-                required
-                value={formData.postalCode}
-                onChange={(e) => updateField("postalCode", e.target.value)}
-                className="w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none"
-                placeholder="00-000"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="address" className="block text-sm font-medium text-brand-700 mb-1">
-                Adres
-              </label>
-              <input
-                id="address"
-                type="text"
-                required
-                value={formData.address}
-                onChange={(e) => updateField("address", e.target.value)}
-                className="w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none"
-                placeholder="ul. Przykładowa 1/2"
-              />
-            </div>
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium text-brand-700 mb-1">
-                Miasto
-              </label>
-              <input
-                id="city"
-                type="text"
-                required
-                value={formData.city}
-                onChange={(e) => updateField("city", e.target.value)}
-                className="w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none"
-              />
-            </div>
-          </div>
-        </section>
 
-        {step !== "shipping" || formData.email ? (
-          <section>
-            <h2 className="font-display text-xl font-semibold text-brand-800 mb-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="firstName" className={LABEL_CLASS}>
+                  Imię <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  required
+                  value={formData.firstName}
+                  onChange={(e) => updateField("firstName", e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className={LABEL_CLASS}>
+                  Nazwisko <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  required
+                  value={formData.lastName}
+                  onChange={(e) => updateField("lastName", e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <div>
+                <label htmlFor="phone" className={LABEL_CLASS}>
+                  Telefon <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  className={INPUT_CLASS}
+                  placeholder="+48 000 000 000"
+                />
+              </div>
+              <div>
+                <label htmlFor="postalCode" className={LABEL_CLASS}>
+                  Kod pocztowy <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="postalCode"
+                  type="text"
+                  required
+                  value={formData.postalCode}
+                  onChange={(e) => updateField("postalCode", e.target.value)}
+                  className={INPUT_CLASS}
+                  placeholder="00-000"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="address" className={LABEL_CLASS}>
+                  Adres <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="address"
+                  type="text"
+                  required
+                  value={formData.address}
+                  onChange={(e) => updateField("address", e.target.value)}
+                  className={INPUT_CLASS}
+                  placeholder="ul. Przykładowa 1/2"
+                />
+              </div>
+              <div>
+                <label htmlFor="city" className={LABEL_CLASS}>
+                  Miasto <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="city"
+                  type="text"
+                  required
+                  value={formData.city}
+                  onChange={(e) => updateField("city", e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </div>
+            </div>
+
+            {/* VAT Invoice */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.wantInvoice}
+                  onChange={(e) => updateField("wantInvoice", e.target.checked)}
+                  className="h-4 w-4 rounded border-brand-300 text-accent focus:ring-accent"
+                />
+                <span className="text-sm text-brand-700">Chcę fakturę VAT</span>
+              </label>
+
+              {formData.wantInvoice && (
+                <div className="grid gap-4 sm:grid-cols-2 pl-6">
+                  <div>
+                    <label htmlFor="companyName" className={LABEL_CLASS}>
+                      Nazwa firmy
+                    </label>
+                    <input
+                      id="companyName"
+                      type="text"
+                      value={formData.companyName}
+                      onChange={(e) => updateField("companyName", e.target.value)}
+                      className={INPUT_CLASS}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="nip" className={LABEL_CLASS}>
+                      NIP
+                    </label>
+                    <input
+                      id="nip"
+                      type="text"
+                      value={formData.nip}
+                      onChange={(e) => updateField("nip", e.target.value)}
+                      className={INPUT_CLASS}
+                      placeholder="0000000000"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Newsletter opt-in */}
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.newsletter}
+                onChange={(e) => updateField("newsletter", e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-brand-300 text-accent focus:ring-accent"
+              />
+              <span className="text-sm text-brand-600">
+                Chcę otrzymywać inspiracje, nowości i oferty specjalne na email
+              </span>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => {
+                trackFormSubmit("checkout_contact");
+                trackCheckoutStepCompleted(1, "contact");
+                setStep(2);
+              }}
+              disabled={!canGoToStep2}
+              className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            >
+              Przejdź do dostawy
+            </button>
+          </section>
+        )}
+
+        {/* Step 2 — Shipping */}
+        {step === 2 && (
+          <section className="space-y-6">
+            <h2 className="font-display text-xl font-semibold text-brand-800">
               Sposób dostawy
             </h2>
             <ShippingSelector
@@ -156,38 +300,79 @@ export function CheckoutForm() {
                 updateField("inpostLockerId", id)
               }
             />
-            {formData.shippingOptionId && step === "shipping" && (
-              <button
-                type="button"
-                onClick={handleShippingSubmit}
-                className="mt-6 w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 transition-colors"
-              >
-                Przejdź do płatności
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                trackFormSubmit("checkout_shipping");
+                trackCheckoutStepCompleted(2, "shipping");
+                setStep(3);
+              }}
+              disabled={!canGoToStep3}
+              className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            >
+              Przejdź do płatności
+            </button>
           </section>
-        ) : null}
+        )}
 
-        {step === "payment" || step === "review" ? (
-          <section>
-            <h2 className="font-display text-xl font-semibold text-brand-800 mb-6">
+        {/* Step 3 — Payment */}
+        {step === 3 && (
+          <section className="space-y-6">
+            <h2 className="font-display text-xl font-semibold text-brand-800">
               Płatność
             </h2>
             <PaymentSelector
               selectedProviderId={formData.paymentProviderId}
               onSelect={(id: string) => updateField("paymentProviderId", id)}
             />
-            {formData.paymentProviderId && step === "payment" && (
-              <button
-                type="button"
-                onClick={handlePaymentSubmit}
-                className="mt-6 w-full rounded-md bg-accent py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors"
-              >
-                Zamawiam i płacę
-              </button>
-            )}
+
+            <div className="space-y-3 border-t border-brand-100 pt-4">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.acceptTerms}
+                  onChange={(e) => updateField("acceptTerms", e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-brand-300 text-accent focus:ring-accent"
+                />
+                <span className="text-xs text-brand-600">
+                  Akceptuję{" "}
+                  <a href="/regulamin" className="underline hover:text-brand-900">
+                    regulamin sklepu
+                  </a>{" "}
+                  i{" "}
+                  <a href="/polityka-prywatnosci" className="underline hover:text-brand-900">
+                    politykę prywatności
+                  </a>{" "}
+                  <span className="text-red-500">*</span>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.acceptRodo}
+                  onChange={(e) => updateField("acceptRodo", e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-brand-300 text-accent focus:ring-accent"
+                />
+                <span className="text-xs text-brand-600">
+                  Wyrażam zgodę na przetwarzanie danych osobowych w celu realizacji zamówienia (RODO)
+                  <span className="text-red-500"> *</span>
+                </span>
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                trackFormSubmit("checkout_payment");
+              }}
+              disabled={!canSubmit}
+              className="w-full rounded-md bg-accent py-3 text-sm font-semibold text-white hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            >
+              Zamawiam i płacę
+            </button>
           </section>
-        ) : null}
+        )}
       </div>
 
       <div className="lg:col-span-1">

@@ -1,11 +1,21 @@
 import { medusa } from "./client";
 
-const REGION_ID = process.env.NEXT_PUBLIC_MEDUSA_REGION_ID;
+let cachedRegionId: string | null = process.env.NEXT_PUBLIC_MEDUSA_REGION_ID ?? null;
 
-if (!REGION_ID && typeof window === "undefined") {
-  console.warn(
-    "[Medusa] NEXT_PUBLIC_MEDUSA_REGION_ID is not set — product prices may not display correctly.",
+async function getRegionId(): Promise<string> {
+  if (cachedRegionId) return cachedRegionId;
+
+  const response = await medusa.store.region.list();
+  const plRegion = response.regions.find(
+    (r) => r.countries?.some((c) => c.iso_2 === "pl"),
   );
+
+  if (!plRegion) {
+    throw new Error("Region PL nie znaleziony. Skonfiguruj region w Medusa Admin.");
+  }
+
+  cachedRegionId = plRegion.id;
+  return cachedRegionId;
 }
 
 export async function getProducts(params?: {
@@ -14,12 +24,13 @@ export async function getProducts(params?: {
   category_id?: string[];
   order?: string;
 }) {
+  const regionId = await getRegionId();
   const response = await medusa.store.product.list({
     limit: params?.limit ?? 20,
     offset: params?.offset ?? 0,
     category_id: params?.category_id,
     order: params?.order,
-    region_id: REGION_ID,
+    region_id: regionId,
     fields: "+variants.calculated_price",
   });
 
@@ -27,8 +38,10 @@ export async function getProducts(params?: {
 }
 
 export async function getProductByHandle(handle: string) {
+  const regionId = await getRegionId();
   const response = await medusa.store.product.list({
     handle,
+    region_id: regionId,
     fields: "+variants.calculated_price,+variants.inventory_quantity",
   });
 
@@ -40,9 +53,10 @@ export async function getProductByHandle(handle: string) {
  * Falls back to the first `limit` products if none are tagged.
  */
 export async function getProductsByTag(tag: string, limit = 6) {
+  const regionId = await getRegionId();
   const response = await medusa.store.product.list({
     limit: 100,
-    region_id: REGION_ID,
+    region_id: regionId,
     fields: "+variants.calculated_price,+tags",
   });
 
