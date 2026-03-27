@@ -4,6 +4,18 @@ loadEnv(process.env.NODE_ENV ?? "development", process.cwd());
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
+// #region agent log
+console.log("[DEBUG-901fe7] medusa-config loaded", JSON.stringify({
+  NODE_ENV: process.env.NODE_ENV,
+  IS_PRODUCTION,
+  ADMIN_DISABLED: IS_PRODUCTION,
+  PORT: process.env.PORT,
+  DATABASE_URL_SET: !!process.env.DATABASE_URL,
+  REDIS_URL_SET: !!process.env.REDIS_URL,
+  CWD: process.cwd(),
+}));
+// #endregion
+
 export default defineConfig({
   admin: {
     disable: IS_PRODUCTION,
