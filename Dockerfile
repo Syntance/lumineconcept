@@ -14,29 +14,36 @@ RUN cd apps/backend && \
     NODE_OPTIONS="--max-old-space-size=2048" \
     DATABASE_URL=postgres://placeholder:placeholder@localhost/placeholder \
     pnpm medusa build 2>&1 && \
-    echo "=== Build done, checking admin ===" && \
+    echo "=== Build done ===" && \
     if [ -d "dist/public/admin" ]; then \
-      echo "Admin found at dist/public/admin — copying" && \
+      echo "Admin found — copying" && \
       mkdir -p public/admin && \
       cp -r dist/public/admin/* public/admin/ ; \
     else \
-      echo "WARN: No admin build output (DISABLE_ADMIN may be set)" ; \
-    fi
+      echo "WARN: No admin build output" ; \
+    fi && \
+    echo "=== .medusa/server check ===" && \
+    ls .medusa/server/medusa-config.js 2>/dev/null && echo "Server build OK" || echo "WARN: no compiled server"
 
 ENV NODE_ENV=production
-ENV NODE_OPTIONS="--max-old-space-size=384"
+ENV NODE_OPTIONS="--max-old-space-size=256"
 WORKDIR /app/apps/backend
 EXPOSE 8080
 
 CMD ["sh", "-c", "\
   echo '########## LUMINE BOOT ##########' && \
-  echo \"PORT env=$PORT | Will listen on 8080\" && \
+  echo \"HEAP=$NODE_OPTIONS\" && \
+  TOTAL_MEM=$(awk '/MemTotal/{printf \"%.0f\", $2/1024}' /proc/meminfo) && \
+  echo \"TOTAL_RAM=${TOTAL_MEM}MB\" && \
   echo \"DB=$([ -n \"$DATABASE_URL\" ] && echo OK || echo MISSING!)\" && \
   echo \"REDIS=$([ -n \"$REDIS_URL\" ] && echo OK || echo not-set)\" && \
-  echo \"HEAP=$NODE_OPTIONS\" && \
-  echo \"MEM=$(awk '/MemTotal/{print $2/1024\"MB\"}' /proc/meminfo)\" && \
-  echo '#################################' && \
+  echo '##################################' && \
+  echo '>>> Running migrations...' && \
   pnpm medusa db:migrate 2>&1 && \
-  echo '>>> Migrations done, starting server...' && \
+  echo '>>> Migrations done' && \
+  FREE_BEFORE=$(awk '/MemAvailable/{printf \"%.0f\", $2/1024}' /proc/meminfo) && \
+  echo \">>> Free RAM before start: ${FREE_BEFORE}MB\" && \
+  echo '>>> Starting Medusa on port 8080...' && \
+  (while true; do sleep 10; MU=$(awk '/MemAvailable/{printf \"%.0f\", $2/1024}' /proc/meminfo); echo \"[watchdog] Free RAM: ${MU}MB\"; done) & \
   exec pnpm medusa start -H 0.0.0.0 -p 8080 \
 "]
