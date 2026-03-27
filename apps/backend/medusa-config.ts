@@ -16,6 +16,7 @@ const STOREFRONT_URL =
 
 export default defineConfig({
   admin: {
+    disable: false,
     backendUrl: BACKEND_URL,
   },
   projectConfig: {
