@@ -4,19 +4,30 @@ loadEnv(process.env.NODE_ENV ?? "development", process.cwd());
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
+const BACKEND_URL =
+  process.env.MEDUSA_BACKEND_URL ??
+  (IS_PRODUCTION
+    ? "https://medusa-backend-lumineconceptpl.up.railway.app"
+    : "http://localhost:9000");
+
+const STOREFRONT_URL =
+  process.env.STORE_CORS ??
+  (IS_PRODUCTION ? "https://lumine.syntance.dev" : "http://localhost:3000");
 
 export default defineConfig({
   admin: {
-    disable: IS_PRODUCTION,
-    backendUrl: process.env.MEDUSA_BACKEND_URL ?? "http://localhost:9000",
+    disable: false,
+    backendUrl: BACKEND_URL,
   },
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL!,
     redisUrl: process.env.REDIS_URL,
     http: {
-      storeCors: process.env.STORE_CORS ?? "http://localhost:3000",
-      adminCors: process.env.ADMIN_CORS ?? "http://localhost:7001",
-      authCors: process.env.AUTH_CORS ?? "http://localhost:3000",
+      storeCors: STOREFRONT_URL,
+      adminCors:
+        process.env.ADMIN_CORS ?? `${BACKEND_URL},${STOREFRONT_URL}`,
+      authCors:
+        process.env.AUTH_CORS ?? `${BACKEND_URL},${STOREFRONT_URL}`,
       jwtSecret: process.env.JWT_SECRET ?? "supersecret-change-me",
       cookieSecret: process.env.COOKIE_SECRET ?? "supersecret-change-me",
     },
