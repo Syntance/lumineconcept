@@ -5,6 +5,6 @@
     "buildCommand": "pnpm turbo build --filter=@lumine/backend"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @lumine/backend db:migrate && cd apps/backend && medusa user -e kamil@lumineconcept.pl -p SecurePass2026 2>&1 || true && cd /app && pnpm start"
+    "startCommand": "pnpm --filter @lumine/backend db:migrate && pnpm --filter @lumine/backend exec medusa user -e kamil@lumineconcept.pl -p SecurePass2026 2>&1; pnpm start"
   }
 }
