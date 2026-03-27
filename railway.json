@@ -5,6 +5,6 @@
     "buildCommand": "pnpm turbo build --filter=@lumine/backend"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @lumine/backend db:migrate && pnpm start"
+    "startCommand": "pnpm --filter @lumine/backend db:migrate && pnpm --filter @lumine/backend build && pnpm start"
   }
 }
