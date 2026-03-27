@@ -2,9 +2,11 @@ import { defineConfig, loadEnv } from "@medusajs/framework/utils";
 
 loadEnv(process.env.NODE_ENV ?? "development", process.cwd());
 
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
 export default defineConfig({
   admin: {
-    disable: process.env.NODE_ENV === "production",
+    disable: IS_PRODUCTION,
     backendUrl: process.env.MEDUSA_BACKEND_URL ?? "http://localhost:9000",
   },
   projectConfig: {
