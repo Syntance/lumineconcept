@@ -5,6 +5,6 @@
     "buildCommand": "pnpm turbo build --filter=@lumine/backend"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @lumine/backend db:migrate && cd apps/backend && medusa start -H 0.0.0.0 -p ${PORT:-9000}"
+    "startCommand": "pnpm --filter @lumine/backend db:migrate && pnpm start"
   }
 }
