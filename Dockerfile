@@ -3,21 +3,23 @@ FROM node:20-slim
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
-# Copy workspace config + lockfile first (layer cache)
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc turbo.json ./
 COPY apps/backend/package.json apps/backend/
 
-# Install all dependencies
 RUN pnpm install --frozen-lockfile --filter @lumine/backend...
 
-# Copy backend source
 COPY apps/backend/ apps/backend/
 
-# Build medusa (server + admin dashboard)
 ENV NODE_OPTIONS="--max-old-space-size=2048"
-RUN cd apps/backend && pnpm medusa build
+RUN cd apps/backend && \
+    DATABASE_URL=postgres://placeholder:placeholder@localhost/placeholder \
+    pnpm medusa build && \
+    echo "=== Admin build check ===" && \
+    ls -la .medusa/server/public/admin/ 2>/dev/null || \
+    echo "WARNING: admin build directory not found" && \
+    find .medusa -name "index.html" 2>/dev/null || \
+    echo "WARNING: no index.html found in .medusa"
 
-# Runtime
 ENV NODE_ENV=production
 WORKDIR /app/apps/backend
 EXPOSE 9000
