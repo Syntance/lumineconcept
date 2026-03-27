@@ -21,20 +21,18 @@ RUN cd apps/backend && \
     ls public/admin/index.html
 
 ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=384"
 WORKDIR /app/apps/backend
-EXPOSE 9000
+EXPOSE 8080
 
 CMD ["sh", "-c", "\
-  echo '=== LUMINE BOOT DIAG ===' && \
-  echo \"PORT=$PORT\" && \
-  echo \"NODE_OPTIONS=$NODE_OPTIONS\" && \
-  echo \"NODE_ENV=$NODE_ENV\" && \
-  echo \"DATABASE_URL set: $([ -n \"$DATABASE_URL\" ] && echo YES || echo NO)\" && \
-  echo \"REDIS_URL set: $([ -n \"$REDIS_URL\" ] && echo YES || echo NO)\" && \
-  echo \"MEDUSA_BACKEND_URL=$MEDUSA_BACKEND_URL\" && \
+  echo '=== LUMINE BOOT ===' && \
+  echo \"PORT=${PORT:-not set} | Listening on 8080\" && \
+  echo \"DATABASE_URL=$([ -n \"$DATABASE_URL\" ] && echo SET || echo MISSING)\" && \
+  echo \"REDIS_URL=$([ -n \"$REDIS_URL\" ] && echo SET || echo MISSING)\" && \
   echo \"Memory: $(cat /proc/meminfo | head -1)\" && \
-  echo '=== Running migrations ===' && \
+  echo \"NODE_OPTIONS=$NODE_OPTIONS\" && \
   pnpm medusa db:migrate && \
-  echo '=== Starting Medusa on port ${PORT:-9000} ===' && \
-  exec pnpm medusa start -H 0.0.0.0 -p ${PORT:-9000} \
+  echo '=== Starting Medusa on port 8080 ===' && \
+  exec pnpm medusa start -H 0.0.0.0 -p 8080 \
 "]
