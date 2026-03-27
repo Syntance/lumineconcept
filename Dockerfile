@@ -21,12 +21,10 @@ RUN cd apps/backend && \
       cp -r dist/public/admin/* public/admin/ ; \
     else \
       echo "WARN: No admin build output" ; \
-    fi && \
-    echo "=== .medusa/server check ===" && \
-    ls .medusa/server/medusa-config.js 2>/dev/null && echo "Server build OK" || echo "WARN: no compiled server"
+    fi
 
 ENV NODE_ENV=production
-ENV NODE_OPTIONS="--max-old-space-size=256"
+ENV NODE_OPTIONS="--max-old-space-size=512"
 WORKDIR /app/apps/backend
 EXPOSE 8080
 
@@ -37,13 +35,9 @@ CMD ["sh", "-c", "\
   echo \"TOTAL_RAM=${TOTAL_MEM}MB\" && \
   echo \"DB=$([ -n \"$DATABASE_URL\" ] && echo OK || echo MISSING!)\" && \
   echo \"REDIS=$([ -n \"$REDIS_URL\" ] && echo OK || echo not-set)\" && \
-  echo '##################################' && \
+  echo '#################################' && \
   echo '>>> Running migrations...' && \
   pnpm medusa db:migrate 2>&1 && \
-  echo '>>> Migrations done' && \
-  FREE_BEFORE=$(awk '/MemAvailable/{printf \"%.0f\", $2/1024}' /proc/meminfo) && \
-  echo \">>> Free RAM before start: ${FREE_BEFORE}MB\" && \
-  echo '>>> Starting Medusa on port 8080...' && \
-  (while true; do sleep 10; MU=$(awk '/MemAvailable/{printf \"%.0f\", $2/1024}' /proc/meminfo); echo \"[watchdog] Free RAM: ${MU}MB\"; done) & \
+  echo '>>> Migrations done, starting server on port 8080...' && \
   exec pnpm medusa start -H 0.0.0.0 -p 8080 \
 "]
