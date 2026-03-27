@@ -10,18 +10,18 @@ RUN pnpm install --frozen-lockfile --filter @lumine/backend...
 
 COPY apps/backend/ apps/backend/
 
+ARG CACHEBUST=2026032722
+
 RUN cd apps/backend && \
     NODE_OPTIONS="--max-old-space-size=2048" \
     DATABASE_URL=postgres://placeholder:placeholder@localhost/placeholder \
     pnpm medusa build 2>&1 && \
     echo "=== Build done ===" && \
-    if [ -d "dist/public/admin" ]; then \
-      echo "Admin found — copying" && \
-      mkdir -p public/admin && \
-      cp -r dist/public/admin/* public/admin/ ; \
-    else \
-      echo "WARN: No admin build output" ; \
-    fi
+    ls -la dist/public/admin/index.html 2>/dev/null && \
+    mkdir -p public/admin && \
+    cp -r dist/public/admin/* public/admin/ && \
+    ls -la public/admin/index.html && \
+    echo "=== Admin OK ==="
 
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=512"
