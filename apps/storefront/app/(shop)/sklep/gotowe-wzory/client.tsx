@@ -133,6 +133,7 @@ export function ShopGridClient({
   const [allProducts, setAllProducts] = useState<SimpleProduct[]>(initialProducts);
   const [hasMore, setHasMore] = useState(initialProducts.length < totalCount);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRefetching, setIsRefetching] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [filters, setFilters] = useState<ActiveFilters>({
@@ -148,6 +149,38 @@ export function ShopGridClient({
   useEffect(() => {
     trackCategoryViewed(productBasePath.split("/").pop() ?? "all", productBasePath);
   }, [productBasePath]);
+
+  // Refetch when category or sort changes
+  useEffect(() => {
+    let cancelled = false;
+
+    async function refetch() {
+      setIsRefetching(true);
+      try {
+        const params = new URLSearchParams();
+        params.set("_offset", "0");
+        params.set("_limit", String(PAGE_SIZE));
+        if (filters.category) params.set("category", filters.category);
+        params.set("sort", filters.sort);
+
+        const res = await fetch(`/api/products?${params.toString()}`);
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { products: SimpleProduct[]; count: number };
+        if (cancelled) return;
+        setAllProducts(data.products);
+        setHasMore(data.products.length < data.count);
+      } finally {
+        if (!cancelled) setIsRefetching(false);
+      }
+    }
+
+    // Skip on initial render when we already have server-loaded data
+    if (filters.category !== initialFilter || filters.sort !== initialSort) {
+      refetch();
+    }
+
+    return () => { cancelled = true; };
+  }, [filters.category, filters.sort]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filterConfig = useMemo(() => extractFilterConfig(allProducts), [allProducts]);
 
@@ -225,7 +258,17 @@ export function ShopGridClient({
         />
 
         {/* Product grid */}
-        {filteredProducts.length > 0 ? (
+        {isRefetching ? (
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-square rounded-lg bg-brand-100" />
+                <div className="mt-3 h-4 w-3/4 rounded bg-brand-100" />
+                <div className="mt-2 h-4 w-1/3 rounded bg-brand-100" />
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
             {filteredProducts.map((product) => (
               <div key={product.id} className="relative">

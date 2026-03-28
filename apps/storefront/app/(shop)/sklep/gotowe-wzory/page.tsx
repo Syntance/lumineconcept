@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Link from "next/link";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
 import { sanityClient } from "@/lib/sanity/client";
 import { SITE_SETTINGS_QUERY, TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
@@ -43,12 +42,7 @@ export default async function GotoweWzoryPage({
 }) {
   const params = await searchParams;
 
-  const [productsResponse, categories, settings, testimonials] = await Promise.all([
-    getProducts({
-      limit: 12,
-      offset: 0,
-      order: params.sort ?? "-created_at",
-    }).catch(() => null),
+  const [allCategories, settings, testimonials] = await Promise.all([
     getProductCategories().catch(() => []),
     sanityClient
       .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
@@ -57,6 +51,22 @@ export default async function GotoweWzoryPage({
       .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
       .catch(() => []),
   ]);
+
+  // Resolve category handle from ?kat= to category ID
+  const initialCategoryId = params.kat
+    ? allCategories.find(
+        (c) => c.handle === params.kat || c.id === params.kat,
+      )?.id
+    : undefined;
+
+  const productsResponse = await getProducts({
+    limit: 12,
+    offset: 0,
+    category_id: initialCategoryId ? [initialCategoryId] : undefined,
+    order: params.sort ?? "-created_at",
+  }).catch(() => null);
+
+  const categories = allCategories;
 
   const products = productsResponse?.products ?? [];
   const totalCount = productsResponse?.count ?? 0;
@@ -120,7 +130,7 @@ export default async function GotoweWzoryPage({
             <ShopGridClient
               initialProducts={initialProducts}
               totalCount={totalCount}
-              initialFilter={params.kat}
+              initialFilter={initialCategoryId}
               initialSort={params.sort ?? "-created_at"}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/gotowe-wzory"

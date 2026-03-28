@@ -24,6 +24,7 @@ export interface ActiveFilters {
 
 export const SORT_OPTIONS = [
   { value: "-created_at", label: "Najnowsze" },
+  { value: "created_at", label: "Najstarsze" },
   { value: "title", label: "Nazwa A-Z" },
   { value: "-title", label: "Nazwa Z-A" },
 ] as const;
