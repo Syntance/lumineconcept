@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getProductByHandle, getProducts } from "@/lib/medusa/products";
 import { sanityClient } from "@/lib/sanity/client";
-import { PRODUCT_FAQ_QUERY } from "@/lib/sanity/queries";
-import type { ProductFaq } from "@/lib/sanity/types";
+import { PRODUCT_FAQ_QUERY, SITE_SETTINGS_QUERY } from "@/lib/sanity/queries";
+import type { ProductFaq, SiteSettings, CheckoutCallout } from "@/lib/sanity/types";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { TrustBadges } from "@/components/marketing/TrustBadges";
@@ -42,6 +42,7 @@ interface ProductPageLayoutProps {
         inventory_quantity: number;
       }>;
     };
+    checkoutCallout?: CheckoutCallout | null;
   }>;
 }
 
@@ -52,11 +53,14 @@ export async function ProductPageLayout({
   categoryHref,
   ProductPageClient,
 }: ProductPageLayoutProps) {
-  const [product, faqs] = await Promise.all([
+  const [product, faqs, siteSettings] = await Promise.all([
     getProductData(slug),
     sanityClient
       .fetch<ProductFaq[]>(PRODUCT_FAQ_QUERY, { handle: slug }, { next: { revalidate: 300 } })
       .catch(() => []),
+    sanityClient
+      .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
+      .catch(() => null),
   ]);
   if (!product) notFound();
 
@@ -172,6 +176,7 @@ export async function ProductPageLayout({
                   inventory_quantity: v.inventory_quantity,
                 })),
               }}
+              checkoutCallout={siteSettings?.checkoutCallout ?? null}
             />
 
             <TrustBadges />
@@ -197,16 +202,21 @@ export async function ProductPageLayout({
               Może Ci się spodobać
             </h2>
             <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-              {crossSellProducts.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  handle={p.handle ?? ""}
-                  title={p.title}
-                  thumbnail={p.thumbnail ?? null}
-                  price={extractPrice(p.variants?.[0])}
-                  href={`${basePath}/${p.handle}`}
-                />
-              ))}
+              {crossSellProducts.map((p) => {
+                const firstVariant = (p.variants as unknown as Array<{ id: string }> | undefined)?.[0];
+                return (
+                  <ProductCard
+                    key={p.id}
+                    handle={p.handle ?? ""}
+                    title={p.title}
+                    thumbnail={p.thumbnail ?? null}
+                    price={extractPrice(p.variants?.[0])}
+                    href={`${basePath}/${p.handle}`}
+                    variantId={firstVariant?.id}
+                    productId={p.id}
+                  />
+                );
+              })}
             </div>
           </div>
         </section>

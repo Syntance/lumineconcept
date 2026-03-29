@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ProductVariantSelector } from "@/components/product/ProductVariantSelector";
+import { ProductVariantSelector, CUSTOM_COLOR_VALUE, isMatAllowed } from "@/components/product/ProductVariantSelector";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { trackProductViewed } from "@/lib/analytics/events";
+
+interface CheckoutCallout {
+  enabled?: boolean;
+  title?: string;
+  message?: string;
+  confirmLabel?: string;
+}
 
 interface ProductPageClientProps {
   product: {
@@ -20,9 +27,10 @@ interface ProductPageClientProps {
       inventory_quantity: number;
     }>;
   };
+  checkoutCallout?: CheckoutCallout | null;
 }
 
-export function ProductPageClient({ product }: ProductPageClientProps) {
+export function ProductPageClient({ product, checkoutCallout }: ProductPageClientProps) {
   const router = useRouter();
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
@@ -34,13 +42,21 @@ export function ProductPageClient({ product }: ProductPageClientProps) {
     return initial;
   });
 
+  const [customText, setCustomText] = useState("");
+  const [customColor, setCustomColor] = useState<string | null>(null);
+  const [matFinish, setMatFinish] = useState(false);
+
   const ctaRef = useRef<HTMLDivElement>(null);
   const [showSticky, setShowSticky] = useState(false);
+  const [calloutAction, setCalloutAction] = useState<"cart" | "checkout" | null>(null);
 
   const selectedVariant = product.variants.find((variant) =>
-    Object.entries(selectedOptions).every(
-      ([key, value]) => variant.options[key] === value,
-    ),
+    Object.entries(selectedOptions).every(([key, value]) => {
+      if (key === "Kolor" && value === CUSTOM_COLOR_VALUE) {
+        return true;
+      }
+      return variant.options[key] === value;
+    }),
   );
 
   useEffect(() => {
@@ -64,8 +80,52 @@ export function ProductPageClient({ product }: ProductPageClientProps) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!calloutAction) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCalloutAction(null);
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [calloutAction]);
+
   const handleOptionChange = (optionTitle: string, value: string) => {
     setSelectedOptions((prev) => ({ ...prev, [optionTitle]: value }));
+    if (optionTitle === "Kolor") {
+      if (value !== CUSTOM_COLOR_VALUE) {
+        setCustomColor(null);
+      }
+      if (!isMatAllowed(value)) {
+        setMatFinish(false);
+      }
+    }
+  };
+
+  const buildMetadata = useCallback((): Record<string, string> | undefined => {
+    const meta: Record<string, string> = {};
+    if (customText.trim()) meta.custom_text = customText.trim();
+    if (customColor) meta.custom_color = customColor;
+    if (matFinish) meta.mat_finish = "true";
+    return Object.keys(meta).length > 0 ? meta : undefined;
+  }, [customText, customColor, matFinish]);
+
+  const calloutEnabled = checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
+
+  const handleBeforeAdd = useCallback(() => {
+    if (calloutEnabled) {
+      setCalloutAction("cart");
+      return true;
+    }
+    return false;
+  }, [calloutEnabled]);
+
+  const handleBuyNow = () => {
+    if (!selectedVariant) return;
+    if (calloutEnabled) {
+      setCalloutAction("checkout");
+    } else {
+      router.push("/checkout");
+    }
   };
 
   const qty = selectedVariant?.inventory_quantity ?? 0;
@@ -77,9 +137,30 @@ export function ProductPageClient({ product }: ProductPageClientProps) {
           options={product.options}
           selectedOptions={selectedOptions}
           onOptionChange={handleOptionChange}
+          customColor={customColor}
+          onCustomColorChange={setCustomColor}
+          matFinish={matFinish}
+          onMatFinishChange={setMatFinish}
         />
 
-        {/* Stock indicator */}
+        <div>
+          <label htmlFor="custom-text" className="mb-2 block text-sm font-medium text-brand-700">
+            Twój tekst <span className="font-normal text-brand-400">(opcjonalnie)</span>
+          </label>
+          <textarea
+            id="custom-text"
+            value={customText}
+            onChange={(e) => setCustomText(e.target.value)}
+            placeholder="Wpisz treść, np. nazwę salonu, imię…"
+            rows={2}
+            maxLength={200}
+            className="w-full resize-none rounded-lg border border-brand-200 px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:border-accent focus:outline-none"
+          />
+          {customText.length > 0 && (
+            <p className="mt-1 text-right text-xs text-brand-400">{customText.length}/200</p>
+          )}
+        </div>
+
         {selectedVariant && qty > 5 && (
           <p className="flex items-center gap-1.5 text-sm text-green-700">
             <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
@@ -110,14 +191,12 @@ export function ProductPageClient({ product }: ProductPageClientProps) {
             }}
             disabled={!selectedVariant || qty === 0}
             maxQuantity={qty > 0 ? qty : undefined}
+            onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
+            metadata={buildMetadata()}
           />
           <button
             type="button"
-            onClick={() => {
-              if (selectedVariant) {
-                router.push("/checkout");
-              }
-            }}
+            onClick={handleBuyNow}
             disabled={!selectedVariant || qty === 0}
             className="w-full rounded-md border border-brand-300 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -146,7 +225,63 @@ export function ProductPageClient({ product }: ProductPageClientProps) {
               }}
               disabled={!selectedVariant || qty === 0}
               compact
+              onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
+              metadata={buildMetadata()}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Callout Modal */}
+      {calloutAction && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setCalloutAction(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={checkoutCallout?.title ?? "Informacja"}
+        >
+          <div
+            className="mx-4 w-full max-w-md rounded-xl border border-brand-200 bg-white p-8 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {checkoutCallout?.title && (
+              <h2 className="font-display text-lg tracking-wide text-brand-800">
+                {checkoutCallout.title}
+              </h2>
+            )}
+            {checkoutCallout?.message && (
+              <p className="mt-3 text-sm leading-relaxed text-brand-600 whitespace-pre-line">
+                {checkoutCallout.message}
+              </p>
+            )}
+            <div className="mt-6 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const action = calloutAction;
+                  setCalloutAction(null);
+                  if (action === "checkout") {
+                    router.push("/checkout");
+                  } else if (action === "cart") {
+                    window.dispatchEvent(new Event("callout-confirmed-cart"));
+                  }
+                }}
+                className="w-full rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+              >
+                {checkoutCallout?.confirmLabel ?? "Rozumiem, kontynuuj"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCalloutAction(null);
+                  window.dispatchEvent(new Event("callout-cancelled"));
+                }}
+                className="w-full rounded-md border border-brand-200 px-6 py-2.5 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-50"
+              >
+                Anuluj
+              </button>
+            </div>
           </div>
         </div>
       )}

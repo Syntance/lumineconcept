@@ -101,6 +101,43 @@ export const siteSettings = defineType({
     }),
 
     defineField({
+      name: "checkoutCallout",
+      title: "Callout przed dodaniem do koszyka / zakupem",
+      type: "object",
+      group: "general",
+      description:
+        "Komunikat wyświetlany po kliknięciu „Dodaj do koszyka" lub „Kup teraz" na stronie produktu.",
+      fields: [
+        {
+          name: "enabled",
+          title: "Włączony",
+          type: "boolean",
+          initialValue: true,
+        },
+        {
+          name: "title",
+          title: "Nagłówek",
+          type: "string",
+          initialValue: "UWAGA",
+        },
+        {
+          name: "message",
+          title: "Treść komunikatu",
+          type: "text",
+          rows: 4,
+          initialValue:
+            "Nie ingerujemy w przesłany tekst. Prosimy o dokładne sprawdzenie poprawności treści.",
+        },
+        {
+          name: "confirmLabel",
+          title: "Tekst przycisku potwierdzenia",
+          type: "string",
+          initialValue: "Rozumiem, kontynuuj",
+        },
+      ],
+    }),
+
+    defineField({
       name: "socialLinks",
       title: "Linki do social media",
       type: "object",

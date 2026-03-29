@@ -17,8 +17,9 @@ export function useCart() {
         currency: string;
       },
       quantity = 1,
+      metadata?: Record<string, string>,
     ) => {
-      await cart.addItem(variantId, quantity);
+      await cart.addItem(variantId, quantity, metadata);
       trackAddToCart({
         id: productData.id,
         title: productData.title,

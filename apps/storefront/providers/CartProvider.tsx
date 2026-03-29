@@ -19,6 +19,7 @@ interface CartItem {
   quantity: number;
   unit_price: number;
   total: number;
+  metadata?: Record<string, string>;
 }
 
 interface CartState {
@@ -36,7 +37,7 @@ interface CartContextType extends CartState {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addItem: (variantId: string, quantity?: number) => Promise<void>;
+  addItem: (variantId: string, quantity?: number, metadata?: Record<string, string>) => Promise<void>;
   updateItem: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
   refreshCart: () => Promise<void>;
@@ -56,6 +57,7 @@ function mapCartItems(items: Array<Record<string, unknown>>): CartItem[] {
     quantity: item.quantity as number,
     unit_price: item.unit_price as number,
     total: item.total as number,
+    metadata: item.metadata as Record<string, string> | undefined,
   }));
 }
 
@@ -116,11 +118,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [getOrCreateCart]);
 
   const addItem = useCallback(
-    async (variantId: string, quantity = 1) => {
+    async (variantId: string, quantity = 1, metadata?: Record<string, string>) => {
       if (!cart.id) return;
       setIsLoading(true);
       try {
-        const updated = await cartApi.addLineItem(cart.id, variantId, quantity);
+        const updated = await cartApi.addLineItem(cart.id, variantId, quantity, metadata);
         updateCartState(updated as unknown as Record<string, unknown>);
         setIsOpen(true);
       } finally {

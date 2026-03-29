@@ -1,7 +1,7 @@
 "use client";
 
 import { ShoppingBag, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 
 interface AddToCartButtonProps {
@@ -15,6 +15,9 @@ interface AddToCartButtonProps {
   disabled?: boolean;
   compact?: boolean;
   maxQuantity?: number;
+  /** If provided, called before adding to cart. Return true to prevent the default add-to-cart action (e.g. to show a callout first). */
+  onBeforeAdd?: () => boolean;
+  metadata?: Record<string, string>;
 }
 
 export function AddToCartButton({
@@ -23,20 +26,47 @@ export function AddToCartButton({
   disabled,
   compact,
   maxQuantity = 99,
+  onBeforeAdd,
+  metadata,
 }: AddToCartButtonProps) {
   const { addItemWithTracking } = useCart();
   const [isAdding, setIsAdding] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [pendingFromCallout, setPendingFromCallout] = useState(false);
 
-  const handleAddToCart = async () => {
+  const doAdd = async () => {
     if (!variantId) return;
     setIsAdding(true);
     try {
-      await addItemWithTracking(variantId, productData, quantity);
+      await addItemWithTracking(variantId, productData, quantity, metadata);
     } finally {
       setIsAdding(false);
     }
   };
+
+  const handleAddToCart = () => {
+    if (!variantId) return;
+    if (onBeforeAdd?.()) {
+      setPendingFromCallout(true);
+      return;
+    }
+    doAdd();
+  };
+
+  useEffect(() => {
+    if (!pendingFromCallout) return;
+    const handler = () => {
+      setPendingFromCallout(false);
+      doAdd();
+    };
+    window.addEventListener("callout-confirmed-cart", handler);
+    const cancel = () => setPendingFromCallout(false);
+    window.addEventListener("callout-cancelled", cancel);
+    return () => {
+      window.removeEventListener("callout-confirmed-cart", handler);
+      window.removeEventListener("callout-cancelled", cancel);
+    };
+  });
 
   if (compact) {
     return (
@@ -93,7 +123,7 @@ export function AddToCartButton({
         ) : (
           <ShoppingBag className="h-4 w-4" />
         )}
-        {!variantId ? "Wybierz wariant" : "Dodaj do koszyka"}
+        Dodaj do koszyka
       </button>
     </div>
   );

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { CloudinaryImage } from "../common/CloudinaryImage";
 import { PriceDisplay } from "./PriceDisplay";
+import { AddToCartButton } from "./AddToCartOverlay";
 
 export type ProductCardFrameVariant = "square" | "arch-up" | "arch-down";
 
@@ -23,6 +24,8 @@ interface ProductCardProps {
   badge?: "bestseller" | "nowość" | null;
   colorSwatches?: string[];
   hasVariantPrices?: boolean;
+  variantId?: string;
+  productId?: string;
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -59,6 +62,8 @@ export function ProductCard({
   badge,
   colorSwatches,
   hasVariantPrices = false,
+  variantId,
+  productId,
 }: ProductCardProps) {
   const sharpSquare = sharpCorners && frameVariant === "square";
 
@@ -118,6 +123,9 @@ export function ProductCard({
             {badge === "bestseller" ? "Bestseller" : "Nowość"}
           </span>
         )}
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-center bg-brand-900/70 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
+          Zobacz produkt
+        </span>
       </div>
       {!imageOnly && (
         <div className="flex min-h-0 flex-1 flex-col justify-between gap-2 p-4">
@@ -139,19 +147,35 @@ export function ProductCard({
               )}
             </div>
           )}
-          <div className="relative shrink-0 flex items-center justify-center rounded-md border border-[#EEE8E0] bg-white py-2 px-3 transition-all duration-200 group-hover:bg-[#EEE8E0]">
-            <span className="transition-opacity duration-200 group-hover:opacity-0">
+          {variantId && productId ? (
+            <AddToCartButton
+              variantId={variantId}
+              productId={productId}
+              title={title}
+              price={price}
+            >
               <PriceDisplay
                 amount={price}
                 compareAtAmount={compareAtPrice}
                 currency={currency}
                 prefix={hasVariantPrices ? "od" : undefined}
               />
-            </span>
-            <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              Zobacz produkt
-            </span>
-          </div>
+            </AddToCartButton>
+          ) : (
+            <div className="relative shrink-0 flex items-center justify-center rounded-md border border-[#EEE8E0] bg-white py-2 px-3 transition-all duration-200 group-hover:bg-[#EEE8E0]">
+              <span className="transition-opacity duration-200 group-hover:opacity-0">
+                <PriceDisplay
+                  amount={price}
+                  compareAtAmount={compareAtPrice}
+                  currency={currency}
+                  prefix={hasVariantPrices ? "od" : undefined}
+                />
+              </span>
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                Zobacz produkt
+              </span>
+            </div>
+          )}
         </div>
       )}
     </article>

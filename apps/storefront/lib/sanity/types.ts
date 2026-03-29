@@ -151,6 +151,13 @@ export interface TrustBar {
   shippingLabel?: string;
 }
 
+export interface CheckoutCallout {
+  enabled?: boolean;
+  title?: string;
+  message?: string;
+  confirmLabel?: string;
+}
+
 export interface SiteSettings {
   title: string;
   description: string;
@@ -160,6 +167,7 @@ export interface SiteSettings {
     link?: string;
   };
   trustBar?: TrustBar;
+  checkoutCallout?: CheckoutCallout;
   socialLinks?: {
     instagram?: string;
     facebook?: string;

@@ -13,10 +13,16 @@ export async function getCart(cartId: string) {
   return response.cart;
 }
 
-export async function addLineItem(cartId: string, variantId: string, quantity: number) {
+export async function addLineItem(
+  cartId: string,
+  variantId: string,
+  quantity: number,
+  metadata?: Record<string, string>,
+) {
   const response = await medusa.store.cart.createLineItem(cartId, {
     variant_id: variantId,
     quantity,
+    ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
   });
   return response.cart;
 }

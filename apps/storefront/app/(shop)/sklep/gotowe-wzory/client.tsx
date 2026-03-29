@@ -16,6 +16,7 @@ export interface SimpleProduct {
   thumbnail: string | null;
   price: number;
   hasVariantPrices: boolean;
+  variantId: string | null;
   tags: string[];
   options: Record<string, string[]>;
 }
@@ -340,6 +341,8 @@ export function ShopGridClient({
                   badge={getBadge(product.tags)}
                   colorSwatches={product.options["Kolor"]}
                   hasVariantPrices={product.hasVariantPrices}
+                  variantId={product.variantId ?? undefined}
+                  productId={product.id}
                 />
               </div>
             ))}

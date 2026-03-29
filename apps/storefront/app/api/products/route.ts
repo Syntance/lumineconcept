@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
 
     const products = response.products.map((p) => {
       const variants = (p.variants ?? []) as unknown as Array<{
+        id: string;
         calculated_price?: { calculated_amount: number };
       }>;
       const prices = variants
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
         thumbnail: p.thumbnail ?? null,
         price: prices.length > 0 ? Math.min(...prices) : 0,
         hasVariantPrices: new Set(prices).size > 1,
+        variantId: variants[0]?.id ?? null,
         tags: (p.tags ?? []).map(
           (t) => ((t as unknown as { value: string }).value ?? "").toLowerCase(),
         ),
