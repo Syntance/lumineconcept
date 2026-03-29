@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, Loader2 } from "lucide-react";
+import { Minus, Plus, Trash2, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/utils";
@@ -53,28 +53,27 @@ export function CartItem({ item }: { item: CartItemData }) {
   };
 
   const handleTouchEnd = () => {
-    if (swipeOffset < -60) {
-      handleRemove();
-    }
+    if (swipeOffset < -60) handleRemove();
     setSwipeOffset(0);
     touchStartRef.current = null;
   };
 
   return (
-    <div className="relative overflow-hidden rounded-lg">
-      {/* Red background behind swipe */}
-      <div className="absolute inset-y-0 right-0 flex w-24 items-center justify-center bg-red-500 text-white text-xs font-medium">
+    <div className="relative overflow-hidden">
+      {/* Swipe-to-delete background */}
+      <div className="absolute inset-y-0 right-0 flex w-24 items-center justify-center bg-red-500 text-[11px] font-medium uppercase tracking-wide text-white">
         Usuń
       </div>
 
       <div
-        className={`relative flex gap-4 bg-white transition-transform ${isUpdating ? "opacity-60" : ""}`}
+        className={`relative flex gap-4 bg-white py-4 transition-all ${isUpdating ? "opacity-50" : ""}`}
         style={{ transform: `translateX(${swipeOffset}px)` }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="h-20 w-20 shrink-0 rounded-md bg-brand-50 overflow-hidden">
+        {/* Thumbnail */}
+        <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-lg bg-brand-50">
           {item.thumbnail ? (
             <img
               src={item.thumbnail}
@@ -82,54 +81,60 @@ export function CartItem({ item }: { item: CartItemData }) {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-brand-300 text-xs">
+            <div className="flex h-full w-full items-center justify-center text-[10px] text-brand-300">
               Brak zdjęcia
             </div>
           )}
         </div>
-        <div className="flex flex-1 flex-col justify-between">
-          <div className="flex justify-between">
-            <h3 className="text-sm font-medium text-brand-800 line-clamp-2">
+
+        {/* Content */}
+        <div className="flex flex-1 flex-col justify-between min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-sm leading-snug text-brand-800 line-clamp-2">
               {item.title}
             </h3>
             <button
               type="button"
               onClick={handleRemove}
               disabled={isUpdating}
-              className="hidden sm:block p-1 text-brand-400 hover:text-red-600 transition-colors"
+              className="shrink-0 rounded-full p-1 text-brand-300 transition-colors hover:bg-brand-50 hover:text-red-500"
               aria-label={`Usuń ${item.title}`}
             >
               {isUpdating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3.5 w-3.5" />
               )}
             </button>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center rounded border border-brand-200">
+
+          <div className="mt-2 flex items-center justify-between">
+            {/* Quantity stepper */}
+            <div className="inline-flex items-center rounded-full border border-brand-200">
               <button
                 type="button"
                 onClick={() => handleQuantityChange(item.quantity - 1)}
                 disabled={isUpdating || item.quantity <= 1}
-                className="px-2 py-1 text-xs text-brand-700 disabled:opacity-30"
+                className="flex h-7 w-7 items-center justify-center text-brand-500 transition-colors hover:text-brand-800 disabled:opacity-30"
                 aria-label="Zmniejsz ilość"
               >
-                -
+                <Minus className="h-3 w-3" />
               </button>
-              <span className="w-8 text-center text-xs font-medium tabular-nums">
+              <span className="w-6 text-center text-xs font-medium tabular-nums text-brand-700">
                 {item.quantity}
               </span>
               <button
                 type="button"
                 onClick={() => handleQuantityChange(item.quantity + 1)}
                 disabled={isUpdating}
-                className="px-2 py-1 text-xs text-brand-700"
+                className="flex h-7 w-7 items-center justify-center text-brand-500 transition-colors hover:text-brand-800"
                 aria-label="Zwiększ ilość"
               >
-                +
+                <Plus className="h-3 w-3" />
               </button>
             </div>
+
+            {/* Price */}
             <span className="text-sm font-medium tabular-nums text-brand-800">
               {formatPrice(item.total)}
             </span>

@@ -10,6 +10,7 @@ export interface FilterConfig {
 
 export interface ActiveFilters {
   category?: string;
+  pill?: string;
   sort: string;
   colors: string[];
   led?: boolean;
@@ -20,6 +21,45 @@ export interface ActiveFilters {
   finishes: string[];
   availability?: "in_stock" | "on_order";
   tags: string[];
+}
+
+export const PRODUCT_PILLS = [
+  { value: "all", label: "Wszystkie" },
+  { value: "cenniki", label: "Cenniki" },
+  { value: "tabliczki", label: "Tabliczki" },
+  { value: "menu", label: "Menu" },
+  { value: "qr", label: "QR" },
+  { value: "wizytowniki", label: "Wizytowniki" },
+] as const;
+
+export function matchesPill(pill: string | undefined, handle: string, title: string): boolean {
+  if (!pill || pill === "all") return true;
+  const h = handle.toLowerCase();
+  const t = title.toLowerCase();
+  switch (pill) {
+    case "cenniki":
+      return h.includes("cennik");
+    case "tabliczki":
+      return (
+        h.includes("tabliczk") ||
+        h.includes("piktogram") ||
+        h.includes("zakaz") ||
+        h.includes("instrukcja-mycia") ||
+        h.includes("higiena") ||
+        h.includes("zaleceni") ||
+        h.includes("pielegnac") ||
+        h.includes("pomieszczen") ||
+        h.includes("informacyjn")
+      );
+    case "menu":
+      return h.includes("menu") || h.includes("drink");
+    case "qr":
+      return h.includes("qr") || h.includes("wifi") || h.includes("wi-fi");
+    case "wizytowniki":
+      return h.includes("wizytownik") || h.includes("certyfikat") || h.includes("voucher");
+    default:
+      return true;
+  }
 }
 
 export const SORT_OPTIONS = [
@@ -58,9 +98,10 @@ export const TAG_OPTIONS = [
   { value: "promocja", label: "Promocja" },
 ] as const;
 
-export function clearFilters(sort: string): ActiveFilters {
+export function clearFilters(sort: string, pill?: string): ActiveFilters {
   return {
     sort,
+    pill,
     colors: [],
     sizes: [],
     materials: [],
@@ -95,6 +136,7 @@ export function hasAnyActiveFilter(f: ActiveFilters): boolean {
     f.led !== undefined ||
     f.priceMin !== undefined ||
     f.priceMax !== undefined ||
-    f.availability !== undefined
+    f.availability !== undefined ||
+    (!!f.pill && f.pill !== "all")
   );
 }
