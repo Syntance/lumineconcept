@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "next-sanity";
 
 export const sanityClient = createClient({
@@ -7,3 +8,8 @@ export const sanityClient = createClient({
   useCdn: process.env.NODE_ENV === "production",
   token: process.env.SANITY_API_TOKEN,
 });
+
+export const cachedSanityFetch = cache(
+  <T>(query: string, params?: Record<string, unknown>): Promise<T> =>
+    sanityClient.fetch<T>(query, params),
+);

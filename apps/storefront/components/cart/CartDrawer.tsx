@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { X, ShoppingBag, ArrowRight, Gift, Truck } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { CartItem } from "./CartItem";
 import { CartSummary } from "./CartSummary";
@@ -52,11 +52,21 @@ export function CartDrawer() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [referralMessage, setReferralMessage] = useState("");
+  const prevOpenRef = useRef(false);
+
   useEffect(() => {
-    if (!isOpen) return;
-    trackCartViewed(items.map((i) => i.id));
-    const savedCode = localStorage.getItem("lumine_referral");
-    if (savedCode && referralStatus === "idle") setReferralCode(savedCode);
+    if (!isOpen) {
+      prevOpenRef.current = false;
+      return;
+    }
+
+    if (!prevOpenRef.current) {
+      trackCartViewed(items.map((i) => i.id));
+      const savedCode = localStorage.getItem("lumine_referral");
+      if (savedCode && referralStatus === "idle") setReferralCode(savedCode);
+      prevOpenRef.current = true;
+    }
+
     document.body.style.overflow = "hidden";
 
     const handleKey = (e: KeyboardEvent) => {
@@ -104,7 +114,7 @@ export function CartDrawer() {
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5">
-          <h2 className="font-display text-lg tracking-wide text-brand-800">
+          <h2 className="font-display text-[24px] font-semibold tracking-wide text-brand-800">
             Koszyk
             {itemCount > 0 && (
               <span className="ml-2 text-sm font-normal text-brand-400">({itemCount})</span>
@@ -124,11 +134,11 @@ export function CartDrawer() {
 
         {items.length === 0 ? (
           /* ── Empty state ── */
-          <div className="flex flex-1 flex-col items-center justify-center px-8">
+          <div className="relative flex flex-1 flex-col items-center justify-center px-8">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-50">
               <ShoppingBag className="h-8 w-8 text-brand-300" strokeWidth={1.5} />
             </div>
-            <p className="mt-6 font-display text-base tracking-wide text-brand-700">
+            <p className="mt-6 font-sans text-base tracking-wide text-brand-700">
               Koszyk jest pusty
             </p>
             <p className="mt-2 text-center text-sm text-brand-400">
@@ -137,7 +147,7 @@ export function CartDrawer() {
             <Link
               href="/sklep/gotowe-wzory"
               onClick={closeCart}
-              className="mt-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-brand-600 transition-colors hover:text-brand-900"
+              className="absolute bottom-[20%] inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-brand-600 transition-colors hover:text-brand-900"
             >
               Przeglądaj sklep
               <ArrowRight className="h-3.5 w-3.5" />

@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "";
 const ACCESS_TOKEN = process.env.META_CAPI_ACCESS_TOKEN ?? "";
+const CAPI_SECRET = process.env.CAPI_SHARED_SECRET ?? "";
 
 interface CAPIEventPayload {
   event_name: string;
@@ -24,6 +25,10 @@ export async function POST(request: NextRequest) {
       { message: "Meta CAPI not configured" },
       { status: 503 },
     );
+  }
+
+  if (CAPI_SECRET && request.headers.get("x-capi-secret") !== CAPI_SECRET) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -77,11 +82,11 @@ export async function POST(request: NextRequest) {
       },
     );
 
-    const result = await response.json();
-    return NextResponse.json(result);
-  } catch (error) {
+    await response.json();
+    return NextResponse.json({ success: response.ok });
+  } catch {
     return NextResponse.json(
-      { message: "CAPI error", error: String(error) },
+      { message: "CAPI error" },
       { status: 500 },
     );
   }

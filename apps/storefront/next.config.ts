@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const MEDUSA_BACKEND_URL =
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "http://localhost:9000";
+const MEILISEARCH_HOST =
+  process.env.NEXT_PUBLIC_MEILISEARCH_HOST ?? "http://localhost:7700";
 
 const nextConfig: NextConfig = {
   images: {
@@ -50,6 +52,10 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(self)",
           },
@@ -57,18 +63,23 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://connect.facebook.net https://eu.posthog.com https://cdn.cookieyes.com https://geowidget.inpost.pl",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://connect.facebook.net https://eu.posthog.com https://cdn-cookieyes.com https://geowidget.inpost.pl",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://geowidget.inpost.pl",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com",
+              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com https://images.unsplash.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://eu.posthog.com https://connect.facebook.net https://api.mailerlite.com " + MEDUSA_BACKEND_URL,
+              "connect-src 'self' https://eu.posthog.com https://connect.facebook.net https://api.mailerlite.com " + MEDUSA_BACKEND_URL + " " + MEILISEARCH_HOST,
               "frame-src 'self' https://geowidget.inpost.pl https://www.facebook.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
             ].join("; "),
           },
         ],
       },
     ];
   },
+
+  poweredByHeader: false,
 
   experimental: {
     serverActions: {

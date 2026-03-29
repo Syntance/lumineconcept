@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PortableText } from "next-sanity";
-import { sanityClient } from "@/lib/sanity/client";
+import { sanityClient, cachedSanityFetch } from "@/lib/sanity/client";
 import { BLOG_POST_BY_SLUG_QUERY, BLOG_SLUGS_QUERY } from "@/lib/sanity/queries";
 import type { BlogPost } from "@/lib/sanity/types";
 import { buildMetadata } from "@/lib/sanity/metadata";
@@ -23,8 +23,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await sanityClient
-    .fetch<BlogPost>(BLOG_POST_BY_SLUG_QUERY, { slug })
+  const post = await cachedSanityFetch<BlogPost>(BLOG_POST_BY_SLUG_QUERY, { slug })
     .catch(() => null);
 
   if (!post) return { title: "Artykuł nie znaleziony" };
@@ -46,8 +45,7 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await sanityClient
-    .fetch<BlogPost>(BLOG_POST_BY_SLUG_QUERY, { slug })
+  const post = await cachedSanityFetch<BlogPost>(BLOG_POST_BY_SLUG_QUERY, { slug })
     .catch(() => null);
 
   if (!post) notFound();
