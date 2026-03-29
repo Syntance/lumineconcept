@@ -130,8 +130,8 @@ export function Header() {
           isOpen={isSearchOpen}
           onClose={() => setSearchOpen(false)}
         />
-        <CartDrawer />
       </header>
+      <CartDrawer />
     </>
   );
 }

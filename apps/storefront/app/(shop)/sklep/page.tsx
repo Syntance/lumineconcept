@@ -89,7 +89,7 @@ export default async function ShopHubPage() {
       />
 
       {/* Hero */}
-      <section className="bg-white pt-10 lg:pt-14">
+      <section className="bg-[#EEE8E0] pt-10 lg:pt-14">
         <div className="container mx-auto max-w-4xl px-4">
           <Breadcrumbs
             items={[
@@ -107,26 +107,35 @@ export default async function ShopHubPage() {
       </section>
 
       {/* Kategorie obok siebie */}
-      <section className="bg-white pb-16 pt-12 lg:pb-24 lg:pt-16">
+      <section className="bg-[#EEE8E0] pb-16 pt-12 lg:pb-24 lg:pt-16">
         <nav className="container mx-auto max-w-4xl px-4">
           <div className="grid gap-6 sm:grid-cols-3">
             {CATEGORIES.map((cat, i) => {
-              const align = i === 0 ? "items-end text-right pr-[15%]" : i === 2 ? "items-start text-left pl-[15%]" : "items-center text-center";
+              const align = "items-center text-center";
+              const radius =
+                i === 0
+                  ? { borderRadius: "50% 50% 0 0 / 40% 40% 0 0" }
+                  : i === CATEGORIES.length - 1
+                    ? { borderRadius: "0 0 50% 50% / 0 0 40% 40%" }
+                    : undefined;
               return (
               <Link
                 key={cat.href}
                 href={cat.href}
-                className={`group flex flex-col ${align} border border-brand-300 bg-[#EEE8E0] px-6 py-14 transition-colors hover:border-brand-500 lg:py-18 ${i === 0 ? "rounded-tl-[50%]" : ""} ${i === CATEGORIES.length - 1 ? "rounded-br-[50%]" : ""}`}
+                style={radius}
+                className={`group flex aspect-[4/5] border border-brand-200 bg-white px-6 transition-colors hover:border-brand-400 ${align}`}
               >
-                <h2 className="font-display text-xl tracking-wide text-brand-800 group-hover:text-brand-900 lg:text-2xl">
-                  {cat.title}
-                </h2>
-                <p className="mt-5 text-base leading-relaxed text-brand-400">
-                  {cat.description}
-                </p>
-                <span className="mt-auto pt-10 text-xs font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:text-brand-900">
-                  {cat.cta} &rarr;
-                </span>
+                <div className="my-auto flex flex-col items-center gap-5">
+                  <h2 className="font-display text-xl tracking-wide text-brand-800 group-hover:text-brand-900 lg:text-2xl">
+                    {cat.title}
+                  </h2>
+                  <p className="text-base leading-relaxed text-brand-400">
+                    {cat.description}
+                  </p>
+                  <span className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:text-brand-900">
+                    {cat.cta} &rarr;
+                  </span>
+                </div>
               </Link>
               );
             })}

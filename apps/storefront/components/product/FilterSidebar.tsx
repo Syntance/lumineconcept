@@ -14,7 +14,6 @@ import {
 } from "./filter-types";
 
 interface FilterSidebarProps {
-  categories: Array<{ id: string; name: string }>;
   activeFilters: ActiveFilters;
   filterConfig: FilterConfig;
   onFiltersChange: (filters: ActiveFilters) => void;
@@ -25,7 +24,6 @@ function toggle(arr: string[], val: string): string[] {
 }
 
 export function FilterSidebar({
-  categories,
   activeFilters,
   filterConfig,
   onFiltersChange,
@@ -60,7 +58,7 @@ export function FilterSidebar({
           {hasAnyActiveFilter(activeFilters) && (
             <button
               type="button"
-              onClick={() => onFiltersChange(clearFilters(activeFilters.sort))}
+              onClick={() => onFiltersChange(clearFilters(activeFilters.sort, activeFilters.pill))}
               className="text-[11px] text-brand-400 underline underline-offset-2 hover:text-brand-600 transition-colors"
             >
               Wyczyść
@@ -69,42 +67,6 @@ export function FilterSidebar({
         </div>
 
         <div className="h-px bg-brand-100" />
-
-        {/* Kategoria */}
-        {categories.length > 0 && (
-          <details open>
-            <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
-              Kategoria
-            </summary>
-            <div className="flex flex-col gap-1 pt-1">
-              <button
-                type="button"
-                onClick={() => update({ category: undefined })}
-                className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                  !activeFilters.category
-                    ? "bg-brand-900 text-white font-medium"
-                    : "text-brand-600 hover:bg-brand-50"
-                }`}
-              >
-                Wszystkie
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => update({ category: cat.id })}
-                  className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                    activeFilters.category === cat.id
-                      ? "bg-brand-900 text-white font-medium"
-                      : "text-brand-600 hover:bg-brand-50"
-                  }`}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-          </details>
-        )}
 
         {/* Cena — suwak */}
         <details open>

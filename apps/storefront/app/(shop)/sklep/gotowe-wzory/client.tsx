@@ -6,7 +6,7 @@ import { FilterSidebar } from "@/components/product/FilterSidebar";
 import { FilterDrawer } from "@/components/product/FilterDrawer";
 import { SortBar } from "@/components/product/SortBar";
 import type { ActiveFilters, FilterConfig } from "@/components/product/filter-types";
-import { isPriceSort } from "@/components/product/filter-types";
+import { isPriceSort, PRODUCT_PILLS, matchesPill, SORT_OPTIONS } from "@/components/product/filter-types";
 import { trackCategoryViewed, trackProductFiltered } from "@/lib/analytics/events";
 
 export interface SimpleProduct {
@@ -139,6 +139,7 @@ export function ShopGridClient({
 
   const [filters, setFilters] = useState<ActiveFilters>({
     category: initialFilter,
+    pill: undefined,
     sort: initialSort,
     colors: [],
     sizes: [],
@@ -195,7 +196,10 @@ export function ShopGridClient({
   const filterConfig = useMemo(() => extractFilterConfig(allProducts), [allProducts]);
 
   const filteredProducts = useMemo(() => {
-    const filtered = applyFilters(allProducts, filters);
+    let filtered = applyFilters(allProducts, filters);
+    if (filters.pill && filters.pill !== "all") {
+      filtered = filtered.filter((p) => matchesPill(filters.pill, p.handle, p.title));
+    }
     if (isPriceSort(filters.sort)) {
       return [...filtered].sort((a, b) =>
         filters.sort === "price_asc" ? a.price - b.price : b.price - a.price,
@@ -244,7 +248,6 @@ export function ShopGridClient({
     <div className="lg:flex lg:gap-8">
       {/* Desktop sidebar */}
       <FilterSidebar
-        categories={categories}
         activeFilters={filters}
         filterConfig={filterConfig}
         onFiltersChange={handleFiltersChange}
@@ -252,14 +255,55 @@ export function ShopGridClient({
 
       {/* Main content */}
       <div className="flex-1 min-w-0">
-        {/* Sort bar (sticky on mobile) */}
+        {/* Mobile: sticky sort bar */}
         <SortBar
           categories={categories}
           activeFilters={filters}
-          resultCount={filteredProducts.length}
           onFiltersChange={handleFiltersChange}
           onOpenDrawer={() => setDrawerOpen(true)}
         />
+
+        {/* Pills row + sort (desktop) */}
+        <div className="mt-2 flex items-center gap-3 lg:mt-1">
+          <div className="flex flex-1 gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {PRODUCT_PILLS.map((pill) => {
+              const isActive = (filters.pill ?? "all") === pill.value;
+              return (
+                <button
+                  key={pill.value}
+                  type="button"
+                  onClick={() =>
+                    handleFiltersChange({
+                      ...filters,
+                      pill: pill.value === "all" ? undefined : pill.value,
+                    })
+                  }
+                  className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-brand-900 text-white shadow-sm"
+                      : "bg-brand-50 text-brand-600 hover:bg-brand-100"
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Desktop sort dropdown */}
+          <select
+            value={filters.sort}
+            onChange={(e) => handleFiltersChange({ ...filters, sort: e.target.value })}
+            className="hidden shrink-0 rounded-md border border-brand-200 bg-white px-3 py-1.5 text-xs text-brand-700 lg:block"
+            aria-label="Sortowanie"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Mobile filter drawer */}
         <FilterDrawer
@@ -310,6 +354,7 @@ export function ShopGridClient({
               onClick={() =>
                 setFilters({
                   sort: filters.sort,
+                  pill: filters.pill,
                   colors: [],
                   sizes: [],
                   materials: [],

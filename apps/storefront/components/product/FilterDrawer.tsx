@@ -113,7 +113,7 @@ export function FilterDrawer({
             {hasAnyActiveFilter(activeFilters) && (
               <button
                 type="button"
-                onClick={() => onFiltersChange(clearFilters(activeFilters.sort))}
+                onClick={() => onFiltersChange(clearFilters(activeFilters.sort, activeFilters.pill))}
                 className="text-xs text-brand-400 underline underline-offset-2"
               >
                 Wyczyść
@@ -132,30 +132,6 @@ export function FilterDrawer({
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
-          {/* Kategoria */}
-          {categories.length > 0 && (
-            <section>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Kategoria</p>
-              <div className="flex flex-wrap gap-2">
-                <Chip
-                  active={!activeFilters.category}
-                  onClick={() => update({ category: undefined })}
-                >
-                  Wszystkie
-                </Chip>
-                {categories.map((cat) => (
-                  <Chip
-                    key={cat.id}
-                    active={activeFilters.category === cat.id}
-                    onClick={() => update({ category: cat.id })}
-                  >
-                    {cat.name}
-                  </Chip>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Cena — suwak */}
           <section>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Cena</p>

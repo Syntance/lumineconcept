@@ -1,37 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { X, ShoppingBag, Gift, Shield, Truck, RefreshCcw } from "lucide-react";
+import { X, ShoppingBag, ArrowRight, Gift, Truck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { CartItem } from "./CartItem";
 import { CartSummary } from "./CartSummary";
 import { CartUpsell } from "./CartUpsell";
 import { trackReferralApplied, trackCartViewed } from "@/lib/analytics/events";
+import { formatPrice } from "@/lib/utils";
 
 const FREE_SHIPPING_THRESHOLD = 29900;
 
-function FreeShippingProgress({ subtotal }: { subtotal: number }) {
+function ShippingProgress({ subtotal }: { subtotal: number }) {
   const remaining = FREE_SHIPPING_THRESHOLD - subtotal;
   const percent = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
 
   if (remaining <= 0) {
     return (
-      <div className="rounded-lg bg-green-50 px-4 py-2.5 text-center text-sm text-green-700">
-        <Truck className="inline-block mr-1.5 h-4 w-4" />
-        Masz darmową wysyłkę!
+      <div className="flex items-center justify-center gap-2 bg-brand-50 px-4 py-2.5 text-xs text-brand-700">
+        <Truck className="h-3.5 w-3.5 text-accent" />
+        <span>Darmowa wysyłka</span>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-brand-100 px-4 py-3">
-      <p className="text-xs text-brand-600 text-center mb-2">
-        Brakuje <strong>{(remaining / 100).toFixed(0)} PLN</strong> do darmowej wysyłki
-      </p>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-brand-100">
+    <div className="space-y-2 px-6 py-3">
+      <div className="flex items-center justify-between text-[11px] text-brand-500">
+        <span>
+          Brakuje <span className="font-medium text-brand-700">{formatPrice(remaining)}</span> do
+          darmowej wysyłki
+        </span>
+        <Truck className="h-3.5 w-3.5" />
+      </div>
+      <div className="h-[3px] w-full overflow-hidden rounded-full bg-brand-100">
         <div
-          className="h-full rounded-full bg-accent transition-all duration-500"
+          className="h-full rounded-full bg-accent transition-all duration-700 ease-out"
           style={{ width: `${percent}%` }}
         />
       </div>
@@ -43,29 +48,24 @@ export function CartDrawer() {
   const { isOpen, closeCart, items, itemCount, subtotal, applyDiscount } = useCart();
 
   const [referralCode, setReferralCode] = useState("");
-  const [referralStatus, setReferralStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [referralStatus, setReferralStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const [referralMessage, setReferralMessage] = useState("");
-
   useEffect(() => {
     if (!isOpen) return;
-
     trackCartViewed(items.map((i) => i.id));
-
     const savedCode = localStorage.getItem("lumine_referral");
-    if (savedCode && referralStatus === "idle") {
-      setReferralCode(savedCode);
-    }
-
+    if (savedCode && referralStatus === "idle") setReferralCode(savedCode);
     document.body.style.overflow = "hidden";
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeCart();
     };
-    document.addEventListener("keydown", handleKeyDown);
-
+    document.addEventListener("keydown", handleKey);
     return () => {
       document.body.style.overflow = "";
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handleKey);
     };
   }, [isOpen, closeCart, referralStatus, items]);
 
@@ -73,9 +73,7 @@ export function CartDrawer() {
     if (!referralCode.trim()) return;
     setReferralStatus("loading");
     try {
-      if (applyDiscount) {
-        await applyDiscount(referralCode.trim());
-      }
+      if (applyDiscount) await applyDiscount(referralCode.trim());
       localStorage.setItem("lumine_referral", referralCode.trim());
       trackReferralApplied(referralCode.trim());
       setReferralStatus("success");
@@ -90,54 +88,85 @@ export function CartDrawer() {
 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Koszyk">
+      {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-brand-900/40"
+        style={{ animation: "cartFadeIn 200ms ease-out" }}
         onClick={closeCart}
         aria-hidden="true"
       />
-      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-xl flex flex-col">
-        <div className="flex items-center justify-between border-b border-brand-100 p-4">
-          <h2 className="font-display text-lg font-semibold text-brand-800">
-            Koszyk ({itemCount})
+
+      {/* Panel */}
+      <div
+        className="fixed inset-y-0 right-0 flex w-full max-w-[420px] flex-col bg-white shadow-2xl"
+        style={{ animation: "cartSlideIn 300ms ease-out" }}
+      >
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5">
+          <h2 className="font-display text-lg tracking-wide text-brand-800">
+            Koszyk
+            {itemCount > 0 && (
+              <span className="ml-2 text-sm font-normal text-brand-400">({itemCount})</span>
+            )}
           </h2>
           <button
             type="button"
             onClick={closeCart}
-            className="p-2 -mr-2 text-brand-700 hover:text-brand-900"
+            className="-mr-2 rounded-full p-2 text-brand-500 transition-colors hover:bg-brand-50 hover:text-brand-800"
             aria-label="Zamknij koszyk"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
+        <div className="h-px bg-brand-100" />
+
         {items.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
-            <ShoppingBag className="h-12 w-12 text-brand-200" />
-            <p className="text-brand-500">Twój koszyk jest pusty</p>
-            <button
-              type="button"
+          /* ── Empty state ── */
+          <div className="flex flex-1 flex-col items-center justify-center px-8">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-50">
+              <ShoppingBag className="h-8 w-8 text-brand-300" strokeWidth={1.5} />
+            </div>
+            <p className="mt-6 font-display text-base tracking-wide text-brand-700">
+              Koszyk jest pusty
+            </p>
+            <p className="mt-2 text-center text-sm text-brand-400">
+              Przeglądaj nasze produkty i znajdź coś idealnego dla siebie
+            </p>
+            <Link
+              href="/sklep/gotowe-wzory"
               onClick={closeCart}
-              className="rounded-md bg-accent px-6 py-2 text-sm font-medium text-white hover:bg-accent-dark transition-colors"
+              className="mt-8 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-brand-600 transition-colors hover:text-brand-900"
             >
-              Przeglądaj produkty
-            </button>
+              Przeglądaj sklep
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         ) : (
+          /* ── Items ── */
           <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <FreeShippingProgress subtotal={subtotal} />
+            <ShippingProgress subtotal={subtotal} />
 
-              {items.map((item) => (
-                <CartItem key={item.id} item={item} />
-              ))}
+            <div className="flex-1 overflow-y-auto">
+              <div className="divide-y divide-brand-50 px-6">
+                {items.map((item) => (
+                  <CartItem key={item.id} item={item} />
+                ))}
+              </div>
 
-              <CartUpsell currentItemIds={items.map((i) => i.variant_id ?? i.id)} />
+              {/* Upsell */}
+              <div className="px-6 pt-2 pb-4">
+                <CartUpsell currentItemIds={items.map((i) => i.variant_id ?? i.id)} />
+              </div>
 
-              {/* Referral code */}
-              <div className="rounded-lg border border-brand-100 p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Gift className="h-4 w-4 text-brand-500" />
-                  <span className="text-xs font-medium text-brand-700">Kod polecający</span>
+              {/* Referral */}
+              <div className="mx-6 mb-4 rounded-lg border border-brand-100 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-brand-400" />
+                  <span className="text-xs font-medium tracking-wide text-brand-600">
+                    Kod rabatowy
+                  </span>
                 </div>
                 <div className="flex gap-2">
                   <input
@@ -148,48 +177,61 @@ export function CartDrawer() {
                       if (referralStatus !== "idle") setReferralStatus("idle");
                     }}
                     placeholder="Wpisz kod..."
-                    className="flex-1 rounded-md border border-brand-200 px-3 py-1.5 text-xs text-brand-700 placeholder:text-brand-400 focus:border-brand-400 focus:outline-none"
+                    className="flex-1 rounded-md border border-brand-200 bg-transparent px-3 py-2 text-xs text-brand-700 placeholder:text-brand-300 focus:border-brand-400 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleApplyReferral}
-                    disabled={referralStatus === "loading" || referralStatus === "success"}
-                    className="shrink-0 rounded-md bg-brand-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50 transition-colors"
+                    disabled={
+                      referralStatus === "loading" || referralStatus === "success"
+                    }
+                    className="shrink-0 rounded-md bg-brand-800 px-4 py-2 text-xs font-medium tracking-wide text-white transition-colors hover:bg-brand-700 disabled:opacity-40"
                   >
                     {referralStatus === "loading" ? "..." : "Zastosuj"}
                   </button>
                 </div>
                 {referralMessage && (
-                  <p className={`mt-1.5 text-[11px] ${referralStatus === "success" ? "text-green-600" : "text-red-600"}`}>
+                  <p
+                    className={`mt-2 text-[11px] ${referralStatus === "success" ? "text-green-600" : "text-red-500"}`}
+                  >
                     {referralMessage}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="border-t border-brand-100 p-4 space-y-4">
-              {/* Trust badges */}
-              <div className="flex justify-center gap-4 text-[11px] text-brand-500">
-                <span className="flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> Bezpieczna płatność</span>
-                <span className="flex items-center gap-1"><Truck className="h-3.5 w-3.5" /> Wysyłka 1-3 dni</span>
-                <span className="flex items-center gap-1"><RefreshCcw className="h-3.5 w-3.5" /> 14 dni zwrotu</span>
+            {/* Footer */}
+            <div className="border-t border-brand-100">
+              <div className="px-6 pt-5 pb-2">
+                <CartSummary />
               </div>
 
-              <CartSummary />
-              <Link
-                href="/koszyk"
-                onClick={closeCart}
-                className="block w-full rounded-md bg-accent py-3 text-center text-sm font-semibold text-white hover:bg-accent-dark transition-colors"
-              >
-                Przejdź do koszyka
-              </Link>
-              <Link
-                href="/checkout"
-                onClick={closeCart}
-                className="block w-full rounded-md border border-brand-900 bg-brand-900 py-3 text-center text-sm font-semibold text-white hover:bg-brand-800 transition-colors"
-              >
-                Zamów teraz
-              </Link>
+              <div className="space-y-2.5 px-6 pb-6">
+                <Link
+                  href="/checkout"
+                  onClick={closeCart}
+                  className="flex w-full items-center justify-center gap-2 rounded-md bg-brand-900 py-3.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-800"
+                >
+                  Zamów teraz
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/koszyk"
+                  onClick={closeCart}
+                  className="block w-full py-2 text-center text-xs font-medium tracking-wide text-brand-500 transition-colors hover:text-brand-800"
+                >
+                  lub zobacz pełny koszyk
+                </Link>
+              </div>
+
+              {/* Micro trust */}
+              <div className="flex items-center justify-center gap-4 border-t border-brand-50 px-6 py-3 text-[10px] uppercase tracking-widest text-brand-400">
+                <span>Bezpieczna płatność</span>
+                <span className="text-brand-200">·</span>
+                <span>Wysyłka 1–3 dni</span>
+                <span className="text-brand-200">·</span>
+                <span>14 dni zwrotu</span>
+              </div>
             </div>
           </>
         )}
