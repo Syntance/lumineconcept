@@ -25,9 +25,15 @@ export interface ActiveFilters {
 export const SORT_OPTIONS = [
   { value: "-created_at", label: "Najnowsze" },
   { value: "created_at", label: "Najstarsze" },
+  { value: "price_asc", label: "Cena: od najniższej" },
+  { value: "price_desc", label: "Cena: od najwyższej" },
   { value: "title", label: "Nazwa A-Z" },
   { value: "-title", label: "Nazwa Z-A" },
 ] as const;
+
+export function isPriceSort(sort: string): boolean {
+  return sort === "price_asc" || sort === "price_desc";
+}
 
 export const PRICE_STEP = 1000;
 export const PRICE_SLIDER_MIN = 0;
