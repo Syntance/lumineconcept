@@ -10,6 +10,6 @@ export const sanityClient = createClient({
 });
 
 export const cachedSanityFetch = cache(
-  <T>(query: string, params?: Record<string, unknown>): Promise<T> =>
-    sanityClient.fetch<T>(query, params),
+  <T>(query: string, params?: Record<string, string>): Promise<T> =>
+    sanityClient.fetch<T>(query, params ?? {}),
 );
