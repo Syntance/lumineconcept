@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: "Salony Beauty — Produkty Plexi dla Twojego Salonu",
   description:
     "Kompletne rozwiązania brandingowe z plexi dla salonów beauty. Loga 3D, tablice cennikowe, organizery na kosmetyki, stojaki na karty wizytowe.",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumine.syntance.dev"}/salony-beauty`,
+  },
 };
 
 export default function SalonyBeautyPage() {

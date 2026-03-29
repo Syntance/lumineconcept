@@ -1,10 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getProducts } from "@/lib/medusa/products";
 
+const MAX_LIMIT = 50;
+
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
-  const limit = Number(sp.get("_limit") ?? "12");
-  const offset = Number(sp.get("_offset") ?? "0");
+  const rawLimit = Number(sp.get("_limit") ?? "12");
+  const rawOffset = Number(sp.get("_offset") ?? "0");
+  const limit = Math.min(Math.max(1, Number.isFinite(rawLimit) ? rawLimit : 12), MAX_LIMIT);
+  const offset = Math.max(0, Number.isFinite(rawOffset) ? rawOffset : 0);
   const category = sp.get("category") ?? undefined;
   const sort = sp.get("sort") ?? "-created_at";
 

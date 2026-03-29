@@ -1,5 +1,3 @@
-"use client";
-
 export function ShippingTimer() {
   const now = new Date();
   const day = now.getDay();

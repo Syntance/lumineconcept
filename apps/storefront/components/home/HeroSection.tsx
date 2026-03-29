@@ -1,16 +1,17 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function HeroSection() {
   return (
     <section className="relative h-[70vh] min-h-[400px] overflow-hidden">
       {/* Zdjęcie w tle */}
-      <div
-        className="absolute inset-0 bg-brand-300"
-        style={{
-          backgroundImage: "url('/images/hero.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "55% 35%",
-        }}
+      <Image
+        src="/images/hero.png"
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-[55%_35%]"
       />
 
       {/* Przyciemnienie + subtelny blur */}

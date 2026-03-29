@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Realizacje",
   description:
     "Galeria naszych realizacji. Zobacz, jak produkty Lumine wyglądają w salonach beauty naszych klientów.",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumine.syntance.dev"}/realizacje`,
+  },
 };
 
 export default function RealizacjePage() {

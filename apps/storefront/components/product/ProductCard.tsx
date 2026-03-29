@@ -139,13 +139,18 @@ export function ProductCard({
               )}
             </div>
           )}
-          <div className="shrink-0">
-            <PriceDisplay
-              amount={price}
-              compareAtAmount={compareAtPrice}
-              currency={currency}
-              prefix={hasVariantPrices ? "od" : undefined}
-            />
+          <div className="relative shrink-0 flex items-center justify-center rounded-md border border-[#EEE8E0] bg-white py-2 px-3 transition-all duration-200 group-hover:bg-[#EEE8E0]">
+            <span className="transition-opacity duration-200 group-hover:opacity-0">
+              <PriceDisplay
+                amount={price}
+                compareAtAmount={compareAtPrice}
+                currency={currency}
+                prefix={hasVariantPrices ? "od" : undefined}
+              />
+            </span>
+            <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              Zobacz produkt
+            </span>
           </div>
         </div>
       )}

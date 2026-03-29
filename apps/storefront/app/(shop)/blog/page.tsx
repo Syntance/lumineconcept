@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "Blog",
   description:
     "Porady, inspiracje i trendy ze świata beauty i brandingu. Blog Lumine Concept.",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumine.syntance.dev"}/blog`,
+  },
 };
 
 export const revalidate = 60;

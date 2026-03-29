@@ -31,7 +31,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
       <nav aria-label="Breadcrumb" className="mb-6">
         <ol className="flex items-center gap-1 text-sm text-brand-500">
           {items.map((item, index) => (
-            <li key={item.label} className="flex items-center gap-1">
+            <li key={`${index}-${item.href ?? item.label}`} className="flex items-center gap-1">
               {index > 0 && <ChevronRight className="h-3.5 w-3.5" />}
               {item.href && index < items.length - 1 ? (
                 <Link

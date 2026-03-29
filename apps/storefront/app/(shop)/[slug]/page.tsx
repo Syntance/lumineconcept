@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PortableText } from "next-sanity";
-import { sanityClient } from "@/lib/sanity/client";
+import { sanityClient, cachedSanityFetch } from "@/lib/sanity/client";
 import { PAGE_BY_SLUG_QUERY, PAGE_SLUGS_QUERY } from "@/lib/sanity/queries";
 import type { Page } from "@/lib/sanity/types";
 import { buildMetadata } from "@/lib/sanity/metadata";
@@ -22,8 +22,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const page = await sanityClient
-    .fetch<Page>(PAGE_BY_SLUG_QUERY, { slug })
+  const page = await cachedSanityFetch<Page>(PAGE_BY_SLUG_QUERY, { slug })
     .catch(() => null);
 
   if (!page) return { title: "Strona nie znaleziona" };
@@ -41,8 +40,7 @@ export default async function DynamicPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const page = await sanityClient
-    .fetch<Page>(PAGE_BY_SLUG_QUERY, { slug })
+  const page = await cachedSanityFetch<Page>(PAGE_BY_SLUG_QUERY, { slug })
     .catch(() => null);
 
   if (!page) notFound();

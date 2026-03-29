@@ -21,6 +21,7 @@
         "SANITY_API_TOKEN",
         "SANITY_REVALIDATE_SECRET",
         "META_CAPI_ACCESS_TOKEN",
+        "CAPI_SHARED_SECRET",
         "MAILERLITE_API_KEY",
         "MAILERLITE_GROUP_ID"
       ]

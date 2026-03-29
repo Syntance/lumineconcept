@@ -15,7 +15,7 @@ import { BestsellersSection } from "@/components/home/BestsellersSection";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await sanityClient
-    .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
+    .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 60, tags: ["sanity"] } })
     .catch(() => null);
 
   return buildMetadata({

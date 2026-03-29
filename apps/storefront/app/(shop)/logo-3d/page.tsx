@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Logo 3D — Prześlij swoje logo",
   description:
     "Prześlij swoje logo, a my przygotujemy wycenę i wizualizację 3D w ciągu 24 godzin. Bezpłatna wycena.",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumine.syntance.dev"}/logo-3d`,
+  },
 };
 
 export default function Logo3DPage() {

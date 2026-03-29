@@ -1,22 +1,5 @@
 import { medusa } from "./client";
-
-let cachedRegionId: string | null = process.env.NEXT_PUBLIC_MEDUSA_REGION_ID ?? null;
-
-async function getRegionId(): Promise<string> {
-  if (cachedRegionId) return cachedRegionId;
-
-  const response = await medusa.store.region.list();
-  const plRegion = response.regions.find(
-    (r) => r.countries?.some((c) => c.iso_2 === "pl"),
-  );
-
-  if (!plRegion) {
-    throw new Error("Region PL nie znaleziony. Skonfiguruj region w Medusa Admin.");
-  }
-
-  cachedRegionId = plRegion.id;
-  return cachedRegionId;
-}
+import { getPolishRegionId } from "./region";
 
 export async function getProducts(params?: {
   limit?: number;
@@ -24,7 +7,7 @@ export async function getProducts(params?: {
   category_id?: string[];
   order?: string;
 }) {
-  const regionId = await getRegionId();
+  const regionId = await getPolishRegionId();
   const response = await medusa.store.product.list({
     limit: params?.limit ?? 20,
     offset: params?.offset ?? 0,
@@ -38,7 +21,7 @@ export async function getProducts(params?: {
 }
 
 export async function getProductByHandle(handle: string) {
-  const regionId = await getRegionId();
+  const regionId = await getPolishRegionId();
   const response = await medusa.store.product.list({
     handle,
     region_id: regionId,
@@ -53,7 +36,7 @@ export async function getProductByHandle(handle: string) {
  * Falls back to the first `limit` products if none are tagged.
  */
 export async function getProductsByTag(tag: string, limit = 6) {
-  const regionId = await getRegionId();
+  const regionId = await getPolishRegionId();
   const response = await medusa.store.product.list({
     limit: 100,
     region_id: regionId,

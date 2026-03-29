@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
     revalidateTag("sanity", "max");
 
     return NextResponse.json({ revalidated: true, now: Date.now() });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { message: "Error revalidating", error: String(error) },
+      { message: "Error revalidating" },
       { status: 500 },
     );
   }

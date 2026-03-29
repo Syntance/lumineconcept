@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
@@ -7,8 +8,16 @@ import { Search, ShoppingBag, Menu, User } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { MobileNav } from "./MobileNav";
 import { AnnouncementBar } from "./AnnouncementBar";
-import { SearchModal } from "../search/SearchModal";
-import { CartDrawer } from "../cart/CartDrawer";
+
+const SearchModal = dynamic(
+  () => import("../search/SearchModal").then((m) => m.SearchModal),
+  { ssr: false },
+);
+
+const CartDrawer = dynamic(
+  () => import("../cart/CartDrawer").then((m) => m.CartDrawer),
+  { ssr: false },
+);
 
 const NAV_LEFT = [
   { href: "/sklep", label: "Sklep" },

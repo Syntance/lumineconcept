@@ -16,13 +16,15 @@ export async function generateMetadata({
 
   const productUrl = `${SITE_URL}/sklep/logo-3d/${slug}`;
   return {
-    title: `${product.title} | Lumine Concept`,
+    title: product.title,
     description: product.description,
     alternates: { canonical: productUrl },
     openGraph: {
       title: product.title,
       description: product.description ?? "",
-      images: product.thumbnail ? [{ url: product.thumbnail, width: 1200, height: 630 }] : [],
+      images: product.thumbnail
+        ? [{ url: product.thumbnail, width: 1200, height: 630 }]
+        : [{ url: `${SITE_URL}/images/logo.png`, width: 1200, height: 630 }],
       type: "website",
       url: productUrl,
     },

@@ -60,15 +60,19 @@ export function useInPostPoints() {
       loadWidget();
     };
 
-    const script = document.createElement("script");
-    script.src = "https://geowidget.inpost.pl/inpost-geowidget.js";
-    script.async = true;
-    document.head.appendChild(script);
+    if (!document.querySelector('script[src*="inpost-geowidget"]')) {
+      const script = document.createElement("script");
+      script.src = "https://geowidget.inpost.pl/inpost-geowidget.js";
+      script.async = true;
+      document.head.appendChild(script);
+    }
 
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://geowidget.inpost.pl/inpost-geowidget.css";
-    document.head.appendChild(link);
+    if (!document.querySelector('link[href*="inpost-geowidget"]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "https://geowidget.inpost.pl/inpost-geowidget.css";
+      document.head.appendChild(link);
+    }
   }, []);
 
   const clearSelection = useCallback(() => {
