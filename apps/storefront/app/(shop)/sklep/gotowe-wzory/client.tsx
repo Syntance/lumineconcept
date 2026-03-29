@@ -6,6 +6,7 @@ import { FilterSidebar } from "@/components/product/FilterSidebar";
 import { FilterDrawer } from "@/components/product/FilterDrawer";
 import { SortBar } from "@/components/product/SortBar";
 import type { ActiveFilters, FilterConfig } from "@/components/product/filter-types";
+import { isPriceSort } from "@/components/product/filter-types";
 import { trackCategoryViewed, trackProductFiltered } from "@/lib/analytics/events";
 
 export interface SimpleProduct {
@@ -157,24 +158,33 @@ export function ShopGridClient({
     async function refetch() {
       setIsRefetching(true);
       try {
+        const priceSort = isPriceSort(filters.sort);
         const params = new URLSearchParams();
         params.set("_offset", "0");
-        params.set("_limit", String(PAGE_SIZE));
+        // For price sort, fetch all products so we can sort client-side
+        params.set("_limit", priceSort ? "200" : String(PAGE_SIZE));
         if (filters.category) params.set("category", filters.category);
-        params.set("sort", filters.sort);
+        if (!priceSort) params.set("sort", filters.sort);
 
         const res = await fetch(`/api/products?${params.toString()}`);
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as { products: SimpleProduct[]; count: number };
         if (cancelled) return;
-        setAllProducts(data.products);
-        setHasMore(data.products.length < data.count);
+
+        let products = data.products;
+        if (priceSort) {
+          products = [...products].sort((a, b) =>
+            filters.sort === "price_asc" ? a.price - b.price : b.price - a.price,
+          );
+        }
+
+        setAllProducts(products);
+        setHasMore(!priceSort && products.length < data.count);
       } finally {
         if (!cancelled) setIsRefetching(false);
       }
     }
 
-    // Skip on initial render when we already have server-loaded data
     if (filters.category !== initialFilter || filters.sort !== initialSort) {
       refetch();
     }
@@ -184,10 +194,15 @@ export function ShopGridClient({
 
   const filterConfig = useMemo(() => extractFilterConfig(allProducts), [allProducts]);
 
-  const filteredProducts = useMemo(
-    () => applyFilters(allProducts, filters),
-    [allProducts, filters],
-  );
+  const filteredProducts = useMemo(() => {
+    const filtered = applyFilters(allProducts, filters);
+    if (isPriceSort(filters.sort)) {
+      return [...filtered].sort((a, b) =>
+        filters.sort === "price_asc" ? a.price - b.price : b.price - a.price,
+      );
+    }
+    return filtered;
+  }, [allProducts, filters]);
 
   const handleFiltersChange = useCallback((next: ActiveFilters) => {
     setFilters(next);
@@ -315,7 +330,7 @@ export function ShopGridClient({
         )}
 
         {/* Load more */}
-        {hasMore && filteredProducts.length >= PAGE_SIZE && (
+        {hasMore && !isPriceSort(filters.sort) && filteredProducts.length >= PAGE_SIZE && (
           <div className="mt-10 text-center">
             <button
               type="button"
