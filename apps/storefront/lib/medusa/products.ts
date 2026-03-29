@@ -1,7 +1,8 @@
+import { unstable_cache } from "next/cache";
 import { medusa } from "./client";
 import { getPolishRegionId } from "./region";
 
-export async function getProducts(params?: {
+async function _getProducts(params?: {
   limit?: number;
   offset?: number;
   category_id?: string[];
@@ -20,7 +21,13 @@ export async function getProducts(params?: {
   return response;
 }
 
-export async function getProductByHandle(handle: string) {
+export const getProducts = unstable_cache(
+  _getProducts,
+  ["medusa-products"],
+  { revalidate: 60, tags: ["medusa-products"] },
+);
+
+async function _getProductByHandle(handle: string) {
   const regionId = await getPolishRegionId();
   const response = await medusa.store.product.list({
     handle,
@@ -31,14 +38,21 @@ export async function getProductByHandle(handle: string) {
   return response.products[0] ?? null;
 }
 
+export const getProductByHandle = unstable_cache(
+  _getProductByHandle,
+  ["medusa-product-by-handle"],
+  { revalidate: 120, tags: ["medusa-products"] },
+);
+
 /**
  * Returns products tagged with `tag` (case-insensitive).
  * Falls back to the first `limit` products if none are tagged.
  */
 export async function getProductsByTag(tag: string, limit = 6) {
   const regionId = await getPolishRegionId();
+  const fetchLimit = Math.max(limit * 3, 20);
   const response = await medusa.store.product.list({
-    limit: 100,
+    limit: fetchLimit,
     region_id: regionId,
     fields: "+variants.calculated_price,+tags",
   });
@@ -48,15 +62,20 @@ export async function getProductsByTag(tag: string, limit = 6) {
     p.tags?.some((t) => t.value?.toLowerCase() === normalised),
   );
 
-  // If no products have the tag yet, show the first available products
   const result = tagged.length > 0 ? tagged : response.products;
   return result.slice(0, limit);
 }
 
-export async function getProductCategories() {
+async function _getProductCategories() {
   const response = await medusa.store.category.list({
     include_descendants_tree: true,
   });
 
   return response.product_categories;
 }
+
+export const getProductCategories = unstable_cache(
+  _getProductCategories,
+  ["medusa-categories"],
+  { revalidate: 300, tags: ["medusa-categories"] },
+);
