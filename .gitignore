@@ -11,6 +11,10 @@ dist/
 .DS_Store
 coverage/
 .medusa/
+apps/backend/medusa-config.js
+apps/backend/medusa-config.js.map
+apps/backend/medusa-config.d.ts
+apps/backend/medusa-config.d.ts.map
 uploads/
 .cache/
 sanity/.sanity/
