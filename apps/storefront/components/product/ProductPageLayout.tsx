@@ -52,7 +52,12 @@ export async function ProductPageLayout({
   categoryHref,
   ProductPageClient,
 }: ProductPageLayoutProps) {
-  const product = await getProductData(slug);
+  const [product, faqs] = await Promise.all([
+    getProductData(slug),
+    sanityClient
+      .fetch<ProductFaq[]>(PRODUCT_FAQ_QUERY, { handle: slug }, { next: { revalidate: 300 } })
+      .catch(() => []),
+  ]);
   if (!product) notFound();
 
   const images =
@@ -74,12 +79,7 @@ export async function ProductPageLayout({
   const firstVariant = variants[0];
   const price = firstVariant?.calculated_price?.calculated_amount ?? 0;
 
-  const [faqs, crossSellProducts] = await Promise.all([
-    sanityClient
-      .fetch<ProductFaq[]>(PRODUCT_FAQ_QUERY, { handle: slug }, { next: { revalidate: 300 } })
-      .catch(() => []),
-    loadCrossSell(metadata, basePath),
-  ]);
+  const crossSellProducts = await loadCrossSell(metadata, basePath);
 
   const productUrl = `${SITE_URL}${basePath}/${slug}`;
 

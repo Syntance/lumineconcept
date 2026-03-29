@@ -41,30 +41,56 @@ export default async function GotoweWzoryPage({
   searchParams: Promise<{ kat?: string; sort?: string }>;
 }) {
   const params = await searchParams;
+  const order = params.sort ?? "-created_at";
 
-  const [allCategories, settings, testimonials] = await Promise.all([
-    getProductCategories().catch(() => []),
-    sanityClient
-      .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
-      .catch(() => null),
-    sanityClient
-      .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
-      .catch(() => []),
-  ]);
+  let allCategories: Awaited<ReturnType<typeof getProductCategories>>;
+  let settings: SiteSettings | null;
+  let testimonials: Testimonial[];
+  let productsResponse: Awaited<ReturnType<typeof getProducts>> | null;
 
-  // Resolve category handle from ?kat= to category ID
+  if (params.kat) {
+    [allCategories, settings, testimonials] = await Promise.all([
+      getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
+      sanityClient
+        .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
+        .catch(() => null),
+      sanityClient
+        .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
+        .catch(() => []),
+    ]);
+
+    const initialCategoryId = allCategories.find(
+      (c) => c.handle === params.kat || c.id === params.kat,
+    )?.id;
+
+    productsResponse = await getProducts({
+      limit: 12,
+      offset: 0,
+      category_id: initialCategoryId ? [initialCategoryId] : undefined,
+      order,
+    }).catch(() => null);
+  } else {
+    const results = await Promise.all([
+      getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
+      sanityClient
+        .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
+        .catch(() => null),
+      sanityClient
+        .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
+        .catch(() => []),
+      getProducts({ limit: 12, offset: 0, order }).catch(() => null),
+    ]);
+    allCategories = results[0];
+    settings = results[1];
+    testimonials = results[2];
+    productsResponse = results[3];
+  }
+
   const initialCategoryId = params.kat
     ? allCategories.find(
         (c) => c.handle === params.kat || c.id === params.kat,
       )?.id
     : undefined;
-
-  const productsResponse = await getProducts({
-    limit: 12,
-    offset: 0,
-    category_id: initialCategoryId ? [initialCategoryId] : undefined,
-    order: params.sort ?? "-created_at",
-  }).catch(() => null);
 
   const categories = allCategories;
 

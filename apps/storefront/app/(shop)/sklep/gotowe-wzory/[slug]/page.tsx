@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import { ProductPageLayout, getProductData } from "@/components/product/ProductPageLayout";
+import { getProducts } from "@/lib/medusa/products";
 import { SITE_URL } from "@/lib/utils";
 import { ProductPageClient } from "./client";
 
 export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const response = await getProducts({ limit: 50, offset: 0 }).catch(() => null);
+  if (!response?.products) return [];
+  return response.products
+    .filter((p) => p.handle)
+    .map((p) => ({ slug: p.handle! }));
+}
 
 export async function generateMetadata({
   params,
