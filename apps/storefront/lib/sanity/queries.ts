@@ -157,6 +157,7 @@ export const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0] {
   description,
   announcementBar,
   trustBar,
+  checkoutCallout,
   socialLinks,
   footerText,
   titleTemplate,

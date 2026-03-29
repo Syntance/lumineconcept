@@ -67,6 +67,7 @@ export default async function CertyfikatyPage({
     for (const opt of options) {
       optionsMap[opt.title] = (opt.values ?? []).map((v) => v.value);
     }
+    const variants = (p.variants ?? []) as unknown as Array<{ id: string }>;
     return {
       id: p.id,
       handle: p.handle ?? "",
@@ -74,6 +75,7 @@ export default async function CertyfikatyPage({
       thumbnail: p.thumbnail ?? null,
       price: getMinPrice(p.variants as unknown[] | null),
       hasVariantPrices: hasMultiplePrices(p.variants as unknown[] | null),
+      variantId: variants[0]?.id ?? null,
       tags: (p.tags ?? []).map((t) => (t as unknown as { value: string }).value?.toLowerCase() ?? ""),
       options: optionsMap,
     };

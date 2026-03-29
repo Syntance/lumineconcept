@@ -13,6 +13,7 @@ interface CartItemData {
   quantity: number;
   unit_price: number;
   total: number;
+  metadata?: Record<string, string>;
 }
 
 export function CartItem({ item }: { item: CartItemData }) {
@@ -90,9 +91,33 @@ export function CartItem({ item }: { item: CartItemData }) {
         {/* Content */}
         <div className="flex flex-1 flex-col justify-between min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm leading-snug text-brand-800 line-clamp-2">
-              {item.title}
-            </h3>
+            <div className="min-w-0">
+              <h3 className="text-sm leading-snug text-brand-800 line-clamp-2">
+                {item.title}
+              </h3>
+              {(item.metadata?.custom_text || item.metadata?.custom_color || item.metadata?.mat_finish) && (
+                <div className="mt-1 space-y-0.5">
+                  {item.metadata.custom_text && (
+                    <p className="text-xs text-brand-400 truncate">
+                      Treść: &ldquo;{item.metadata.custom_text}&rdquo;
+                    </p>
+                  )}
+                  {item.metadata.custom_color && (
+                    <p className="flex items-center gap-1.5 text-xs text-brand-400">
+                      Kolor:
+                      <span
+                        className="inline-block h-3 w-3 rounded-sm border border-brand-200"
+                        style={{ backgroundColor: item.metadata.custom_color }}
+                      />
+                      <span className="font-mono text-[10px]">{item.metadata.custom_color}</span>
+                    </p>
+                  )}
+                  {item.metadata.mat_finish === "true" && (
+                    <p className="text-xs text-brand-400">Wykończenie: mat</p>
+                  )}
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={handleRemove}
