@@ -108,11 +108,13 @@ export default async function GotoweWzoryPage({
       optionsMap[opt.title] = (opt.values ?? []).map((v) => v.value);
     }
     const variants = (p.variants ?? []) as unknown as Array<{ id: string }>;
+    const images = (p.images ?? []) as unknown as Array<{ url: string }>;
+    const thumbnail = p.thumbnail ?? images[0]?.url ?? null;
     return {
       id: p.id,
       handle: p.handle ?? "",
       title: p.title,
-      thumbnail: p.thumbnail ?? null,
+      thumbnail,
       price: getMinPrice(p.variants as unknown[] | null),
       hasVariantPrices: hasMultiplePrices(p.variants as unknown[] | null),
       variantId: variants[0]?.id ?? null,

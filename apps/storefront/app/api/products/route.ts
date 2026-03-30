@@ -40,11 +40,13 @@ export async function GET(request: NextRequest) {
         optionsMap[opt.title] = (opt.values ?? []).map((v) => v.value);
       }
 
+      const images = (p.images ?? []) as unknown as Array<{ url: string }>;
+      const thumbnail = p.thumbnail ?? images[0]?.url ?? null;
       return {
         id: p.id,
         handle: p.handle ?? "",
         title: p.title,
-        thumbnail: p.thumbnail ?? null,
+        thumbnail,
         price: prices.length > 0 ? Math.min(...prices) : 0,
         hasVariantPrices: new Set(prices).size > 1,
         variantId: variants[0]?.id ?? null,

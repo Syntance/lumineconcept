@@ -26,6 +26,7 @@ interface ProductCardProps {
   hasVariantPrices?: boolean;
   variantId?: string;
   productId?: string;
+  productOptions?: Record<string, string[]>;
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -54,7 +55,7 @@ export function ProductCard({
   currency = "PLN",
   frameVariant = "square",
   imageOnly = false,
-  imageAspectClassName = "aspect-square",
+  imageAspectClassName = "aspect-[10/11]",
   linkless = false,
   sharpCorners = false,
   imageAreaClassName = "bg-brand-50",
@@ -64,6 +65,7 @@ export function ProductCard({
   hasVariantPrices = false,
   variantId,
   productId,
+  productOptions,
 }: ProductCardProps) {
   const sharpSquare = sharpCorners && frameVariant === "square";
 
@@ -81,7 +83,7 @@ export function ProductCard({
       ? "rounded-lg"
       : "";
 
-  const imageIsPortrait = imageAspectClassName !== "aspect-square";
+  const imageIsPortrait = imageAspectClassName !== "aspect-square" && imageAspectClassName !== "aspect-[10/11]";
   const imageWidth = 600;
   const imageHeight = imageIsPortrait ? 750 : 600;
 
@@ -101,13 +103,23 @@ export function ProductCard({
         )}
       >
         {thumbnail ? (
-          <CloudinaryImage
-            publicId={thumbnail}
-            alt={title}
-            width={imageWidth}
-            height={imageHeight}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+          <>
+            <CloudinaryImage
+              publicId={thumbnail}
+              alt={title}
+              width={imageWidth}
+              height={imageHeight}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <img
+              src="/images/watermark.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute right-2 top-2 z-10 h-5 w-auto select-none opacity-30"
+              style={{ filter: "brightness(0) invert(1)" }}
+              draggable={false}
+            />
+          </>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-brand-400">
             <span className="text-sm">Brak zdjęcia</span>
@@ -153,12 +165,14 @@ export function ProductCard({
               productId={productId}
               title={title}
               price={price}
+              thumbnail={thumbnail}
+              options={productOptions}
+              href={href ?? `/sklep/gotowe-wzory/${handle}`}
             >
               <PriceDisplay
                 amount={price}
                 compareAtAmount={compareAtPrice}
                 currency={currency}
-                prefix={hasVariantPrices ? "od" : undefined}
               />
             </AddToCartButton>
           ) : (
@@ -168,7 +182,6 @@ export function ProductCard({
                   amount={price}
                   compareAtAmount={compareAtPrice}
                   currency={currency}
-                  prefix={hasVariantPrices ? "od" : undefined}
                 />
               </span>
               <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">

@@ -20,9 +20,10 @@ export function CloudinaryImage({
   className,
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
 }: CloudinaryImageProps) {
-  const isCloudinaryUrl = publicId.startsWith("http");
+  const isExternalUrl = publicId.startsWith("http");
+  const isLocalBackend = isExternalUrl && new URL(publicId).hostname === "localhost";
 
-  if (isCloudinaryUrl) {
+  if (isExternalUrl) {
     return (
       <Image
         src={publicId}
@@ -32,6 +33,7 @@ export function CloudinaryImage({
         priority={priority}
         className={className}
         sizes={sizes}
+        unoptimized={isLocalBackend}
       />
     );
   }

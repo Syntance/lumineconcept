@@ -15,7 +15,7 @@ async function _getProducts(params?: {
     category_id: params?.category_id,
     order: params?.order,
     region_id: regionId,
-    fields: "+variants.calculated_price,+options,+tags",
+    fields: "+variants.calculated_price,+options,+tags,+images",
   });
 
   return response;
@@ -54,7 +54,7 @@ export async function getProductsByTag(tag: string, limit = 6) {
   const response = await medusa.store.product.list({
     limit: fetchLimit,
     region_id: regionId,
-    fields: "+variants.calculated_price,+tags",
+    fields: "+variants.calculated_price,+tags,+images",
   });
 
   const normalised = tag.toLowerCase();

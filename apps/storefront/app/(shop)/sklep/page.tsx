@@ -195,13 +195,13 @@ export default async function ShopHubPage() {
                         <ProductCard
                           handle={product.handle ?? ""}
                           title={product.title}
-                          thumbnail={product.thumbnail ?? null}
+                          thumbnail={product.thumbnail ?? (product.images as unknown as Array<{ url: string }> | undefined)?.[0]?.url ?? null}
                           price={price}
                           frameVariant={frameVariant}
                           imageOnly
                           linkless
                           sharpCorners={sharpCorners}
-                          imageAspectClassName="aspect-[4/5]"
+                          imageAspectClassName="aspect-[10/11]"
                           imageAreaClassName="bg-white"
                         />
                       </div>

@@ -16,6 +16,80 @@ interface CartItemData {
   metadata?: Record<string, string>;
 }
 
+const COLOR_ELEMENT_LABELS: Record<string, string> = {
+  kolor: "Kolor",
+  tabliczki: "Tabliczka",
+  podstawki: "Podstawka",
+  "3d": "Elementy 3D",
+  "elementów_3d": "Elementy 3D",
+  "elementow_3d": "Elementy 3D",
+};
+
+function hasCustomMetadata(meta: Record<string, string>): boolean {
+  return !!(
+    meta.custom_text ||
+    meta.custom_color ||
+    meta.mat_finish ||
+    Object.keys(meta).some((k) => k.startsWith("color_"))
+  );
+}
+
+function hasPerElementColors(meta: Record<string, string>): boolean {
+  return Object.keys(meta).some((k) => k.startsWith("color_"));
+}
+
+function renderPerElementColors(meta: Record<string, string>) {
+  const colorKeys = Object.keys(meta).filter(
+    (k) => k.startsWith("color_") && k.endsWith("_custom"),
+  );
+  const matKeys = Object.keys(meta).filter(
+    (k) => k.startsWith("color_") && k.endsWith("_mat"),
+  );
+
+  const elements = new Set<string>();
+  for (const k of [...colorKeys, ...matKeys]) {
+    const match = k.match(/^color_(.+?)_(custom|mat)$/);
+    if (match) elements.add(match[1]);
+  }
+
+  if (elements.size === 0) return null;
+
+  return Array.from(elements).map((el) => {
+    const hex = meta[`color_${el}_custom`];
+    const mat = meta[`color_${el}_mat`] === "true";
+    const label = COLOR_ELEMENT_LABELS[el] ?? el;
+
+    return (
+      <div key={el} className="flex items-center gap-1.5 text-xs text-brand-400">
+        <span>{label}:</span>
+        {hex && (
+          <>
+            <span
+              className="inline-block h-3 w-3 rounded-sm border border-brand-200"
+              style={{ backgroundColor: hex }}
+            />
+            <span className="font-mono text-[10px]">{hex}</span>
+          </>
+        )}
+        {mat && <span className="text-[10px]">(mat)</span>}
+      </div>
+    );
+  });
+}
+
+function ColorMetaLine({ label, hex }: { label: string; hex: string }) {
+  return (
+    <p className="flex items-center gap-1.5 text-xs text-brand-400">
+      {label}:
+      <span
+        className="inline-block h-3 w-3 rounded-sm border border-brand-200"
+        style={{ backgroundColor: hex }}
+      />
+      <span className="font-mono text-[10px]">{hex}</span>
+    </p>
+  );
+}
+
 export function CartItem({ item }: { item: CartItemData }) {
   const { updateItem, removeItem } = useCart();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -95,26 +169,22 @@ export function CartItem({ item }: { item: CartItemData }) {
               <h3 className="text-sm leading-snug text-brand-800 line-clamp-2">
                 {item.title}
               </h3>
-              {(item.metadata?.custom_text || item.metadata?.custom_color || item.metadata?.mat_finish) && (
+              {item.metadata && hasCustomMetadata(item.metadata) && (
                 <div className="mt-1 space-y-0.5">
                   {item.metadata.custom_text && (
                     <p className="text-xs text-brand-400 truncate">
                       Treść: &ldquo;{item.metadata.custom_text}&rdquo;
                     </p>
                   )}
+                  {/* Legacy single-color format */}
                   {item.metadata.custom_color && (
-                    <p className="flex items-center gap-1.5 text-xs text-brand-400">
-                      Kolor:
-                      <span
-                        className="inline-block h-3 w-3 rounded-sm border border-brand-200"
-                        style={{ backgroundColor: item.metadata.custom_color }}
-                      />
-                      <span className="font-mono text-[10px]">{item.metadata.custom_color}</span>
-                    </p>
+                    <ColorMetaLine label="Kolor" hex={item.metadata.custom_color} />
                   )}
-                  {item.metadata.mat_finish === "true" && (
+                  {item.metadata.mat_finish === "true" && !hasPerElementColors(item.metadata) && (
                     <p className="text-xs text-brand-400">Wykończenie: mat</p>
                   )}
+                  {/* Per-element colors */}
+                  {renderPerElementColors(item.metadata)}
                 </div>
               )}
             </div>

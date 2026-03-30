@@ -20,7 +20,7 @@ interface ProductVariantSelectorProps {
   onMatFinishChange?: (enabled: boolean) => void;
 }
 
-const COLOR_MAP: Record<string, string> = {
+export const COLOR_MAP: Record<string, string> = {
   bezbarwny: "transparent",
   mleczny: "#F5F0E8",
   czarny: "#1a1a1a",
@@ -41,12 +41,12 @@ const COLOR_MAP: Record<string, string> = {
   brązowy: "#6B4226",
 };
 
-const MIRROR_COLORS = new Set([
+export const MIRROR_COLORS = new Set([
   "złoty", "srebrny", "rose gold", "rosegold",
   "czerwone", "czerwony", "fioletowy", "zielony", "granatowy",
 ]);
 
-const MAT_DISABLED_COLORS = new Set([
+export const MAT_DISABLED_COLORS = new Set([
   "bezbarwny", "mleczny",
   ...MIRROR_COLORS,
 ]);
@@ -55,19 +55,19 @@ export function isMatAllowed(colorValue: string): boolean {
   return !MAT_DISABLED_COLORS.has(colorValue.toLowerCase());
 }
 
-function isMirrorColor(value: string): boolean {
+export function isMirrorColor(value: string): boolean {
   return MIRROR_COLORS.has(value.toLowerCase());
 }
 
-function isColorOption(title: string): boolean {
-  return title.toLowerCase() === "kolor";
+export function isColorOption(title: string): boolean {
+  return title.toLowerCase().startsWith("kolor");
 }
 
-function isSizeOption(title: string): boolean {
+export function isSizeOption(title: string): boolean {
   return title.toLowerCase() === "rozmiar";
 }
 
-function isLedOption(title: string): boolean {
+export function isLedOption(title: string): boolean {
   return title.toLowerCase() === "led";
 }
 

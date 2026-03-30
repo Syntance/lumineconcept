@@ -1,8 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ProductVariantSelector, CUSTOM_COLOR_VALUE, isMatAllowed } from "@/components/product/ProductVariantSelector";
+import {
+  ProductConfigurator,
+  type ColorCustomization,
+  type ColorRegion,
+} from "@/components/product/ProductConfigurator";
+import {
+  CUSTOM_COLOR_VALUE,
+  isColorOption,
+} from "@/components/product/ProductVariantSelector";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { trackProductViewed } from "@/lib/analytics/events";
@@ -26,13 +34,27 @@ interface ProductPageClientProps {
       price: number;
       inventory_quantity: number;
     }>;
+    metadata?: Record<string, unknown>;
+    images?: Array<{ id: string; url: string; alt?: string }>;
   };
   checkoutCallout?: CheckoutCallout | null;
 }
 
-export function ProductPageClient({ product, checkoutCallout }: ProductPageClientProps) {
+function extractMetaKey(optionTitle: string): string {
+  const lower = optionTitle.toLowerCase().replace(/\s+/g, "_");
+  if (lower === "kolor") return "kolor";
+  return lower.replace(/^kolor_/, "");
+}
+
+export function ProductPageClient({
+  product,
+  checkoutCallout,
+}: ProductPageClientProps) {
   const router = useRouter();
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
+
+  const [selectedOptions, setSelectedOptions] = useState<
+    Record<string, string>
+  >(() => {
     const initial: Record<string, string> = {};
     for (const option of product.options) {
       if (option.values[0]) {
@@ -42,17 +64,32 @@ export function ProductPageClient({ product, checkoutCallout }: ProductPageClien
     return initial;
   });
 
+  const colorOptionTitles = useMemo(
+    () => product.options.filter((o) => isColorOption(o.title)).map((o) => o.title),
+    [product.options],
+  );
+
+  const [colorCustomizations, setColorCustomizations] = useState<
+    Record<string, ColorCustomization>
+  >(() => {
+    const initial: Record<string, ColorCustomization> = {};
+    for (const title of colorOptionTitles) {
+      initial[title] = { customColor: null, matFinish: false };
+    }
+    return initial;
+  });
+
   const [customText, setCustomText] = useState("");
-  const [customColor, setCustomColor] = useState<string | null>(null);
-  const [matFinish, setMatFinish] = useState(false);
 
   const ctaRef = useRef<HTMLDivElement>(null);
   const [showSticky, setShowSticky] = useState(false);
-  const [calloutAction, setCalloutAction] = useState<"cart" | "checkout" | null>(null);
+  const [calloutAction, setCalloutAction] = useState<
+    "cart" | "checkout" | null
+  >(null);
 
   const selectedVariant = product.variants.find((variant) =>
     Object.entries(selectedOptions).every(([key, value]) => {
-      if (key === "Kolor" && value === CUSTOM_COLOR_VALUE) {
+      if (isColorOption(key) && value === CUSTOM_COLOR_VALUE) {
         return true;
       }
       return variant.options[key] === value;
@@ -91,25 +128,62 @@ export function ProductPageClient({ product, checkoutCallout }: ProductPageClien
 
   const handleOptionChange = (optionTitle: string, value: string) => {
     setSelectedOptions((prev) => ({ ...prev, [optionTitle]: value }));
-    if (optionTitle === "Kolor") {
-      if (value !== CUSTOM_COLOR_VALUE) {
-        setCustomColor(null);
-      }
-      if (!isMatAllowed(value)) {
-        setMatFinish(false);
-      }
-    }
   };
 
-  const buildMetadata = useCallback((): Record<string, string> | undefined => {
+  const handleColorCustomizationChange = (
+    optionTitle: string,
+    field: "customColor" | "matFinish",
+    value: string | boolean | null,
+  ) => {
+    setColorCustomizations((prev) => ({
+      ...prev,
+      [optionTitle]: {
+        ...prev[optionTitle],
+        [field]: value,
+      },
+    }));
+  };
+
+  const colorRegions = useMemo<ColorRegion[]>(() => {
+    const raw = product.metadata?.colorRegions;
+    if (!Array.isArray(raw)) return [];
+    return raw.filter(
+      (r): r is ColorRegion =>
+        typeof r === "object" &&
+        r !== null &&
+        typeof (r as ColorRegion).name === "string" &&
+        typeof (r as ColorRegion).maskUrl === "string",
+    );
+  }, [product.metadata]);
+
+  const baseImageUrl = useMemo(() => {
+    const fromMeta = product.metadata?.configuratorBaseImage;
+    if (typeof fromMeta === "string" && fromMeta) return fromMeta;
+    return product.images?.[0]?.url ?? null;
+  }, [product.metadata, product.images]);
+
+  const buildMetadata = useCallback(():
+    | Record<string, string>
+    | undefined => {
     const meta: Record<string, string> = {};
     if (customText.trim()) meta.custom_text = customText.trim();
-    if (customColor) meta.custom_color = customColor;
-    if (matFinish) meta.mat_finish = "true";
-    return Object.keys(meta).length > 0 ? meta : undefined;
-  }, [customText, customColor, matFinish]);
 
-  const calloutEnabled = checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
+    for (const title of colorOptionTitles) {
+      const key = extractMetaKey(title);
+      const cust = colorCustomizations[title];
+      if (cust?.customColor) {
+        meta[`color_${key}_custom`] = cust.customColor;
+      }
+      if (cust?.matFinish) {
+        meta[`color_${key}_mat`] = "true";
+      }
+    }
+
+    return Object.keys(meta).length > 0 ? meta : undefined;
+  }, [customText, colorCustomizations, colorOptionTitles]);
+
+  const calloutEnabled =
+    checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
 
   const handleBeforeAdd = useCallback(() => {
     if (calloutEnabled) {
@@ -133,33 +207,17 @@ export function ProductPageClient({ product, checkoutCallout }: ProductPageClien
   return (
     <>
       <div className="space-y-6">
-        <ProductVariantSelector
+        <ProductConfigurator
           options={product.options}
           selectedOptions={selectedOptions}
           onOptionChange={handleOptionChange}
-          customColor={customColor}
-          onCustomColorChange={setCustomColor}
-          matFinish={matFinish}
-          onMatFinishChange={setMatFinish}
+          colorCustomizations={colorCustomizations}
+          onColorCustomizationChange={handleColorCustomizationChange}
+          customText={customText}
+          onCustomTextChange={setCustomText}
+          baseImageUrl={baseImageUrl}
+          colorRegions={colorRegions}
         />
-
-        <div>
-          <label htmlFor="custom-text" className="mb-2 block text-sm font-medium text-brand-700">
-            Twój tekst <span className="font-normal text-brand-400">(opcjonalnie)</span>
-          </label>
-          <textarea
-            id="custom-text"
-            value={customText}
-            onChange={(e) => setCustomText(e.target.value)}
-            placeholder="Wpisz treść, np. nazwę salonu, imię…"
-            rows={2}
-            maxLength={200}
-            className="w-full resize-none rounded-lg border border-brand-200 px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:border-accent focus:outline-none"
-          />
-          {customText.length > 0 && (
-            <p className="mt-1 text-right text-xs text-brand-400">{customText.length}/200</p>
-          )}
-        </div>
 
         {selectedVariant && qty > 5 && (
           <p className="flex items-center gap-1.5 text-sm text-green-700">
