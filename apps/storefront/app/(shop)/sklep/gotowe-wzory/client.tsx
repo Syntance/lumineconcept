@@ -343,6 +343,7 @@ export function ShopGridClient({
                   hasVariantPrices={product.hasVariantPrices}
                   variantId={product.variantId ?? undefined}
                   productId={product.id}
+                  productOptions={product.options}
                 />
               </div>
             ))}

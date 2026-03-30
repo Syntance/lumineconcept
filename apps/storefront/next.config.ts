@@ -5,6 +5,8 @@ const MEDUSA_BACKEND_URL =
 const MEILISEARCH_HOST =
   process.env.NEXT_PUBLIC_MEILISEARCH_HOST ?? "http://localhost:7700";
 
+const medusaUrl = new URL(MEDUSA_BACKEND_URL);
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -15,6 +17,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "cdn.sanity.io",
+      },
+      {
+        protocol: medusaUrl.protocol.replace(":", "") as "http" | "https",
+        hostname: medusaUrl.hostname,
+        port: medusaUrl.port || undefined,
       },
     ],
   },
@@ -65,7 +72,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://connect.facebook.net https://eu.posthog.com https://cdn-cookieyes.com https://geowidget.inpost.pl",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://geowidget.inpost.pl",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com https://images.unsplash.com",
+              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com https://images.unsplash.com " + MEDUSA_BACKEND_URL,
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://eu.posthog.com https://connect.facebook.net https://api.mailerlite.com " + MEDUSA_BACKEND_URL + " " + MEILISEARCH_HOST,
               "frame-src 'self' https://geowidget.inpost.pl https://www.facebook.com",

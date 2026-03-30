@@ -41,6 +41,8 @@ interface ProductPageLayoutProps {
         price: number;
         inventory_quantity: number;
       }>;
+      metadata?: Record<string, unknown>;
+      images?: Array<{ id: string; url: string; alt?: string }>;
     };
     checkoutCallout?: CheckoutCallout | null;
   }>;
@@ -174,6 +176,12 @@ export async function ProductPageLayout({
                   options: v.options,
                   price: v.calculated_price?.calculated_amount ?? 0,
                   inventory_quantity: v.inventory_quantity,
+                })),
+                metadata,
+                images: images.map((img) => ({
+                  id: img.id,
+                  url: img.url,
+                  alt: img.alt,
                 })),
               }}
               checkoutCallout={siteSettings?.checkoutCallout ?? null}

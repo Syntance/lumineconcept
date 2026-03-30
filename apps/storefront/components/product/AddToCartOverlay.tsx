@@ -1,13 +1,17 @@
 "use client";
 
 import { useCallback, useState, type MouseEvent, type ReactNode } from "react";
-import { useCart } from "@/hooks/useCart";
+import { createPortal } from "react-dom";
+import { MiniConfiguratorModal } from "./MiniConfiguratorModal";
 
 interface AddToCartButtonProps {
   variantId: string;
   productId: string;
   title: string;
   price: number;
+  thumbnail?: string | null;
+  options?: Record<string, string[]>;
+  href?: string;
   children: ReactNode;
 }
 
@@ -16,50 +20,52 @@ export function AddToCartButton({
   productId,
   title,
   price,
+  thumbnail,
+  options,
+  href,
   children,
 }: AddToCartButtonProps) {
-  const { addItemWithTracking } = useCart();
-  const [adding, setAdding] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const handleClick = useCallback(
-    async (e: MouseEvent) => {
+    (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (adding) return;
-      setAdding(true);
-      try {
-        await addItemWithTracking(variantId, {
-          id: productId,
-          title,
-          price,
-          currency: "PLN",
-        });
-      } finally {
-        setAdding(false);
-      }
+      setModalOpen(true);
     },
-    [adding, addItemWithTracking, variantId, productId, title, price],
+    [],
   );
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="relative shrink-0 flex w-full items-center justify-center rounded-md border border-[#EEE8E0] bg-white py-2 px-3 transition-all duration-200 group-hover:bg-[#EEE8E0]"
-    >
-      <span className="transition-opacity duration-200 group-hover:opacity-0">
-        {children}
-      </span>
-      <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-        {adding ? (
-          <span className="flex items-center gap-2">
-            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand-300 border-t-brand-800" />
-            Dodaję…
-          </span>
-        ) : (
-          "Dodaj do koszyka"
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        className="relative shrink-0 flex w-full items-center justify-center rounded-md border border-[#EEE8E0] bg-white py-2 px-3 transition-all duration-200 group-hover:bg-[#EEE8E0]"
+      >
+        <span className="transition-opacity duration-200 group-hover:opacity-0">
+          {children}
+        </span>
+        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          Konfiguruj
+        </span>
+      </button>
+      {modalOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <MiniConfiguratorModal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            productId={productId}
+            variantId={variantId}
+            title={title}
+            price={price}
+            thumbnail={thumbnail ?? null}
+            options={options ?? {}}
+            href={href}
+          />,
+          document.body,
         )}
-      </span>
-    </button>
+    </>
   );
 }

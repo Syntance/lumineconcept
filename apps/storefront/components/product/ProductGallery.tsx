@@ -1,7 +1,40 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Image from "next/image";
+import { cloudinaryLoader } from "@/lib/cloudinary/utils";
 import { CloudinaryImage } from "../common/CloudinaryImage";
+
+function GalleryMainImage({ url, alt }: { url: string; alt: string }) {
+  const isExternal = url.startsWith("http");
+  const isLocal = isExternal && new URL(url).hostname === "localhost";
+
+  if (isExternal) {
+    return (
+      <Image
+        src={url}
+        alt={alt}
+        fill
+        priority
+        className="object-cover object-center"
+        sizes="(max-width: 1024px) 100vw, 50vw"
+        unoptimized={isLocal}
+      />
+    );
+  }
+
+  return (
+    <Image
+      loader={cloudinaryLoader}
+      src={url}
+      alt={alt}
+      fill
+      priority
+      className="object-cover object-center"
+      sizes="(max-width: 1024px) 100vw, 50vw"
+    />
+  );
+}
 
 interface ProductGalleryProps {
   images: Array<{
@@ -84,7 +117,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
       {/* Vertical thumbnails — desktop */}
       {images.length > 1 && (
         <div
-          className="hidden lg:flex flex-col gap-2 overflow-y-auto max-h-[600px] shrink-0"
+          className="hidden lg:flex flex-col gap-2 overflow-y-auto max-h-[700px] shrink-0"
           role="tablist"
           aria-label="Galeria produktu"
         >
@@ -118,7 +151,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
         {/* Main image with zoom + swipe */}
         <div
           ref={mainRef}
-          className={`relative aspect-square overflow-hidden rounded-lg bg-brand-50 ${
+          className={`relative aspect-[10/11] overflow-hidden rounded-lg bg-brand-50 ${
             zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
           }`}
           onClick={handleMainClick}
@@ -128,7 +161,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
           onTouchEnd={handleTouchEnd}
         >
           <div
-            className="h-full w-full transition-transform duration-200"
+            className="relative h-full w-full transition-transform duration-200"
             style={
               zoomed
                 ? {
@@ -138,15 +171,20 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 : undefined
             }
           >
-            <CloudinaryImage
-              publicId={selectedImage.url}
+            <GalleryMainImage
+              url={selectedImage.url}
               alt={selectedImage.alt || productTitle}
-              width={1200}
-              height={1200}
-              priority
-              className="object-cover"
             />
           </div>
+          {/* Watermark */}
+          <img
+            src="/images/watermark.png"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute right-4 -top-0.5 h-32 w-auto select-none opacity-100"
+            style={{ filter: "brightness(0) invert(1)" }}
+            draggable={false}
+          />
           {/* Dot indicators mobile */}
           {images.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 lg:hidden">
