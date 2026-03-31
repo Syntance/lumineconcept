@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ActiveFilters, FilterConfig } from "./filter-types";
 import {
   PRODUCT_PILLS,
@@ -38,6 +38,11 @@ export function FilterSidebar({
   const sliderMax = filterConfig.maxPrice || PRICE_SLIDER_MAX;
   const [localMin, setLocalMin] = useState(activeFilters.priceMin ?? sliderMin);
   const [localMax, setLocalMax] = useState(activeFilters.priceMax ?? sliderMax);
+
+  useEffect(() => {
+    setLocalMin(activeFilters.priceMin ?? sliderMin);
+    setLocalMax(activeFilters.priceMax ?? sliderMax);
+  }, [activeFilters.priceMin, activeFilters.priceMax, sliderMin, sliderMax]);
 
   const commitPrice = () => {
     update({
