@@ -293,7 +293,7 @@ export function ProductPageClient({
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white/95 p-3 backdrop-blur-sm lg:hidden">
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-medium text-brand-800">
+              <p className="truncate text-base font-medium text-brand-800">
                 {product.title}
               </p>
               <PriceDisplay amount={selectedVariant?.price ?? 0} size="sm" />

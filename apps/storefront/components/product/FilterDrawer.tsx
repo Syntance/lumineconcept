@@ -4,8 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { ActiveFilters, FilterConfig } from "./filter-types";
 import {
-  COLOR_MAP,
-  TAG_OPTIONS,
+  PRODUCT_PILLS,
   PRICE_SLIDER_MIN,
   PRICE_SLIDER_MAX,
   PRICE_STEP,
@@ -21,7 +20,10 @@ interface FilterDrawerProps {
   categories: Array<{ id: string; name: string }>;
   activeFilters: ActiveFilters;
   filterConfig: FilterConfig;
+  /** Liczba produktów pasujących do filtrów (pełny katalog musi być wczytany). */
   resultCount: number;
+  /** Gdy true, pełna lista się jeszcze ładuje — nie pokazujemy mylącej liczby. */
+  catalogLoading?: boolean;
   onFiltersChange: (filters: ActiveFilters) => void;
 }
 
@@ -60,6 +62,7 @@ export function FilterDrawer({
   activeFilters,
   filterConfig,
   resultCount,
+  catalogLoading = false,
   onFiltersChange,
 }: FilterDrawerProps) {
   useEffect(() => {
@@ -132,6 +135,30 @@ export function FilterDrawer({
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+          {/* Kategoria */}
+          <section>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Kategoria</p>
+            <div className="flex flex-wrap gap-2">
+              {PRODUCT_PILLS.map((pill) => {
+                const isActive = (activeFilters.pill ?? "all") === pill.value;
+                return (
+                  <Chip
+                    key={pill.value}
+                    active={isActive}
+                    onClick={() =>
+                      onFiltersChange({
+                        ...activeFilters,
+                        pill: pill.value === "all" ? undefined : pill.value,
+                      })
+                    }
+                  >
+                    {pill.label}
+                  </Chip>
+                );
+              })}
+            </div>
+          </section>
+
           {/* Cena — suwak */}
           <section>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Cena</p>
@@ -182,37 +209,6 @@ export function FilterDrawer({
               </div>
             </div>
           </section>
-
-          {/* Kolor */}
-          {filterConfig.colors.length > 0 && (
-            <section>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Kolor</p>
-              <div className="flex flex-wrap gap-2">
-                {filterConfig.colors.map((color) => {
-                  const hex = COLOR_MAP[color.toLowerCase()] ?? "#ccc";
-                  const isActive = activeFilters.colors.includes(color);
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => update({ colors: toggle(activeFilters.colors, color) })}
-                      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
-                        isActive
-                          ? "border-accent bg-accent/10 text-accent-dark font-medium"
-                          : "border-brand-200 text-brand-600"
-                      }`}
-                    >
-                      <span
-                        className="inline-block h-3.5 w-3.5 rounded-full border border-brand-200"
-                        style={{ backgroundColor: hex }}
-                      />
-                      {color}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          )}
 
           {/* Materiał */}
           {filterConfig.materials.length > 0 && (
@@ -288,41 +284,6 @@ export function FilterDrawer({
               </div>
             </section>
           )}
-
-          {/* Dostępność */}
-          <section>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Dostępność</p>
-            <div className="flex gap-2">
-              <Chip
-                active={activeFilters.availability === "in_stock"}
-                onClick={() => update({ availability: activeFilters.availability === "in_stock" ? undefined : "in_stock" })}
-              >
-                W magazynie
-              </Chip>
-              <Chip
-                active={activeFilters.availability === "on_order"}
-                onClick={() => update({ availability: activeFilters.availability === "on_order" ? undefined : "on_order" })}
-              >
-                Na zamówienie
-              </Chip>
-            </div>
-          </section>
-
-          {/* Cechy / Tagi */}
-          <section>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Cechy</p>
-            <div className="flex flex-wrap gap-2">
-              {TAG_OPTIONS.map((tag) => (
-                <Chip
-                  key={tag.value}
-                  active={activeFilters.tags.includes(tag.value)}
-                  onClick={() => update({ tags: toggle(activeFilters.tags, tag.value) })}
-                >
-                  {tag.label}
-                </Chip>
-              ))}
-            </div>
-          </section>
         </div>
 
         {/* Sticky footer */}
@@ -332,7 +293,7 @@ export function FilterDrawer({
             onClick={onClose}
             className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
           >
-            Pokaż {resultCountLabel(resultCount)}
+            {catalogLoading ? "Zastosuj" : `Pokaż ${resultCountLabel(resultCount)}`}
           </button>
         </div>
       </div>

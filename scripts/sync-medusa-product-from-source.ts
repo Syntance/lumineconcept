@@ -292,8 +292,18 @@ function buildOptionsPayload(options: AdminOption[]): Array<{ title: string; val
   }));
 }
 
-function buildVariantCreatePayload(sourceVariant: AdminVariant): Record<string, unknown> {
+function buildVariantCreatePayload(
+  sourceVariant: AdminVariant,
+  allOptions: AdminOption[],
+): Record<string, unknown> {
   const options = variantOptionsToRecord(sourceVariant);
+
+  for (const opt of allOptions) {
+    if (!options[opt.title] && opt.values.length > 0) {
+      options[opt.title] = opt.values[0].value;
+    }
+  }
+
   const prices = mapPricesForCreate(sourceVariant.prices);
   return {
     title: sourceVariant.title,
@@ -350,7 +360,7 @@ async function syncOneHandle(
   // 3) Utwórz warianty ze źródła
   console.log(`  → Tworzenie ${source.variants.length} wariantów...`);
   for (const v of source.variants) {
-    const payload = buildVariantCreatePayload(v);
+    const payload = buildVariantCreatePayload(v, source.options);
     if (!payload.prices || (payload.prices as unknown[]).length === 0) {
       console.warn(`     ! Pominięto wariant bez cen: ${v.title}`);
       continue;

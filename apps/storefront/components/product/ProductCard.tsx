@@ -22,29 +22,11 @@ interface ProductCardProps {
   imageAreaClassName?: string;
   href?: string;
   badge?: "bestseller" | "nowość" | null;
-  colorSwatches?: string[];
   hasVariantPrices?: boolean;
   variantId?: string;
   productId?: string;
   productOptions?: Record<string, string[]>;
   linksCount?: number;
-}
-
-const COLOR_MAP: Record<string, string> = {
-  czarny: "#1a1a1a",
-  biały: "#ffffff",
-  złoty: "#D4AF37",
-  "rose gold": "#B76E79",
-  srebrny: "#C0C0C0",
-  przezroczysty: "transparent",
-  różowy: "#E8A0BF",
-  beżowy: "#D4C5B2",
-  szary: "#8B8B8B",
-  brązowy: "#6B4226",
-};
-
-function resolveSwatchColor(name: string): string {
-  return COLOR_MAP[name.toLowerCase()] ?? "#ccc";
 }
 
 export function ProductCard({
@@ -62,7 +44,6 @@ export function ProductCard({
   imageAreaClassName = "bg-brand-50",
   href,
   badge,
-  colorSwatches,
   hasVariantPrices = false,
   variantId,
   productId,
@@ -88,9 +69,6 @@ export function ProductCard({
   const imageIsPortrait = imageAspectClassName !== "aspect-square" && imageAspectClassName !== "aspect-[10/11]";
   const imageWidth = 600;
   const imageHeight = imageIsPortrait ? 750 : 600;
-
-  const visibleSwatches = colorSwatches?.slice(0, 5) ?? [];
-  const extraSwatchCount = (colorSwatches?.length ?? 0) - 5;
 
   const article = (
     <article
@@ -143,24 +121,9 @@ export function ProductCard({
       </div>
       {!imageOnly && (
         <div className="flex min-h-0 flex-1 flex-col justify-between gap-2 p-4">
-          <h3 className="min-h-11 shrink-0 text-sm font-medium leading-snug text-brand-800 line-clamp-2">
+          <h3 className="min-h-12 shrink-0 text-base font-medium leading-snug text-brand-800 line-clamp-2">
             {title}
           </h3>
-          {visibleSwatches.length > 0 && (
-            <div className="flex items-center gap-1">
-              {visibleSwatches.map((color) => (
-                <span
-                  key={color}
-                  className="inline-block h-3 w-3 rounded-full border border-brand-200"
-                  style={{ backgroundColor: resolveSwatchColor(color) }}
-                  title={color}
-                />
-              ))}
-              {extraSwatchCount > 0 && (
-                <span className="text-[10px] text-brand-400">+{extraSwatchCount}</span>
-              )}
-            </div>
-          )}
           {variantId && productId ? (
             <AddToCartButton
               variantId={variantId}

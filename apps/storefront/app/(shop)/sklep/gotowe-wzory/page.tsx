@@ -6,7 +6,10 @@ import { SITE_SETTINGS_QUERY, TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
 import type { SiteSettings, Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { SITE_URL } from "@/lib/utils";
+import { medusaProductToSimple } from "@/lib/products/simple-product";
 import { ShopGridClient } from "./client";
+
+const INITIAL_PAGE_SIZE = 24;
 
 export const metadata: Metadata = {
   title: "Gotowe wzory z plexi — cenniki, tabliczki, menu, QR | Lumine Concept",
@@ -16,24 +19,6 @@ export const metadata: Metadata = {
 };
 
 export const revalidate = 60;
-
-function extractPrice(variant: unknown): number {
-  const v = variant as Record<string, unknown> | null;
-  const cp = v?.calculated_price as Record<string, unknown> | undefined;
-  return Number(cp?.calculated_amount ?? 0);
-}
-
-function getMinPrice(variants: unknown[] | null | undefined): number {
-  if (!variants?.length) return 0;
-  const prices = variants.map(extractPrice).filter((p) => p > 0);
-  return prices.length > 0 ? Math.min(...prices) : 0;
-}
-
-function hasMultiplePrices(variants: unknown[] | null | undefined): boolean {
-  if (!variants || variants.length <= 1) return false;
-  const prices = new Set(variants.map(extractPrice).filter((p) => p > 0));
-  return prices.size > 1;
-}
 
 export default async function GotoweWzoryPage({
   searchParams,
@@ -64,7 +49,7 @@ export default async function GotoweWzoryPage({
     )?.id;
 
     productsResponse = await getProducts({
-      limit: 12,
+      limit: INITIAL_PAGE_SIZE,
       offset: 0,
       category_id: initialCategoryId ? [initialCategoryId] : undefined,
       order,
@@ -78,7 +63,7 @@ export default async function GotoweWzoryPage({
       sanityClient
         .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
         .catch(() => []),
-      getProducts({ limit: 12, offset: 0, order }).catch(() => null),
+      getProducts({ limit: INITIAL_PAGE_SIZE, offset: 0, order }).catch(() => null),
     ]);
     allCategories = results[0];
     settings = results[1];
@@ -98,33 +83,9 @@ export default async function GotoweWzoryPage({
   const totalCount = productsResponse?.count ?? 0;
   const trustBar = settings?.trustBar;
 
-  const initialProducts = products.map((p) => {
-    const options = (p.options ?? []) as unknown as Array<{
-      title: string;
-      values: Array<{ value: string }>;
-    }>;
-    const optionsMap: Record<string, string[]> = {};
-    for (const opt of options) {
-      optionsMap[opt.title] = (opt.values ?? []).map((v) => v.value);
-    }
-    const variants = (p.variants ?? []) as unknown as Array<{ id: string }>;
-    const images = (p.images ?? []) as unknown as Array<{ url: string }>;
-    const thumbnail = p.thumbnail ?? images[0]?.url ?? null;
-    const meta = (p.metadata ?? {}) as Record<string, unknown>;
-    const rawLinks = Number(meta.links_count);
-    return {
-      id: p.id,
-      handle: p.handle ?? "",
-      title: p.title,
-      thumbnail,
-      price: getMinPrice(p.variants as unknown[] | null),
-      hasVariantPrices: hasMultiplePrices(p.variants as unknown[] | null),
-      variantId: variants[0]?.id ?? null,
-      tags: (p.tags ?? []).map((t) => (t as unknown as { value: string }).value?.toLowerCase() ?? ""),
-      options: optionsMap,
-      linksCount: Number.isFinite(rawLinks) && rawLinks > 0 ? rawLinks : 0,
-    };
-  });
+  const initialProducts = products.map((p) =>
+    medusaProductToSimple(p as unknown as Record<string, unknown>),
+  );
 
   const displayTestimonials = testimonials.slice(0, 2);
 

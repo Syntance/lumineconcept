@@ -4,17 +4,10 @@ import { useCallback } from "react";
 import type { ActiveFilters } from "./filter-types";
 import {
   SORT_OPTIONS,
-  TAG_OPTIONS,
   PRODUCT_PILLS,
   clearFilters,
   formatPricePLN,
 } from "./filter-types";
-
-interface ActiveChip {
-  key: string;
-  label: string;
-  onRemove: () => void;
-}
 
 interface SortBarProps {
   categories: Array<{ id: string; name: string }>;
@@ -23,19 +16,19 @@ interface SortBarProps {
   onOpenDrawer: () => void;
 }
 
-export function SortBar({
-  categories,
-  activeFilters,
-  onFiltersChange,
-  onOpenDrawer,
-}: SortBarProps) {
-  const update = useCallback(
-    (patch: Partial<ActiveFilters>) => {
-      onFiltersChange({ ...activeFilters, ...patch });
-    },
-    [activeFilters, onFiltersChange],
-  );
+type SortBarDesktopChipsProps = Omit<SortBarProps, "onOpenDrawer">;
 
+interface ActiveChip {
+  key: string;
+  label: string;
+  onRemove: () => void;
+}
+
+function buildActiveChips(
+  activeFilters: ActiveFilters,
+  categories: Array<{ id: string; name: string }>,
+  update: (patch: Partial<ActiveFilters>) => void,
+): ActiveChip[] {
   const chips: ActiveChip[] = [];
 
   if (activeFilters.pill && activeFilters.pill !== "all") {
@@ -53,15 +46,6 @@ export function SortBar({
       key: `cat-${activeFilters.category}`,
       label: cat?.name ?? activeFilters.category,
       onRemove: () => update({ category: undefined }),
-    });
-  }
-
-  for (const color of activeFilters.colors) {
-    chips.push({
-      key: `color-${color}`,
-      label: color,
-      onRemove: () =>
-        update({ colors: activeFilters.colors.filter((c) => c !== color) }),
     });
   }
 
@@ -110,88 +94,102 @@ export function SortBar({
     });
   }
 
-  if (activeFilters.availability) {
-    chips.push({
-      key: "availability",
-      label: activeFilters.availability === "in_stock" ? "W magazynie" : "Na zamówienie",
-      onRemove: () => update({ availability: undefined }),
-    });
-  }
+  return chips;
+}
 
-  for (const tag of activeFilters.tags) {
-    const tagOpt = TAG_OPTIONS.find((t) => t.value === tag);
-    chips.push({
-      key: `tag-${tag}`,
-      label: tagOpt?.label ?? tag,
-      onRemove: () =>
-        update({ tags: activeFilters.tags.filter((t) => t !== tag) }),
-    });
-  }
+/** Pasek sortowania + Filtry — tylko mobile (lg:hidden). */
+export function SortBarMobile({
+  categories,
+  activeFilters,
+  onFiltersChange,
+  onOpenDrawer,
+}: SortBarProps) {
+  const update = useCallback(
+    (patch: Partial<ActiveFilters>) => {
+      onFiltersChange({ ...activeFilters, ...patch });
+    },
+    [activeFilters, onFiltersChange],
+  );
 
+  const chips = buildActiveChips(activeFilters, categories, update);
   const activeCount = chips.length;
 
   return (
-    <>
-      {/* Mobile sticky bar: sort + result count + filter button */}
-      <div className="sticky top-16 z-30 -mx-4 border-b border-brand-100 bg-white/95 px-4 py-2.5 backdrop-blur-sm lg:hidden">
-        <div className="flex items-center gap-3">
-          <select
-            value={activeFilters.sort}
-            onChange={(e) => update({ sort: e.target.value })}
-            className="rounded-md border border-brand-200 bg-white px-3 py-1.5 text-xs text-brand-700"
-            aria-label="Sortowanie"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
-          <span className="flex-1" />
-          <button
-            type="button"
-            onClick={onOpenDrawer}
-            className="flex items-center gap-1.5 rounded-md border border-brand-200 px-3 py-1.5 text-xs text-brand-700 transition-colors hover:bg-brand-50"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            Filtry
-            {activeCount > 0 && (
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
-                {activeCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Desktop: active chips */}
-      {chips.length > 0 && (
-        <div className="hidden flex-wrap items-center gap-1.5 lg:flex">
-          {chips.map((chip) => (
-            <button
-              key={chip.key}
-              type="button"
-              onClick={chip.onRemove}
-              className="flex items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-[11px] text-brand-700 transition-colors hover:bg-brand-200"
-            >
-              {chip.label}
-              <span className="text-brand-400">&times;</span>
-            </button>
+    <div className="sticky top-16 z-30 -mx-4 border-b border-brand-100 bg-white/95 px-4 py-2.5 backdrop-blur-sm lg:hidden">
+      <div className="flex items-center gap-3">
+        <select
+          value={activeFilters.sort}
+          onChange={(e) => update({ sort: e.target.value })}
+          className="rounded-md border border-brand-200 bg-white px-3 py-1.5 text-xs text-brand-700"
+          aria-label="Sortowanie"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
           ))}
-          {chips.length > 1 && (
-            <button
-              type="button"
-              onClick={() => onFiltersChange(clearFilters(activeFilters.sort, activeFilters.pill))}
-              className="text-[11px] text-brand-400 underline underline-offset-2 hover:text-brand-600"
-            >
-              Wyczyść
-            </button>
+        </select>
+
+        <span className="flex-1" />
+        <button
+          type="button"
+          onClick={onOpenDrawer}
+          className="flex items-center gap-1.5 rounded-md border border-brand-200 px-3 py-1.5 text-xs text-brand-700 transition-colors hover:bg-brand-50"
+        >
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          Filtry
+          {activeCount > 0 && (
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
+              {activeCount}
+            </span>
           )}
-        </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Aktywne chipy filtrów — tylko desktop (hidden lg:flex). */
+export function SortBarDesktopChips({
+  categories,
+  activeFilters,
+  onFiltersChange,
+}: SortBarDesktopChipsProps) {
+  const update = useCallback(
+    (patch: Partial<ActiveFilters>) => {
+      onFiltersChange({ ...activeFilters, ...patch });
+    },
+    [activeFilters, onFiltersChange],
+  );
+
+  const chips = buildActiveChips(activeFilters, categories, update);
+
+  if (chips.length === 0) return null;
+
+  return (
+    <div className="hidden flex-wrap items-center gap-1.5 lg:flex">
+      {chips.map((chip) => (
+        <button
+          key={chip.key}
+          type="button"
+          onClick={chip.onRemove}
+          className="flex items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-[11px] text-brand-700 transition-colors hover:bg-brand-200"
+        >
+          {chip.label}
+          <span className="text-brand-400">&times;</span>
+        </button>
+      ))}
+      {chips.length > 1 && (
+        <button
+          type="button"
+          onClick={() => onFiltersChange(clearFilters(activeFilters.sort, activeFilters.pill))}
+          className="text-[11px] text-brand-400 underline underline-offset-2 hover:text-brand-600"
+        >
+          Wyczyść
+        </button>
       )}
-    </>
+    </div>
   );
 }

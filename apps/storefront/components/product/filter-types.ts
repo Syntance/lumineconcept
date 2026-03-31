@@ -1,5 +1,4 @@
 export interface FilterConfig {
-  colors: string[];
   sizes: string[];
   materials: string[];
   finishes: string[];
@@ -12,15 +11,12 @@ export interface ActiveFilters {
   category?: string;
   pill?: string;
   sort: string;
-  colors: string[];
   led?: boolean;
   priceMin?: number;
   priceMax?: number;
   sizes: string[];
   materials: string[];
   finishes: string[];
-  availability?: "in_stock" | "on_order";
-  tags: string[];
 }
 
 export const PRODUCT_PILLS = [
@@ -30,6 +26,7 @@ export const PRODUCT_PILLS = [
   { value: "menu", label: "Menu" },
   { value: "qr", label: "QR" },
   { value: "wizytowniki", label: "Wizytowniki" },
+  { value: "certyfikaty", label: "Certyfikaty" },
 ] as const;
 
 export function matchesPill(pill: string | undefined, handle: string, title: string): boolean {
@@ -56,7 +53,18 @@ export function matchesPill(pill: string | undefined, handle: string, title: str
     case "qr":
       return h.includes("qr") || h.includes("wifi") || h.includes("wi-fi");
     case "wizytowniki":
-      return h.includes("wizytownik") || h.includes("certyfikat") || h.includes("voucher");
+      return h.includes("wizytownik");
+    case "certyfikaty":
+      return (
+        h.includes("certyfikat") ||
+        h.includes("dyplom") ||
+        h.includes("voucher") ||
+        h.includes("podziękow") ||
+        h.includes("podziekow") ||
+        t.includes("certyfikat") ||
+        t.includes("dyplom") ||
+        t.includes("voucher")
+      );
     default:
       return true;
   }
@@ -79,39 +87,17 @@ export const PRICE_STEP = 1000;
 export const PRICE_SLIDER_MIN = 0;
 export const PRICE_SLIDER_MAX = 100000;
 
-export const COLOR_MAP: Record<string, string> = {
-  czarny: "#1a1a1a",
-  biały: "#ffffff",
-  złoty: "#D4AF37",
-  "rose gold": "#B76E79",
-  srebrny: "#C0C0C0",
-  przezroczysty: "transparent",
-  różowy: "#E8A0BF",
-  beżowy: "#D4C5B2",
-  szary: "#8B8B8B",
-  brązowy: "#6B4226",
-};
-
-export const TAG_OPTIONS = [
-  { value: "bestseller", label: "Bestseller" },
-  { value: "nowość", label: "Nowość" },
-  { value: "promocja", label: "Promocja" },
-] as const;
-
 export function clearFilters(sort: string, pill?: string): ActiveFilters {
   return {
     sort,
     pill,
-    colors: [],
     sizes: [],
     materials: [],
     finishes: [],
-    tags: [],
     category: undefined,
     led: undefined,
     priceMin: undefined,
     priceMax: undefined,
-    availability: undefined,
   };
 }
 
@@ -128,15 +114,12 @@ export function formatPricePLN(amountInCents: number): string {
 export function hasAnyActiveFilter(f: ActiveFilters): boolean {
   return (
     !!f.category ||
-    f.colors.length > 0 ||
     f.sizes.length > 0 ||
     f.materials.length > 0 ||
     f.finishes.length > 0 ||
-    f.tags.length > 0 ||
     f.led !== undefined ||
     f.priceMin !== undefined ||
     f.priceMax !== undefined ||
-    f.availability !== undefined ||
     (!!f.pill && f.pill !== "all")
   );
 }
