@@ -11,6 +11,7 @@ interface AddToCartButtonProps {
   price: number;
   thumbnail?: string | null;
   options?: Record<string, string[]>;
+  linksCount?: number;
   href?: string;
   children: ReactNode;
 }
@@ -22,6 +23,7 @@ export function AddToCartButton({
   price,
   thumbnail,
   options,
+  linksCount,
   href,
   children,
 }: AddToCartButtonProps) {
@@ -62,6 +64,7 @@ export function AddToCartButton({
             price={price}
             thumbnail={thumbnail ?? null}
             options={options ?? {}}
+            linksCount={linksCount ?? 0}
             href={href}
           />,
           document.body,

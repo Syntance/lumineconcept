@@ -35,6 +35,23 @@ export default defineConfig({
   },
   modules: [
     {
+      resolve: "@medusajs/medusa/file",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/cloudinary",
+            id: "cloudinary",
+            options: {
+              cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+              apiKey: process.env.CLOUDINARY_API_KEY,
+              apiSecret: process.env.CLOUDINARY_API_SECRET,
+              folder: "lumine-products",
+            },
+          },
+        ],
+      },
+    },
+    {
       key: "przelewy24",
       resolve: "./src/modules/przelewy24",
       options: {
@@ -77,15 +94,6 @@ export default defineConfig({
       options: {
         host: process.env.MEILISEARCH_HOST ?? "http://localhost:7700",
         adminKey: process.env.MEILISEARCH_ADMIN_KEY,
-      },
-    },
-    {
-      key: "cloudinary",
-      resolve: "./src/modules/cloudinary",
-      options: {
-        cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-        apiKey: process.env.CLOUDINARY_API_KEY,
-        apiSecret: process.env.CLOUDINARY_API_SECRET,
       },
     },
   ],

@@ -79,6 +79,7 @@ export default async function Logo3dListingPage({
       variantId: variants[0]?.id ?? null,
       tags: (p.tags ?? []).map((t) => (t as unknown as { value: string }).value?.toLowerCase() ?? ""),
       options: optionsMap,
+      linksCount: Number((p.metadata as Record<string, unknown> | null)?.links_count ?? 0) || 0,
     };
   });
 

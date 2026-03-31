@@ -1,51 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { X, ShoppingBag, ArrowRight, Gift, Truck } from "lucide-react";
+import { X, ShoppingBag, ArrowRight, Gift } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { CartItem } from "./CartItem";
 import { CartSummary } from "./CartSummary";
 import { CartUpsell } from "./CartUpsell";
 import { trackReferralApplied, trackCartViewed } from "@/lib/analytics/events";
-import { formatPrice } from "@/lib/utils";
-
-const FREE_SHIPPING_THRESHOLD = 29900;
-
-function ShippingProgress({ subtotal }: { subtotal: number }) {
-  const remaining = FREE_SHIPPING_THRESHOLD - subtotal;
-  const percent = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
-
-  if (remaining <= 0) {
-    return (
-      <div className="flex items-center justify-center gap-2 bg-brand-50 px-4 py-2.5 text-xs text-brand-700">
-        <Truck className="h-3.5 w-3.5 text-accent" />
-        <span>Darmowa wysyłka</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2 px-6 py-3">
-      <div className="flex items-center justify-between text-[11px] text-brand-500">
-        <span>
-          Brakuje <span className="font-medium text-brand-700">{formatPrice(remaining)}</span> do
-          darmowej wysyłki
-        </span>
-        <Truck className="h-3.5 w-3.5" />
-      </div>
-      <div className="h-[3px] w-full overflow-hidden rounded-full bg-brand-100">
-        <div
-          className="h-full rounded-full bg-accent transition-all duration-700 ease-out"
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-    </div>
-  );
-}
 
 export function CartDrawer() {
-  const { isOpen, closeCart, items, itemCount, subtotal, applyDiscount } = useCart();
+  const { isOpen, closeCart, items, itemCount, applyDiscount } = useCart();
 
   const [referralCode, setReferralCode] = useState("");
   const [referralStatus, setReferralStatus] = useState<
@@ -156,8 +121,6 @@ export function CartDrawer() {
         ) : (
           /* ── Items ── */
           <>
-            <ShippingProgress subtotal={subtotal} />
-
             <div className="flex-1 overflow-y-auto">
               <div className="divide-y divide-brand-50 px-6">
                 {items.map((item) => (

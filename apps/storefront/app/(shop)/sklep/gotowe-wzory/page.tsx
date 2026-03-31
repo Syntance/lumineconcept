@@ -110,6 +110,8 @@ export default async function GotoweWzoryPage({
     const variants = (p.variants ?? []) as unknown as Array<{ id: string }>;
     const images = (p.images ?? []) as unknown as Array<{ url: string }>;
     const thumbnail = p.thumbnail ?? images[0]?.url ?? null;
+    const meta = (p.metadata ?? {}) as Record<string, unknown>;
+    const rawLinks = Number(meta.links_count);
     return {
       id: p.id,
       handle: p.handle ?? "",
@@ -120,6 +122,7 @@ export default async function GotoweWzoryPage({
       variantId: variants[0]?.id ?? null,
       tags: (p.tags ?? []).map((t) => (t as unknown as { value: string }).value?.toLowerCase() ?? ""),
       options: optionsMap,
+      linksCount: Number.isFinite(rawLinks) && rawLinks > 0 ? rawLinks : 0,
     };
   });
 

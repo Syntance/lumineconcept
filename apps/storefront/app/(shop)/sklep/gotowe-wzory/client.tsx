@@ -19,6 +19,7 @@ export interface SimpleProduct {
   variantId: string | null;
   tags: string[];
   options: Record<string, string[]>;
+  linksCount: number;
 }
 
 interface ShopGridClientProps {
@@ -344,6 +345,7 @@ export function ShopGridClient({
                   variantId={product.variantId ?? undefined}
                   productId={product.id}
                   productOptions={product.options}
+                  linksCount={product.linksCount}
                 />
               </div>
             ))}
