@@ -3,8 +3,7 @@
 import { useCallback, useState } from "react";
 import type { ActiveFilters, FilterConfig } from "./filter-types";
 import {
-  COLOR_MAP,
-  TAG_OPTIONS,
+  PRODUCT_PILLS,
   PRICE_SLIDER_MIN,
   PRICE_SLIDER_MAX,
   PRICE_STEP,
@@ -48,10 +47,10 @@ export function FilterSidebar({
   };
 
   return (
-    <aside className="hidden lg:block w-60 shrink-0">
-      <div className="sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-5 pr-4 pb-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <aside className="hidden w-60 shrink-0 self-start lg:z-10 lg:block lg:sticky lg:top-24">
+      <div className="max-h-[calc(100vh-6rem)] overflow-y-auto pr-4 pb-8">
+        {/* Header — min-h-9 jak wiersz sortowania (select h-9), żeby kreski były w jednej linii */}
+        <div className="flex min-h-9 items-center justify-between">
           <h2 className="font-display text-base font-semibold tracking-wide text-brand-800">
             Filtry
           </h2>
@@ -66,7 +65,38 @@ export function FilterSidebar({
           )}
         </div>
 
-        <div className="h-px bg-brand-100" />
+        <div className="mt-3 h-px bg-brand-100" />
+
+        <div className="mt-5 space-y-5">
+        {/* Kategoria */}
+        <details open>
+          <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
+            Kategoria
+          </summary>
+          <div className="flex flex-col gap-1 pt-1">
+            {PRODUCT_PILLS.map((pill) => {
+              const isActive = (activeFilters.pill ?? "all") === pill.value;
+              return (
+                <button
+                  key={pill.value}
+                  type="button"
+                  onClick={() =>
+                    update({
+                      pill: pill.value === "all" ? undefined : pill.value,
+                    })
+                  }
+                  className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
+                    isActive
+                      ? "bg-accent/10 text-accent-dark font-medium"
+                      : "text-brand-600 hover:bg-brand-50"
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              );
+            })}
+          </div>
+        </details>
 
         {/* Cena — suwak */}
         <details open>
@@ -121,41 +151,6 @@ export function FilterSidebar({
             </div>
           </div>
         </details>
-
-        {/* Kolor */}
-        {filterConfig.colors.length > 0 && (
-          <details open>
-            <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
-              Kolor
-            </summary>
-            <div className="flex flex-col gap-1.5 pt-1">
-              {filterConfig.colors.map((color) => {
-                const hex = COLOR_MAP[color.toLowerCase()] ?? "#ccc";
-                const isActive = activeFilters.colors.includes(color);
-                return (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => update({ colors: toggle(activeFilters.colors, color) })}
-                    className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${
-                      isActive
-                        ? "bg-accent/10 text-accent-dark font-medium"
-                        : "text-brand-600 hover:bg-brand-50"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 rounded-full border ${
-                        isActive ? "border-accent ring-2 ring-accent/30" : "border-brand-200"
-                      }`}
-                      style={{ backgroundColor: hex }}
-                    />
-                    {color}
-                  </button>
-                );
-              })}
-            </div>
-          </details>
-        )}
 
         {/* Materiał */}
         {filterConfig.materials.length > 0 && (
@@ -273,63 +268,7 @@ export function FilterSidebar({
             </div>
           </details>
         )}
-
-        {/* Dostępność */}
-        <details open>
-          <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
-            Dostępność
-          </summary>
-          <div className="flex flex-col gap-1 pt-1">
-            <button
-              type="button"
-              onClick={() => update({ availability: activeFilters.availability === "in_stock" ? undefined : "in_stock" })}
-              className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                activeFilters.availability === "in_stock"
-                  ? "bg-accent/10 text-accent-dark font-medium"
-                  : "text-brand-600 hover:bg-brand-50"
-              }`}
-            >
-              W magazynie
-            </button>
-            <button
-              type="button"
-              onClick={() => update({ availability: activeFilters.availability === "on_order" ? undefined : "on_order" })}
-              className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                activeFilters.availability === "on_order"
-                  ? "bg-accent/10 text-accent-dark font-medium"
-                  : "text-brand-600 hover:bg-brand-50"
-              }`}
-            >
-              Na zamówienie
-            </button>
-          </div>
-        </details>
-
-        {/* Tagi */}
-        <details open>
-          <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
-            Cechy
-          </summary>
-          <div className="flex flex-col gap-1 pt-1">
-            {TAG_OPTIONS.map((tag) => {
-              const isActive = activeFilters.tags.includes(tag.value);
-              return (
-                <button
-                  key={tag.value}
-                  type="button"
-                  onClick={() => update({ tags: toggle(activeFilters.tags, tag.value) })}
-                  className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                    isActive
-                      ? "bg-accent/10 text-accent-dark font-medium"
-                      : "text-brand-600 hover:bg-brand-50"
-                  }`}
-                >
-                  {tag.label}
-                </button>
-              );
-            })}
-          </div>
-        </details>
+        </div>
       </div>
     </aside>
   );

@@ -150,7 +150,7 @@ export async function ProductPageLayout({
           />
 
           <div className="space-y-6">
-            <h1 className="font-display text-2xl tracking-wide text-brand-800 lg:text-3xl">
+            <h1 className="font-display text-3xl tracking-wide text-brand-800 lg:text-4xl">
               {product.title}
             </h1>
 

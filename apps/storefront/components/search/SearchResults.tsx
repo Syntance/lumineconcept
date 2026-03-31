@@ -41,7 +41,7 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-brand-900 truncate">
+                <p className="text-base font-medium text-brand-900 truncate">
                   {product.title}
                 </p>
                 <p className="text-xs text-brand-500 line-clamp-1">

@@ -205,7 +205,7 @@ export default async function ShopHubPage() {
                           imageAreaClassName="bg-white"
                         />
                       </div>
-                      <p className="text-center text-sm font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">
+                      <p className="text-center text-base font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">
                         {product.title}
                       </p>
                       <div className="flex w-full justify-center">

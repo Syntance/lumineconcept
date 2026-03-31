@@ -282,7 +282,7 @@ export function MiniConfiguratorModal({
             />
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-brand-800 line-clamp-2">{title}</h3>
+            <h3 className="text-base font-semibold text-brand-800 line-clamp-2">{title}</h3>
             <p className="mt-0.5 text-sm font-medium text-accent">
               {(price / 100).toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
             </p>
