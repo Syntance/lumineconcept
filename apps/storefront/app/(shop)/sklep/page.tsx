@@ -11,7 +11,7 @@ import type { Testimonial, SiteSettings } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
-import { SITE_URL } from "@/lib/utils";
+import { cn, SITE_URL } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Sklep — cenniki, tabliczki, logo z plexi do salonu beauty | Lumine Concept",
@@ -33,15 +33,17 @@ const CATEGORIES = [
     title: "Gotowe wzory",
     subtitle: "Kup od ręki · wysyłka w 48h",
     description: "Cenniki, tabliczki, menu, kody QR — gotowe wzory do Twojego salonu.",
-    cta: "Przeglądaj gotowe wzory",
+    cta: "PRZEGLĄDAJ WZORY",
     href: "/sklep/gotowe-wzory",
+    image: "/images/categories/gotowe-wzory-personel.png",
   },
   {
     title: "Logo 3D",
     subtitle: "Plexi · LED · matowe UV",
-    description: "Gotowe wzory logo 3D. 15+ kolorów, montaż w cenie.",
+    description: "Tablica z Twoim Logo 3D",
     cta: "Zobacz logo 3D",
     href: "/sklep/logo-3d",
+    image: "/images/categories/logo-kategoria-nail-boss.png",
   },
   {
     title: "Certyfikaty",
@@ -49,6 +51,7 @@ const CATEGORIES = [
     description: "Eleganckie certyfikaty z plexi dla Twoich klientek.",
     cta: "Zobacz certyfikaty",
     href: "/sklep/certyfikaty",
+    image: "/images/categories/certyfikat-kategoria.png",
   },
 ] as const;
 
@@ -88,57 +91,93 @@ export default async function ShopHubPage() {
         }}
       />
 
-      {/* Hero */}
-      <section className="bg-[#EEE8E0] pt-10 lg:pt-14">
-        <div className="container mx-auto max-w-4xl px-4">
-          <Breadcrumbs
-            items={[
-              { label: "Strona główna", href: "/" },
-              { label: "Sklep" },
-            ]}
-          />
-          <div className="mt-8 text-center">
-            <h1 className="font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
+      <section className="relative overflow-x-hidden bg-brand-100">
+        <div className="relative z-10 bg-white pt-10 pb-0 lg:pt-12 lg:pb-0">
+          <div className="container mx-auto max-w-4xl px-4">
+            <Breadcrumbs
+              className="mb-0"
+              items={[
+                { label: "Strona główna", href: "/" },
+                { label: "Sklep" },
+              ]}
+            />
+          </div>
+        </div>
+        <div className="container relative z-10 mx-auto max-w-4xl px-4 text-center">
+          <div className="relative inline-block">
+            <div
+              className="pointer-events-none absolute left-1/2 top-0 z-0 h-full w-screen -translate-x-1/2 bg-[linear-gradient(to_bottom,white_0%,white_50%,var(--color-brand-100)_50%,var(--color-brand-100)_100%)]"
+              aria-hidden
+            />
+            <h1 className="relative z-10 mt-0 font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
               Sklep
             </h1>
-            <div className="mt-3 mx-auto h-px w-12 bg-accent" />
           </div>
+          <div className="relative z-10 mt-1 mx-auto h-px w-12 bg-accent" />
         </div>
       </section>
 
       {/* Kategorie obok siebie */}
-      <section className="bg-[#EEE8E0] pb-16 pt-12 lg:pb-24 lg:pt-16">
+      <section className="bg-brand-100 pb-16 pt-10 lg:pb-24 lg:pt-14">
         <nav className="container mx-auto max-w-4xl px-4">
-          <div className="grid gap-6 sm:grid-cols-3">
-            {CATEGORIES.map((cat, i) => {
-              const align = "items-center text-center";
-              const radius =
-                i === 0
-                  ? { borderRadius: "50% 50% 0 0 / 40% 40% 0 0" }
-                  : i === CATEGORIES.length - 1
-                    ? { borderRadius: "0 0 50% 50% / 0 0 40% 40%" }
-                    : undefined;
-              return (
+          <div className="grid gap-6 sm:grid-cols-3 sm:items-stretch">
+            {CATEGORIES.map((cat, index) => (
               <Link
                 key={cat.href}
                 href={cat.href}
-                style={radius}
-                className={`group flex aspect-[4/5] border border-brand-200 bg-white px-6 transition-colors hover:border-brand-400 ${align}`}
+                className="shop-category-card group relative flex aspect-4/5 h-full w-full flex-col overflow-hidden border border-brand-200 bg-white px-10 pb-11 pt-11 transition-colors hover:border-brand-400"
               >
-                <div className="my-auto flex flex-col items-center gap-5">
-                  <h2 className="font-display text-xl tracking-wide text-brand-800 group-hover:text-brand-900 lg:text-2xl">
-                    {cat.title}
-                  </h2>
-                  <p className="text-base leading-relaxed text-brand-400">
-                    {cat.description}
-                  </p>
-                  <span className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:text-brand-900">
-                    {cat.cta} &rarr;
-                  </span>
+                {/* Zdjęcie na pełny kafelek (object-cover); desktop: widoczne po najechaniu */}
+                <div className="pointer-events-none absolute inset-0 z-0">
+                  <div className="shop-category-image-wrap relative h-full w-full">
+                    <Image
+                      src={cat.image}
+                      alt={cat.title}
+                      fill
+                      className={cn(
+                        "object-cover",
+                        index === 0
+                          ? "origin-bottom -translate-x-[1%] translate-y-[3.5%] scale-[1.05] object-bottom"
+                          : "object-center",
+                      )}
+                      sizes="(max-width: 640px) 90vw, 33vw"
+                    />
+                  </div>
+                </div>
+
+                {/* Układ: stały pas na tytuł + flex-1 na treść + CTA na dole — wyrównanie między kafelkami */}
+                <div className="relative z-10 flex min-h-0 w-full flex-1 flex-col">
+                  {/* Title zone – slides up; blur tylko wokół wiersza tytułu */}
+                  <div className="shop-category-title flex min-h-18 shrink-0 items-center justify-center transition-transform duration-700 ease-in-out group-hover:-translate-y-6">
+                    <div className="inline-block max-w-[min(100%,13rem)] transition-all duration-300 group-hover:rounded-md group-hover:px-1.5 group-hover:py-0.5 group-hover:bg-white/25 group-hover:backdrop-blur-sm">
+                      <h2
+                        className={cn(
+                          "text-center font-display text-xl tracking-wide text-brand-800 transition-colors duration-300 lg:text-2xl",
+                          index === 0 && "group-hover:text-black",
+                        )}
+                      >
+                        {cat.title}
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="h-6 shrink-0" aria-hidden="true" />
+
+                  {/* Opis + CTA – blur przy CTA; mt-auto wyrównuje linki na dole kafelka */}
+                  <div className="shop-category-body relative flex min-h-0 flex-1 flex-col items-center text-center transition-transform duration-700 ease-in-out group-hover:translate-y-6">
+                    <p className="w-full max-w-[min(100%,13rem)] shrink-0 text-sm leading-relaxed text-brand-400 transition-opacity duration-300 group-hover:opacity-0">
+                      {cat.description}
+                    </p>
+                    <span className="mt-auto inline-flex w-fit max-w-full items-center justify-center gap-2 self-center whitespace-nowrap pt-4 text-xs font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:rounded-md group-hover:px-1 group-hover:py-0.5 group-hover:bg-white/25 group-hover:backdrop-blur-sm group-hover:text-brand-900">
+                      {cat.cta}
+                      <span aria-hidden="true" className="shrink-0">
+                        &rarr;
+                      </span>
+                    </span>
+                  </div>
                 </div>
               </Link>
-              );
-            })}
+            ))}
           </div>
         </nav>
       </section>
