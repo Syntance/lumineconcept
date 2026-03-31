@@ -4,6 +4,7 @@ import { useCallback, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { PriceDisplay } from "./PriceDisplay";
 import {
   COLOR_MAP,
   CUSTOM_COLOR_VALUE,
@@ -267,11 +268,20 @@ export function MiniConfiguratorModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      {/* Backdrop: pointerdown + preventDefault — unika „ghost click” na Link karty pod modałem */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onPointerDown={(e) => {
+          if (e.target === e.currentTarget) {
+            e.preventDefault();
+            onClose();
+          }
+        }}
+        role="presentation"
+      />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-start gap-3 border-b border-brand-100 px-5 py-4">
           {thumbnail && (
@@ -283,13 +293,17 @@ export function MiniConfiguratorModal({
           )}
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-brand-800 line-clamp-2">{title}</h3>
-            <p className="mt-0.5 text-sm font-medium text-accent">
-              {(price / 100).toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
-            </p>
+            <div className="mt-0.5">
+              <PriceDisplay amount={price} currency="PLN" size="md" />
+            </div>
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
             className="shrink-0 rounded-full p-1.5 text-brand-400 transition-colors hover:bg-brand-100 hover:text-brand-600"
             aria-label="Zamknij"
           >
@@ -375,7 +389,7 @@ export function MiniConfiguratorModal({
           {href && (
             <Link
               href={href}
-              className="mt-2 block w-full text-center text-xs text-brand-400 hover:text-brand-600 transition-colors"
+              className="mt-3 block w-full text-center text-sm font-medium text-brand-800 underline-offset-2 transition-colors hover:text-accent-dark hover:underline"
               onClick={onClose}
             >
               lub przejdź do pełnej konfiguracji
