@@ -19,7 +19,7 @@ export interface SimpleProduct {
   variantId: string | null;
   tags: string[];
   options: Record<string, string[]>;
-  linksCount: number;
+  linksCount?: number;
 }
 
 interface ShopGridClientProps {
