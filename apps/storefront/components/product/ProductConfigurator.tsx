@@ -22,6 +22,15 @@ export interface ColorCustomization {
   matFinish: boolean;
 }
 
+export interface TextFieldDef {
+  key: string;
+  label: string;
+  placeholder?: string;
+  required?: boolean;
+  maxLength?: number;
+  multiline?: boolean;
+}
+
 interface ProductConfiguratorProps {
   options: ProductOption[];
   selectedOptions: Record<string, string>;
@@ -34,6 +43,9 @@ interface ProductConfiguratorProps {
   ) => void;
   customText: string;
   onCustomTextChange: (text: string) => void;
+  textFields?: TextFieldDef[];
+  textFieldValues?: Record<string, string>;
+  onTextFieldChange?: (key: string, value: string) => void;
   linksCount?: number;
   links?: string[];
   onLinksChange?: (links: string[]) => void;
@@ -55,6 +67,9 @@ export function ProductConfigurator({
   onColorCustomizationChange,
   customText,
   onCustomTextChange,
+  textFields = [],
+  textFieldValues = {},
+  onTextFieldChange,
   linksCount = 0,
   links = [],
   onLinksChange,
@@ -94,7 +109,7 @@ export function ProductConfigurator({
       {colorOptions.length > 0 && (
         <div className={hasMultipleColors ? "space-y-3" : "space-y-5"}>
           {hasMultipleColors && (
-            <h3 className="text-xs font-medium uppercase tracking-widest text-brand-400">
+            <h3 className="font-sans text-xs font-medium uppercase tracking-widest text-[#725750]">
               Konfiguracja kolorów
             </h3>
           )}
@@ -285,30 +300,94 @@ export function ProductConfigurator({
         </div>
       )}
 
-      {/* Custom text */}
-      <div>
-        <label
-          htmlFor="custom-text"
-          className="mb-2 block text-sm font-medium text-brand-700"
-        >
-          Twój tekst{" "}
-          <span className="font-normal text-brand-400">(opcjonalnie)</span>
-        </label>
-        <textarea
-          id="custom-text"
-          value={customText}
-          onChange={(e) => onCustomTextChange(e.target.value)}
-          placeholder="Wpisz treść, np. nazwę salonu, imię…"
-          rows={2}
-          maxLength={200}
-          className="w-full resize-none rounded-lg border border-brand-200 px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:border-accent focus:outline-none"
-        />
-        {customText.length > 0 && (
-          <p className="mt-1 text-right text-xs text-brand-400">
-            {customText.length}/200
-          </p>
-        )}
-      </div>
+      {/* Dynamic text fields from Medusa metadata, or fallback to generic text */}
+      {textFields.length > 0 && onTextFieldChange ? (
+        <div className="space-y-4">
+          <h3 className="font-sans text-xs font-medium uppercase tracking-widest text-[#725750]">
+            Personalizacja tekstu
+          </h3>
+          {textFields.map((field) => {
+            const value = textFieldValues[field.key] ?? "";
+            const max = field.maxLength ?? 200;
+            const inputId = `tf-${field.key}`;
+            return (
+              <div key={field.key}>
+                <label
+                  htmlFor={inputId}
+                  className="mb-1.5 block text-sm font-medium text-brand-700"
+                >
+                  {field.label}
+                  {field.required ? (
+                    <span className="ml-0.5 text-red-500">*</span>
+                  ) : (
+                    <span className="ml-1 font-normal text-brand-400">(opcjonalnie)</span>
+                  )}
+                </label>
+                {field.multiline ? (
+                  <textarea
+                    id={inputId}
+                    value={value}
+                    onChange={(e) => onTextFieldChange(field.key, e.target.value)}
+                    placeholder={field.placeholder ?? ""}
+                    rows={2}
+                    maxLength={max}
+                    required={field.required}
+                    className={`w-full resize-none rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                      field.required && !value.trim()
+                        ? "border-red-300 focus:border-red-400"
+                        : "border-brand-200 focus:border-accent"
+                    }`}
+                  />
+                ) : (
+                  <input
+                    id={inputId}
+                    type="text"
+                    value={value}
+                    onChange={(e) => onTextFieldChange(field.key, e.target.value)}
+                    placeholder={field.placeholder ?? ""}
+                    maxLength={max}
+                    required={field.required}
+                    className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                      field.required && !value.trim()
+                        ? "border-red-300 focus:border-red-400"
+                        : "border-brand-200 focus:border-accent"
+                    }`}
+                  />
+                )}
+                {value.length > 0 && (
+                  <p className="mt-1 text-right text-xs text-brand-400">
+                    {value.length}/{max}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div>
+          <label
+            htmlFor="custom-text"
+            className="mb-2 block text-sm font-medium text-brand-700"
+          >
+            Twój tekst{" "}
+            <span className="font-normal text-brand-400">(opcjonalnie)</span>
+          </label>
+          <textarea
+            id="custom-text"
+            value={customText}
+            onChange={(e) => onCustomTextChange(e.target.value)}
+            placeholder="Wpisz treść, np. nazwę salonu, imię…"
+            rows={2}
+            maxLength={200}
+            className="w-full resize-none rounded-lg border border-brand-200 px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:border-accent focus:outline-none"
+          />
+          {customText.length > 0 && (
+            <p className="mt-1 text-right text-xs text-brand-400">
+              {customText.length}/200
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

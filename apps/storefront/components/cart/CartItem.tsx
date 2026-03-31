@@ -30,7 +30,9 @@ function hasCustomMetadata(meta: Record<string, string>): boolean {
     meta.custom_text ||
     meta.custom_color ||
     meta.mat_finish ||
-    Object.keys(meta).some((k) => k.startsWith("color_") || k.startsWith("link_"))
+    Object.keys(meta).some(
+      (k) => k.startsWith("color_") || k.startsWith("link_") || k.startsWith("text_"),
+    )
   );
 }
 
@@ -176,6 +178,13 @@ export function CartItem({ item }: { item: CartItemData }) {
                       Treść: &ldquo;{item.metadata.custom_text}&rdquo;
                     </p>
                   )}
+                  {Object.entries(item.metadata)
+                    .filter(([k, v]) => k.startsWith("text_") && v)
+                    .map(([key, value]) => (
+                      <p key={key} className="text-xs text-brand-400 truncate">
+                        {key.replace("text_", "").replace(/_/g, " ")}: &ldquo;{value}&rdquo;
+                      </p>
+                    ))}
                   {/* Legacy single-color format */}
                   {item.metadata.custom_color && (
                     <ColorMetaLine label="Kolor" hex={item.metadata.custom_color} />

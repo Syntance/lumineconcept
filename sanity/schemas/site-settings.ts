@@ -106,7 +106,7 @@ export const siteSettings = defineType({
       type: "object",
       group: "general",
       description:
-        "Komunikat wyświetlany po kliknięciu „Dodaj do koszyka" lub „Kup teraz" na stronie produktu.",
+        "Komunikat wyświetlany po kliknięciu „Dodaj do koszyka” lub „Kup teraz” na stronie produktu.",
       fields: [
         {
           name: "enabled",

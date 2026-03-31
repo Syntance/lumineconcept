@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "sanity dev",
+    "dev": "sanity dev --port=3334",
     "build": "sanity build",
     "deploy": "sanity deploy",
     "type-check": "tsc --noEmit",

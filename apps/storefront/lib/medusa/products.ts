@@ -15,7 +15,7 @@ async function _getProducts(params?: {
     category_id: params?.category_id,
     order: params?.order,
     region_id: regionId,
-    fields: "+variants.calculated_price,+options,+tags,+images",
+    fields: "+variants.calculated_price,+options,+tags,*images,+thumbnail",
   });
 
   return response;
@@ -32,7 +32,8 @@ async function _getProductByHandle(handle: string) {
   const response = await medusa.store.product.list({
     handle,
     region_id: regionId,
-    fields: "+variants.calculated_price,+variants.inventory_quantity,+images",
+    fields:
+      "+variants.calculated_price,+variants.inventory_quantity,*images,+thumbnail",
   });
 
   return response.products[0] ?? null;
@@ -54,7 +55,7 @@ export async function getProductsByTag(tag: string, limit = 6) {
   const response = await medusa.store.product.list({
     limit: fetchLimit,
     region_id: regionId,
-    fields: "+variants.calculated_price,+tags,+images",
+    fields: "+variants.calculated_price,+tags,*images,+thumbnail",
   });
 
   const normalised = tag.toLowerCase();
