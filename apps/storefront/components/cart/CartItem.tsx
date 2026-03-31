@@ -30,7 +30,7 @@ function hasCustomMetadata(meta: Record<string, string>): boolean {
     meta.custom_text ||
     meta.custom_color ||
     meta.mat_finish ||
-    Object.keys(meta).some((k) => k.startsWith("color_"))
+    Object.keys(meta).some((k) => k.startsWith("color_") || k.startsWith("link_"))
   );
 }
 
@@ -185,6 +185,15 @@ export function CartItem({ item }: { item: CartItemData }) {
                   )}
                   {/* Per-element colors */}
                   {renderPerElementColors(item.metadata)}
+                  {/* Links */}
+                  {Object.entries(item.metadata)
+                    .filter(([k]) => k.startsWith("link_"))
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([key, url]) => (
+                      <p key={key} className="text-xs text-brand-400 truncate">
+                        QR {key.replace("link_", "#")}: {url}
+                      </p>
+                    ))}
                 </div>
               )}
             </div>

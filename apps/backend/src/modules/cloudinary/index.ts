@@ -1,6 +1,6 @@
-import { Module } from "@medusajs/framework/utils";
 import CloudinaryFileService from "./service";
+import { ModuleProvider, Modules } from "@medusajs/framework/utils";
 
-export default Module("cloudinary", {
-  service: CloudinaryFileService,
+export default ModuleProvider(Modules.FILE, {
+  services: [CloudinaryFileService],
 });

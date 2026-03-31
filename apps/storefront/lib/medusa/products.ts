@@ -32,7 +32,7 @@ async function _getProductByHandle(handle: string) {
   const response = await medusa.store.product.list({
     handle,
     region_id: regionId,
-    fields: "+variants.calculated_price,+variants.inventory_quantity",
+    fields: "+variants.calculated_price,+variants.inventory_quantity,+images",
   });
 
   return response.products[0] ?? null;

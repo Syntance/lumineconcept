@@ -27,6 +27,7 @@ interface ProductCardProps {
   variantId?: string;
   productId?: string;
   productOptions?: Record<string, string[]>;
+  linksCount?: number;
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -66,6 +67,7 @@ export function ProductCard({
   variantId,
   productId,
   productOptions,
+  linksCount,
 }: ProductCardProps) {
   const sharpSquare = sharpCorners && frameVariant === "square";
 
@@ -167,6 +169,7 @@ export function ProductCard({
               price={price}
               thumbnail={thumbnail}
               options={productOptions}
+              linksCount={linksCount}
               href={href ?? `/sklep/gotowe-wzory/${handle}`}
             >
               <PriceDisplay

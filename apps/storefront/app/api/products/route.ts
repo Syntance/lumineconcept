@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
 
       const images = (p.images ?? []) as unknown as Array<{ url: string }>;
       const thumbnail = p.thumbnail ?? images[0]?.url ?? null;
+      const meta = (p.metadata ?? {}) as Record<string, unknown>;
+      const rawLinks = Number(meta.links_count);
       return {
         id: p.id,
         handle: p.handle ?? "",
@@ -54,6 +56,7 @@ export async function GET(request: NextRequest) {
           (t) => ((t as unknown as { value: string }).value ?? "").toLowerCase(),
         ),
         options: optionsMap,
+        linksCount: Number.isFinite(rawLinks) && rawLinks > 0 ? rawLinks : 0,
       };
     });
 

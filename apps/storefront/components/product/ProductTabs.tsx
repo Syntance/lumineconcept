@@ -27,7 +27,6 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
       <div className="space-y-3 text-sm text-brand-700">
         <p>Realizacja zamówienia: <strong>1-3 dni robocze</strong></p>
         <p>Wysyłka kurierem InPost lub Paczkomaty 24/7.</p>
-        <p>Darmowa wysyłka od 299 PLN.</p>
       </div>
     ),
   });

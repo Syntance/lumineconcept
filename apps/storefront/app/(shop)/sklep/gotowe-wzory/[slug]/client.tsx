@@ -81,6 +81,18 @@ export function ProductPageClient({
 
   const [customText, setCustomText] = useState("");
 
+  const linksCount = useMemo(() => {
+    const raw = product.metadata?.links_count;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }, [product.metadata]);
+
+  const [links, setLinks] = useState<string[]>(() =>
+    Array.from({ length: linksCount }, () => ""),
+  );
+
+  const allLinksProvided = linksCount === 0 || links.slice(0, linksCount).every((l) => l.trim().length > 0);
+
   const ctaRef = useRef<HTMLDivElement>(null);
   const [showSticky, setShowSticky] = useState(false);
   const [calloutAction, setCalloutAction] = useState<
@@ -179,8 +191,13 @@ export function ProductPageClient({
       }
     }
 
+    for (let i = 0; i < linksCount; i++) {
+      const url = links[i]?.trim();
+      if (url) meta[`link_${i + 1}`] = url;
+    }
+
     return Object.keys(meta).length > 0 ? meta : undefined;
-  }, [customText, colorCustomizations, colorOptionTitles]);
+  }, [customText, colorCustomizations, colorOptionTitles, links, linksCount]);
 
   const calloutEnabled =
     checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
@@ -215,6 +232,9 @@ export function ProductPageClient({
           onColorCustomizationChange={handleColorCustomizationChange}
           customText={customText}
           onCustomTextChange={setCustomText}
+          linksCount={linksCount}
+          links={links}
+          onLinksChange={setLinks}
           baseImageUrl={baseImageUrl}
           colorRegions={colorRegions}
         />
@@ -247,15 +267,20 @@ export function ProductPageClient({
               price: selectedVariant?.price ?? 0,
               currency: "PLN",
             }}
-            disabled={!selectedVariant || qty === 0}
+            disabled={!selectedVariant || qty === 0 || !allLinksProvided}
             maxQuantity={qty > 0 ? qty : undefined}
             onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
             metadata={buildMetadata()}
           />
+          {!allLinksProvided && (
+            <p className="text-xs text-red-500 text-center">
+              Uzupełnij wszystkie linki do kodów QR
+            </p>
+          )}
           <button
             type="button"
             onClick={handleBuyNow}
-            disabled={!selectedVariant || qty === 0}
+            disabled={!selectedVariant || qty === 0 || !allLinksProvided}
             className="w-full rounded-md border border-brand-300 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Kup teraz
@@ -281,7 +306,7 @@ export function ProductPageClient({
                 price: selectedVariant?.price ?? 0,
                 currency: "PLN",
               }}
-              disabled={!selectedVariant || qty === 0}
+              disabled={!selectedVariant || qty === 0 || !allLinksProvided}
               compact
               onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
               metadata={buildMetadata()}

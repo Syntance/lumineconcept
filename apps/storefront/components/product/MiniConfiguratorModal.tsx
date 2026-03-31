@@ -22,6 +22,7 @@ interface MiniConfiguratorModalProps {
   price: number;
   thumbnail: string | null;
   options: Record<string, string[]>;
+  linksCount?: number;
   href?: string;
 }
 
@@ -201,11 +202,16 @@ export function MiniConfiguratorModal({
   price,
   thumbnail,
   options,
+  linksCount = 0,
   href,
 }: MiniConfiguratorModalProps) {
   const { addItemWithTracking } = useCart();
   const [isAdding, setIsAdding] = useState(false);
   const [customText, setCustomText] = useState("");
+  const [links, setLinks] = useState<string[]>(() =>
+    Array.from({ length: linksCount }, () => ""),
+  );
+  const allLinksProvided = linksCount === 0 || links.slice(0, linksCount).every((l) => l.trim().length > 0);
 
   const colorOptionEntries = Object.entries(options).filter(([key]) => isColorOption(key));
 
@@ -234,8 +240,12 @@ export function MiniConfiguratorModal({
     if (customText.trim()) {
       meta.custom_text = customText.trim();
     }
+    for (let i = 0; i < linksCount; i++) {
+      const url = links[i]?.trim();
+      if (url) meta[`link_${i + 1}`] = url;
+    }
     return meta;
-  }, [colorStates, customText]);
+  }, [colorStates, customText, links, linksCount]);
 
   const handleAdd = async () => {
     setIsAdding(true);
@@ -299,6 +309,37 @@ export function MiniConfiguratorModal({
             />
           ))}
 
+          {/* Links */}
+          {linksCount > 0 && (
+            <div className="space-y-2">
+              <div>
+                <p className="text-xs font-medium text-brand-600">
+                  Linki do kodów QR <span className="text-red-500">*</span>
+                </p>
+                <p className="mt-0.5 text-[10px] text-brand-400">
+                  {linksCount === 1 ? "Podaj adres URL" : `Podaj ${linksCount} adresy URL`} do zakodowania w QR
+                </p>
+              </div>
+              {Array.from({ length: linksCount }).map((_, i) => (
+                <input
+                  key={i}
+                  type="url"
+                  value={links[i] ?? ""}
+                  onChange={(e) => {
+                    const next = [...links];
+                    next[i] = e.target.value;
+                    setLinks(next);
+                  }}
+                  placeholder={`Link ${linksCount > 1 ? `#${i + 1}` : ""} — https://...`}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                    links[i]?.trim() ? "border-brand-200 focus:border-accent" : "border-red-300 focus:border-red-400"
+                  }`}
+                  required
+                />
+              ))}
+            </div>
+          )}
+
           {/* Custom text */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-brand-600">
@@ -320,11 +361,13 @@ export function MiniConfiguratorModal({
           <button
             type="button"
             onClick={handleAdd}
-            disabled={isAdding}
+            disabled={isAdding || !allLinksProvided}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark disabled:opacity-50"
           >
             {isAdding ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : !allLinksProvided ? (
+              "Uzupełnij linki"
             ) : (
               "Dodaj do koszyka"
             )}
