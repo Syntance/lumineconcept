@@ -1,3 +1,30 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+/** Opcjonalny plik z sekretami (nie commituj): scripts/sync-medusa-product.env */
+function loadOptionalEnvFile(): void {
+  const envPath = resolve(process.cwd(), "scripts/sync-medusa-product.env");
+  if (!existsSync(envPath)) return;
+  const text = readFileSync(envPath, "utf8");
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let val = trimmed.slice(eq + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    if (process.env[key] === undefined) process.env[key] = val;
+  }
+}
+
+loadOptionalEnvFile();
+
 /**
  * Synchronizuje produkt z lokalnego (lub dowolnego) Medusa do docelowego:
  * metadata (colorRegions, links_count, configuratorBaseImage), opcje produktu
@@ -348,11 +375,17 @@ async function main() {
     process.exit(1);
   }
   if (!SOURCE_EMAIL || !SOURCE_PASSWORD) {
-    console.error("Ustaw MEDUSA_ADMIN_EMAIL i MEDUSA_ADMIN_PASSWORD (źródło).");
+    console.error(
+      "Ustaw MEDUSA_ADMIN_EMAIL i MEDUSA_ADMIN_PASSWORD (źródło),\n" +
+        "albo utwórz plik scripts/sync-medusa-product.env (wzór: scripts/sync-medusa-product.env.example).",
+    );
     process.exit(1);
   }
   if (!TARGET_EMAIL || !TARGET_PASSWORD) {
-    console.error("Ustaw dane logowania admina dla celu (np. MEDUSA_TARGET_* lub wspólne MEDUSA_ADMIN_*).");
+    console.error(
+      "Ustaw dane logowania admina dla celu (np. MEDUSA_TARGET_* lub wspólne MEDUSA_ADMIN_*),\n" +
+        "albo plik scripts/sync-medusa-product.env.",
+    );
     process.exit(1);
   }
   if (handles.length === 0) {
