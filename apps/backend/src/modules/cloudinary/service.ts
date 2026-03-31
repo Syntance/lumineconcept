@@ -36,14 +36,10 @@ export default class CloudinaryFileService extends AbstractFileProviderService {
   }
 
   static validateOptions(options: Record<string, unknown>) {
-    if (!options.cloudName) {
-      throw new Error("Cloudinary cloud_name is required");
-    }
-    if (!options.apiKey) {
-      throw new Error("Cloudinary api_key is required");
-    }
-    if (!options.apiSecret) {
-      throw new Error("Cloudinary api_secret is required");
+    if (!options.cloudName || !options.apiKey || !options.apiSecret) {
+      console.warn(
+        "[Cloudinary] Missing credentials — uploads will fail until CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET are set.",
+      );
     }
   }
 
