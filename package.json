@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "turbo dev",
+    "dev:storefront": "pnpm --filter @lumine/storefront dev",
     "start": "pnpm --filter @lumine/backend start",
     "build": "turbo build",
     "lint": "turbo lint",
@@ -15,7 +16,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "sync-medusa-product": "tsx scripts/sync-medusa-product-from-source.ts"
+    "sync-medusa-product": "tsx scripts/sync-medusa-product-from-source.ts",
+    "studio": "pnpm --filter @lumine/sanity dev",
+    "studio:build": "pnpm --filter @lumine/sanity build",
+    "studio:deploy": "pnpm --filter @lumine/sanity deploy"
   },
   "devDependencies": {
     "tsx": "^4.19.4",

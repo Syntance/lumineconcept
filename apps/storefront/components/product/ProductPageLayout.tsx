@@ -14,6 +14,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { ShippingTimer } from "@/components/product/ShippingTimer";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
+import { collectProductImages } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
@@ -66,8 +67,11 @@ export async function ProductPageLayout({
   ]);
   if (!product) notFound();
 
-  const images =
-    (product.images as unknown as Array<{ id: string; url: string; alt?: string }>) ?? [];
+  const images = collectProductImages({
+    title: product.title,
+    images: product.images,
+    thumbnail: product.thumbnail as string | null | undefined,
+  });
   const variants = (product.variants ?? []) as unknown as Array<{
     id: string;
     title: string;
@@ -139,15 +143,21 @@ export async function ProductPageLayout({
           ]}
         />
 
-        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-          <ProductGallery
-            images={images.map((img) => ({
-              id: img.id,
-              url: img.url,
-              alt: img.alt ?? product.title,
-            }))}
-            productTitle={product.title}
-          />
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-stretch">
+          <div className="min-w-0">
+            <div
+              className="lg:sticky lg:z-10 lg:self-start lg:top-[calc(var(--header-sticky-height)+var(--product-gallery-sticky-gap)+env(safe-area-inset-top,0px))]"
+            >
+            <ProductGallery
+              images={images.map((img) => ({
+                id: img.id,
+                url: img.url,
+                alt: img.alt ?? product.title,
+              }))}
+              productTitle={product.title}
+            />
+            </div>
+          </div>
 
           <div className="space-y-6">
             <h1 className="font-display text-3xl tracking-wide text-brand-800 lg:text-4xl">

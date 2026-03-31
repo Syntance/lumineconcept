@@ -6,6 +6,7 @@ import {
   ProductConfigurator,
   type ColorCustomization,
   type ColorRegion,
+  type TextFieldDef,
 } from "@/components/product/ProductConfigurator";
 import {
   CUSTOM_COLOR_VALUE,
@@ -46,6 +47,12 @@ function extractMetaKey(optionTitle: string): string {
   return lower.replace(/^kolor_/, "");
 }
 
+function isValidTextField(f: unknown): f is TextFieldDef {
+  if (!f || typeof f !== "object") return false;
+  const obj = f as Record<string, unknown>;
+  return typeof obj.key === "string" && typeof obj.label === "string";
+}
+
 export function ProductPageClient({
   product,
   checkoutCallout,
@@ -80,6 +87,34 @@ export function ProductPageClient({
   });
 
   const [customText, setCustomText] = useState("");
+
+  const textFields = useMemo<TextFieldDef[]>(() => {
+    const raw = product.metadata?.text_fields;
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed.filter(isValidTextField);
+      } catch { /* ignore */ }
+    }
+    if (Array.isArray(raw)) return raw.filter(isValidTextField);
+    return [];
+  }, [product.metadata]);
+
+  const [textFieldValues, setTextFieldValues] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (const f of textFields) initial[f.key] = "";
+    return initial;
+  });
+
+  const handleTextFieldChange = useCallback((key: string, value: string) => {
+    setTextFieldValues((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const allTextFieldsValid = useMemo(() => {
+    return textFields
+      .filter((f) => f.required)
+      .every((f) => (textFieldValues[f.key] ?? "").trim().length > 0);
+  }, [textFields, textFieldValues]);
 
   const linksCount = useMemo(() => {
     const raw = product.metadata?.links_count;
@@ -180,6 +215,11 @@ export function ProductPageClient({
     const meta: Record<string, string> = {};
     if (customText.trim()) meta.custom_text = customText.trim();
 
+    for (const field of textFields) {
+      const val = textFieldValues[field.key]?.trim();
+      if (val) meta[`text_${field.key}`] = val;
+    }
+
     for (const title of colorOptionTitles) {
       const key = extractMetaKey(title);
       const cust = colorCustomizations[title];
@@ -197,7 +237,7 @@ export function ProductPageClient({
     }
 
     return Object.keys(meta).length > 0 ? meta : undefined;
-  }, [customText, colorCustomizations, colorOptionTitles, links, linksCount]);
+  }, [customText, textFields, textFieldValues, colorCustomizations, colorOptionTitles, links, linksCount]);
 
   const calloutEnabled =
     checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
@@ -232,6 +272,9 @@ export function ProductPageClient({
           onColorCustomizationChange={handleColorCustomizationChange}
           customText={customText}
           onCustomTextChange={setCustomText}
+          textFields={textFields}
+          textFieldValues={textFieldValues}
+          onTextFieldChange={handleTextFieldChange}
           linksCount={linksCount}
           links={links}
           onLinksChange={setLinks}
@@ -267,7 +310,7 @@ export function ProductPageClient({
               price: selectedVariant?.price ?? 0,
               currency: "PLN",
             }}
-            disabled={!selectedVariant || qty === 0 || !allLinksProvided}
+            disabled={!selectedVariant || qty === 0 || !allLinksProvided || !allTextFieldsValid}
             maxQuantity={qty > 0 ? qty : undefined}
             onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
             metadata={buildMetadata()}
@@ -277,10 +320,15 @@ export function ProductPageClient({
               Uzupełnij wszystkie linki do kodów QR
             </p>
           )}
+          {!allTextFieldsValid && (
+            <p className="text-xs text-red-500 text-center">
+              Uzupełnij wymagane pola tekstowe
+            </p>
+          )}
           <button
             type="button"
             onClick={handleBuyNow}
-            disabled={!selectedVariant || qty === 0 || !allLinksProvided}
+            disabled={!selectedVariant || qty === 0 || !allLinksProvided || !allTextFieldsValid}
             className="w-full rounded-md border border-brand-300 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Kup teraz
@@ -306,7 +354,7 @@ export function ProductPageClient({
                 price: selectedVariant?.price ?? 0,
                 currency: "PLN",
               }}
-              disabled={!selectedVariant || qty === 0 || !allLinksProvided}
+              disabled={!selectedVariant || qty === 0 || !allLinksProvided || !allTextFieldsValid}
               compact
               onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
               metadata={buildMetadata()}

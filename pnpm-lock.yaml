@@ -35,9 +35,15 @@ importers:
       '@medusajs/framework':
         specifier: ^2.13.4
         version: 2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6)
+      '@medusajs/icons':
+        specifier: ^2.13.5
+        version: 2.13.5(react@18.3.1)
       '@medusajs/medusa':
         specifier: ^2.13.4
-        version: 2.13.4(@emotion/is-prop-valid@1.4.0)(@medusajs/admin-sdk@2.13.4)(@medusajs/cli@2.13.4(@types/node@25.5.0))(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))(@medusajs/icons@2.13.4(react@18.3.1))(@medusajs/ui@4.1.4(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/node@25.5.0)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(awilix@8.0.1)(lightningcss@1.32.0)(posthog-node@5.28.5(rxjs@7.8.2))(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+        version: 2.13.4(@emotion/is-prop-valid@1.4.0)(@medusajs/admin-sdk@2.13.4)(@medusajs/cli@2.13.4(@types/node@25.5.0))(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))(@medusajs/icons@2.13.5(react@18.3.1))(@medusajs/ui@4.1.5(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/node@25.5.0)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(awilix@8.0.1)(lightningcss@1.32.0)(posthog-node@5.28.5(rxjs@7.8.2))(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      '@medusajs/ui':
+        specifier: ^4.1.5
+        version: 4.1.5(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       '@types/react':
         specifier: ^18.3.28
         version: 18.3.28
@@ -2362,6 +2368,11 @@ packages:
     peerDependencies:
       react: ^18.3.1
 
+  '@medusajs/icons@2.13.5':
+    resolution: {integrity: sha512-uDEiz/ZW4McFzDY/iP83zHzq+EvzvbNyWw144uJkU/iogonQ/5+96F5HPFK5hPL2+fisWB2ay3o5QUF8sUlGQQ==}
+    peerDependencies:
+      react: ^18.3.1
+
   '@medusajs/index@2.13.4':
     resolution: {integrity: sha512-Yj93rDWhOmqAhMLoqUlKu0miWecngTcBHRLI465b0/nJhRxYNYL5JN6AZjyDRHlU0AqJu/X89F4HXNet14AMLg==}
     engines: {node: '>=20'}
@@ -2548,6 +2559,12 @@ packages:
 
   '@medusajs/ui@4.1.4':
     resolution: {integrity: sha512-UrXUCsGY3JoRHFfRDzx5hvyH9NI0FlSTkiddeiPLED71lgTqO0MHUrOA7M9cCovM7L8naM3Xn7KY8xPMXDGc5w==}
+    peerDependencies:
+      react: ^18.3.1
+      react-dom: ^18.3.1
+
+  '@medusajs/ui@4.1.5':
+    resolution: {integrity: sha512-IkTvMU56Ea/h7ulENICUEy8JDX9QBuWcKfcyQ05uD0bQb3QJUYt/yvT1+7lZIWwn/UshxqeFMhJKgsSlnTKtvw==}
     peerDependencies:
       react: ^18.3.1
       react-dom: ^18.3.1
@@ -13326,7 +13343,7 @@ snapshots:
       - supports-color
       - tedious
 
-  '@medusajs/draft-order@2.13.4(@medusajs/admin-sdk@2.13.4)(@medusajs/cli@2.13.4(@types/node@25.5.0))(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))(@medusajs/icons@2.13.4(react@18.3.1))(@medusajs/ui@4.1.4(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)':
+  '@medusajs/draft-order@2.13.4(@medusajs/admin-sdk@2.13.4)(@medusajs/cli@2.13.4(@types/node@25.5.0))(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))(@medusajs/icons@2.13.5(react@18.3.1))(@medusajs/ui@4.1.5(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@ariakit/react': 0.4.24(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@babel/runtime': 7.29.2
@@ -13344,8 +13361,8 @@ snapshots:
     optionalDependencies:
       '@medusajs/admin-sdk': 2.13.4
       '@medusajs/cli': 2.13.4(@types/node@25.5.0)
-      '@medusajs/icons': 2.13.4(react@18.3.1)
-      '@medusajs/ui': 4.1.4(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+      '@medusajs/icons': 2.13.5(react@18.3.1)
+      '@medusajs/ui': 4.1.5(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-router-dom: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -13441,6 +13458,10 @@ snapshots:
     dependencies:
       react: 18.3.1
 
+  '@medusajs/icons@2.13.5(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+
   '@medusajs/index@2.13.4(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))':
     dependencies:
       '@medusajs/framework': 2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6)
@@ -13473,7 +13494,7 @@ snapshots:
     dependencies:
       '@medusajs/framework': 2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6)
 
-  '@medusajs/medusa@2.13.4(@emotion/is-prop-valid@1.4.0)(@medusajs/admin-sdk@2.13.4)(@medusajs/cli@2.13.4(@types/node@25.5.0))(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))(@medusajs/icons@2.13.4(react@18.3.1))(@medusajs/ui@4.1.4(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/node@25.5.0)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(awilix@8.0.1)(lightningcss@1.32.0)(posthog-node@5.28.5(rxjs@7.8.2))(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)':
+  '@medusajs/medusa@2.13.4(@emotion/is-prop-valid@1.4.0)(@medusajs/admin-sdk@2.13.4)(@medusajs/cli@2.13.4(@types/node@25.5.0))(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))(@medusajs/icons@2.13.5(react@18.3.1))(@medusajs/ui@4.1.5(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/node@25.5.0)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(awilix@8.0.1)(lightningcss@1.32.0)(posthog-node@5.28.5(rxjs@7.8.2))(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)':
     dependencies:
       '@inquirer/checkbox': 2.5.0
       '@inquirer/input': 2.3.0
@@ -13494,7 +13515,7 @@ snapshots:
       '@medusajs/core-flows': 2.13.4(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))
       '@medusajs/currency': 2.13.4(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))
       '@medusajs/customer': 2.13.4(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))
-      '@medusajs/draft-order': 2.13.4(@medusajs/admin-sdk@2.13.4)(@medusajs/cli@2.13.4(@types/node@25.5.0))(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))(@medusajs/icons@2.13.4(react@18.3.1))(@medusajs/ui@4.1.4(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@medusajs/draft-order': 2.13.4(@medusajs/admin-sdk@2.13.4)(@medusajs/cli@2.13.4(@types/node@25.5.0))(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))(@medusajs/icons@2.13.5(react@18.3.1))(@medusajs/ui@4.1.5(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@medusajs/event-bus-local': 2.13.4(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))
       '@medusajs/event-bus-redis': 2.13.4(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))
       '@medusajs/file': 2.13.4(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0))(zod@4.3.6))
@@ -13714,6 +13735,34 @@ snapshots:
       '@dnd-kit/sortable': 8.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@dnd-kit/utilities': 3.2.2(react@18.3.1)
       '@medusajs/icons': 2.13.4(react@18.3.1)
+      '@radix-ui/react-dialog': 1.1.4(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-dismissable-layer': 1.1.4(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-table': 8.20.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 1.2.1
+      copy-to-clipboard: 3.3.3
+      cva: 1.0.0-beta.1(typescript@5.9.3)
+      lodash.isequal: 4.5.0
+      prism-react-renderer: 2.4.1(react@18.3.1)
+      prismjs: 1.30.0
+      radix-ui: 1.1.2(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-aria: 3.47.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-currency-input-field: 3.10.0(react@18.3.1)
+      react-dom: 18.3.1(react@18.3.1)
+      react-stately: 3.45.0(react@18.3.1)
+      sonner: 1.7.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      tailwind-merge: 2.6.1
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+      - typescript
+
+  '@medusajs/ui@4.1.5(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)':
+    dependencies:
+      '@dnd-kit/core': 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/sortable': 8.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+      '@medusajs/icons': 2.13.5(react@18.3.1)
       '@radix-ui/react-dialog': 1.1.4(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-dismissable-layer': 1.1.4(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-table': 8.20.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -18978,7 +19027,7 @@ snapshots:
   capital-case@1.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
       upper-case-first: 2.0.2
 
   cardinal@2.1.1:
@@ -19027,7 +19076,7 @@ snapshots:
       path-case: 3.0.4
       sentence-case: 3.0.4
       snake-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   character-entities-legacy@3.0.0: {}
 
@@ -19278,7 +19327,7 @@ snapshots:
   constant-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
       upper-case: 2.0.2
 
   content-disposition@0.5.4:
@@ -19514,7 +19563,7 @@ snapshots:
   dot-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   dot-prop@5.3.0:
     dependencies:
@@ -20140,7 +20189,7 @@ snapshots:
   header-case@2.0.4:
     dependencies:
       capital-case: 1.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   history@5.3.0:
     dependencies:
@@ -20392,7 +20441,7 @@ snapshots:
 
   is-lower-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   is-number@7.0.0: {}
 
@@ -20430,7 +20479,7 @@ snapshots:
 
   is-upper-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   is-valid-path@0.1.1:
     dependencies:
@@ -20806,11 +20855,11 @@ snapshots:
 
   lower-case-first@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   lower-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   lru-cache@10.4.3: {}
 
@@ -21280,7 +21329,7 @@ snapshots:
   param-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   parent-require@1.0.0: {}
 
@@ -21331,7 +21380,7 @@ snapshots:
   path-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   path-exists@3.0.0: {}
 
@@ -22529,7 +22578,7 @@ snapshots:
   sentence-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
       upper-case-first: 2.0.2
 
   serve-static@1.16.3:
@@ -22649,7 +22698,7 @@ snapshots:
   snake-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   sonner@1.7.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -22689,7 +22738,7 @@ snapshots:
 
   sponge-case@1.0.1:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   sprintf-js@1.0.3: {}
 
@@ -22834,7 +22883,7 @@ snapshots:
 
   swap-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   symbol-tree@3.2.4: {}
 
@@ -22952,7 +23001,7 @@ snapshots:
 
   title-case@3.0.3:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   tldts-core@6.1.86: {}
 
@@ -23165,11 +23214,11 @@ snapshots:
 
   upper-case-first@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   upper-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   uri-js@4.4.1:
     dependencies:

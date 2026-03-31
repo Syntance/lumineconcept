@@ -28,6 +28,10 @@
   --font-serif: var(--font-chronicle), Georgia, serif;
   /* Display z polskim tekstem = Chronicle (pełne glyphy). Binerka tylko przez klasę .font-binerka (np. CONCEPT). */
   --font-display: var(--font-chronicle), Georgia, serif;
+
+  /* Sticky galeria produktu: ten sam „oddech” co pod headerem (Header.tsx: h-16) */
+  --header-sticky-height: 4rem;
+  --product-gallery-sticky-gap: 1.5rem;
 }
 
 @layer base {
