@@ -14,7 +14,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     metadata?: Record<string, unknown> | null
   }
 
-  const option = await service.updateConfigOptions(id, body)
+  const option = await service.updateConfigOptions({ id, ...body })
   res.json({ config_option: option })
 }
 
