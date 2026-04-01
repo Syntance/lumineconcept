@@ -21,6 +21,11 @@ export default defineMiddlewares({
       bodyParser: { sizeLimit: "10mb" },
     },
     {
+      matcher: "/admin/products/:id/text-fields",
+      method: ["POST"],
+      bodyParser: { sizeLimit: "10mb" },
+    },
+    {
       matcher: "/admin/product-categories/:id",
       method: ["POST"],
       bodyParser: { sizeLimit: "10mb" },
