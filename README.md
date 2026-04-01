@@ -37,6 +37,8 @@ cp apps/backend/.env.example apps/backend/.env
 
 Uzupełnij klucze API w plikach `.env`.
 
+**Storefront + Medusa:** w `apps/storefront/.env.local` ustaw `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` (Medusa Admin → Settings → Publishable API keys) i **tę samą wartość** w `MEDUSA_PUBLISHABLE_KEY`. Opcjonalnie `MEDUSA_BACKEND_URL` = ten sam URL co `NEXT_PUBLIC_MEDUSA_BACKEND_URL` (proxy `/api/medusa`). Przy backendzie lokalnym (`http://localhost:9000`) użyj klucza z lokalnej bazy, nie z produkcji.
+
 ### 3. Uruchomienie infrastruktury (Docker)
 
 ```bash
