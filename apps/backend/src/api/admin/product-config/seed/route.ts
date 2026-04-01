@@ -25,7 +25,7 @@ const SEED_COLORS = [
 ]
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
-  const service = req.scope.resolve("product-config") as ProductConfigService
+  const service = req.scope.resolve("product_config") as ProductConfigService
 
   const existing = await service.listConfigOptions({ type: "color" })
   if (existing.length > 0) {

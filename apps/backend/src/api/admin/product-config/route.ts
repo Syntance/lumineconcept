@@ -2,7 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type ProductConfigService from "../../../modules/product-config/service"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
-  const service = req.scope.resolve("product-config") as ProductConfigService
+  const service = req.scope.resolve("product_config") as ProductConfigService
   const { type } = req.query as { type?: string }
 
   const filters: Record<string, unknown> = {}
@@ -16,7 +16,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 }
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
-  const service = req.scope.resolve("product-config") as ProductConfigService
+  const service = req.scope.resolve("product_config") as ProductConfigService
   const body = req.body as {
     type: string
     name: string

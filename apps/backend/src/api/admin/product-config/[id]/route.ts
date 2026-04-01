@@ -2,7 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type ProductConfigService from "../../../../modules/product-config/service"
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
-  const service = req.scope.resolve("product-config") as ProductConfigService
+  const service = req.scope.resolve("product_config") as ProductConfigService
   const { id } = req.params
   const body = req.body as {
     type?: string
@@ -19,7 +19,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 }
 
 export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
-  const service = req.scope.resolve("product-config") as ProductConfigService
+  const service = req.scope.resolve("product_config") as ProductConfigService
   const { id } = req.params
 
   await service.deleteConfigOptions(id)

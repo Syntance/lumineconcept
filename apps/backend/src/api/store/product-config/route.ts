@@ -4,7 +4,7 @@ import { Modules } from "@medusajs/framework/utils"
 import type ProductConfigService from "../../../modules/product-config/service"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
-  const service = req.scope.resolve("product-config") as ProductConfigService
+  const service = req.scope.resolve("product_config") as ProductConfigService
   const { type, product_id } = req.query as {
     type?: string
     product_id?: string
