@@ -169,9 +169,6 @@ export function ColorStepPanel({
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
                   Standardowe
                 </p>
-                <p className="mb-2 text-[10px] leading-snug text-brand-500/85">
-                  Biel, czerń, transparent i neutralne tło pod grawer.
-                </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
                   {standardColors.map(renderSwatch)}
                 </div>
@@ -183,9 +180,6 @@ export function ColorStepPanel({
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
                   Kolorowe
                 </p>
-                <p className="mb-2 text-[10px] leading-snug text-brand-500/85">
-                  Ciepłe i stonowane odcienie z palety podstawowej.
-                </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
                   {coloredColors.map(renderSwatch)}
                 </div>
@@ -196,9 +190,6 @@ export function ColorStepPanel({
               <div>
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
                   Lustrzane
-                </p>
-                <p className="mb-2 text-[10px] leading-snug text-brand-500/85">
-                  Metaliczne i intensywne wykończenie jak lustro.
                 </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
                   {mirrorColors.map(renderSwatch)}
