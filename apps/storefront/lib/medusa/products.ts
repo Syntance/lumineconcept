@@ -2,24 +2,36 @@ import { unstable_cache } from "next/cache";
 import { medusa } from "./client";
 import { getPolishRegionId } from "./region";
 
+function logMedusaFailure(context: string, error: unknown) {
+  console.error(
+    `[medusa] ${context} — backend niedostępny lub błąd HTTP (np. 502). Uruchom Medusę (pnpm dev w apps/backend) i sprawdź NEXT_PUBLIC_MEDUSA_BACKEND_URL.`,
+    error,
+  );
+}
+
 async function _getProducts(params?: {
   limit?: number;
   offset?: number;
   category_id?: string[];
   order?: string;
 }) {
-  const regionId = await getPolishRegionId();
-  const response = await medusa.store.product.list({
-    limit: params?.limit ?? 20,
-    offset: params?.offset ?? 0,
-    category_id: params?.category_id,
-    order: params?.order,
-    region_id: regionId,
-    fields:
-      "+variants.calculated_price,+variants.metadata,+options,+tags,*images,+thumbnail,+metadata",
-  });
-
-  return response;
+  const limit = params?.limit ?? 20;
+  const offset = params?.offset ?? 0;
+  try {
+    const regionId = await getPolishRegionId();
+    return await medusa.store.product.list({
+      limit,
+      offset,
+      category_id: params?.category_id,
+      order: params?.order,
+      region_id: regionId,
+      fields:
+        "+variants.calculated_price,+variants.metadata,+options,+tags,*images,+thumbnail,+metadata",
+    });
+  } catch (e) {
+    logMedusaFailure("getProducts", e);
+    return { products: [], count: 0, offset, limit };
+  }
 }
 
 export const getProducts = unstable_cache(
@@ -29,15 +41,20 @@ export const getProducts = unstable_cache(
 );
 
 async function _getProductByHandle(handle: string) {
-  const regionId = await getPolishRegionId();
-  const response = await medusa.store.product.list({
-    handle,
-    region_id: regionId,
-    fields:
-      "+variants.calculated_price,+variants.inventory_quantity,+variants.metadata,*images,+thumbnail,+metadata,+options",
-  });
+  try {
+    const regionId = await getPolishRegionId();
+    const response = await medusa.store.product.list({
+      handle,
+      region_id: regionId,
+      fields:
+        "+variants.calculated_price,+variants.inventory_quantity,+variants.metadata,*images,+thumbnail,+metadata,+options",
+    });
 
-  return response.products[0] ?? null;
+    return response.products[0] ?? null;
+  } catch (e) {
+    logMedusaFailure(`getProductByHandle(${handle})`, e);
+    return null;
+  }
 }
 
 export const getProductByHandle = unstable_cache(
@@ -51,29 +68,39 @@ export const getProductByHandle = unstable_cache(
  * Falls back to the first `limit` products if none are tagged.
  */
 export async function getProductsByTag(tag: string, limit = 6) {
-  const regionId = await getPolishRegionId();
-  const fetchLimit = Math.max(limit * 3, 20);
-  const response = await medusa.store.product.list({
-    limit: fetchLimit,
-    region_id: regionId,
-    fields: "+variants.calculated_price,+variants.metadata,+tags,*images,+thumbnail,+metadata",
-  });
+  try {
+    const regionId = await getPolishRegionId();
+    const fetchLimit = Math.max(limit * 3, 20);
+    const response = await medusa.store.product.list({
+      limit: fetchLimit,
+      region_id: regionId,
+      fields: "+variants.calculated_price,+variants.metadata,+tags,*images,+thumbnail,+metadata",
+    });
 
-  const normalised = tag.toLowerCase();
-  const tagged = response.products.filter((p) =>
-    p.tags?.some((t) => t.value?.toLowerCase() === normalised),
-  );
+    const normalised = tag.toLowerCase();
+    const tagged = response.products.filter((p) =>
+      p.tags?.some((t) => t.value?.toLowerCase() === normalised),
+    );
 
-  const result = tagged.length > 0 ? tagged : response.products;
-  return result.slice(0, limit);
+    const result = tagged.length > 0 ? tagged : response.products;
+    return result.slice(0, limit);
+  } catch (e) {
+    logMedusaFailure(`getProductsByTag(${tag})`, e);
+    return [];
+  }
 }
 
 async function _getProductCategories() {
-  const response = await medusa.store.category.list({
-    include_descendants_tree: true,
-  });
+  try {
+    const response = await medusa.store.category.list({
+      include_descendants_tree: true,
+    });
 
-  return response.product_categories;
+    return response.product_categories;
+  } catch (e) {
+    logMedusaFailure("getProductCategories", e);
+    return [];
+  }
 }
 
 export const getProductCategories = unstable_cache(

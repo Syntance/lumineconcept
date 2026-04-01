@@ -4,9 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
  * Proxy Store API → Medusa (ten sam origin w przeglądarce, bez CORS).
  * Rewrite w next.config do zewnętrznego hosta w dev (Turbopack) potrafi zwracać 500 przy POST — jawny fetch jest stabilniejszy.
  */
+
+/** Vercel: dłuższy cold start Railway / Medusa — unikaj przedwczesnego 504 „Application failed to respond”. */
+export const maxDuration = 60;
 const BACKEND =
-  process.env.MEDUSA_BACKEND_URL ??
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ??
+  process.env.MEDUSA_BACKEND_URL?.trim() ||
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
   "http://localhost:9000";
 
 const HOP_BY_HOP = new Set([

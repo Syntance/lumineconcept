@@ -1,8 +1,10 @@
 import Medusa from "@medusajs/js-sdk";
 
-/** W przeglądarce: Next.js proxy (`next.config.ts` rewrites) — ten sam origin, bez CORS/CSP. */
+/** Po stronie serwera: bezpośrednio do Medusy (bez self-fetch przez /api/medusa). Używamy || — pusty string w .env nie może nadpisać domyślnego hosta. */
 const SERVER_BACKEND_URL =
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "http://localhost:9000";
+  process.env.MEDUSA_BACKEND_URL?.trim() ||
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
+  "http://localhost:9000";
 
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ?? "";
 
