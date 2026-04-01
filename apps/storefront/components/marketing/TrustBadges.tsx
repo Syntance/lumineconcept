@@ -1,4 +1,4 @@
-import { Shield, Truck, RotateCcw, CreditCard } from "lucide-react";
+import { Shield, Truck, CreditCard } from "lucide-react";
 
 const BADGES = [
   {
@@ -8,13 +8,8 @@ const BADGES = [
   },
   {
     icon: Truck,
-    title: "Szybka dostawa",
-    description: "InPost Paczkomat od 1 dnia",
-  },
-  {
-    icon: RotateCcw,
-    title: "14 dni na zwrot",
-    description: "Bez podawania przyczyny",
+    title: "Czas realizacji",
+    description: "około 10 dni roboczych",
   },
   {
     icon: CreditCard,
@@ -27,12 +22,12 @@ export function TrustBadges() {
   return (
     <section className="border-y border-brand-100 py-8">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           {BADGES.map((badge) => {
             const Icon = badge.icon;
             return (
               <div key={badge.title} className="flex items-start gap-3">
-                <Icon className="h-6 w-6 flex-shrink-0 text-accent" />
+                <Icon className="h-6 w-6 shrink-0 text-accent" />
                 <div>
                   <p className="text-sm font-medium text-brand-900">
                     {badge.title}

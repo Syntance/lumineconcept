@@ -18,6 +18,7 @@ apps/backend/medusa-config.d.ts.map
 uploads/
 static/
 scripts/sync-medusa-product.env
+scripts/fill-product-dimensions.env
 .cache/
 sanity/.sanity/
 .vercel

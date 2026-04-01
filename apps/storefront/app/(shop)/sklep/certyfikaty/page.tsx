@@ -7,6 +7,7 @@ import type { SiteSettings } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { SITE_URL } from "@/lib/utils";
 import { medusaProductToSimple } from "@/lib/products/simple-product";
+import { getGlobalProductConfig } from "@/lib/products/global-config";
 import { ShopGridClient } from "../gotowe-wzory/client";
 
 const INITIAL_PAGE_SIZE = 24;
@@ -27,7 +28,7 @@ export default async function CertyfikatyPage({
 }) {
   const params = await searchParams;
 
-  const [productsResponse, categories, settings] = await Promise.all([
+  const [productsResponse, categories, settings, globalConfig] = await Promise.all([
     getProducts({
       limit: INITIAL_PAGE_SIZE,
       offset: 0,
@@ -37,6 +38,13 @@ export default async function CertyfikatyPage({
     sanityClient
       .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
       .catch(() => null),
+    getGlobalProductConfig().catch(() => ({
+      colors: [] as any[],
+      sizes: [],
+      materials: [],
+      led: [],
+      finishes: [],
+    })),
   ]);
 
   const products = productsResponse?.products ?? [];
@@ -84,6 +92,7 @@ export default async function CertyfikatyPage({
               initialSort={params.sort ?? "-created_at"}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/certyfikaty"
+              globalColors={globalConfig.colors}
             />
           </Suspense>
         </div>
@@ -96,7 +105,7 @@ export default async function CertyfikatyPage({
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
             <span className="text-brand-300">·</span>
-            <span>{trustBar?.shippingLabel ?? "Express wysyłka"}</span>
+            <span>{trustBar?.shippingLabel ?? "Realizacja ok. 10 dni rob."}</span>
           </div>
         </div>
       </section>

@@ -52,6 +52,19 @@ cd apps/backend
 pnpm db:migrate
 ```
 
+### 4b. Konto admina na testy (lokalnie)
+
+Jednorazowo po migracji (słabe hasło — wyłącznie do dev):
+
+```bash
+pnpm admin:create-local
+```
+
+**Logowanie:** http://localhost:7001 — e-mail `admin@local.test`, hasło `admin`.  
+Jeśli użytkownik już istnieje, komenda zwróci błąd; wtedy zaloguj się tymi danymi albo usuń użytkownika z bazy i uruchom ponownie.
+
+Wartości możesz też trzymać w `apps/backend/.env` jako `MEDUSA_ADMIN_EMAIL` / `MEDUSA_ADMIN_PASSWORD` (wzór w `.env.example`).
+
 ### 5. Uruchomienie projektu
 
 ```bash

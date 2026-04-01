@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getProductsByTag } from "@/lib/medusa/products";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
+import { getProductDimensionsLabel } from "@/lib/products/dimensions";
 
 export async function BestsellersSection() {
   let products: Awaited<ReturnType<typeof getProductsByTag>> = [];
@@ -64,6 +65,13 @@ export async function BestsellersSection() {
             const sharpCorners = index === 1 || index === 3;
             const price =
               product.variants?.[0]?.calculated_price?.calculated_amount ?? 0;
+            const v0 = product.variants?.[0] as
+              | { metadata?: Record<string, unknown> }
+              | undefined;
+            const dimensionsLabel = getProductDimensionsLabel(
+              (product.metadata ?? undefined) as Record<string, unknown> | undefined,
+              v0?.metadata,
+            );
             return (
               <Link
                 key={product.handle}
@@ -87,6 +95,11 @@ export async function BestsellersSection() {
                 <p className="text-center text-base font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">
                   {product.title}
                 </p>
+                {dimensionsLabel && (
+                  <p className="text-center text-xs text-brand-500 line-clamp-2 px-0.5">
+                    <span className="text-brand-400">Wymiary:</span> {dimensionsLabel}
+                  </p>
+                )}
                 <div className="flex w-full justify-center">
                   <PriceDisplay amount={price} />
                 </div>

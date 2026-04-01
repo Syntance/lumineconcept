@@ -1,6 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework";
 import type MeilisearchService from "../../../modules/meilisearch/service";
-import type InPostFulfillmentService from "../../../modules/inpost/service";
 
 /**
  * GET /store/custom/search?q=...&filter=...&sort=...&limit=...&offset=...
@@ -29,21 +28,17 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
  * POST /store/custom/shipping-options
  * Returns available shipping options with prices
  */
-export async function POST(req: MedusaRequest, res: MedusaResponse) {
-  const inpost = req.scope.resolve("inpost") as InPostFulfillmentService;
-
-  const inpostOptions = await inpost.getShippingOptions();
-
+export async function POST(_req: MedusaRequest, res: MedusaResponse) {
   const dpdOptions = [
     {
       id: "dpd_courier",
-      name: "DPD Kurier",
-      price: 1899,
-      estimated_days: "1-3 dni robocze",
+      name: "Kurier DPD",
+      price: 2500,
+      estimated_days: "1-3 dni robocze po nadaniu",
     },
   ];
 
   return res.json({
-    shipping_options: [...inpostOptions, ...dpdOptions],
+    shipping_options: dpdOptions,
   });
 }

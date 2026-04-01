@@ -1,16 +1,69 @@
+import {
+  extractDimensionsFromProductDescription,
+  getProductDimensionsLabel,
+  stripHtmlForDimensions,
+} from "@/lib/products/dimensions";
+
 interface ProductTabsProps {
   description: string | null;
   metadata: Record<string, unknown>;
+}
+
+/** „…3D. Wymiary: 23×25 cm” → osobny akapit pod pierwszym zdaniem. */
+function splitDescriptionLeadAndDimensions(raw: string): {
+  lead: string;
+  dimensionsLine: string | null;
+} {
+  const plain = stripHtmlForDimensions(raw).replace(/\s+/g, " ").trim();
+  if (!plain) return { lead: raw, dimensionsLine: null };
+  const m = plain.match(/\b(Wymiary\s*[:\-–—]\s*.+)$/i);
+  if (!m || m.index === undefined || m.index === 0) {
+    return { lead: raw, dimensionsLine: null };
+  }
+  const lead = plain.slice(0, m.index).trim();
+  const dimensionsLine = m[1].trim();
+  if (!lead) return { lead: raw, dimensionsLine: null };
+  return { lead, dimensionsLine };
 }
 
 export function ProductTabs({ description, metadata }: ProductTabsProps) {
   const spec = metadata.specyfikacja as string | undefined;
   const tabs: Array<{ title: string; content: React.ReactNode }> = [];
 
+  const dimensionsInOpis =
+    getProductDimensionsLabel(metadata) ??
+    extractDimensionsFromProductDescription(
+      description ?? undefined,
+      typeof spec === "string" ? spec : undefined,
+    );
+
+  const split = description ? splitDescriptionLeadAndDimensions(description) : null;
+
   if (description) {
     tabs.push({
       title: "Opis",
-      content: <div className="prose prose-sm text-brand-700 max-w-none"><p>{description}</p></div>,
+      content: (
+        <div className="prose prose-sm text-brand-700 max-w-none">
+          {split?.dimensionsLine ? (
+            <>
+              <p>{split.lead}</p>
+              <p className="mt-1">
+                <span className="text-brand-500">Wymiary:</span>{" "}
+                {split.dimensionsLine.replace(/^Wymiary\s*[:\-–—]\s*/i, "").trim()}
+              </p>
+            </>
+          ) : (
+            <>
+              {dimensionsInOpis && (
+                <p className="mb-3 font-sans text-sm leading-relaxed text-brand-700">
+                  <span className="text-brand-500">Wymiary:</span> {dimensionsInOpis}
+                </p>
+              )}
+              <p>{description}</p>
+            </>
+          )}
+        </div>
+      ),
     });
   }
 
@@ -22,21 +75,14 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
   }
 
   tabs.push({
-    title: "Wysyłka",
+    title: "Czas realizacji i wysyłka",
     content: (
       <div className="space-y-3 text-sm text-brand-700">
-        <p>Realizacja zamówienia: <strong>1-3 dni robocze</strong></p>
-        <p>Wysyłka kurierem InPost lub Paczkomaty 24/7.</p>
-      </div>
-    ),
-  });
-
-  tabs.push({
-    title: "Zwroty",
-    content: (
-      <div className="space-y-3 text-sm text-brand-700">
-        <p>Masz <strong>14 dni</strong> na zwrot produktu bez podawania przyczyny.</p>
-        <p>Produkty personalizowane (na zamówienie) nie podlegają zwrotowi.</p>
+        <p>Czas realizacji zamówienia: <strong>około 10 dni roboczych</strong></p>
+        <p>
+          <strong>Kurier DPD</strong> — przesyłka kurierska dostarczona pod wskazany adres, koszt od{" "}
+          <strong>25 zł</strong>.
+        </p>
       </div>
     ),
   });

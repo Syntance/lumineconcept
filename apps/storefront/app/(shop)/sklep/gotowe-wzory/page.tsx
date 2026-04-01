@@ -7,6 +7,7 @@ import type { SiteSettings, Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { SITE_URL } from "@/lib/utils";
 import { medusaProductToSimple } from "@/lib/products/simple-product";
+import { getGlobalProductConfig } from "@/lib/products/global-config";
 import { ShopGridClient } from "./client";
 
 const INITIAL_PAGE_SIZE = 24;
@@ -14,7 +15,7 @@ const INITIAL_PAGE_SIZE = 24;
 export const metadata: Metadata = {
   title: "Gotowe wzory z plexi — cenniki, tabliczki, menu, QR | Lumine Concept",
   description:
-    "Gotowe cenniki, tabliczki, menu, QR i wizytowniki z plexi. Kup online — szybka wysyłka w 48h.",
+    "Gotowe cenniki, tabliczki, menu, QR i wizytowniki z plexi. Kup online — realizacja ok. 10 dni roboczych.",
   alternates: { canonical: `${SITE_URL}/sklep/gotowe-wzory` },
 };
 
@@ -32,6 +33,14 @@ export default async function GotoweWzoryPage({
   let settings: SiteSettings | null;
   let testimonials: Testimonial[];
   let productsResponse: Awaited<ReturnType<typeof getProducts>> | null;
+
+  const globalConfigPromise = getGlobalProductConfig().catch(() => ({
+    colors: [] as any[],
+    sizes: [],
+    materials: [],
+    led: [],
+    finishes: [],
+  }));
 
   if (params.kat) {
     [allCategories, settings, testimonials] = await Promise.all([
@@ -71,6 +80,8 @@ export default async function GotoweWzoryPage({
     productsResponse = results[3];
   }
 
+  const globalConfig = await globalConfigPromise;
+
   const initialCategoryId = params.kat
     ? allCategories.find(
         (c) => c.handle === params.kat || c.id === params.kat,
@@ -102,7 +113,7 @@ export default async function GotoweWzoryPage({
             ]}
           />
           <h1 className="font-display text-3xl tracking-[0.06em] text-brand-800 lg:text-4xl">
-            Gotowe wzory z plexi — kup od ręki, wysyłka w 48h
+            Gotowe wzory z plexi — kup od ręki, realizacja ok. 10 dni roboczych
           </h1>
           <p className="mt-4 mx-auto max-w-2xl text-brand-600 leading-relaxed">
             Cenniki, tabliczki, oznaczenia, logo — gotowe wzory do Twojego salonu. Bez czekania na projekt.
@@ -128,6 +139,7 @@ export default async function GotoweWzoryPage({
               initialSort={params.sort ?? "-created_at"}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/gotowe-wzory"
+              globalColors={globalConfig.colors}
             />
           </Suspense>
         </div>
@@ -141,7 +153,7 @@ export default async function GotoweWzoryPage({
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
             <span className="text-brand-300">·</span>
-            <span>{trustBar?.shippingLabel ?? "Express wysyłka"}</span>
+            <span>{trustBar?.shippingLabel ?? "Realizacja ok. 10 dni rob."}</span>
           </div>
 
           {displayTestimonials.length > 0 && (

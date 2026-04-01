@@ -31,7 +31,6 @@ export function CheckoutForm() {
     postalCode: "",
     shippingOptionId: "",
     paymentProviderId: "",
-    inpostLockerId: "",
     newsletter: false,
     wantInvoice: false,
     companyName: "",
@@ -311,9 +310,6 @@ export function CheckoutForm() {
             <ShippingSelector
               selectedOptionId={formData.shippingOptionId}
               onSelect={(id: string) => updateField("shippingOptionId", id)}
-              onInPostLockerSelect={(id: string) =>
-                updateField("inpostLockerId", id)
-              }
             />
             <button
               type="button"

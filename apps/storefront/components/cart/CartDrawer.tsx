@@ -201,9 +201,7 @@ export function CartDrawer() {
               <div className="flex items-center justify-center gap-4 border-t border-brand-50 px-6 py-3 text-[10px] uppercase tracking-widest text-brand-400">
                 <span>Bezpieczna płatność</span>
                 <span className="text-brand-200">·</span>
-                <span>Wysyłka 1–3 dni</span>
-                <span className="text-brand-200">·</span>
-                <span>14 dni zwrotu</span>
+                <span>Realizacja ok. 10 dni rob.</span>
               </div>
             </div>
           </>

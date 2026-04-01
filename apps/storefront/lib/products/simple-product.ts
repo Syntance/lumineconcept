@@ -11,6 +11,10 @@ export interface SimpleProduct {
   tags: string[];
   options: Record<string, string[]>;
   linksCount?: number;
+  /** Surowe metadata Medusa (m.in. text_fields dla mini-konfiguratora). */
+  metadata?: Record<string, unknown>;
+  /** Metadane pierwszego wariantu (np. wymiary zapisane per wariant). */
+  firstVariantMetadata?: Record<string, unknown>;
 }
 
 function minPriceFromVariants(variants: unknown[] | null | undefined): number {
@@ -54,7 +58,9 @@ export function medusaProductToSimple(p: Record<string, unknown>): SimpleProduct
   const thumbnail = (p.thumbnail as string | null) ?? images[0]?.url ?? null;
   const meta = (p.metadata ?? {}) as Record<string, unknown>;
   const rawLinks = Number(meta.links_count);
-  const v0 = variants[0] as { id?: string } | undefined;
+  const v0 = variants[0] as { id?: string; metadata?: Record<string, unknown> } | undefined;
+  const hasMeta = p.metadata && typeof p.metadata === "object";
+  const firstVariantMetadata = v0?.metadata;
 
   return {
     id: String(p.id ?? ""),
@@ -69,6 +75,8 @@ export function medusaProductToSimple(p: Record<string, unknown>): SimpleProduct
     ),
     options: optionsMap,
     linksCount: Number.isFinite(rawLinks) && rawLinks > 0 ? rawLinks : 0,
+    metadata: hasMeta ? meta : undefined,
+    firstVariantMetadata,
   };
 }
 

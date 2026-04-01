@@ -80,6 +80,10 @@ export default defineConfig({
       },
     },
     {
+      key: "product-config",
+      resolve: "./src/modules/product-config",
+    },
+    {
       resolve: "@medusajs/medusa/file",
       options: {
         providers: [

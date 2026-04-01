@@ -14,9 +14,12 @@
     "type-check": "turbo type-check",
     "clean": "turbo clean",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "admin:create-local": "pnpm --filter @lumine/backend admin:create-local",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "sync-medusa-product": "tsx scripts/sync-medusa-product-from-source.ts",
+    "fill-product-dimensions": "tsx scripts/fill-product-dimensions-from-description.ts",
+    "fill-product-attributes": "tsx scripts/fill-product-attributes-from-description.ts",
     "studio": "pnpm --filter @lumine/sanity dev",
     "studio:build": "pnpm --filter @lumine/sanity build",
     "studio:deploy": "pnpm --filter @lumine/sanity deploy"

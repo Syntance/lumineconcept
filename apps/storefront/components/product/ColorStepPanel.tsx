@@ -4,10 +4,9 @@ import { useState, useRef, useId } from "react";
 import { ChevronDown } from "lucide-react";
 import {
   CUSTOM_COLOR_VALUE,
-  COLOR_MAP,
-  MIRROR_COLORS,
-  isMatAllowed,
+  getColorHex,
   isMirrorColor,
+  isMatAllowed,
 } from "./ProductVariantSelector";
 
 interface ColorStepPanelProps {
@@ -19,6 +18,10 @@ interface ColorStepPanelProps {
   matFinish: boolean;
   onMatFinishChange: (enabled: boolean) => void;
   defaultExpanded?: boolean;
+  colorMap: Record<string, string>;
+  coloredSet: Set<string>;
+  mirrorSet: Set<string>;
+  matDisabledSet: Set<string>;
 }
 
 export function ColorStepPanel({
@@ -30,6 +33,10 @@ export function ColorStepPanel({
   matFinish,
   onMatFinishChange,
   defaultExpanded = false,
+  colorMap,
+  coloredSet,
+  mirrorSet,
+  matDisabledSet,
 }: ColorStepPanelProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [hexInput, setHexInput] = useState(customColor ?? "#000000");
@@ -37,9 +44,12 @@ export function ColorStepPanel({
   const uniqueId = useId();
 
   const isCustomSelected = selectedColor === CUSTOM_COLOR_VALUE;
-  const standardColors = option.values.filter((v) => !isMirrorColor(v));
-  const mirrorColors = option.values.filter((v) => isMirrorColor(v));
-  const matAllowed = isCustomSelected || isMatAllowed(selectedColor);
+  const standardColors = option.values.filter(
+    (v) => !isMirrorColor(v, mirrorSet) && !coloredSet.has(v.toLowerCase()),
+  );
+  const coloredColors = option.values.filter((v) => coloredSet.has(v.toLowerCase()));
+  const mirrorColors = option.values.filter((v) => isMirrorColor(v, mirrorSet));
+  const matAllowed = isCustomSelected || isMatAllowed(selectedColor, matDisabledSet);
 
   const displayName = isCustomSelected
     ? `Własny kolor${customColor ? ` (${customColor})` : ""}`
@@ -48,14 +58,14 @@ export function ColorStepPanel({
 
   const selectedHex = isCustomSelected
     ? customColor ?? "#ccc"
-    : COLOR_MAP[selectedColor.toLowerCase()] ?? "#ccc";
+    : getColorHex(selectedColor, colorMap);
 
   const filterId = `milky-blur-${uniqueId.replace(/:/g, "")}`;
   const clipId = `milky-clip-${uniqueId.replace(/:/g, "")}`;
 
   const renderSwatch = (value: string) => {
     const isSelected = selectedColor === value;
-    const hex = COLOR_MAP[value.toLowerCase()] ?? "#ccc";
+    const hex = getColorHex(value, colorMap);
     const isTransparent =
       value.toLowerCase() === "bezbarwny" ||
       value.toLowerCase() === "przezroczysty";
@@ -68,8 +78,8 @@ export function ColorStepPanel({
         onClick={() => onColorChange(value)}
         className={`relative h-9 w-9 rounded-full border-2 transition-all overflow-hidden ${
           isSelected
-            ? "border-accent ring-2 ring-accent/30"
-            : "border-brand-200 hover:border-brand-400"
+            ? "border-[#AF7C61] ring-2 ring-[#AF7C61]/30"
+            : "border-[#AF7C61]/50 hover:border-[#AF7C61]"
         }`}
         style={isMilky ? undefined : { backgroundColor: hex }}
         title={value}
@@ -77,7 +87,7 @@ export function ColorStepPanel({
         aria-label={value}
       >
         {isTransparent && (
-          <span className="absolute inset-1 rounded-full border border-dashed border-brand-300" />
+          <span className="absolute inset-1 rounded-full border border-dashed border-[#AF7C61]/50" />
         )}
         {isMilky && (
           <svg className="absolute inset-0 h-full w-full" viewBox="0 0 36 36">
@@ -104,23 +114,22 @@ export function ColorStepPanel({
   };
 
   return (
-    <div className="rounded-xl border border-brand-200 overflow-hidden">
+    <div className="rounded-xl border border-[#AF7C61]/50 overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-brand-50"
         aria-expanded={expanded}
       >
-        {/* Selected color swatch (small) */}
         <span
-          className="h-6 w-6 shrink-0 rounded-full border border-brand-200"
+          className="h-6 w-6 shrink-0 rounded-full border border-[#AF7C61]/50"
           style={{
             backgroundColor:
               selectedHex === "transparent" ? undefined : selectedHex,
           }}
         >
           {selectedHex === "transparent" && (
-            <span className="flex h-full w-full items-center justify-center rounded-full border border-dashed border-brand-300 text-[8px] text-brand-300">
+            <span className="flex h-full w-full items-center justify-center rounded-full border border-dashed border-[#AF7C61]/50 text-[8px] text-[#AF7C61]">
               ∅
             </span>
           )}
@@ -128,7 +137,7 @@ export function ColorStepPanel({
 
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-brand-700">{option.title}</p>
-          <p className="text-xs text-brand-400 truncate">
+          <p className="truncate text-xs text-[#AF7C61]">
             {displayName}
             {displaySuffix}
           </p>
@@ -147,14 +156,25 @@ export function ColorStepPanel({
         }`}
       >
         <div className="overflow-hidden">
-          <div className="space-y-3 border-t border-brand-100 px-4 pb-4 pt-3">
+          <div className="space-y-3 border-t border-[#AF7C61]/50 px-4 pb-4 pt-3">
             {standardColors.length > 0 && (
               <div>
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
-                  Standard
+                  Standardowe
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {standardColors.map(renderSwatch)}
+                </div>
+              </div>
+            )}
+
+            {coloredColors.length > 0 && (
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
+                  Kolorowe
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {coloredColors.map(renderSwatch)}
                 </div>
               </div>
             )}
@@ -186,8 +206,8 @@ export function ColorStepPanel({
                   }}
                   className={`relative flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all ${
                     isCustomSelected
-                      ? "border-accent ring-2 ring-accent/30"
-                      : "border-dashed border-brand-300 hover:border-brand-400"
+                      ? "border-[#AF7C61] ring-2 ring-[#AF7C61]/30"
+                      : "border-dashed border-[#AF7C61]/50 hover:border-[#AF7C61]"
                   }`}
                   style={{
                     background:
@@ -213,7 +233,7 @@ export function ColorStepPanel({
                 <button
                   type="button"
                   onClick={() => colorInputRef.current?.click()}
-                  className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-brand-200"
+                  className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-[#AF7C61]/50"
                   style={{ backgroundColor: customColor ?? hexInput }}
                   aria-label="Wybierz kolor"
                 >
@@ -241,7 +261,7 @@ export function ColorStepPanel({
                     }
                   }}
                   placeholder="#000000"
-                  className="w-24 rounded-lg border border-brand-200 px-3 py-1.5 text-sm font-mono text-brand-700 focus:border-accent focus:outline-none"
+                  className="w-24 rounded-lg border border-[#AF7C61]/50 px-3 py-1.5 text-sm font-mono text-brand-700 focus:border-[#AF7C61] focus:outline-none"
                   maxLength={7}
                 />
                 <span className="text-xs text-brand-400">Wpisz kod HEX</span>
@@ -256,10 +276,10 @@ export function ColorStepPanel({
                 disabled={!matAllowed}
                 className={`flex items-center gap-2.5 rounded-lg border px-4 py-2.5 text-sm transition-colors ${
                   !matAllowed
-                    ? "cursor-not-allowed border-brand-100 bg-brand-50 text-brand-300"
+                    ? "cursor-not-allowed border-[#AF7C61]/50 bg-brand-50 text-brand-600"
                     : matFinish
-                      ? "border-accent bg-accent/10 font-medium text-accent-dark"
-                      : "border-brand-200 text-brand-700 hover:border-brand-400"
+                      ? "border-[#AF7C61] bg-[#AF7C61]/10 font-medium text-accent-dark"
+                      : "border-[#AF7C61]/50 text-brand-700 hover:border-[#AF7C61]"
                 }`}
                 aria-pressed={matFinish}
                 title={
@@ -270,7 +290,7 @@ export function ColorStepPanel({
               >
                 <span
                   className={`inline-flex h-4 w-7 items-center rounded-full transition-colors ${
-                    matFinish && matAllowed ? "bg-accent" : "bg-brand-200"
+                    matFinish && matAllowed ? "bg-[#AF7C61]" : "bg-brand-200"
                   }`}
                 >
                   <span
@@ -283,8 +303,8 @@ export function ColorStepPanel({
                 </span>
                 Mat
                 {!matAllowed && (
-                  <span className="text-[10px] font-normal text-brand-300">
-                    (niedostępne)
+                  <span className="text-[10px] font-normal text-brand-700">
+                    (niedostępne dla tego koloru)
                   </span>
                 )}
               </button>
