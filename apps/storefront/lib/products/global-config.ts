@@ -22,8 +22,14 @@ export interface GlobalProductConfig {
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "http://localhost:9000"
 
+const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ?? ""
+
 async function _fetchGlobalConfig(): Promise<GlobalProductConfig> {
+  const headers: Record<string, string> = {}
+  if (PUBLISHABLE_KEY) headers["x-publishable-api-key"] = PUBLISHABLE_KEY
+
   const res = await fetch(`${BACKEND_URL}/store/product-config`, {
+    headers,
     next: { revalidate: 60 },
   })
 
@@ -53,9 +59,12 @@ export const getGlobalProductConfig = unstable_cache(
 async function _fetchProductConfig(
   productId: string,
 ): Promise<GlobalProductConfig> {
+  const headers: Record<string, string> = {}
+  if (PUBLISHABLE_KEY) headers["x-publishable-api-key"] = PUBLISHABLE_KEY
+
   const res = await fetch(
     `${BACKEND_URL}/store/product-config?product_id=${productId}`,
-    { next: { revalidate: 60 } },
+    { headers, next: { revalidate: 60 } },
   )
 
   if (!res.ok) {

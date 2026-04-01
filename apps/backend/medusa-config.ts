@@ -80,7 +80,7 @@ export default defineConfig({
       },
     },
     {
-      key: "product-config",
+      key: "product_config",
       resolve: "./src/modules/product-config",
     },
     {
