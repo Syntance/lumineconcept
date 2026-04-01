@@ -20,7 +20,9 @@ export interface GlobalProductConfig {
 }
 
 const BACKEND_URL =
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "http://localhost:9000"
+  process.env.MEDUSA_BACKEND_URL?.trim() ||
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
+  "http://localhost:9000"
 
 /** Store API wymaga klucza; lokalnie możesz ustawić tylko MEDUSA_PUBLISHABLE_KEY (serwer, bez NEXT_PUBLIC). */
 function getPublishableKey(): string {
@@ -32,8 +34,8 @@ function getPublishableKey(): string {
 }
 
 /**
- * Origin Nexta (RSC) — fetch do /api/medusa/* przechodzi przez proxy, które dopisuje x-publishable-api-key.
- * W dev zawsze localhost (ignoruje NEXT_PUBLIC_SITE_URL wskazujący na produkcję).
+ * Fallback: same-origin /api/medusa (proxy dopisuje klucz). Produkcja: najpierw bezpośredni BACKEND_URL.
+ * W dev zawsze localhost dla self-fetch (ignoruje NEXT_PUBLIC_SITE_URL wskazujący na produkcję).
  */
 function getSameOriginForServerFetch(): string {
   if (process.env.VERCEL_URL) {
@@ -48,6 +50,24 @@ function getSameOriginForServerFetch(): string {
 }
 
 async function fetchStoreProductConfig(search: string): Promise<Response> {
+  const key = getPublishableKey()
+  const headers: Record<string, string> = {}
+  if (key) headers["x-publishable-api-key"] = key
+
+  const directUrl = `${BACKEND_URL}/store/product-config${search}`
+
+  // Najpierw bezpośrednio do Medusy — unika self-fetch na Vercel (RSC → /api/medusa → backend),
+  // co często kończy się timeoutem „Application failed to respond”.
+  try {
+    const direct = await fetch(directUrl, {
+      headers,
+      next: { revalidate: 60 },
+    })
+    if (direct.ok) return direct
+  } catch {
+    /* Medusa wyłączona / zła sieć */
+  }
+
   const origin = getSameOriginForServerFetch().replace(/\/$/, "")
   const internalUrl = `${origin}/api/medusa/store/product-config${search}`
 
@@ -55,14 +75,10 @@ async function fetchStoreProductConfig(search: string): Promise<Response> {
     const viaProxy = await fetch(internalUrl, { next: { revalidate: 60 } })
     if (viaProxy.ok) return viaProxy
   } catch {
-    /* np. zły port — spróbuj bezpośrednio do Medusy */
+    /* np. zły port w dev — zwrócimy ostatni direct poniżej */
   }
 
-  const key = getPublishableKey()
-  const headers: Record<string, string> = {}
-  if (key) headers["x-publishable-api-key"] = key
-
-  return fetch(`${BACKEND_URL}/store/product-config${search}`, {
+  return fetch(directUrl, {
     headers,
     next: { revalidate: 60 },
   })

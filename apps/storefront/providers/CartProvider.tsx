@@ -93,24 +93,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const getOrCreateCart = useCallback(async () => {
-    const savedId =
-      typeof window !== "undefined"
-        ? localStorage.getItem(CART_ID_KEY)
-        : null;
+    try {
+      const savedId =
+        typeof window !== "undefined"
+          ? localStorage.getItem(CART_ID_KEY)
+          : null;
 
-    if (savedId) {
-      try {
-        const existing = await cartApi.getCart(savedId);
-        updateCartState(existing as unknown as Record<string, unknown>);
-        return;
-      } catch {
-        localStorage.removeItem(CART_ID_KEY);
+      if (savedId) {
+        try {
+          const existing = await cartApi.getCart(savedId);
+          updateCartState(existing as unknown as Record<string, unknown>);
+          return;
+        } catch {
+          localStorage.removeItem(CART_ID_KEY);
+        }
       }
-    }
 
-    const newCart = await cartApi.createCart();
-    localStorage.setItem(CART_ID_KEY, (newCart as unknown as Record<string, unknown>).id as string);
-    updateCartState(newCart as unknown as Record<string, unknown>);
+      const newCart = await cartApi.createCart();
+      localStorage.setItem(
+        CART_ID_KEY,
+        (newCart as unknown as Record<string, unknown>).id as string,
+      );
+      updateCartState(newCart as unknown as Record<string, unknown>);
+    } catch (e) {
+      console.error(
+        "[cart] Medusa niedostępna (np. 502) — koszyk nie został utworzony. Sprawdź backend i /api/medusa.",
+        e,
+      );
+    }
   }, [updateCartState]);
 
   useEffect(() => {
