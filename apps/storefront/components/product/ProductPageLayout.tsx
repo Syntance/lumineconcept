@@ -1,5 +1,4 @@
 import { cache } from "react";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getProductByHandle, getProducts } from "@/lib/medusa/products";
 import { sanityClient } from "@/lib/sanity/client";
@@ -11,13 +10,25 @@ import { TrustBadges } from "@/components/marketing/TrustBadges";
 import { PayPoPromo } from "@/components/marketing/PayPoPromo";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { ProductCard } from "@/components/product/ProductCard";
-import { ShippingTimer } from "@/components/product/ShippingTimer";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { collectProductImages } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
+
+/** Callout wysyłki — trzymany w tym pliku, żeby uniknąć utkniętych bundler/cache przy osobnym module. */
+function ExpressShippingCallout() {
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-green-100 bg-green-50 px-4 py-2.5 text-sm text-green-800">
+      <span aria-hidden="true">🚚</span>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span>Zamów express — realizacja w 72 godziny</span>
+        <span className="text-xs text-green-700/90">+50% wartości zamówienia</span>
+      </span>
+    </div>
+  );
+}
 
 function extractPrice(variant: unknown): number {
   const v = variant as Record<string, unknown> | null;
@@ -167,9 +178,7 @@ export async function ProductPageLayout({
             <PriceDisplay amount={price} size="lg" />
             <PayPoPromo price={price} />
 
-            <Suspense fallback={null}>
-              <ShippingTimer />
-            </Suspense>
+            <ExpressShippingCallout />
 
             <ProductPageClient
               product={{
