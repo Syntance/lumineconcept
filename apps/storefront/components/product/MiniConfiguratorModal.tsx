@@ -82,44 +82,48 @@ function ColorPicker({
     const isMilky = value.toLowerCase() === "mleczny";
 
     return (
-      <button
-        key={value}
-        type="button"
-        onClick={() => {
-          const next = { ...state, selected: value };
-          if (
-            value !== CUSTOM_COLOR_VALUE &&
-            !isMatAllowed(value, matDisabledSet)
-          ) {
-            next.matFinish = false;
-          }
-          onChange(next);
-        }}
-        className={`relative h-8 w-8 rounded-full border-2 transition-all overflow-hidden ${
-          isSelected ? "border-accent ring-2 ring-accent/30" : "border-brand-200 hover:border-brand-400"
-        }`}
-        style={isMilky ? undefined : { backgroundColor: hex }}
-        title={value}
-        aria-pressed={isSelected}
-      >
-        {isTransparent && <span className="absolute inset-0.5 rounded-full border border-dashed border-brand-300" />}
-        {isMilky && (
-          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 36 36">
-            <defs>
-              <clipPath id={clipId}><circle cx="18" cy="18" r="17" /></clipPath>
-              <filter id={filterId}><feGaussianBlur stdDeviation="2.5" /></filter>
-            </defs>
-            <g clipPath={`url(#${clipId})`}>
-              <rect width="36" height="36" fill="#F5F0E8" />
-              <line x1="-10" y1="46" x2="14" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-              <line x1="2" y1="46" x2="26" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-              <line x1="14" y1="46" x2="38" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-              <line x1="26" y1="46" x2="50" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-              <rect width="36" height="36" fill="rgba(245,240,232,0.25)" />
-            </g>
-          </svg>
-        )}
-      </button>
+      <div key={value} className="flex flex-col items-center gap-0.5">
+        <button
+          type="button"
+          onClick={() => {
+            const next = { ...state, selected: value };
+            if (
+              value !== CUSTOM_COLOR_VALUE &&
+              !isMatAllowed(value, matDisabledSet)
+            ) {
+              next.matFinish = false;
+            }
+            onChange(next);
+          }}
+          className={`relative h-8 w-8 shrink-0 rounded-full border-2 transition-all overflow-hidden ${
+            isSelected ? "border-accent ring-2 ring-accent/30" : "border-brand-200 hover:border-brand-400"
+          }`}
+          style={isMilky ? undefined : { backgroundColor: hex }}
+          title={value}
+          aria-pressed={isSelected}
+        >
+          {isTransparent && <span className="absolute inset-0.5 rounded-full border border-dashed border-brand-300" />}
+          {isMilky && (
+            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 36 36">
+              <defs>
+                <clipPath id={clipId}><circle cx="18" cy="18" r="17" /></clipPath>
+                <filter id={filterId}><feGaussianBlur stdDeviation="2.5" /></filter>
+              </defs>
+              <g clipPath={`url(#${clipId})`}>
+                <rect width="36" height="36" fill="#F5F0E8" />
+                <line x1="-10" y1="46" x2="14" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
+                <line x1="2" y1="46" x2="26" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
+                <line x1="14" y1="46" x2="38" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
+                <line x1="26" y1="46" x2="50" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
+                <rect width="36" height="36" fill="rgba(245,240,232,0.25)" />
+              </g>
+            </svg>
+          )}
+        </button>
+        <span className="max-w-[3.75rem] text-center text-[8px] leading-tight text-brand-500">
+          {value}
+        </span>
+      </div>
     );
   };
 
@@ -129,25 +133,29 @@ function ColorPicker({
 
       {standard.length > 0 && (
         <div>
-          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Standardowe</p>
-          <div className="flex flex-wrap gap-1.5">{standard.map(renderSwatch)}</div>
+          <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-brand-400">Standardowe</p>
+          <p className="mb-1.5 text-[9px] leading-snug text-brand-500/85">Biel, czerń, transparent i neutralne tło.</p>
+          <div className="flex flex-wrap gap-x-2 gap-y-1.5">{standard.map(renderSwatch)}</div>
         </div>
       )}
       {colored.length > 0 && (
         <div>
-          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Kolorowe</p>
-          <div className="flex flex-wrap gap-1.5">{colored.map(renderSwatch)}</div>
+          <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-brand-400">Kolorowe</p>
+          <p className="mb-1.5 text-[9px] leading-snug text-brand-500/85">Ciepłe i stonowane odcienie palety.</p>
+          <div className="flex flex-wrap gap-x-2 gap-y-1.5">{colored.map(renderSwatch)}</div>
         </div>
       )}
       {mirror.length > 0 && (
         <div>
-          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Lustrzane</p>
-          <div className="flex flex-wrap gap-1.5">{mirror.map(renderSwatch)}</div>
+          <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-brand-400">Lustrzane</p>
+          <p className="mb-1.5 text-[9px] leading-snug text-brand-500/85">Metaliczne, intensywne wykończenie.</p>
+          <div className="flex flex-wrap gap-x-2 gap-y-1.5">{mirror.map(renderSwatch)}</div>
         </div>
       )}
 
       <div>
-        <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Indywidualny</p>
+        <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-brand-400">Indywidualny</p>
+        <p className="mb-1.5 text-[9px] leading-snug text-brand-500/85">Własny odcień lub kod HEX.</p>
         <div className="flex flex-wrap items-center gap-1.5">
         <button
           type="button"

@@ -72,44 +72,51 @@ export function ColorStepPanel({
     const isMilky = value.toLowerCase() === "mleczny";
 
     return (
-      <button
+      <div
         key={value}
-        type="button"
-        onClick={() => onColorChange(value)}
-        className={`relative h-9 w-9 rounded-full border-2 transition-all overflow-hidden ${
-          isSelected
-            ? "border-[#AF7C61] ring-2 ring-[#AF7C61]/30"
-            : "border-[#AF7C61]/50 hover:border-[#AF7C61]"
-        }`}
-        style={isMilky ? undefined : { backgroundColor: hex }}
-        title={value}
-        aria-pressed={isSelected}
-        aria-label={value}
+        className="flex flex-col items-center gap-1"
       >
-        {isTransparent && (
-          <span className="absolute inset-1 rounded-full border border-dashed border-[#AF7C61]/50" />
-        )}
-        {isMilky && (
-          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 36 36">
-            <defs>
-              <clipPath id={clipId}>
-                <circle cx="18" cy="18" r="17" />
-              </clipPath>
-              <filter id={filterId}>
-                <feGaussianBlur stdDeviation="2.5" />
-              </filter>
-            </defs>
-            <g clipPath={`url(#${clipId})`}>
-              <rect width="36" height="36" fill="#F5F0E8" />
-              <line x1="-10" y1="46" x2="14" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-              <line x1="2" y1="46" x2="26" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-              <line x1="14" y1="46" x2="38" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-              <line x1="26" y1="46" x2="50" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-              <rect width="36" height="36" fill="rgba(245,240,232,0.25)" />
-            </g>
-          </svg>
-        )}
-      </button>
+        <button
+          type="button"
+          onClick={() => onColorChange(value)}
+          className={`relative h-9 w-9 shrink-0 rounded-full border-2 transition-all overflow-hidden ${
+            isSelected
+              ? "border-[#AF7C61] ring-2 ring-[#AF7C61]/30"
+              : "border-[#AF7C61]/50 hover:border-[#AF7C61]"
+          }`}
+          style={isMilky ? undefined : { backgroundColor: hex }}
+          title={value}
+          aria-pressed={isSelected}
+          aria-label={value}
+        >
+          {isTransparent && (
+            <span className="absolute inset-1 rounded-full border border-dashed border-[#AF7C61]/50" />
+          )}
+          {isMilky && (
+            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 36 36">
+              <defs>
+                <clipPath id={clipId}>
+                  <circle cx="18" cy="18" r="17" />
+                </clipPath>
+                <filter id={filterId}>
+                  <feGaussianBlur stdDeviation="2.5" />
+                </filter>
+              </defs>
+              <g clipPath={`url(#${clipId})`}>
+                <rect width="36" height="36" fill="#F5F0E8" />
+                <line x1="-10" y1="46" x2="14" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
+                <line x1="2" y1="46" x2="26" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
+                <line x1="14" y1="46" x2="38" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
+                <line x1="26" y1="46" x2="50" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
+                <rect width="36" height="36" fill="rgba(245,240,232,0.25)" />
+              </g>
+            </svg>
+          )}
+        </button>
+        <span className="max-w-[4.5rem] text-center text-[9px] leading-tight text-brand-500">
+          {value}
+        </span>
+      </div>
     );
   };
 
@@ -162,7 +169,10 @@ export function ColorStepPanel({
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
                   Standardowe
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <p className="mb-2 text-[10px] leading-snug text-brand-500/85">
+                  Biel, czerń, transparent i neutralne tło pod grawer.
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-2">
                   {standardColors.map(renderSwatch)}
                 </div>
               </div>
@@ -173,7 +183,10 @@ export function ColorStepPanel({
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
                   Kolorowe
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <p className="mb-2 text-[10px] leading-snug text-brand-500/85">
+                  Ciepłe i stonowane odcienie z palety podstawowej.
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-2">
                   {coloredColors.map(renderSwatch)}
                 </div>
               </div>
@@ -184,7 +197,10 @@ export function ColorStepPanel({
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
                   Lustrzane
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <p className="mb-2 text-[10px] leading-snug text-brand-500/85">
+                  Metaliczne i intensywne wykończenie jak lustro.
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-2">
                   {mirrorColors.map(renderSwatch)}
                 </div>
               </div>
@@ -194,6 +210,9 @@ export function ColorStepPanel({
             <div>
               <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
                 Indywidualny
+              </p>
+              <p className="mb-2 text-[10px] leading-snug text-brand-500/85">
+                Dowolny odcień — wybierz kolor lub wpisz kod HEX poniżej.
               </p>
               <div className="flex flex-wrap gap-2">
                 <button
