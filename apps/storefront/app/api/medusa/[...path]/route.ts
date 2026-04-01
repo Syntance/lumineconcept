@@ -31,14 +31,27 @@ function filterRequestHeaders(req: NextRequest): Headers {
   return h;
 }
 
+function ensureStorePublishableKey(headers: Headers, path: string) {
+  if (!path.startsWith("store/")) return
+  const key =
+    process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ??
+    process.env.MEDUSA_PUBLISHABLE_KEY
+  if (key && !headers.has("x-publishable-api-key")) {
+    headers.set("x-publishable-api-key", key)
+  }
+}
+
 async function proxy(req: NextRequest, pathSegments: string[]) {
   const path = pathSegments.join("/");
   const base = BACKEND.replace(/\/$/, "");
   const url = `${base}/${path}${req.nextUrl.search}`;
 
+  const headers = filterRequestHeaders(req)
+  ensureStorePublishableKey(headers, path)
+
   const init: RequestInit = {
     method: req.method,
-    headers: filterRequestHeaders(req),
+    headers,
   };
 
   if (req.method !== "GET" && req.method !== "HEAD") {

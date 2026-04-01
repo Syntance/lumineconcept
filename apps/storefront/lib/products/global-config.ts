@@ -22,7 +22,11 @@ export interface GlobalProductConfig {
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "http://localhost:9000"
 
-const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ?? ""
+/** Store API wymaga klucza; lokalnie możesz ustawić tylko MEDUSA_PUBLISHABLE_KEY (serwer, bez NEXT_PUBLIC). */
+const PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ??
+  process.env.MEDUSA_PUBLISHABLE_KEY ??
+  ""
 
 async function _fetchGlobalConfig(): Promise<GlobalProductConfig> {
   const headers: Record<string, string> = {}
