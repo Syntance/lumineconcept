@@ -133,19 +133,19 @@ function ColorPicker({
 
       {standard.length > 0 && (
         <div>
-          <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-brand-400">Standardowe</p>
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Standardowe</p>
           <div className="flex flex-wrap gap-x-2 gap-y-1.5">{standard.map(renderSwatch)}</div>
         </div>
       )}
       {colored.length > 0 && (
         <div>
-          <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-brand-400">Kolorowe</p>
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Kolorowe</p>
           <div className="flex flex-wrap gap-x-2 gap-y-1.5">{colored.map(renderSwatch)}</div>
         </div>
       )}
       {mirror.length > 0 && (
         <div>
-          <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-brand-400">Lustrzane</p>
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Lustrzane</p>
           <div className="flex flex-wrap gap-x-2 gap-y-1.5">{mirror.map(renderSwatch)}</div>
         </div>
       )}
