@@ -23,22 +23,62 @@ const BACKEND_URL =
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "http://localhost:9000"
 
 /** Store API wymaga klucza; lokalnie możesz ustawić tylko MEDUSA_PUBLISHABLE_KEY (serwer, bez NEXT_PUBLIC). */
-const PUBLISHABLE_KEY =
-  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ??
-  process.env.MEDUSA_PUBLISHABLE_KEY ??
-  ""
+function getPublishableKey(): string {
+  return (
+    process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ??
+    process.env.MEDUSA_PUBLISHABLE_KEY ??
+    ""
+  )
+}
 
-async function _fetchGlobalConfig(): Promise<GlobalProductConfig> {
+/**
+ * Origin Nexta (RSC) — fetch do /api/medusa/* przechodzi przez proxy, które dopisuje x-publishable-api-key.
+ * W dev zawsze localhost (ignoruje NEXT_PUBLIC_SITE_URL wskazujący na produkcję).
+ */
+function getSameOriginForServerFetch(): string {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  if (process.env.NODE_ENV === "development") {
+    return `http://127.0.0.1:${process.env.PORT ?? "3000"}`
+  }
+  const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "")
+  if (site) return site
+  return `http://127.0.0.1:${process.env.PORT ?? "3000"}`
+}
+
+async function fetchStoreProductConfig(search: string): Promise<Response> {
+  const origin = getSameOriginForServerFetch().replace(/\/$/, "")
+  const internalUrl = `${origin}/api/medusa/store/product-config${search}`
+
+  try {
+    const viaProxy = await fetch(internalUrl, { next: { revalidate: 60 } })
+    if (viaProxy.ok) return viaProxy
+  } catch {
+    /* np. zły port — spróbuj bezpośrednio do Medusy */
+  }
+
+  const key = getPublishableKey()
   const headers: Record<string, string> = {}
-  if (PUBLISHABLE_KEY) headers["x-publishable-api-key"] = PUBLISHABLE_KEY
+  if (key) headers["x-publishable-api-key"] = key
 
-  const res = await fetch(`${BACKEND_URL}/store/product-config`, {
+  return fetch(`${BACKEND_URL}/store/product-config${search}`, {
     headers,
     next: { revalidate: 60 },
   })
+}
+
+async function _fetchGlobalConfig(): Promise<GlobalProductConfig> {
+  const res = await fetchStoreProductConfig("")
 
   if (!res.ok) {
-    console.error("Failed to fetch global product config:", res.status)
+    if (process.env.NODE_ENV === "development" && !getPublishableKey()) {
+      console.error(
+        "[global-config] Brak publishable API key: ustaw MEDUSA_PUBLISHABLE_KEY lub NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY w apps/storefront/.env.local (Medusa Admin → Settings → Publishable API keys).",
+      )
+    } else {
+      console.error("Failed to fetch global product config:", res.status)
+    }
     return { colors: [], sizes: [], materials: [], led: [], finishes: [] }
   }
 
@@ -63,13 +103,8 @@ export const getGlobalProductConfig = unstable_cache(
 async function _fetchProductConfig(
   productId: string,
 ): Promise<GlobalProductConfig> {
-  const headers: Record<string, string> = {}
-  if (PUBLISHABLE_KEY) headers["x-publishable-api-key"] = PUBLISHABLE_KEY
-
-  const res = await fetch(
-    `${BACKEND_URL}/store/product-config?product_id=${productId}`,
-    { headers, next: { revalidate: 60 } },
-  )
+  const search = `?product_id=${encodeURIComponent(productId)}`
+  const res = await fetchStoreProductConfig(search)
 
   if (!res.ok) {
     return _fetchGlobalConfig()
