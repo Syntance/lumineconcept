@@ -1,18 +1,20 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { PriceDisplay } from "./PriceDisplay";
 import {
-  COLOR_MAP,
   CUSTOM_COLOR_VALUE,
-  MIRROR_COLORS,
+  getColorHex,
+  isEveryColorOptionChosen,
   isMatAllowed,
   isMirrorColor,
   isColorOption,
 } from "./ProductVariantSelector";
+import { parseTextFieldsFromMetadata } from "@/lib/products/text-fields";
+import type { GlobalConfigOption } from "@/lib/products/global-config";
 
 interface MiniConfiguratorModalProps {
   open: boolean;
@@ -25,6 +27,12 @@ interface MiniConfiguratorModalProps {
   options: Record<string, string[]>;
   linksCount?: number;
   href?: string;
+  metadata?: Record<string, unknown>;
+  globalColors?: GlobalConfigOption[];
+  colorMap?: Record<string, string>;
+  coloredSet?: Set<string>;
+  mirrorSet?: Set<string>;
+  matDisabledSet?: Set<string>;
 }
 
 interface ColorState {
@@ -38,27 +46,38 @@ function ColorPicker({
   values,
   state,
   onChange,
+  colorMap,
+  coloredSet,
+  mirrorSet,
+  matDisabledSet,
 }: {
   label: string;
   values: string[];
   state: ColorState;
   onChange: (s: ColorState) => void;
+  colorMap: Record<string, string>;
+  coloredSet: Set<string>;
+  mirrorSet: Set<string>;
+  matDisabledSet: Set<string>;
 }) {
   const uniqueId = useId();
   const colorInputRef = useRef<HTMLInputElement>(null);
   const [hexInput, setHexInput] = useState(state.customHex ?? "#000000");
 
-  const standard = values.filter((v) => !isMirrorColor(v));
-  const mirror = values.filter((v) => isMirrorColor(v));
+  const standard = values.filter(
+    (v) => !isMirrorColor(v, mirrorSet) && !coloredSet.has(v.toLowerCase()),
+  );
+  const colored = values.filter((v) => coloredSet.has(v.toLowerCase()));
+  const mirror = values.filter((v) => isMirrorColor(v, mirrorSet));
   const isCustom = state.selected === CUSTOM_COLOR_VALUE;
-  const matAllowed = isCustom || isMatAllowed(state.selected);
+  const matAllowed = isCustom || isMatAllowed(state.selected, matDisabledSet);
 
   const filterId = `mini-blur-${uniqueId.replace(/:/g, "")}`;
   const clipId = `mini-clip-${uniqueId.replace(/:/g, "")}`;
 
   const renderSwatch = (value: string) => {
     const isSelected = state.selected === value;
-    const hex = COLOR_MAP[value.toLowerCase()] ?? "#ccc";
+    const hex = getColorHex(value, colorMap);
     const isTransparent = value.toLowerCase() === "bezbarwny" || value.toLowerCase() === "przezroczysty";
     const isMilky = value.toLowerCase() === "mleczny";
 
@@ -68,7 +87,12 @@ function ColorPicker({
         type="button"
         onClick={() => {
           const next = { ...state, selected: value };
-          if (!isMatAllowed(value)) next.matFinish = false;
+          if (
+            value !== CUSTOM_COLOR_VALUE &&
+            !isMatAllowed(value, matDisabledSet)
+          ) {
+            next.matFinish = false;
+          }
           onChange(next);
         }}
         className={`relative h-8 w-8 rounded-full border-2 transition-all overflow-hidden ${
@@ -104,7 +128,16 @@ function ColorPicker({
       <p className="text-xs font-medium text-brand-600">{label}</p>
 
       {standard.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">{standard.map(renderSwatch)}</div>
+        <div>
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Standardowe</p>
+          <div className="flex flex-wrap gap-1.5">{standard.map(renderSwatch)}</div>
+        </div>
+      )}
+      {colored.length > 0 && (
+        <div>
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Kolorowe</p>
+          <div className="flex flex-wrap gap-1.5">{colored.map(renderSwatch)}</div>
+        </div>
       )}
       {mirror.length > 0 && (
         <div>
@@ -113,8 +146,9 @@ function ColorPicker({
         </div>
       )}
 
-      {/* Custom color */}
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div>
+        <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Indywidualny</p>
+        <div className="flex flex-wrap items-center gap-1.5">
         <button
           type="button"
           onClick={() => {
@@ -169,26 +203,36 @@ function ColorPicker({
             />
           </>
         )}
+        </div>
       </div>
 
-      {/* Mat toggle */}
       <button
         type="button"
         onClick={() => matAllowed && onChange({ ...state, matFinish: !state.matFinish })}
         disabled={!matAllowed}
         className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition-colors ${
           !matAllowed
-            ? "cursor-not-allowed border-brand-100 bg-brand-50 text-brand-300"
+            ? "cursor-not-allowed border-brand-100 bg-brand-50 text-brand-600"
             : state.matFinish
               ? "border-accent bg-accent/10 font-medium text-accent-dark"
               : "border-brand-200 text-brand-700 hover:border-brand-400"
         }`}
         aria-pressed={state.matFinish}
+        title={
+          matAllowed
+            ? "Wykończenie matowe"
+            : "Niedostępne dla tego koloru"
+        }
       >
         <span className={`inline-flex h-3.5 w-6 items-center rounded-full transition-colors ${state.matFinish && matAllowed ? "bg-accent" : "bg-brand-200"}`}>
           <span className={`h-2.5 w-2.5 rounded-full bg-white shadow-sm transition-transform ${state.matFinish && matAllowed ? "translate-x-3" : "translate-x-0.5"}`} />
         </span>
         Mat
+        {!matAllowed && (
+          <span className="text-[10px] font-normal text-brand-700">
+            (niedostępne dla tego koloru)
+          </span>
+        )}
       </button>
     </div>
   );
@@ -205,23 +249,74 @@ export function MiniConfiguratorModal({
   options,
   linksCount = 0,
   href,
+  metadata,
+  globalColors = [],
+  colorMap = {},
+  coloredSet = new Set(),
+  mirrorSet = new Set(),
+  matDisabledSet = new Set(),
 }: MiniConfiguratorModalProps) {
   const { addItemWithTracking } = useCart();
   const [isAdding, setIsAdding] = useState(false);
-  const [customText, setCustomText] = useState("");
   const [links, setLinks] = useState<string[]>(() =>
     Array.from({ length: linksCount }, () => ""),
   );
   const allLinksProvided = linksCount === 0 || links.slice(0, linksCount).every((l) => l.trim().length > 0);
 
-  const colorOptionEntries = Object.entries(options).filter(([key]) => isColorOption(key));
+  const textFields = useMemo(
+    () => parseTextFieldsFromMetadata(metadata),
+    [metadata],
+  );
+  const [textFieldValues, setTextFieldValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setTextFieldValues((prev) => {
+      const next: Record<string, string> = {};
+      for (const f of textFields) next[f.key] = prev[f.key] ?? "";
+      return next;
+    });
+  }, [textFields]);
+
+  const allTextFieldsValid = useMemo(() => {
+    return textFields
+      .filter((f) => f.required)
+      .every((f) => (textFieldValues[f.key] ?? "").trim().length > 0);
+  }, [textFields, textFieldValues]);
+
+  const globalColorNames = useMemo(
+    () => globalColors.map((c) => c.name),
+    [globalColors],
+  );
+
+  const colorOptionEntries = useMemo(() => {
+    const fromOptions = Object.entries(options).filter(([key]) => isColorOption(key));
+    if (fromOptions.length > 0) {
+      return fromOptions.map(([key, vals]) => [key, globalColors.length > 0 ? globalColorNames : vals] as [string, string[]]);
+    }
+    if (globalColors.length > 0) {
+      return [["Kolor", globalColorNames] as [string, string[]]];
+    }
+    return [];
+  }, [options, globalColors, globalColorNames]);
 
   const initialColors: Record<string, ColorState> = {};
-  for (const [key, values] of colorOptionEntries) {
-    initialColors[key] = { selected: values[0] ?? "", customHex: null, matFinish: false };
+  for (const [key] of colorOptionEntries) {
+    initialColors[key] = { selected: "", customHex: null, matFinish: false };
   }
 
   const [colorStates, setColorStates] = useState<Record<string, ColorState>>(initialColors);
+
+  const allColorChoicesComplete = useMemo(() => {
+    const titles = colorOptionEntries.map(([t]) => t);
+    const sel: Record<string, string> = {};
+    const cust: Record<string, { customColor: string | null }> = {};
+    for (const t of titles) {
+      const cs = colorStates[t];
+      sel[t] = cs?.selected ?? "";
+      cust[t] = { customColor: cs?.customHex ?? null };
+    }
+    return isEveryColorOptionChosen(titles, sel, cust);
+  }, [colorOptionEntries, colorStates]);
 
   const updateColor = useCallback((optionTitle: string, state: ColorState) => {
     setColorStates((prev) => ({ ...prev, [optionTitle]: state }));
@@ -231,6 +326,9 @@ export function MiniConfiguratorModal({
     const meta: Record<string, string> = {};
     for (const [optKey, cs] of Object.entries(colorStates)) {
       const key = optKey.toLowerCase().replace(/^kolor\s*/, "").replace(/\s+/g, "_") || "kolor";
+      if (cs.selected && cs.selected !== CUSTOM_COLOR_VALUE) {
+        meta[`color_${key}`] = cs.selected;
+      }
       if (cs.selected === CUSTOM_COLOR_VALUE && cs.customHex) {
         meta[`color_${key}_custom`] = cs.customHex;
       }
@@ -238,15 +336,16 @@ export function MiniConfiguratorModal({
         meta[`color_${key}_mat`] = "true";
       }
     }
-    if (customText.trim()) {
-      meta.custom_text = customText.trim();
+    for (const field of textFields) {
+      const val = textFieldValues[field.key]?.trim();
+      if (val) meta[`text_${field.key}`] = val;
     }
     for (let i = 0; i < linksCount; i++) {
       const url = links[i]?.trim();
       if (url) meta[`link_${i + 1}`] = url;
     }
     return meta;
-  }, [colorStates, customText, links, linksCount]);
+  }, [colorStates, textFields, textFieldValues, links, linksCount]);
 
   const handleAdd = async () => {
     setIsAdding(true);
@@ -268,7 +367,6 @@ export function MiniConfiguratorModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop: pointerdown + preventDefault — unika „ghost click” na Link karty pod modałem */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onPointerDown={(e) => {
@@ -280,9 +378,7 @@ export function MiniConfiguratorModal({
         role="presentation"
       />
 
-      {/* Modal */}
       <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-start gap-3 border-b border-brand-100 px-5 py-4">
           {thumbnail && (
             <img
@@ -311,19 +407,27 @@ export function MiniConfiguratorModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="max-h-[60vh] overflow-y-auto px-5 py-4 space-y-4">
           {colorOptionEntries.map(([optionTitle, values]) => (
             <ColorPicker
               key={optionTitle}
               label={optionTitle}
               values={values}
-              state={colorStates[optionTitle] ?? { selected: values[0] ?? "", customHex: null, matFinish: false }}
+              state={
+                colorStates[optionTitle] ?? {
+                  selected: "",
+                  customHex: null,
+                  matFinish: false,
+                }
+              }
               onChange={(s) => updateColor(optionTitle, s)}
+              colorMap={colorMap}
+              coloredSet={coloredSet}
+              mirrorSet={mirrorSet}
+              matDisabledSet={matDisabledSet}
             />
           ))}
 
-          {/* Links */}
           {linksCount > 0 && (
             <div className="space-y-2">
               <div>
@@ -354,34 +458,86 @@ export function MiniConfiguratorModal({
             </div>
           )}
 
-          {/* Custom text */}
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-brand-600">
-              Twój tekst <span className="font-normal text-brand-400">(opcjonalnie)</span>
-            </label>
-            <textarea
-              value={customText}
-              onChange={(e) => setCustomText(e.target.value)}
-              placeholder="Wpisz treść, np. nazwę salonu, imię…"
-              rows={2}
-              maxLength={200}
-              className="w-full resize-none rounded-lg border border-brand-200 px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:border-accent focus:outline-none"
-            />
-          </div>
+          {textFields.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-brand-600">Personalizacja tekstu</p>
+              {textFields.map((field) => {
+                const value = textFieldValues[field.key] ?? "";
+                const max = field.maxLength ?? 200;
+                return (
+                  <div key={field.key}>
+                    <label className="mb-1 block text-[11px] font-medium text-brand-600">
+                      {field.label}
+                      {field.required ? (
+                        <span className="ml-0.5 text-red-500">*</span>
+                      ) : (
+                        <span className="ml-1 font-normal text-brand-400">(opcjonalnie)</span>
+                      )}
+                    </label>
+                    {field.multiline ? (
+                      <textarea
+                        value={value}
+                        onChange={(e) =>
+                          setTextFieldValues((prev) => ({
+                            ...prev,
+                            [field.key]: e.target.value,
+                          }))
+                        }
+                        placeholder={field.placeholder ?? ""}
+                        rows={2}
+                        maxLength={max}
+                        className={`w-full resize-none rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                          field.required && !value.trim()
+                            ? "border-red-300 focus:border-red-400"
+                            : "border-brand-200 focus:border-accent"
+                        }`}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={value}
+                        onChange={(e) =>
+                          setTextFieldValues((prev) => ({
+                            ...prev,
+                            [field.key]: e.target.value,
+                          }))
+                        }
+                        placeholder={field.placeholder ?? ""}
+                        maxLength={max}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                          field.required && !value.trim()
+                            ? "border-red-300 focus:border-red-400"
+                            : "border-brand-200 focus:border-accent"
+                        }`}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Footer */}
         <div className="border-t border-brand-100 px-5 py-4">
           <button
             type="button"
             onClick={handleAdd}
-            disabled={isAdding || !allLinksProvided}
+            disabled={
+              isAdding ||
+              !allLinksProvided ||
+              !allTextFieldsValid ||
+              !allColorChoicesComplete
+            }
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark disabled:opacity-50"
           >
             {isAdding ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
             ) : !allLinksProvided ? (
               "Uzupełnij linki"
+            ) : !allTextFieldsValid ? (
+              "Uzupełnij pola tekstowe"
+            ) : !allColorChoicesComplete ? (
+              "Wybierz kolory"
             ) : (
               "Dodaj do koszyka"
             )}

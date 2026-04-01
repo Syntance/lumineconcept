@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { getProductDimensionsLabel } from "@/lib/products/dimensions";
+import type { GlobalConfigOption } from "@/lib/products/global-config";
 import { CloudinaryImage } from "../common/CloudinaryImage";
 import { PriceDisplay } from "./PriceDisplay";
 import { AddToCartButton } from "./AddToCartOverlay";
@@ -27,6 +29,10 @@ interface ProductCardProps {
   productId?: string;
   productOptions?: Record<string, string[]>;
   linksCount?: number;
+  productMetadata?: Record<string, unknown>;
+  /** Gdy wymiary są tylko na wariancie (Medusa). */
+  variantMetadata?: Record<string, unknown>;
+  globalColors?: GlobalConfigOption[];
 }
 
 export function ProductCard({
@@ -49,7 +55,12 @@ export function ProductCard({
   productId,
   productOptions,
   linksCount,
+  productMetadata,
+  variantMetadata,
+  globalColors,
 }: ProductCardProps) {
+  const dimensionsLabel = getProductDimensionsLabel(productMetadata, variantMetadata);
+
   const sharpSquare = sharpCorners && frameVariant === "square";
 
   const archFrameStyle: CSSProperties | undefined = sharpSquare
@@ -70,9 +81,9 @@ export function ProductCard({
   const imageWidth = 600;
   const imageHeight = imageIsPortrait ? 750 : 600;
 
-  const article = (
+  const articleBody = (
     <article
-      className={`flex h-full min-h-0 w-full flex-col overflow-hidden border border-brand-100 bg-white transition-shadow group-hover:shadow-md ${articleRadiusClass}`}
+      className={`relative z-1 flex h-full min-h-0 w-full flex-col overflow-hidden border border-brand-100 bg-white transition-shadow group-hover:shadow-md ${articleRadiusClass}`}
       style={archFrameStyle}
     >
       <div
@@ -124,23 +135,32 @@ export function ProductCard({
           <h3 className="min-h-12 shrink-0 text-base font-medium leading-snug text-brand-800 line-clamp-2">
             {title}
           </h3>
+          {dimensionsLabel && (
+            <p className="text-xs text-brand-500 line-clamp-2">
+              <span className="text-brand-400">Wymiary:</span> {dimensionsLabel}
+            </p>
+          )}
           {variantId && productId ? (
-            <AddToCartButton
-              variantId={variantId}
-              productId={productId}
-              title={title}
-              price={price}
-              thumbnail={thumbnail}
-              options={productOptions}
-              linksCount={linksCount}
-              href={href ?? `/sklep/gotowe-wzory/${handle}`}
-            >
-              <PriceDisplay
-                amount={price}
-                compareAtAmount={compareAtPrice}
-                currency={currency}
-              />
-            </AddToCartButton>
+            <div className="pointer-events-auto">
+              <AddToCartButton
+                variantId={variantId}
+                productId={productId}
+                title={title}
+                price={price}
+                thumbnail={thumbnail}
+                options={productOptions}
+                linksCount={linksCount}
+                href={href ?? `/sklep/gotowe-wzory/${handle}`}
+                metadata={productMetadata}
+                globalColors={globalColors}
+              >
+                <PriceDisplay
+                  amount={price}
+                  compareAtAmount={compareAtPrice}
+                  currency={currency}
+                />
+              </AddToCartButton>
+            </div>
           ) : (
             <div className="relative shrink-0 flex items-center justify-center rounded-md border border-[#EEE8E0] bg-white py-2 px-3 transition-all duration-200 group-hover:bg-[#EEE8E0]">
               <span className="transition-opacity duration-200 group-hover:opacity-0">
@@ -161,16 +181,21 @@ export function ProductCard({
   );
 
   if (linkless) {
-    return article;
+    return articleBody;
   }
 
+  const productHref = href ?? `/sklep/gotowe-wzory/${handle}`;
+
   return (
-    <Link
-      href={href ?? `/sklep/gotowe-wzory/${handle}`}
-      className="group flex h-full min-h-0 w-full min-w-0 flex-col"
-      aria-label={imageOnly ? title : undefined}
-    >
-      {article}
-    </Link>
+    <div className="group relative flex h-full min-h-0 w-full min-w-0 flex-col">
+      <Link
+        href={productHref}
+        className="absolute inset-0 z-0"
+        aria-label={imageOnly ? title : `Zobacz produkt: ${title}`}
+      />
+      <div className="pointer-events-none flex h-full min-h-0 w-full min-w-0 flex-col">
+        {articleBody}
+      </div>
+    </div>
   );
 }

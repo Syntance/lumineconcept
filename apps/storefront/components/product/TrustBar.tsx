@@ -18,7 +18,7 @@ interface TrustBarProps {
 export function TrustBar({
   followers = "25 000+",
   realizations = "6 000+",
-  shippingLabel = "Express wysyłka",
+  shippingLabel = "Realizacja ok. 10 dni rob.",
   testimonials = [],
   opinionsLink = "/dlaczego-lumine#opinie",
 }: TrustBarProps) {

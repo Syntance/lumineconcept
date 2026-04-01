@@ -7,28 +7,19 @@ import type { ProductFaq, SiteSettings, CheckoutCallout } from "@/lib/sanity/typ
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { TrustBadges } from "@/components/marketing/TrustBadges";
-import { PayPoPromo } from "@/components/marketing/PayPoPromo";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { collectProductImages } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
+import { getProductDimensionsLabel } from "@/lib/products/dimensions";
+import {
+  getGlobalProductConfig,
+  type GlobalConfigOption,
+} from "@/lib/products/global-config";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
-
-/** Callout wysyłki — trzymany w tym pliku, żeby uniknąć utkniętych bundler/cache przy osobnym module. */
-function ExpressShippingCallout() {
-  return (
-    <div className="flex items-start gap-2 rounded-lg border border-green-100 bg-green-50 px-4 py-2.5 text-sm text-green-800">
-      <span aria-hidden="true">🚚</span>
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span>Zamów express — realizacja w 72 godziny</span>
-        <span className="text-xs text-green-700/90">+50% wartości zamówienia</span>
-      </span>
-    </div>
-  );
-}
 
 function extractPrice(variant: unknown): number {
   const v = variant as Record<string, unknown> | null;
@@ -57,6 +48,7 @@ interface ProductPageLayoutProps {
       images?: Array<{ id: string; url: string; alt?: string }>;
     };
     checkoutCallout?: CheckoutCallout | null;
+    globalColors?: GlobalConfigOption[];
   }>;
 }
 
@@ -67,7 +59,7 @@ export async function ProductPageLayout({
   categoryHref,
   ProductPageClient,
 }: ProductPageLayoutProps) {
-  const [product, faqs, siteSettings] = await Promise.all([
+  const [product, faqs, siteSettings, productConfig] = await Promise.all([
     getProductData(slug),
     sanityClient
       .fetch<ProductFaq[]>(PRODUCT_FAQ_QUERY, { handle: slug }, { next: { revalidate: 300 } })
@@ -75,6 +67,13 @@ export async function ProductPageLayout({
     sanityClient
       .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
       .catch(() => null),
+    getGlobalProductConfig().catch(() => ({
+      colors: [] as GlobalConfigOption[],
+      sizes: [],
+      materials: [],
+      led: [],
+      finishes: [],
+    })),
   ]);
   if (!product) notFound();
 
@@ -89,6 +88,7 @@ export async function ProductPageLayout({
     options: Record<string, string>;
     calculated_price?: { calculated_amount: number };
     inventory_quantity: number;
+    metadata?: Record<string, unknown>;
   }>;
   const options = (product.options ?? []) as unknown as Array<{
     id: string;
@@ -96,8 +96,11 @@ export async function ProductPageLayout({
     values: Array<{ value: string }>;
   }>;
   const metadata = (product.metadata ?? {}) as Record<string, unknown>;
-
   const firstVariant = variants[0];
+  const dimensionsLabel = getProductDimensionsLabel(
+    metadata,
+    firstVariant?.metadata ?? null,
+  );
   const price = firstVariant?.calculated_price?.calculated_amount ?? 0;
 
   const crossSellProducts = await loadCrossSell(metadata, basePath);
@@ -175,10 +178,13 @@ export async function ProductPageLayout({
               {product.title}
             </h1>
 
-            <PriceDisplay amount={price} size="lg" />
-            <PayPoPromo price={price} />
+            {dimensionsLabel && (
+              <p className="text-sm text-brand-600">
+                <span className="text-brand-500">Wymiary:</span> {dimensionsLabel}
+              </p>
+            )}
 
-            <ExpressShippingCallout />
+            <PriceDisplay amount={price} size="lg" fontSizePx={28} />
 
             <ProductPageClient
               product={{
@@ -204,6 +210,7 @@ export async function ProductPageLayout({
                 })),
               }}
               checkoutCallout={siteSettings?.checkoutCallout ?? null}
+              globalColors={productConfig.colors}
             />
 
             <TrustBadges />
@@ -230,7 +237,9 @@ export async function ProductPageLayout({
             </h2>
             <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
               {crossSellProducts.map((p) => {
-                const firstVariant = (p.variants as unknown as Array<{ id: string }> | undefined)?.[0];
+                const firstVariant = (p.variants as unknown as
+                  | Array<{ id: string; metadata?: Record<string, unknown> }>
+                  | undefined)?.[0];
                 return (
                   <ProductCard
                     key={p.id}
@@ -241,6 +250,11 @@ export async function ProductPageLayout({
                     href={`${basePath}/${p.handle}`}
                     variantId={firstVariant?.id}
                     productId={p.id}
+                    productMetadata={
+                      (p.metadata ?? undefined) as Record<string, unknown> | undefined
+                    }
+                    variantMetadata={firstVariant?.metadata}
+                    globalColors={productConfig.colors}
                   />
                 );
               })}

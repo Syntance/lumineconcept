@@ -12,6 +12,7 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { cn, SITE_URL } from "@/lib/utils";
+import { getProductDimensionsLabel } from "@/lib/products/dimensions";
 
 export const metadata: Metadata = {
   title: "Sklep — cenniki, tabliczki, logo z plexi do salonu beauty | Lumine Concept",
@@ -31,7 +32,7 @@ function extractPrice(variant: unknown): number {
 const CATEGORIES = [
   {
     title: "Gotowe wzory",
-    subtitle: "Kup od ręki · wysyłka w 48h",
+    subtitle: "Kup od ręki · realizacja ok. 10 dni roboczych",
     description: "Cenniki, tabliczki, menu, kody QR — gotowe wzory do Twojego salonu.",
     cta: "PRZEGLĄDAJ WZORY",
     href: "/sklep/gotowe-wzory",
@@ -224,6 +225,13 @@ export default async function ShopHubPage() {
                         : "square";
                   const sharpCorners = index === 1 || index === 3;
                   const price = extractPrice(product.variants?.[0]);
+                  const v0 = product.variants?.[0] as
+                    | { metadata?: Record<string, unknown> }
+                    | undefined;
+                  const dimensionsLabel = getProductDimensionsLabel(
+                    (product.metadata ?? undefined) as Record<string, unknown> | undefined,
+                    v0?.metadata,
+                  );
                   return (
                     <Link
                       key={product.handle ?? product.id}
@@ -247,6 +255,12 @@ export default async function ShopHubPage() {
                       <p className="text-center text-base font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">
                         {product.title}
                       </p>
+                      {dimensionsLabel && (
+                        <p className="text-center text-xs text-brand-500 line-clamp-2 px-0.5">
+                          <span className="text-brand-400">Wymiary:</span>{" "}
+                          {dimensionsLabel}
+                        </p>
+                      )}
                       <div className="flex w-full justify-center">
                         <PriceDisplay amount={price} />
                       </div>
@@ -294,7 +308,7 @@ export default async function ShopHubPage() {
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
             <span className="text-brand-300">·</span>
-            <span>{trustBar?.shippingLabel ?? "Express wysyłka"}</span>
+            <span>{trustBar?.shippingLabel ?? "Realizacja ok. 10 dni rob."}</span>
           </div>
 
           {displayTestimonials.length > 0 && (

@@ -2,18 +2,31 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircle } from "lucide-react";
 import {
   ProductConfigurator,
   type ColorCustomization,
-  type ColorRegion,
-  type TextFieldDef,
 } from "@/components/product/ProductConfigurator";
+import {
+  type TextFieldDef,
+  parseTextFieldsFromMetadata,
+} from "@/lib/products/text-fields";
 import {
   CUSTOM_COLOR_VALUE,
   isColorOption,
+  isEveryColorOptionChosen,
 } from "@/components/product/ProductVariantSelector";
+import {
+  buildColorMap,
+  buildColoredSet,
+  buildMirrorSet,
+  buildMatDisabledSet,
+  type GlobalConfigOption,
+} from "@/lib/products/global-config";
+import { PayPoPromo } from "@/components/marketing/PayPoPromo";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
+import { ShippingTimer } from "@/components/product/ShippingTimer";
 import { trackProductViewed } from "@/lib/analytics/events";
 
 interface CheckoutCallout {
@@ -39,6 +52,7 @@ interface ProductPageClientProps {
     images?: Array<{ id: string; url: string; alt?: string }>;
   };
   checkoutCallout?: CheckoutCallout | null;
+  globalColors?: GlobalConfigOption[];
 }
 
 function extractMetaKey(optionTitle: string): string {
@@ -47,34 +61,42 @@ function extractMetaKey(optionTitle: string): string {
   return lower.replace(/^kolor_/, "");
 }
 
-function isValidTextField(f: unknown): f is TextFieldDef {
-  if (!f || typeof f !== "object") return false;
-  const obj = f as Record<string, unknown>;
-  return typeof obj.key === "string" && typeof obj.label === "string";
-}
-
 export function ProductPageClient({
   product,
   checkoutCallout,
+  globalColors = [],
 }: ProductPageClientProps) {
   const router = useRouter();
+
+  const colorMap = useMemo(() => buildColorMap(globalColors), [globalColors]);
+  const coloredSet = useMemo(() => buildColoredSet(globalColors), [globalColors]);
+  const mirrorSet = useMemo(() => buildMirrorSet(globalColors), [globalColors]);
+  const matDisabledSet = useMemo(() => buildMatDisabledSet(globalColors), [globalColors]);
+
+  const colorOptionTitles = useMemo(
+    () => product.options.filter((o) => isColorOption(o.title)).map((o) => o.title),
+    [product.options],
+  );
+
+  const nonColorOptions = useMemo(
+    () => product.options.filter((o) => !isColorOption(o.title)),
+    [product.options],
+  );
 
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
   >(() => {
     const initial: Record<string, string> = {};
-    for (const option of product.options) {
+    for (const title of colorOptionTitles) {
+      initial[title] = "";
+    }
+    for (const option of nonColorOptions) {
       if (option.values[0]) {
         initial[option.title] = option.values[0];
       }
     }
     return initial;
   });
-
-  const colorOptionTitles = useMemo(
-    () => product.options.filter((o) => isColorOption(o.title)).map((o) => o.title),
-    [product.options],
-  );
 
   const [colorCustomizations, setColorCustomizations] = useState<
     Record<string, ColorCustomization>
@@ -86,25 +108,21 @@ export function ProductPageClient({
     return initial;
   });
 
-  const [customText, setCustomText] = useState("");
-
   const textFields = useMemo<TextFieldDef[]>(() => {
-    const raw = product.metadata?.text_fields;
-    if (typeof raw === "string") {
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed.filter(isValidTextField);
-      } catch { /* ignore */ }
-    }
-    if (Array.isArray(raw)) return raw.filter(isValidTextField);
-    return [];
+    return parseTextFieldsFromMetadata(product.metadata);
   }, [product.metadata]);
 
-  const [textFieldValues, setTextFieldValues] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    for (const f of textFields) initial[f.key] = "";
-    return initial;
-  });
+  const [textFieldValues, setTextFieldValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setTextFieldValues((prev) => {
+      const next: Record<string, string> = {};
+      for (const f of textFields) {
+        next[f.key] = prev[f.key] ?? "";
+      }
+      return next;
+    });
+  }, [textFields]);
 
   const handleTextFieldChange = useCallback((key: string, value: string) => {
     setTextFieldValues((prev) => ({ ...prev, [key]: value }));
@@ -115,6 +133,16 @@ export function ProductPageClient({
       .filter((f) => f.required)
       .every((f) => (textFieldValues[f.key] ?? "").trim().length > 0);
   }, [textFields, textFieldValues]);
+
+  const allColorChoicesComplete = useMemo(
+    () =>
+      isEveryColorOptionChosen(
+        colorOptionTitles,
+        selectedOptions,
+        colorCustomizations,
+      ),
+    [colorOptionTitles, selectedOptions, colorCustomizations],
+  );
 
   const linksCount = useMemo(() => {
     const raw = product.metadata?.links_count;
@@ -136,12 +164,13 @@ export function ProductPageClient({
 
   const selectedVariant = product.variants.find((variant) =>
     Object.entries(selectedOptions).every(([key, value]) => {
-      if (isColorOption(key) && value === CUSTOM_COLOR_VALUE) {
-        return true;
-      }
+      if (isColorOption(key)) return true;
       return variant.options[key] === value;
     }),
   );
+
+  const priceForPayPo =
+    selectedVariant?.price ?? product.variants[0]?.price ?? 0;
 
   useEffect(() => {
     trackProductViewed({
@@ -191,29 +220,10 @@ export function ProductPageClient({
     }));
   };
 
-  const colorRegions = useMemo<ColorRegion[]>(() => {
-    const raw = product.metadata?.colorRegions;
-    if (!Array.isArray(raw)) return [];
-    return raw.filter(
-      (r): r is ColorRegion =>
-        typeof r === "object" &&
-        r !== null &&
-        typeof (r as ColorRegion).name === "string" &&
-        typeof (r as ColorRegion).maskUrl === "string",
-    );
-  }, [product.metadata]);
-
-  const baseImageUrl = useMemo(() => {
-    const fromMeta = product.metadata?.configuratorBaseImage;
-    if (typeof fromMeta === "string" && fromMeta) return fromMeta;
-    return product.images?.[0]?.url ?? null;
-  }, [product.metadata, product.images]);
-
   const buildMetadata = useCallback(():
     | Record<string, string>
     | undefined => {
     const meta: Record<string, string> = {};
-    if (customText.trim()) meta.custom_text = customText.trim();
 
     for (const field of textFields) {
       const val = textFieldValues[field.key]?.trim();
@@ -222,6 +232,10 @@ export function ProductPageClient({
 
     for (const title of colorOptionTitles) {
       const key = extractMetaKey(title);
+      const sel = selectedOptions[title];
+      if (sel && sel !== CUSTOM_COLOR_VALUE) {
+        meta[`color_${key}`] = sel;
+      }
       const cust = colorCustomizations[title];
       if (cust?.customColor) {
         meta[`color_${key}_custom`] = cust.customColor;
@@ -237,7 +251,7 @@ export function ProductPageClient({
     }
 
     return Object.keys(meta).length > 0 ? meta : undefined;
-  }, [customText, textFields, textFieldValues, colorCustomizations, colorOptionTitles, links, linksCount]);
+  }, [textFields, textFieldValues, colorCustomizations, colorOptionTitles, selectedOptions, links, linksCount]);
 
   const calloutEnabled =
     checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
@@ -261,31 +275,38 @@ export function ProductPageClient({
 
   const qty = selectedVariant?.inventory_quantity ?? 0;
 
+  const showValidationCallout =
+    !allLinksProvided ||
+    !allTextFieldsValid ||
+    (!allColorChoicesComplete && colorOptionTitles.length > 0);
+
   return (
     <>
       <div className="space-y-6">
         <ProductConfigurator
-          options={product.options}
+          options={nonColorOptions}
           selectedOptions={selectedOptions}
           onOptionChange={handleOptionChange}
           colorCustomizations={colorCustomizations}
           onColorCustomizationChange={handleColorCustomizationChange}
-          customText={customText}
-          onCustomTextChange={setCustomText}
           textFields={textFields}
           textFieldValues={textFieldValues}
           onTextFieldChange={handleTextFieldChange}
           linksCount={linksCount}
           links={links}
           onLinksChange={setLinks}
-          baseImageUrl={baseImageUrl}
-          colorRegions={colorRegions}
+          globalColors={globalColors}
+          colorOptionTitles={colorOptionTitles}
+          colorMap={colorMap}
+          coloredSet={coloredSet}
+          mirrorSet={mirrorSet}
+          matDisabledSet={matDisabledSet}
         />
 
         {selectedVariant && qty > 5 && (
           <p className="flex items-center gap-1.5 text-sm text-green-700">
             <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
-            W magazynie — wysyłka w 48h
+            W magazynie — realizacja ok. 10 dni roboczych
           </p>
         )}
         {selectedVariant && qty > 0 && qty <= 5 && (
@@ -301,7 +322,34 @@ export function ProductPageClient({
           </p>
         )}
 
+        <div className="space-y-3">
+          <PayPoPromo price={priceForPayPo} />
+          <ShippingTimer />
+        </div>
+
         <div ref={ctaRef} className="space-y-3">
+          {showValidationCallout && (
+            <div
+              className="flex gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+              role="status"
+            >
+              <AlertCircle
+                className="h-5 w-5 shrink-0 text-red-600"
+                aria-hidden
+              />
+              <div className="flex min-w-0 flex-col gap-1.5">
+                {!allLinksProvided && (
+                  <p>Uzupełnij wszystkie linki do kodów QR</p>
+                )}
+                {!allTextFieldsValid && (
+                  <p>Uzupełnij wymagane pola tekstowe</p>
+                )}
+                {!allColorChoicesComplete && colorOptionTitles.length > 0 && (
+                  <p>Wybierz kolor dla każdego elementu konfiguracji</p>
+                )}
+              </div>
+            </div>
+          )}
           <AddToCartButton
             variantId={selectedVariant?.id ?? null}
             productData={{
@@ -310,25 +358,27 @@ export function ProductPageClient({
               price: selectedVariant?.price ?? 0,
               currency: "PLN",
             }}
-            disabled={!selectedVariant || qty === 0 || !allLinksProvided || !allTextFieldsValid}
+            disabled={
+              !selectedVariant ||
+              qty === 0 ||
+              !allLinksProvided ||
+              !allTextFieldsValid ||
+              !allColorChoicesComplete
+            }
             maxQuantity={qty > 0 ? qty : undefined}
             onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
             metadata={buildMetadata()}
           />
-          {!allLinksProvided && (
-            <p className="text-xs text-red-500 text-center">
-              Uzupełnij wszystkie linki do kodów QR
-            </p>
-          )}
-          {!allTextFieldsValid && (
-            <p className="text-xs text-red-500 text-center">
-              Uzupełnij wymagane pola tekstowe
-            </p>
-          )}
           <button
             type="button"
             onClick={handleBuyNow}
-            disabled={!selectedVariant || qty === 0 || !allLinksProvided || !allTextFieldsValid}
+            disabled={
+              !selectedVariant ||
+              qty === 0 ||
+              !allLinksProvided ||
+              !allTextFieldsValid ||
+              !allColorChoicesComplete
+            }
             className="w-full rounded-md border border-brand-300 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Kup teraz
@@ -336,7 +386,6 @@ export function ProductPageClient({
         </div>
       </div>
 
-      {/* Sticky mobile CTA */}
       {showSticky && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white/95 p-3 backdrop-blur-sm lg:hidden">
           <div className="flex items-center gap-3">
@@ -354,7 +403,13 @@ export function ProductPageClient({
                 price: selectedVariant?.price ?? 0,
                 currency: "PLN",
               }}
-              disabled={!selectedVariant || qty === 0 || !allLinksProvided || !allTextFieldsValid}
+              disabled={
+                !selectedVariant ||
+                qty === 0 ||
+                !allLinksProvided ||
+                !allTextFieldsValid ||
+                !allColorChoicesComplete
+              }
               compact
               onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
               metadata={buildMetadata()}
@@ -363,7 +418,6 @@ export function ProductPageClient({
         </div>
       )}
 
-      {/* Checkout Callout Modal */}
       {calloutAction && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"

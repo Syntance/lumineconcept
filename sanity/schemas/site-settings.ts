@@ -96,7 +96,7 @@ export const siteSettings = defineType({
       fields: [
         { name: "followers", title: "Obserwujący", type: "string", initialValue: "25 000+" },
         { name: "realizations", title: "Realizacje", type: "string", initialValue: "6 000+" },
-        { name: "shippingLabel", title: "Label wysyłki", type: "string", initialValue: "Express wysyłka" },
+        { name: "shippingLabel", title: "Label wysyłki", type: "string", initialValue: "Realizacja ok. 10 dni rob." },
       ],
     }),
 

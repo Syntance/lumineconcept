@@ -9,6 +9,7 @@ import type { ActiveFilters, FilterConfig } from "@/components/product/filter-ty
 import { resultCountLabel, SORT_OPTIONS } from "@/components/product/filter-types";
 import { trackCategoryViewed, trackProductFiltered } from "@/lib/analytics/events";
 import { extractFilterConfig, type SimpleProduct } from "@/lib/products/simple-product";
+import type { GlobalConfigOption } from "@/lib/products/global-config";
 
 export type { SimpleProduct };
 
@@ -38,6 +39,7 @@ interface ShopGridClientProps {
   initialSort: string;
   categories: Array<{ id: string; name: string }>;
   productBasePath: string;
+  globalColors?: GlobalConfigOption[];
 }
 
 function getBadge(tags: string[]): "bestseller" | "nowość" | null {
@@ -53,6 +55,7 @@ export function ShopGridClient({
   initialSort,
   categories,
   productBasePath,
+  globalColors = [],
 }: ShopGridClientProps) {
   const [products, setProducts] = useState<SimpleProduct[]>(initialProducts);
   const [totalFiltered, setTotalFiltered] = useState(totalCount);
@@ -277,6 +280,9 @@ export function ShopGridClient({
                     productId={product.id}
                     productOptions={product.options}
                     linksCount={product.linksCount}
+                    productMetadata={product.metadata}
+                    variantMetadata={product.firstVariantMetadata}
+                    globalColors={globalColors}
                   />
                 </div>
               ))}

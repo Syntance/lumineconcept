@@ -12,7 +12,7 @@ const FOOTER_LINKS = {
     { href: "/regulamin", label: "Regulamin" },
     { href: "/polityka-prywatnosci", label: "Polityka prywatności" },
     { href: "/dostawa-i-platnosci", label: "Dostawa i płatności" },
-    { href: "/zwroty", label: "Zwroty i reklamacje" },
+    { href: "/zwroty", label: "Reklamacje" },
   ],
   Kontakt: [
     { href: "mailto:kontakt@lumineconcept.pl", label: "kontakt@lumineconcept.pl" },
