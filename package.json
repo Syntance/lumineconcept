@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "turbo dev",
+    "dev:web": "turbo dev --filter=@lumine/storefront --filter=@lumine/backend",
     "dev:storefront": "pnpm --filter @lumine/storefront dev",
     "start": "pnpm --filter @lumine/backend start",
     "build": "turbo build",
@@ -19,6 +20,7 @@
     "docker:down": "docker compose down",
     "sync-medusa-product": "tsx scripts/sync-medusa-product-from-source.ts",
     "fill-product-dimensions": "tsx scripts/fill-product-dimensions-from-description.ts",
+    "fill-product-plexi-thickness": "tsx scripts/fill-product-plexi-thickness.ts",
     "fill-product-attributes": "tsx scripts/fill-product-attributes-from-description.ts",
     "studio": "pnpm --filter @lumine/sanity dev",
     "studio:build": "pnpm --filter @lumine/sanity build",

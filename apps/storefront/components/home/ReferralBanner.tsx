@@ -27,7 +27,7 @@ export function ReferralBanner() {
   return (
     <div className="bg-accent text-white">
       <div className="container mx-auto flex items-center justify-between gap-2 px-4 py-2">
-        <p className="text-[11px] tracking-wide">
+        <p className="text-xs tracking-wide">
           <span className="font-semibold">-10%</span> z kodem od znajomej! Kod{" "}
           <span className="font-mono font-bold">{code}</span> zastosowany automatycznie.
         </p>

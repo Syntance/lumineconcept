@@ -74,7 +74,7 @@ export function AddToCartButton({
         type="button"
         onClick={handleAddToCart}
         disabled={disabled || !variantId || isAdding}
-        className="flex shrink-0 items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex shrink-0 items-center justify-center gap-2 rounded-md bg-brand-800 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isAdding ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -87,43 +87,34 @@ export function AddToCartButton({
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center rounded-md border border-brand-200">
-        <button
-          type="button"
-          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-          disabled={quantity <= 1}
-          className="px-3 py-2 text-brand-700 hover:text-brand-900 transition-colors"
-          aria-label="Zmniejsz ilość"
-        >
-          -
-        </button>
-        <span className="w-10 text-center text-sm font-medium tabular-nums">
+    <div className="flex items-stretch gap-0">
+      {/* Quantity selector */}
+      <div className="flex items-center border border-r-0 border-brand-300">
+        <span className="flex h-full w-11 items-center justify-center text-sm font-medium tabular-nums text-brand-800">
           {quantity}
         </span>
         <button
           type="button"
           onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
           disabled={quantity >= maxQuantity}
-          className="px-3 py-2 text-brand-700 hover:text-brand-900 transition-colors"
+          className="flex h-full items-center border-l border-brand-300 px-3 text-brand-600 hover:text-brand-900 transition-colors disabled:opacity-40"
           aria-label="Zwiększ ilość"
         >
           +
         </button>
       </div>
 
+      {/* Add to cart */}
       <button
         type="button"
         onClick={handleAddToCart}
         disabled={disabled || !variantId || isAdding}
-        className="flex flex-1 items-center justify-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex flex-1 items-center justify-center gap-2 bg-brand-800 px-6 py-3.5 font-display text-[15px] italic tracking-wide text-white transition-colors hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isAdding ? (
           <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <ShoppingBag className="h-4 w-4" />
-        )}
-        Dodaj do koszyka
+        ) : null}
+        dodaj do koszyka
       </button>
     </div>
   );

@@ -8,6 +8,8 @@ interface PriceDisplayProps {
   prefix?: string;
   /** Wymusza rozmiar w px (strona produktu) — omija klasy Tailwind, gdy coś je nadpisuje. */
   fontSizePx?: number;
+  /** Ciemny badge (PDP) — brązowe tło + biały tekst, kursywa display. */
+  variant?: "default" | "badge";
 }
 
 export function PriceDisplay({
@@ -17,6 +19,7 @@ export function PriceDisplay({
   size = "md",
   prefix,
   fontSizePx,
+  variant = "default",
 }: PriceDisplayProps) {
   const hasDiscount = compareAtAmount && compareAtAmount > amount;
   const discountPercent = hasDiscount
@@ -24,14 +27,34 @@ export function PriceDisplay({
     : 0;
 
   const sizeClasses = {
-    sm: "text-[0.9375rem]", // ~+7% względem text-sm
-    md: "text-[1.0625rem]", // ~+6% względem text-base
-    lg: "text-[1.3125rem]", // ~+6% względem text-xl
+    sm: "text-[0.9375rem]",
+    md: "text-[1.0625rem]",
+    lg: "text-[1.3125rem]",
   };
 
   const sizeStyle =
     fontSizePx != null ? ({ fontSize: `${fontSizePx}px` } as const) : undefined;
   const sizeClass = fontSizePx != null ? undefined : sizeClasses[size];
+
+  if (variant === "badge") {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="inline-block bg-brand-800 px-5 py-1.5 font-display text-[1.05rem] italic text-white">
+          {formatPrice(amount, currency)}
+        </span>
+        {hasDiscount && (
+          <>
+            <span className="text-base text-brand-400 line-through">
+              {formatPrice(compareAtAmount, currency)}
+            </span>
+            <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700">
+              -{discountPercent}%
+            </span>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2">

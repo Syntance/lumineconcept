@@ -120,7 +120,7 @@ function ColorPicker({
             </svg>
           )}
         </button>
-        <span className="max-w-[3.75rem] text-center text-[8px] leading-tight text-brand-500">
+        <span className="max-w-15 text-center text-[8px] leading-tight text-brand-500">
           {value}
         </span>
       </div>

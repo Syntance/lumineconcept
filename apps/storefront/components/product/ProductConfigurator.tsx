@@ -1,6 +1,7 @@
 "use client";
 
 import { ColorStepPanel } from "./ColorStepPanel";
+import { FileUploadSection, type UploadedFile } from "./FileUploadSection";
 import {
   CUSTOM_COLOR_VALUE,
   isColorOption,
@@ -41,6 +42,9 @@ interface ProductConfiguratorProps {
   linksCount?: number;
   links?: string[];
   onLinksChange?: (links: string[]) => void;
+  uploadsCount?: number;
+  uploadedFiles?: UploadedFile[];
+  onUploadedFilesChange?: (files: UploadedFile[]) => void;
   globalColors?: GlobalConfigOption[];
   colorOptionTitles?: string[];
   colorMap?: Record<string, string>;
@@ -61,6 +65,9 @@ export function ProductConfigurator({
   linksCount = 0,
   links = [],
   onLinksChange,
+  uploadsCount = 0,
+  uploadedFiles = [],
+  onUploadedFilesChange,
   globalColors = [],
   colorOptionTitles = [],
   colorMap = {},
@@ -90,15 +97,10 @@ export function ProductConfigurator({
   const hasMultipleColors = colorOptions.length > 1;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {colorOptions.length > 0 && (
-        <div className={hasMultipleColors ? "space-y-3" : "space-y-5"}>
-          {hasMultipleColors && (
-            <h3 className="font-sans text-xs font-medium uppercase tracking-widest text-[#725750]">
-              Konfiguracja kolorów
-            </h3>
-          )}
-          <div className="space-y-2">
+        <div className="space-y-1">
+          <div className="space-y-0">
             {colorOptions.map((option, idx) => {
               const cust = colorCustomizations[option.title] ?? {
                 customColor: null,
@@ -248,10 +250,80 @@ export function ProductConfigurator({
         );
       })}
 
+      {/* Text fields / notes */}
+      {textFields.length > 0 && onTextFieldChange && (
+        <div className="space-y-4">
+          {textFields.map((field) => {
+            const value = textFieldValues[field.key] ?? "";
+            const max = field.maxLength ?? 200;
+            const inputId = `tf-${field.key}`;
+            return (
+              <div key={field.key}>
+                <label
+                  htmlFor={inputId}
+                  className="mb-2 block text-[12px] italic leading-snug text-brand-500"
+                >
+                  {field.label}
+                  {field.required && (
+                    <span className="ml-0.5 not-italic text-red-500">*</span>
+                  )}
+                </label>
+                {field.multiline ? (
+                  <textarea
+                    id={inputId}
+                    value={value}
+                    onChange={(e) => onTextFieldChange(field.key, e.target.value)}
+                    placeholder={field.placeholder ?? "W uwagach prosimy o wpisanie treści, która ma być zawarta na przedmiocie"}
+                    rows={5}
+                    maxLength={max}
+                    required={field.required}
+                    className={`w-full resize-none border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                      field.required && !value.trim()
+                        ? "border-red-300 focus:border-red-400"
+                        : "border-brand-300 focus:border-brand-500"
+                    }`}
+                  />
+                ) : (
+                  <input
+                    id={inputId}
+                    type="text"
+                    value={value}
+                    onChange={(e) => onTextFieldChange(field.key, e.target.value)}
+                    placeholder={field.placeholder ?? ""}
+                    maxLength={max}
+                    required={field.required}
+                    className={`w-full border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                      field.required && !value.trim()
+                        ? "border-red-300 focus:border-red-400"
+                        : "border-brand-300 focus:border-brand-500"
+                    }`}
+                  />
+                )}
+                {value.length > 0 && (
+                  <p className="mt-1 text-right text-xs text-brand-400">
+                    {value.length}/{max}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* File uploads */}
+      {uploadsCount > 0 && onUploadedFilesChange && (
+        <FileUploadSection
+          maxFiles={Math.min(uploadsCount, 5)}
+          files={uploadedFiles}
+          onFilesChange={onUploadedFilesChange}
+        />
+      )}
+
+      {/* QR link inputs */}
       {linksCount > 0 && onLinksChange && (
         <div className="space-y-3">
           <div>
-            <p className="text-sm font-medium text-brand-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-700">
               Linki do kodów QR{" "}
               <span className="text-red-500">*</span>
             </p>
@@ -277,79 +349,15 @@ export function ProductConfigurator({
                   onLinksChange(next);
                 }}
                 placeholder="https://..."
-                className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                className={`w-full rounded border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-400 focus:outline-none transition-colors ${
                   links[i]?.trim()
-                    ? "border-brand-200 focus:border-accent"
+                    ? "border-brand-300 focus:border-brand-500"
                     : "border-red-300 focus:border-red-400"
                 }`}
                 required
               />
             </div>
           ))}
-        </div>
-      )}
-
-      {textFields.length > 0 && onTextFieldChange && (
-        <div className="space-y-4">
-          <h3 className="font-sans text-xs font-medium uppercase tracking-widest text-[#725750]">
-            Personalizacja tekstu
-          </h3>
-          {textFields.map((field) => {
-            const value = textFieldValues[field.key] ?? "";
-            const max = field.maxLength ?? 200;
-            const inputId = `tf-${field.key}`;
-            return (
-              <div key={field.key}>
-                <label
-                  htmlFor={inputId}
-                  className="mb-1.5 block text-sm font-medium text-brand-700"
-                >
-                  {field.label}
-                  {field.required ? (
-                    <span className="ml-0.5 text-red-500">*</span>
-                  ) : (
-                    <span className="ml-1 font-normal text-brand-400">(opcjonalnie)</span>
-                  )}
-                </label>
-                {field.multiline ? (
-                  <textarea
-                    id={inputId}
-                    value={value}
-                    onChange={(e) => onTextFieldChange(field.key, e.target.value)}
-                    placeholder={field.placeholder ?? ""}
-                    rows={2}
-                    maxLength={max}
-                    required={field.required}
-                    className={`w-full resize-none rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
-                      field.required && !value.trim()
-                        ? "border-red-300 focus:border-red-400"
-                        : "border-brand-200 focus:border-accent"
-                    }`}
-                  />
-                ) : (
-                  <input
-                    id={inputId}
-                    type="text"
-                    value={value}
-                    onChange={(e) => onTextFieldChange(field.key, e.target.value)}
-                    placeholder={field.placeholder ?? ""}
-                    maxLength={max}
-                    required={field.required}
-                    className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
-                      field.required && !value.trim()
-                        ? "border-red-300 focus:border-red-400"
-                        : "border-brand-200 focus:border-accent"
-                    }`}
-                  />
-                )}
-                {value.length > 0 && (
-                  <p className="mt-1 text-right text-xs text-brand-400">
-                    {value.length}/{max}
-                  </p>
-                )}
-              </div>
-            );
-          })}
         </div>
       )}
     </div>

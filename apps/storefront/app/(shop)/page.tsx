@@ -29,7 +29,8 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export const revalidate = 60;
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 export default function HomePage() {
   const orgJsonLd = {

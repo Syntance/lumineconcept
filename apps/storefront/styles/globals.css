@@ -6,7 +6,7 @@
 
 @theme {
   /* Paleta z brandbooku (4 próbki): #EEE8E0 · #D5BFAB · #AF7C61 · #725750
-     50/100 = najjaśniejszy krem z PDF (#EEE8E0); pośrednie = interpolacja; 900 = bardzo ciemny brąz do tekstu/UI */
+     brand-50 = jaśniejszy krem między #fff a #EEE8E0; brand-100 = #EEE8E0; pośrednie = interpolacja */
   --color-brand-50: #F5F1EC;
   --color-brand-100: #EEE8E0;
   --color-brand-200: #E2D4C6;

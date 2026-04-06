@@ -7,7 +7,6 @@ import { useState } from "react";
 import { Search, ShoppingBag, Menu, User } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { MobileNav } from "./MobileNav";
-import { AnnouncementBar } from "./AnnouncementBar";
 
 const SearchModal = dynamic(
   () => import("../search/SearchModal").then((m) => m.SearchModal),
@@ -38,7 +37,6 @@ export function Header() {
 
   return (
     <>
-      <AnnouncementBar />
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-brand-100">
         <a href="#main-content" className="skip-to-content">
           Przejdź do treści
@@ -61,7 +59,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-[11px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors"
+                  className="text-[13px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -75,9 +73,9 @@ export function Header() {
               <Image
                 src="/images/logo.png"
                 alt="Lumine Concept"
-                width={140}
-                height={32}
-                className="h-8 w-auto"
+                width={168}
+                height={38}
+                className="h-[38px] w-auto"
                 priority
               />
             </Link>
@@ -90,7 +88,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-[11px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors"
+                  className="text-[13px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -121,7 +119,7 @@ export function Header() {
               >
                 <ShoppingBag className="h-4 w-4" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-white">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-white">
                     {itemCount}
                   </span>
                 )}

@@ -4,7 +4,9 @@ import { getProducts } from "@/lib/medusa/products";
 import { SITE_URL } from "@/lib/utils";
 import { ProductPageClient } from "./client";
 
-export const revalidate = 3600;
+/** Bez długiego cache — PDP odświeża się po zmianach w layoutcie / Medusie */
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   const response = await getProducts({ limit: 50, offset: 0 }).catch(() => null);

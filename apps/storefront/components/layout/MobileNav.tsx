@@ -38,7 +38,7 @@ export function MobileNav({ isOpen, onClose, links }: MobileNavProps) {
       />
       <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-brand-100">
-          <span className="font-display text-lg font-bold text-brand-800">
+          <span className="font-display text-xl font-bold text-brand-800">
             Menu
           </span>
           <button
@@ -57,7 +57,7 @@ export function MobileNav({ isOpen, onClose, links }: MobileNavProps) {
                 <Link
                   href={link.href}
                   onClick={onClose}
-                  className="block rounded-lg px-4 py-3 text-sm font-medium text-brand-700 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                  className="block rounded-lg px-4 py-3 text-base font-medium text-brand-700 hover:bg-brand-50 hover:text-brand-900 transition-colors"
                 >
                   {link.label}
                 </Link>

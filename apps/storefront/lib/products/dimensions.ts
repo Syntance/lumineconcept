@@ -7,6 +7,154 @@ const DIRECT_KEYS = [
   "wymiary_cm",
 ] as const;
 
+/** Grubość (plexi / materiał) — metadata Medusa / wariant */
+const PLEXI_THICKNESS_KEYS = [
+  "grubosc",
+  "grubość",
+  "grubosc_plexi",
+  "grubość_plexi",
+  "plexi_thickness",
+  "plexi_grubosc",
+  "plexi_grubość",
+  "thickness_plexi",
+] as const;
+
+const WIDTH_KEYS = [
+  "szerokosc",
+  "szerokość",
+  "width",
+  "szerokosc_cm",
+  "szerokość_cm",
+] as const;
+
+const HEIGHT_KEYS = [
+  "wysokosc",
+  "wysokość",
+  "height",
+  "wysokosc_cm",
+  "wysokość_cm",
+] as const;
+
+function pickDimensionField(
+  meta: Record<string, unknown> | null | undefined,
+  keys: readonly string[],
+): string | null {
+  if (!meta) return null;
+  for (const key of keys) {
+    const v = meta[key];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return null;
+}
+
+/**
+ * Rozdziela „23 × 25 cm”, „23x25mm”, „Wymiary: 23X25 cm” itd. na dwie wartości.
+ * Obsługuje × (U+00D7), x/X, usuwa prefiks „Wymiary:”, normalizuje twarde spacje.
+ */
+export function parseWidthHeightFromDimensionsLabel(
+  s: string,
+): { width: string | null; height: string | null } {
+  if (!s || typeof s !== "string") return { width: null, height: null };
+  let t = s.trim().replace(/\u00a0/g, " ");
+  t = t.replace(/<[^>]+>/g, " ");
+  t = t.replace(/^Wymiary\s*[:\-–—]?\s*/i, "").trim();
+  // Znaki mnożenia / podobne → x (łatwiejszy jeden wzorzec)
+  t = t.replace(/[\u00D7\u2715\u2716]/g, "x");
+
+  const m = t.match(
+    /([0-9]+(?:[\s,\.][0-9]+)?)\s*[xX]\s*([0-9]+(?:[\s,\.][0-9]+)?)\s*(cm|mm)?/i,
+  );
+  if (!m) return { width: null, height: null };
+  const unit = (m[3] ?? "cm").trim();
+  return {
+    width: `${m[1].replace(/\s/g, "")} ${unit}`,
+    height: `${m[2].replace(/\s/g, "")} ${unit}`,
+  };
+}
+
+export interface ProductDimensionParts {
+  width: string | null;
+  height: string | null;
+  thickness: string | null;
+  /** gdy nie da się rozdzielić na szer./wys. (np. nietypowy opis) */
+  dimensionsFallback: string | null;
+}
+
+/**
+ * Wymiary pod PDP: osobno szerokość, wysokość, grubość — z metadata lub z parsowania `wymiary`.
+ */
+export function getProductDimensionParts(
+  productMetadata: Record<string, unknown> | undefined | null,
+  variantMetadata?: Record<string, unknown> | null,
+): ProductDimensionParts {
+  const meta = (productMetadata ?? {}) as Record<string, unknown>;
+  const variant = (variantMetadata ?? null) as Record<string, unknown> | null;
+
+  const widthDirect =
+    pickDimensionField(meta, WIDTH_KEYS) ?? pickDimensionField(variant, WIDTH_KEYS);
+  const heightDirect =
+    pickDimensionField(meta, HEIGHT_KEYS) ?? pickDimensionField(variant, HEIGHT_KEYS);
+
+  const combined = getProductDimensionsLabel(productMetadata, variantMetadata);
+  const parsed = combined ? parseWidthHeightFromDimensionsLabel(combined) : { width: null, height: null };
+
+  const width = widthDirect ?? parsed.width;
+  const height = heightDirect ?? parsed.height;
+
+  const thickness = getProductPlexiThicknessLabel(productMetadata, variantMetadata);
+
+  const dimensionsFallback =
+    combined && !width && !height ? combined : null;
+
+  return {
+    width,
+    height,
+    thickness,
+    dimensionsFallback,
+  };
+}
+
+function pickPlexiThicknessFromRecord(
+  meta: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!meta) return null;
+  for (const key of PLEXI_THICKNESS_KEYS) {
+    const v = meta[key];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  for (const [k, v] of Object.entries(meta)) {
+    const kl = k.toLowerCase();
+    if (
+      (kl.includes("plexi") && kl.includes("grub")) &&
+      typeof v === "string" &&
+      v.trim()
+    ) {
+      return v.trim();
+    }
+  }
+  return null;
+}
+
+function extractPlexiThicknessFromSpecyfikacja(spec: string): string | null {
+  const trimmed = spec.trim();
+  if (!trimmed) return null;
+
+  for (const line of trimmed.split(/\r?\n/)) {
+    const t = line.trim();
+    const plexi = t.match(/^Grubość\s+plexi\s*[:\-–—]\s*(.+)$/i);
+    if (plexi) return plexi[1].trim();
+    const plain = t.match(/^Grubość\s*[:\-–—]\s*(.+)$/i);
+    if (plain) return plain[1].trim();
+  }
+
+  const inlinePlexi = trimmed.match(/Grubość\s+plexi\s*[:\-–—]\s*([^\n]+?)(?:\n|$)/i);
+  if (inlinePlexi) return inlinePlexi[1].trim();
+  const inline = trimmed.match(/Grubość\s*[:\-–—]\s*([^\n]+?)(?:\n|$)/i);
+  if (inline) return inline[1].trim();
+
+  return null;
+}
+
 function pickFromRecord(meta: Record<string, unknown> | null | undefined): string | null {
   if (!meta) return null;
   for (const key of DIRECT_KEYS) {
@@ -146,4 +294,23 @@ export function getProductDimensionsLabel(
   }
 
   return pickFromRecord(variantMetadata ?? null);
+}
+
+/**
+ * Grubość plexi: dedykowane klucze metadata lub linia „Grubość plexi: …” w specyfikacji.
+ */
+export function getProductPlexiThicknessLabel(
+  productMetadata: Record<string, unknown> | undefined | null,
+  variantMetadata?: Record<string, unknown> | null,
+): string | null {
+  const fromProduct = pickPlexiThicknessFromRecord(productMetadata ?? null);
+  if (fromProduct) return fromProduct;
+
+  const spec = productMetadata?.specyfikacja;
+  if (typeof spec === "string") {
+    const fromSpec = extractPlexiThicknessFromSpecyfikacja(spec);
+    if (fromSpec) return fromSpec;
+  }
+
+  return pickPlexiThicknessFromRecord(variantMetadata ?? null);
 }
