@@ -57,7 +57,7 @@ export default async function CertyfikatyPage({
 
   return (
     <>
-      <section className="bg-brand-50 py-14 lg:py-20">
+      <section className="bg-brand-50 pt-10 pb-14 lg:pt-12 lg:pb-20">
         <div className="container mx-auto max-w-4xl px-4">
           <Breadcrumbs
             className="mb-0"
@@ -68,7 +68,7 @@ export default async function CertyfikatyPage({
             ]}
           />
         </div>
-        <div className="container mx-auto max-w-7xl px-4 pt-6 text-center lg:pt-8">
+        <div className="container mx-auto max-w-7xl px-4 pt-10 text-center lg:pt-16">
           <h1 className="font-display text-4xl tracking-[0.06em] text-brand-800 lg:text-5xl">
             Certyfikaty z plexi — dyplomy, podziękowania, vouchery
           </h1>
