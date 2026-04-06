@@ -60,18 +60,21 @@ export default async function Logo3dListingPage({
     <>
       {/* Hero */}
       <section className="bg-brand-50 py-14 lg:py-20">
-        <div className="container mx-auto max-w-7xl px-4 text-center">
+        <div className="container mx-auto max-w-4xl px-4">
           <Breadcrumbs
+            className="mb-0"
             items={[
               { label: "Strona główna", href: "/" },
               { label: "Sklep", href: "/sklep" },
               { label: "Logo 3D" },
             ]}
           />
-          <h1 className="font-display text-3xl tracking-[0.06em] text-brand-800 lg:text-4xl">
+        </div>
+        <div className="container mx-auto max-w-7xl px-4 pt-6 text-center lg:pt-8">
+          <h1 className="font-display text-4xl tracking-[0.06em] text-brand-800 lg:text-5xl">
             Logo 3D z plexi — gotowe wzory do Twojego salonu
           </h1>
-          <p className="mt-4 mx-auto max-w-2xl text-brand-600 leading-relaxed">
+          <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-600 leading-relaxed">
             Gotowe wzory logo 3D i LED. Wybierz model, zamów online — szybka realizacja.
           </p>
         </div>
@@ -85,13 +88,13 @@ export default async function Logo3dListingPage({
               <p className="font-display text-lg tracking-wide text-brand-800">
                 Masz własne logo?
               </p>
-              <p className="mt-1 text-sm text-brand-600">
+              <p className="mt-1 text-base text-brand-600">
                 Zamów indywidualny projekt — logo 3D z Twoim designem, wycena w 24h.
               </p>
             </div>
             <Link
               href="/logo-3d/#formularz"
-              className="shrink-0 inline-flex items-center justify-center rounded-md bg-brand-900 px-6 py-2.5 text-xs font-medium uppercase tracking-wider text-white transition-colors hover:bg-brand-800"
+              className="shrink-0 inline-flex items-center justify-center rounded-md bg-brand-900 px-6 py-2.5 text-sm font-medium uppercase tracking-wider text-white transition-colors hover:bg-brand-800"
             >
               Wyślij logo &rarr;
             </Link>
@@ -119,7 +122,7 @@ export default async function Logo3dListingPage({
       {/* Trust bar */}
       <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
         <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-brand-600">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-600">
             <span>📷 {trustBar?.followers ?? "25 000+"} obserwujących</span>
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>

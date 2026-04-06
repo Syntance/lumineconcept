@@ -35,10 +35,13 @@
 }
 
 @layer base {
+  /* Bazowy rozmiar jak na odświeżonej stronie głównej — treść czytelniejsza niż domyślne 16px */
   body {
     background-color: #fff;
     color: var(--color-brand-800);
     font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

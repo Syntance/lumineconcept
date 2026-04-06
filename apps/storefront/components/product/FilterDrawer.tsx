@@ -44,7 +44,7 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+      className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
         active
           ? "border border-accent bg-accent/10 text-accent-dark"
           : "border border-brand-200 text-brand-600"
@@ -117,7 +117,7 @@ export function FilterDrawer({
               <button
                 type="button"
                 onClick={() => onFiltersChange(clearFilters(activeFilters.sort, activeFilters.pill))}
-                className="text-xs text-brand-400 underline underline-offset-2"
+                className="text-sm text-brand-400 underline underline-offset-2"
               >
                 Wyczyść
               </button>
@@ -137,7 +137,7 @@ export function FilterDrawer({
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
           {/* Kategoria */}
           <section>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Kategoria</p>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Kategoria</p>
             <div className="flex flex-wrap gap-2">
               {PRODUCT_PILLS.map((pill) => {
                 const isActive = (activeFilters.pill ?? "all") === pill.value;
@@ -161,9 +161,9 @@ export function FilterDrawer({
 
           {/* Cena — suwak */}
           <section>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Cena</p>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Cena</p>
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-brand-500">
+              <div className="flex items-center justify-between text-sm text-brand-500">
                 <span>{formatPricePLN(localMin)}</span>
                 <span>{formatPricePLN(localMax)}</span>
               </div>
@@ -213,7 +213,7 @@ export function FilterDrawer({
           {/* Materiał */}
           {filterConfig.materials.length > 0 && (
             <section>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Materiał</p>
+              <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Materiał</p>
               <div className="flex flex-wrap gap-2">
                 {filterConfig.materials.map((mat) => (
                   <Chip
@@ -231,7 +231,7 @@ export function FilterDrawer({
           {/* Wykończenie */}
           {filterConfig.finishes.length > 0 && (
             <section>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Wykończenie</p>
+              <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Wykończenie</p>
               <div className="flex flex-wrap gap-2">
                 {filterConfig.finishes.map((fin) => (
                   <Chip
@@ -249,7 +249,7 @@ export function FilterDrawer({
           {/* LED */}
           {filterConfig.hasLed && (
             <section>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Podświetlenie LED</p>
+              <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Podświetlenie LED</p>
               <div className="flex gap-2">
                 <Chip
                   active={activeFilters.led === true}
@@ -270,7 +270,7 @@ export function FilterDrawer({
           {/* Rozmiar */}
           {filterConfig.sizes.length > 0 && (
             <section>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-800">Rozmiar</p>
+              <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Rozmiar</p>
               <div className="flex flex-wrap gap-2">
                 {filterConfig.sizes.map((size) => (
                   <Chip

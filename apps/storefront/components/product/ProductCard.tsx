@@ -119,24 +119,24 @@ export function ProductCard({
         {badge && (
           <span
             className={cn(
-              "absolute left-2 top-2 z-10 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white",
+              "absolute left-2 top-2 z-10 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-white",
               badge === "bestseller" ? "bg-accent" : "bg-green-600",
             )}
           >
             {badge === "bestseller" ? "Bestseller" : "Nowość"}
           </span>
         )}
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-center bg-brand-900/70 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-center bg-brand-900/70 py-2.5 text-[13px] font-semibold uppercase tracking-[0.18em] text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
           Zobacz produkt
         </span>
       </div>
       {!imageOnly && (
         <div className="flex min-h-0 flex-1 flex-col justify-between gap-2 p-4">
-          <h3 className="min-h-12 shrink-0 text-base font-medium leading-snug text-brand-800 line-clamp-2">
+          <h3 className="min-h-9 shrink-0 text-xs font-medium leading-snug text-brand-800 line-clamp-2">
             {title}
           </h3>
           {dimensionsLabel && (
-            <p className="text-xs text-brand-500 line-clamp-2">
+            <p className="text-sm text-brand-500 line-clamp-2">
               <span className="text-brand-400">Wymiary:</span> {dimensionsLabel}
             </p>
           )}
@@ -158,6 +158,7 @@ export function ProductCard({
                   amount={price}
                   compareAtAmount={compareAtPrice}
                   currency={currency}
+                  size="lg"
                 />
               </AddToCartButton>
             </div>
@@ -168,9 +169,10 @@ export function ProductCard({
                   amount={price}
                   compareAtAmount={compareAtPrice}
                   currency={currency}
+                  size="lg"
                 />
               </span>
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                 Zobacz produkt
               </span>
             </div>

@@ -63,7 +63,7 @@ export function FilterSidebar({
             <button
               type="button"
               onClick={() => onFiltersChange(clearFilters(activeFilters.sort, activeFilters.pill))}
-              className="text-[11px] text-brand-400 underline underline-offset-2 hover:text-brand-600 transition-colors"
+              className="text-[13px] text-brand-400 underline underline-offset-2 hover:text-brand-600 transition-colors"
             >
               Wyczyść
             </button>
@@ -75,7 +75,7 @@ export function FilterSidebar({
         <div className="mt-5 space-y-5">
         {/* Kategoria */}
         <details open>
-          <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
+          <summary className="cursor-pointer pb-2 text-sm font-semibold uppercase tracking-wider text-brand-800 select-none">
             Kategoria
           </summary>
           <div className="flex flex-col gap-1 pt-1">
@@ -90,7 +90,7 @@ export function FilterSidebar({
                       pill: pill.value === "all" ? undefined : pill.value,
                     })
                   }
-                  className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
+                  className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                     isActive
                       ? "bg-accent/10 text-accent-dark font-medium"
                       : "text-brand-600 hover:bg-brand-50"
@@ -105,11 +105,11 @@ export function FilterSidebar({
 
         {/* Cena — suwak */}
         <details open>
-          <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
+          <summary className="cursor-pointer pb-2 text-sm font-semibold uppercase tracking-wider text-brand-800 select-none">
             Cena
           </summary>
           <div className="space-y-3 pt-1">
-            <div className="flex items-center justify-between text-xs text-brand-500">
+            <div className="flex items-center justify-between text-sm text-brand-500">
               <span>{formatPricePLN(localMin)}</span>
               <span>{formatPricePLN(localMax)}</span>
             </div>
@@ -160,7 +160,7 @@ export function FilterSidebar({
         {/* Materiał */}
         {filterConfig.materials.length > 0 && (
           <details open>
-            <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
+            <summary className="cursor-pointer pb-2 text-sm font-semibold uppercase tracking-wider text-brand-800 select-none">
               Materiał
             </summary>
             <div className="flex flex-col gap-1 pt-1">
@@ -171,7 +171,7 @@ export function FilterSidebar({
                     key={mat}
                     type="button"
                     onClick={() => update({ materials: toggle(activeFilters.materials, mat) })}
-                    className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
+                    className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                       isActive
                         ? "bg-accent/10 text-accent-dark font-medium"
                         : "text-brand-600 hover:bg-brand-50"
@@ -188,7 +188,7 @@ export function FilterSidebar({
         {/* Wykończenie */}
         {filterConfig.finishes.length > 0 && (
           <details open>
-            <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
+            <summary className="cursor-pointer pb-2 text-sm font-semibold uppercase tracking-wider text-brand-800 select-none">
               Wykończenie
             </summary>
             <div className="flex flex-col gap-1 pt-1">
@@ -199,7 +199,7 @@ export function FilterSidebar({
                     key={fin}
                     type="button"
                     onClick={() => update({ finishes: toggle(activeFilters.finishes, fin) })}
-                    className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
+                    className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                       isActive
                         ? "bg-accent/10 text-accent-dark font-medium"
                         : "text-brand-600 hover:bg-brand-50"
@@ -216,14 +216,14 @@ export function FilterSidebar({
         {/* LED */}
         {filterConfig.hasLed && (
           <details open>
-            <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
+            <summary className="cursor-pointer pb-2 text-sm font-semibold uppercase tracking-wider text-brand-800 select-none">
               Podświetlenie LED
             </summary>
             <div className="flex flex-col gap-1 pt-1">
               <button
                 type="button"
                 onClick={() => update({ led: activeFilters.led === true ? undefined : true })}
-                className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
+                className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                   activeFilters.led === true
                     ? "bg-accent/10 text-accent-dark font-medium"
                     : "text-brand-600 hover:bg-brand-50"
@@ -234,7 +234,7 @@ export function FilterSidebar({
               <button
                 type="button"
                 onClick={() => update({ led: activeFilters.led === false ? undefined : false })}
-                className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
+                className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                   activeFilters.led === false
                     ? "bg-accent/10 text-accent-dark font-medium"
                     : "text-brand-600 hover:bg-brand-50"
@@ -249,7 +249,7 @@ export function FilterSidebar({
         {/* Rozmiar */}
         {filterConfig.sizes.length > 0 && (
           <details open>
-            <summary className="cursor-pointer pb-2 text-xs font-semibold uppercase tracking-wider text-brand-800 select-none">
+            <summary className="cursor-pointer pb-2 text-sm font-semibold uppercase tracking-wider text-brand-800 select-none">
               Rozmiar
             </summary>
             <div className="flex flex-col gap-1 pt-1">
@@ -260,7 +260,7 @@ export function FilterSidebar({
                     key={size}
                     type="button"
                     onClick={() => update({ sizes: toggle(activeFilters.sizes, size) })}
-                    className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
+                    className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                       isActive
                         ? "bg-accent/10 text-accent-dark font-medium"
                         : "text-brand-600 hover:bg-brand-50"

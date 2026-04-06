@@ -43,7 +43,7 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
     tabs.push({
       title: "Opis",
       content: (
-        <div className="prose prose-sm text-brand-700 max-w-none">
+        <div className="prose prose-base text-brand-700 max-w-none">
           {split?.dimensionsLine ? (
             <>
               <p>{split.lead}</p>
@@ -55,7 +55,7 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
           ) : (
             <>
               {dimensionsInOpis && (
-                <p className="mb-3 font-sans text-sm leading-relaxed text-brand-700">
+                <p className="mb-3 font-sans text-base leading-relaxed text-brand-700">
                   <span className="text-brand-500">Wymiary:</span> {dimensionsInOpis}
                 </p>
               )}
@@ -70,14 +70,14 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
   if (spec) {
     tabs.push({
       title: "Specyfikacja",
-      content: <div className="prose prose-sm text-brand-700 max-w-none"><p>{spec}</p></div>,
+      content: <div className="prose prose-base text-brand-700 max-w-none"><p>{spec}</p></div>,
     });
   }
 
   tabs.push({
     title: "Czas realizacji i wysyłka",
     content: (
-      <div className="space-y-3 text-sm text-brand-700">
+      <div className="space-y-3 text-base text-brand-700">
         <p>Czas realizacji zamówienia: <strong>około 10 dni roboczych</strong></p>
         <p>
           <strong>Kurier DPD</strong> — przesyłka kurierska dostarczona pod wskazany adres, koszt od{" "}
@@ -91,7 +91,7 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
     <div className="space-y-6">
       {tabs.map((tab, i) => (
         <details key={tab.title} className="group" open={i === 0}>
-          <summary className="cursor-pointer border-b border-brand-200 pb-3 text-sm font-medium text-brand-500 group-open:text-brand-900 transition-colors">
+          <summary className="cursor-pointer border-b border-brand-200 pb-3 text-base font-medium text-brand-500 group-open:text-brand-900 transition-colors">
             {tab.title}
           </summary>
           <div className="pt-4">{tab.content}</div>

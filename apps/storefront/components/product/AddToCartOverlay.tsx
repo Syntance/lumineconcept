@@ -53,7 +53,7 @@ export function AddToCartButton({
         <span className="transition-opacity duration-200 group-hover:opacity-0">
           {children}
         </span>
-        <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-xs font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-sm font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           Dodaj do koszyka
         </span>
       </button>

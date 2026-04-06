@@ -12,7 +12,7 @@ import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { collectProductImages } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
-import { getProductDimensionParts } from "@/lib/products/dimensions";
+import { formatDimensionsWxH, getProductDimensionParts } from "@/lib/products/dimensions";
 import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
 import {
   getGlobalProductConfig,
@@ -101,6 +101,7 @@ export async function ProductPageLayout({
     metadata,
     firstVariant?.metadata ?? null,
   );
+  const dimensionsWxHLine = formatDimensionsWxH(dimensionParts.width, dimensionParts.height);
   const price = firstVariant?.calculated_price?.calculated_amount ?? 0;
 
   const crossSellProducts = await loadCrossSell(metadata, basePath);
@@ -147,9 +148,10 @@ export async function ProductPageLayout({
         }}
       />
 
-      {/* Breadcrumbs on normal page bg */}
-      <div className="mx-auto max-w-7xl px-4 pt-6 lg:px-8 lg:pt-8">
+      {/* Breadcrumbs — ten sam kontener co na /sklep (max-w-4xl + container) */}
+      <div className="container mx-auto max-w-4xl px-4 pt-6 lg:pt-8">
         <Breadcrumbs
+          className="mb-0"
           items={[
             { label: "Home page", href: "/" },
             { label: categoryLabel, href: categoryHref },
@@ -178,7 +180,7 @@ export async function ProductPageLayout({
 
           {/* Product info */}
           <div className="space-y-4">
-            <h1 className="font-display text-[2rem] font-normal uppercase tracking-wider text-brand-800 lg:text-[2.5rem] lg:leading-tight">
+            <h1 className="font-display text-2xl font-normal uppercase tracking-wider text-brand-800 sm:text-3xl lg:text-4xl lg:leading-tight">
               {product.title}
             </h1>
 
@@ -187,27 +189,17 @@ export async function ProductPageLayout({
               dimensionParts.height ||
               dimensionParts.dimensionsFallback ||
               dimensionParts.thickness) && (
-              <div className="space-y-3 text-[13px] leading-snug text-brand-700">
+              <div className="space-y-3 text-base leading-snug text-brand-700">
                 {(dimensionParts.width ||
                   dimensionParts.height ||
                   dimensionParts.dimensionsFallback) && (
-                  <div className="space-y-1">
-                    <div className="font-bold text-brand-800">Wymiary:</div>
+                  <div className="leading-snug text-brand-700">
+                    <span className="font-bold text-brand-800">Wymiary:</span>{" "}
                     {dimensionParts.dimensionsFallback &&
-                      !dimensionParts.width &&
-                      !dimensionParts.height && (
-                        <div>{dimensionParts.dimensionsFallback}</div>
-                      )}
-                    {dimensionParts.width && (
-                      <div>
-                        <span className="font-bold">Szerokość:</span> {dimensionParts.width}
-                      </div>
-                    )}
-                    {dimensionParts.height && (
-                      <div>
-                        <span className="font-bold">Wysokość:</span> {dimensionParts.height}
-                      </div>
-                    )}
+                    !dimensionParts.width &&
+                    !dimensionParts.height
+                      ? dimensionParts.dimensionsFallback
+                      : dimensionsWxHLine}
                   </div>
                 )}
                 {dimensionParts.thickness && (
@@ -224,7 +216,7 @@ export async function ProductPageLayout({
             {/* Configurator header */}
             <div className="flex items-center gap-4 pt-3 pb-1">
               <span className="h-px flex-1 bg-brand-300" />
-              <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.2em] text-brand-700">
+              <span className="whitespace-nowrap text-xs font-bold uppercase tracking-[0.2em] text-brand-700 sm:text-sm">
                 Skonfiguruj swój produkt:
               </span>
               <span className="h-px flex-1 bg-brand-300" />
@@ -260,12 +252,12 @@ export async function ProductPageLayout({
             {/* Inline delivery info */}
             <div className="mt-6">
               <div className="bg-brand-100 p-5 lg:p-6 space-y-4">
-                <h2 className="font-display text-base font-normal uppercase tracking-wider text-brand-800">
+                <h2 className="font-display text-lg font-normal uppercase tracking-wider text-brand-800">
                   Czas i koszt dostawy
                 </h2>
-                <div className="space-y-3 text-[13px] leading-relaxed text-brand-700">
+                <div className="space-y-3 text-base leading-relaxed text-brand-700">
                   <div>
-                    <h3 className="text-[12px] font-bold uppercase tracking-wider text-brand-800">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-brand-800">
                       Sposoby dostawy
                     </h3>
                     <p className="mt-1">
@@ -275,7 +267,7 @@ export async function ProductPageLayout({
                     </p>
                   </div>
                   <div>
-                    <h3 className="text-[12px] font-bold uppercase tracking-wider text-brand-800">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-brand-800">
                       Koszty dostawy
                     </h3>
                     <p className="mt-1">
@@ -283,7 +275,7 @@ export async function ProductPageLayout({
                     </p>
                   </div>
                   <div>
-                    <h3 className="text-[12px] font-bold uppercase tracking-wider text-brand-800">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-brand-800">
                       Czas oczekiwania
                     </h3>
                     <p className="mt-1">
@@ -312,7 +304,7 @@ export async function ProductPageLayout({
       {crossSellProducts.length > 0 && (
         <section className="border-t border-brand-100 bg-white">
           <div className="container mx-auto max-w-7xl px-4 py-10 lg:py-14">
-            <h2 className="mb-8 text-center font-display text-xl tracking-widest text-brand-800">
+            <h2 className="mb-8 text-center font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
               Może Ci się spodobać
             </h2>
             <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
@@ -347,7 +339,7 @@ export async function ProductPageLayout({
       {faqs.length > 0 && (
         <section className="border-t border-brand-100 bg-brand-50">
           <div className="container mx-auto max-w-3xl px-4 py-10 lg:py-14">
-            <h2 className="mb-8 text-center font-display text-xl tracking-widest text-brand-800">
+            <h2 className="mb-8 text-center font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
               Często zadawane pytania
             </h2>
             <div className="space-y-4">
@@ -356,13 +348,13 @@ export async function ProductPageLayout({
                   key={faq._id}
                   className="group rounded-xl bg-white p-5 shadow-sm"
                 >
-                  <summary className="flex cursor-pointer items-center justify-between text-sm font-medium text-brand-800">
+                  <summary className="flex cursor-pointer items-center justify-between text-base font-medium text-brand-800">
                     {faq.question}
                     <span className="ml-2 text-brand-400 transition-transform group-open:rotate-45">
                       +
                     </span>
                   </summary>
-                  <p className="mt-3 text-sm leading-relaxed text-brand-600">
+                  <p className="mt-3 text-base leading-relaxed text-brand-600">
                     {faq.answer}
                   </p>
                 </details>

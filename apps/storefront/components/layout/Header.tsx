@@ -30,6 +30,10 @@ const NAV_RIGHT = [
 
 const ALL_LINKS = [...NAV_LEFT, ...NAV_RIGHT];
 
+/** Jedna stała klasy (jawny 14px = text-sm) — ta sama w SSR i kliencie; unika hydratacji przy mieszanym cache .next. */
+const NAV_LINK_CLASS =
+  "text-[14px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors";
+
 export function Header() {
   const { itemCount, openCart } = useCart();
   const [isMobileNavOpen, setMobileNavOpen] = useState(false);
@@ -59,7 +63,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-[13px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors"
+                  className={NAV_LINK_CLASS}
                 >
                   {link.label}
                 </Link>
@@ -88,7 +92,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-[13px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors"
+                  className={NAV_LINK_CLASS}
                 >
                   {link.label}
                 </Link>

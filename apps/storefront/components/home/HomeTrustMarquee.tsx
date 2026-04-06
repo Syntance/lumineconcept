@@ -48,7 +48,7 @@ export async function HomeTrustMarquee() {
 
   return (
     <div className="bg-brand-50 pt-4 pb-2.5 overflow-hidden md:pt-5 md:pb-3">
-      <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-brand-400 mb-4">
+      <p className="text-center text-sm font-medium uppercase tracking-[0.25em] text-brand-400 mb-4">
         Zaufały nam
       </p>
 
@@ -71,7 +71,7 @@ export async function HomeTrustMarquee() {
                   className="h-8 w-auto object-contain"
                 />
               ) : (
-                <span className="text-sm font-medium uppercase tracking-[0.15em] text-brand-600 whitespace-nowrap">
+                <span className="text-base font-medium uppercase tracking-[0.15em] text-brand-600 whitespace-nowrap">
                   {salon.name}
                 </span>
               )}
