@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { cloudinaryLoader } from "@/lib/cloudinary/utils";
+import { cn } from "@/lib/utils";
 import { CloudinaryImage } from "../common/CloudinaryImage";
 
 function GalleryMainImage({ url, alt }: { url: string; alt: string }) {
@@ -104,7 +105,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
 
   if (images.length === 0) {
     return (
-      <div className="aspect-square rounded-lg bg-brand-50 flex items-center justify-center">
+      <div className="aspect-square bg-brand-100 flex items-center justify-center">
         <span className="text-brand-300">Brak zdjęć</span>
       </div>
     );
@@ -113,97 +114,77 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
   const selectedImage = images[selectedIndex];
 
   return (
-    <div className="flex gap-4">
-      {/* Vertical thumbnails — desktop */}
-      {images.length > 1 && (
-        <div
-          className="hidden lg:flex flex-col gap-2 overflow-y-auto max-h-[700px] shrink-0"
-          role="tablist"
-          aria-label="Galeria produktu"
-        >
-          {images.map((image, index) => (
-            <button
-              key={image.id}
-              type="button"
-              onClick={() => goTo(index)}
-              className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-md border-2 transition-colors ${
-                index === selectedIndex
-                  ? "border-accent"
-                  : "border-transparent hover:border-brand-200"
-              }`}
-              role="tab"
-              aria-selected={index === selectedIndex}
-              aria-label={`Zdjęcie ${index + 1} z ${images.length}`}
-            >
-              <CloudinaryImage
-                publicId={image.url}
-                alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
-                width={80}
-                height={80}
-                className="object-cover"
-              />
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="flex-1 space-y-3">
-        {/* Main image with zoom + swipe */}
-        <div
-          ref={mainRef}
-          className={`relative aspect-[10/11] overflow-hidden rounded-lg bg-brand-50 ${
-            zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
-          }`}
-          onClick={handleMainClick}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={() => zoomed && setZoomed(false)}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div
-            className="relative h-full w-full transition-transform duration-200"
-            style={
-              zoomed
-                ? {
-                    transform: "scale(2)",
-                    transformOrigin: `${panOrigin.x}% ${panOrigin.y}%`,
-                  }
-                : undefined
-            }
-          >
-            <GalleryMainImage
-              url={selectedImage.url}
-              alt={selectedImage.alt || productTitle}
+    <div className="relative isolate w-full overflow-visible pb-3 pr-4">
+      <div className="relative z-10 flex flex-col gap-3 lg:flex-row-reverse lg:items-start lg:gap-4">
+        {/* Główne zdjęcie — na mobile na górze, na lg po prawej (flex-row-reverse) */}
+        <div className="relative min-w-0 flex-1">
+          <div className="relative w-full overflow-visible">
+            <div
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute -z-10 bg-brand-100 top-[20%] -right-4 -bottom-4 sm:-right-5 sm:-bottom-5",
+                /* Do lewej krawędzi strony: margines max-w-7xl + padding kontenera (+ na lg miniatury + gap) */
+                "left-[calc(-1*(max(0px,(100vw-80rem)/2)+1rem))]",
+                images.length > 1
+                  ? "lg:left-[calc(-1*(max(0px,(100vw-80rem)/2)+2rem+5.25rem+1rem))]"
+                  : "lg:left-[calc(-1*(max(0px,(100vw-80rem)/2)+2rem))]",
+              )}
             />
-          </div>
-          {/* Watermark */}
-          <img
-            src="/images/watermark.png"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute right-4 -top-0.5 h-32 w-auto select-none opacity-100"
-            style={{ filter: "brightness(0) invert(1)" }}
-            draggable={false}
-          />
-          {/* Dot indicators mobile */}
-          {images.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 lg:hidden">
-              {images.map((_, i) => (
-                <span
-                  key={i}
-                  className={`block h-1.5 rounded-full transition-all ${
-                    i === selectedIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"
-                  }`}
+            <div
+              ref={mainRef}
+              className={`relative aspect-10/11 overflow-hidden ${
+                zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
+              }`}
+              onClick={handleMainClick}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={() => zoomed && setZoomed(false)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div
+                className="relative h-full w-full transition-transform duration-200"
+                style={
+                  zoomed
+                    ? {
+                        transform: "scale(2)",
+                        transformOrigin: `${panOrigin.x}% ${panOrigin.y}%`,
+                      }
+                    : undefined
+                }
+              >
+                <GalleryMainImage
+                  url={selectedImage.url}
+                  alt={selectedImage.alt || productTitle}
                 />
-              ))}
+              </div>
+              <img
+                src="/images/watermark.png"
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute right-4 -top-0.5 h-32 w-auto select-none opacity-100"
+                style={{ filter: "brightness(0) invert(1)" }}
+                draggable={false}
+              />
+              {images.length > 1 && (
+                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 lg:hidden">
+                  {images.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`block h-1.5 rounded-full transition-all ${
+                        i === selectedIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Horizontal thumbnails — mobile */}
+        {/* Miniatury: pasek poziomy na mobile; na lg kolumna po lewej, przewijalna w pionie */}
         {images.length > 1 && (
           <div
-            className="flex gap-2 overflow-x-auto pb-1 lg:hidden"
+            className="flex gap-3 overflow-x-auto pb-1 pt-1 lg:w-21 lg:shrink-0 lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0 lg:max-h-[min(85vh,calc(100vh-10rem))] lg:gap-2"
             role="tablist"
             aria-label="Galeria produktu"
           >
@@ -212,9 +193,9 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 key={image.id}
                 type="button"
                 onClick={() => goTo(index)}
-                className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors ${
+                className={`relative h-20 w-20 shrink-0 overflow-hidden border transition-colors lg:h-18 lg:w-18 ${
                   index === selectedIndex
-                    ? "border-accent"
+                    ? "border-brand-400"
                     : "border-transparent hover:border-brand-200"
                 }`}
                 role="tab"
@@ -224,8 +205,8 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 <CloudinaryImage
                   publicId={image.url}
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
-                  width={64}
-                  height={64}
+                  width={72}
+                  height={72}
                   className="object-cover"
                 />
               </button>

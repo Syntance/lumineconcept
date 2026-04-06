@@ -7,6 +7,7 @@ import {
   ProductConfigurator,
   type ColorCustomization,
 } from "@/components/product/ProductConfigurator";
+import type { UploadedFile } from "@/components/product/FileUploadSection";
 import {
   type TextFieldDef,
   parseTextFieldsFromMetadata,
@@ -23,10 +24,8 @@ import {
   buildMatDisabledSet,
   type GlobalConfigOption,
 } from "@/lib/products/global-config";
-import { PayPoPromo } from "@/components/marketing/PayPoPromo";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
-import { ShippingTimer } from "@/components/product/ShippingTimer";
 import { trackProductViewed } from "@/lib/analytics/events";
 
 interface CheckoutCallout {
@@ -156,6 +155,15 @@ export function ProductPageClient({
 
   const allLinksProvided = linksCount === 0 || links.slice(0, linksCount).every((l) => l.trim().length > 0);
 
+  const uploadsCount = useMemo(() => {
+    const raw = product.metadata?.uploads_count;
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return Math.min(n, 5);
+    return 5;
+  }, [product.metadata]);
+
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+
   const ctaRef = useRef<HTMLDivElement>(null);
   const [showSticky, setShowSticky] = useState(false);
   const [calloutAction, setCalloutAction] = useState<
@@ -168,9 +176,6 @@ export function ProductPageClient({
       return variant.options[key] === value;
     }),
   );
-
-  const priceForPayPo =
-    selectedVariant?.price ?? product.variants[0]?.price ?? 0;
 
   useEffect(() => {
     trackProductViewed({
@@ -250,8 +255,12 @@ export function ProductPageClient({
       if (url) meta[`link_${i + 1}`] = url;
     }
 
+    uploadedFiles.forEach((f, i) => {
+      if (f?.url) meta[`file_${i + 1}`] = f.url;
+    });
+
     return Object.keys(meta).length > 0 ? meta : undefined;
-  }, [textFields, textFieldValues, colorCustomizations, colorOptionTitles, selectedOptions, links, linksCount]);
+  }, [textFields, textFieldValues, colorCustomizations, colorOptionTitles, selectedOptions, links, linksCount, uploadedFiles]);
 
   const calloutEnabled =
     checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
@@ -263,15 +272,6 @@ export function ProductPageClient({
     }
     return false;
   }, [calloutEnabled]);
-
-  const handleBuyNow = () => {
-    if (!selectedVariant) return;
-    if (calloutEnabled) {
-      setCalloutAction("checkout");
-    } else {
-      router.push("/checkout");
-    }
-  };
 
   const qty = selectedVariant?.inventory_quantity ?? 0;
 
@@ -295,6 +295,9 @@ export function ProductPageClient({
           linksCount={linksCount}
           links={links}
           onLinksChange={setLinks}
+          uploadsCount={uploadsCount}
+          uploadedFiles={uploadedFiles}
+          onUploadedFilesChange={setUploadedFiles}
           globalColors={globalColors}
           colorOptionTitles={colorOptionTitles}
           colorMap={colorMap}
@@ -322,15 +325,10 @@ export function ProductPageClient({
           </p>
         )}
 
-        <div className="space-y-3">
-          <PayPoPromo price={priceForPayPo} />
-          <ShippingTimer />
-        </div>
-
-        <div ref={ctaRef} className="space-y-3">
+        <div ref={ctaRef} className="space-y-4">
           {showValidationCallout && (
             <div
-              className="flex gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+              className="flex gap-3 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
               role="status"
             >
               <AlertCircle
@@ -369,20 +367,6 @@ export function ProductPageClient({
             onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
             metadata={buildMetadata()}
           />
-          <button
-            type="button"
-            onClick={handleBuyNow}
-            disabled={
-              !selectedVariant ||
-              qty === 0 ||
-              !allLinksProvided ||
-              !allTextFieldsValid ||
-              !allColorChoicesComplete
-            }
-            className="w-full rounded-md border border-brand-300 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Kup teraz
-          </button>
         </div>
       </div>
 

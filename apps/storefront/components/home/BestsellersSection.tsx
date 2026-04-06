@@ -3,7 +3,6 @@ import Image from "next/image";
 import { getProductsByTag } from "@/lib/medusa/products";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
-import { getProductDimensionsLabel } from "@/lib/products/dimensions";
 
 export async function BestsellersSection() {
   let products: Awaited<ReturnType<typeof getProductsByTag>> = [];
@@ -23,8 +22,8 @@ export async function BestsellersSection() {
       <div className="bg-white pt-4 pb-0 md:pt-5">
         <div className="container mx-auto flex justify-center px-4">
           {/* Szerokość ~28% szerokości bloku tytułu (max ~17rem ≈ słowo „Bestsellery” w display) */}
-          <div className="mx-auto flex w-full max-w-[17rem] justify-center">
-            <div className="relative aspect-[421/396] w-[42%] min-w-[3.9375rem] max-w-[7.5rem]">
+          <div className="mx-auto flex w-full max-w-68 justify-center">
+            <div className="relative aspect-421/396 w-[42%] min-w-15.75 max-w-30">
               {/* Krem #EEE8E0 od połowy wysokości sygnetu w dół (pełna szerokość ekranu) */}
               <div
                 className="pointer-events-none absolute left-1/2 top-1/2 bottom-0 z-0 w-screen -translate-x-1/2 bg-brand-50"
@@ -47,7 +46,7 @@ export async function BestsellersSection() {
       <div className="bg-brand-50 pt-3 pb-10 md:pt-4 lg:pt-4 lg:pb-10">
         <div className="container mx-auto px-4">
         <div className="text-center mb-10 lg:mb-12">
-          <h2 className="font-display text-2xl tracking-[0.1em] text-brand-800 lg:text-3xl">
+          <h2 className="font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
             Bestsellery
           </h2>
           <div className="mt-3 mx-auto h-px w-12 bg-accent" />
@@ -65,13 +64,6 @@ export async function BestsellersSection() {
             const sharpCorners = index === 1 || index === 3;
             const price =
               product.variants?.[0]?.calculated_price?.calculated_amount ?? 0;
-            const v0 = product.variants?.[0] as
-              | { metadata?: Record<string, unknown> }
-              | undefined;
-            const dimensionsLabel = getProductDimensionsLabel(
-              (product.metadata ?? undefined) as Record<string, unknown> | undefined,
-              v0?.metadata,
-            );
             return (
               <Link
                 key={product.handle}
@@ -92,16 +84,11 @@ export async function BestsellersSection() {
                     imageAreaClassName="bg-white"
                   />
                 </div>
-                <p className="text-center text-base font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">
+                <p className="text-center text-lg font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">
                   {product.title}
                 </p>
-                {dimensionsLabel && (
-                  <p className="text-center text-xs text-brand-500 line-clamp-2 px-0.5">
-                    <span className="text-brand-400">Wymiary:</span> {dimensionsLabel}
-                  </p>
-                )}
                 <div className="flex w-full justify-center">
-                  <PriceDisplay amount={price} />
+                  <PriceDisplay amount={price} size="lg" />
                 </div>
               </Link>
             );
@@ -112,7 +99,7 @@ export async function BestsellersSection() {
         <div className="mt-10 text-center">
           <Link
             href="/sklep"
-            className="text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
+            className="text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
           >
             Zobacz cały sklep &rarr;
           </Link>

@@ -113,7 +113,7 @@ export function ColorStepPanel({
             </svg>
           )}
         </button>
-        <span className="max-w-[4.5rem] text-center text-[9px] leading-tight text-brand-500">
+        <span className="max-w-18 text-center text-[9px] leading-tight text-brand-500">
           {value}
         </span>
       </div>
@@ -121,37 +121,20 @@ export function ColorStepPanel({
   };
 
   return (
-    <div className="rounded-xl border border-[#AF7C61]/50 overflow-hidden">
+    <div>
+      {/* Label + underline trigger — like the reference */}
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-brand-50"
+        className="flex w-full items-center gap-3 py-1.5 text-left"
         aria-expanded={expanded}
       >
-        <span
-          className="h-6 w-6 shrink-0 rounded-full border border-[#AF7C61]/50"
-          style={{
-            backgroundColor:
-              selectedHex === "transparent" ? undefined : selectedHex,
-          }}
-        >
-          {selectedHex === "transparent" && (
-            <span className="flex h-full w-full items-center justify-center rounded-full border border-dashed border-[#AF7C61]/50 text-[8px] text-[#AF7C61]">
-              ∅
-            </span>
-          )}
+        <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.15em] text-brand-700">
+          {option.title}
         </span>
-
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-brand-700">{option.title}</p>
-          <p className="truncate text-xs text-[#AF7C61]">
-            {displayName}
-            {displaySuffix}
-          </p>
-        </div>
-
+        <span className="h-px flex-1 bg-brand-300" />
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-brand-400 transition-transform duration-200 ${
+          className={`h-3.5 w-3.5 shrink-0 text-brand-500 transition-transform duration-200 ${
             expanded ? "rotate-180" : ""
           }`}
         />
@@ -163,7 +146,7 @@ export function ColorStepPanel({
         }`}
       >
         <div className="overflow-hidden">
-          <div className="space-y-3 border-t border-[#AF7C61]/50 px-4 pb-4 pt-3">
+          <div className="space-y-3 bg-brand-100 px-3 pb-4 pt-3 mt-1">
             {standardColors.length > 0 && (
               <div>
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">

@@ -37,10 +37,10 @@ export function SocialProofSection() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 border border-brand-100">
                   <Icon className="h-5 w-5 text-accent-dark" />
                 </div>
-                <p className="mt-3 text-sm font-medium uppercase tracking-widest text-brand-800">
+                <p className="mt-3 text-base font-medium uppercase tracking-widest text-brand-800">
                   {item.title}
                 </p>
-                <p className="mt-1 text-[13px] text-brand-500 leading-relaxed">
+                <p className="mt-1 text-sm text-brand-500 leading-relaxed">
                   {item.desc}
                 </p>
               </div>
@@ -55,14 +55,14 @@ export function SocialProofSection() {
               <Star key={i} className="h-5 w-5 fill-accent text-accent" />
             ))}
           </div>
-          <p className="font-display text-[1.375rem] text-brand-800 leading-relaxed lg:text-[1.625rem]">
+          <p className="font-display text-[1.5rem] text-brand-800 leading-relaxed lg:text-[1.75rem]">
             &ldquo;Zamówiłam logo 3D — klientki nie przestają robić zdjęć&rdquo;
           </p>
           <footer className="mt-5">
-            <p className="text-sm font-medium uppercase tracking-[0.15em] text-brand-700">
+            <p className="text-base font-medium uppercase tracking-[0.15em] text-brand-700">
               Ania
             </p>
-            <p className="text-sm text-brand-500">salon fryzjerski, Kraków</p>
+            <p className="text-base text-brand-500">salon fryzjerski, Kraków</p>
           </footer>
         </blockquote>
 
@@ -70,7 +70,7 @@ export function SocialProofSection() {
         <div className="mt-12 text-center">
           <Link
             href="/dlaczego-lumine"
-            className="text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
+            className="text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
           >
             Zobacz opinie i porównanie &rarr;
           </Link>

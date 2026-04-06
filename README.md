@@ -77,7 +77,7 @@ pnpm dev
 - **Medusa Backend:** http://localhost:9000
 - **Medusa Admin:** http://localhost:7001
 - **Meilisearch:** http://localhost:7700
-- **Sanity Studio:** `cd sanity && pnpm dev`
+- **Sanity Studio:** http://localhost:3335 (`pnpm dev` z roota uruchamia studio na tym porcie)
 
 ## Integracje
 

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BreadcrumbItem {
@@ -31,10 +30,10 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <nav aria-label="Breadcrumb" className={cn("mb-6", className)}>
-        <ol className="flex items-center gap-1 text-sm text-brand-500">
+        <ol className="flex flex-wrap items-center gap-1.5 text-[11px] uppercase tracking-wider text-brand-500">
           {items.map((item, index) => (
-            <li key={`${index}-${item.href ?? item.label}`} className="flex items-center gap-1">
-              {index > 0 && <ChevronRight className="h-3.5 w-3.5" />}
+            <li key={`${index}-${item.href ?? item.label}`} className="flex items-center gap-1.5">
+              {index > 0 && <span className="text-brand-300">/</span>}
               {item.href && index < items.length - 1 ? (
                 <Link
                   href={item.href}
@@ -43,7 +42,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
                   {item.label}
                 </Link>
               ) : (
-                <span className={index === items.length - 1 ? "text-brand-900 font-medium" : ""}>
+                <span className={index === items.length - 1 ? "text-brand-800" : ""}>
                   {item.label}
                 </span>
               )}

@@ -48,7 +48,7 @@ export async function HomeTrustMarquee() {
 
   return (
     <div className="bg-brand-50 pt-4 pb-2.5 overflow-hidden md:pt-5 md:pb-3">
-      <p className="text-center text-[10px] font-medium uppercase tracking-[0.25em] text-brand-400 mb-4">
+      <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-brand-400 mb-4">
         Zaufały nam
       </p>
 
@@ -71,7 +71,7 @@ export async function HomeTrustMarquee() {
                   className="h-8 w-auto object-contain"
                 />
               ) : (
-                <span className="text-[13.3px] font-medium uppercase tracking-[0.15em] text-brand-600 whitespace-nowrap">
+                <span className="text-sm font-medium uppercase tracking-[0.15em] text-brand-600 whitespace-nowrap">
                   {salon.name}
                 </span>
               )}
@@ -80,7 +80,7 @@ export async function HomeTrustMarquee() {
         </div>
       </div>
 
-      <p className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs text-brand-400">
+      <p className="mt-3 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-sm text-brand-400">
         <Instagram className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden />
         <span className="font-medium text-brand-600">25 000+ obserwujących</span>
         <span className="mx-1.5 text-brand-300">&middot;</span>

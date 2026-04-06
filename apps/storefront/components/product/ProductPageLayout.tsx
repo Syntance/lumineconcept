@@ -6,14 +6,14 @@ import { PRODUCT_FAQ_QUERY, SITE_SETTINGS_QUERY } from "@/lib/sanity/queries";
 import type { ProductFaq, SiteSettings, CheckoutCallout } from "@/lib/sanity/types";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { TrustBadges } from "@/components/marketing/TrustBadges";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { collectProductImages } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
-import { getProductDimensionsLabel } from "@/lib/products/dimensions";
+import { getProductDimensionParts } from "@/lib/products/dimensions";
+import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
 import {
   getGlobalProductConfig,
   type GlobalConfigOption,
@@ -97,7 +97,7 @@ export async function ProductPageLayout({
   }>;
   const metadata = (product.metadata ?? {}) as Record<string, unknown>;
   const firstVariant = variants[0];
-  const dimensionsLabel = getProductDimensionsLabel(
+  const dimensionParts = getProductDimensionParts(
     metadata,
     firstVariant?.metadata ?? null,
   );
@@ -139,7 +139,7 @@ export async function ProductPageLayout({
       : null;
 
   return (
-    <>
+    <div>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -147,44 +147,88 @@ export async function ProductPageLayout({
         }}
       />
 
-      <div className="container mx-auto max-w-7xl px-4 py-8">
+      {/* Breadcrumbs on normal page bg */}
+      <div className="mx-auto max-w-7xl px-4 pt-6 lg:px-8 lg:pt-8">
         <Breadcrumbs
           items={[
-            { label: "Strona główna", href: "/" },
-            { label: "Sklep", href: "/sklep" },
+            { label: "Home page", href: "/" },
             { label: categoryLabel, href: categoryHref },
             { label: product.title },
           ]}
         />
+      </div>
 
-        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-stretch">
+      {/* Tło sekcji: brand-50 (#F5F1EC) — między białym a #EEE8E0 z brandbooku */}
+      <div className="bg-brand-50">
+        <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
+        <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:gap-10">
+          {/* Galeria: sticky — lewa kolumna rozciąga się do wysokości opisu, zdjęcie „przypięte” przy scrollu */}
           <div className="min-w-0">
-            <div
-              className="lg:sticky lg:z-10 lg:self-start lg:top-[calc(var(--header-sticky-height)+var(--product-gallery-sticky-gap)+env(safe-area-inset-top,0px))]"
-            >
-            <ProductGallery
-              images={images.map((img) => ({
-                id: img.id,
-                url: img.url,
-                alt: img.alt ?? product.title,
-              }))}
-              productTitle={product.title}
-            />
+            <div className="lg:sticky lg:z-10 lg:top-[calc(var(--header-sticky-height)+var(--product-gallery-sticky-gap)+env(safe-area-inset-top,0px))]">
+              <ProductGallery
+                images={images.map((img) => ({
+                  id: img.id,
+                  url: img.url,
+                  alt: img.alt ?? product.title,
+                }))}
+                productTitle={product.title}
+              />
             </div>
           </div>
 
-          <div className="space-y-6">
-            <h1 className="font-display text-3xl tracking-wide text-brand-800 lg:text-4xl">
+          {/* Product info */}
+          <div className="space-y-4">
+            <h1 className="font-display text-[2rem] font-normal uppercase tracking-wider text-brand-800 lg:text-[2.5rem] lg:leading-tight">
               {product.title}
             </h1>
 
-            {dimensionsLabel && (
-              <p className="text-sm text-brand-600">
-                <span className="text-brand-500">Wymiary:</span> {dimensionsLabel}
-              </p>
+            {/* Wymiary → Materiał → cena (opis pod tytułem usunięty — opis zostaje w zakładce „Opis”) */}
+            {(dimensionParts.width ||
+              dimensionParts.height ||
+              dimensionParts.dimensionsFallback ||
+              dimensionParts.thickness) && (
+              <div className="space-y-3 text-[13px] leading-snug text-brand-700">
+                {(dimensionParts.width ||
+                  dimensionParts.height ||
+                  dimensionParts.dimensionsFallback) && (
+                  <div className="space-y-1">
+                    <div className="font-bold text-brand-800">Wymiary:</div>
+                    {dimensionParts.dimensionsFallback &&
+                      !dimensionParts.width &&
+                      !dimensionParts.height && (
+                        <div>{dimensionParts.dimensionsFallback}</div>
+                      )}
+                    {dimensionParts.width && (
+                      <div>
+                        <span className="font-bold">Szerokość:</span> {dimensionParts.width}
+                      </div>
+                    )}
+                    {dimensionParts.height && (
+                      <div>
+                        <span className="font-bold">Wysokość:</span> {dimensionParts.height}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {dimensionParts.thickness && (
+                  <div>
+                    <span className="font-bold">Materiał:</span> {PDP_MATERIAL_ACRYLIC}{" "}
+                    {dimensionParts.thickness} grubości
+                  </div>
+                )}
+              </div>
             )}
 
-            <PriceDisplay amount={price} size="lg" fontSizePx={28} />
+            <PriceDisplay amount={price} variant="badge" />
+
+            {/* Configurator header */}
+            <div className="flex items-center gap-4 pt-3 pb-1">
+              <span className="h-px flex-1 bg-brand-300" />
+              <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.2em] text-brand-700">
+                Skonfiguruj swój produkt:
+              </span>
+              <span className="h-px flex-1 bg-brand-300" />
+            </div>
 
             <ProductPageClient
               product={{
@@ -213,8 +257,44 @@ export async function ProductPageLayout({
               globalColors={productConfig.colors}
             />
 
-            <TrustBadges />
+            {/* Inline delivery info */}
+            <div className="mt-6">
+              <div className="bg-brand-100 p-5 lg:p-6 space-y-4">
+                <h2 className="font-display text-base font-normal uppercase tracking-wider text-brand-800">
+                  Czas i koszt dostawy
+                </h2>
+                <div className="space-y-3 text-[13px] leading-relaxed text-brand-700">
+                  <div>
+                    <h3 className="text-[12px] font-bold uppercase tracking-wider text-brand-800">
+                      Sposoby dostawy
+                    </h3>
+                    <p className="mt-1">
+                      Klient może skorzystać z następujących metod dostawy:<br />
+                      Kurier InPost – przesyłka kurierska dostarczona pod wskazany adres, koszt od 20 zł<br />
+                      Paczkomat InPost – przesyłka do odbioru w wybranym punkcie paczkomatowym, koszt od 15 zł
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-[12px] font-bold uppercase tracking-wider text-brand-800">
+                      Koszty dostawy
+                    </h3>
+                    <p className="mt-1">
+                      Całkowity koszt dostawy zamówienia będzie podany po dodaniu produktów do koszyka i wybraniu preferowanej formy dostawy i metody płatności – w podsumowaniu będzie wskazana dokładna wartość do zapłaty.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-[12px] font-bold uppercase tracking-wider text-brand-800">
+                      Czas oczekiwania
+                    </h3>
+                    <p className="mt-1">
+                      Czas realizacji jest podany w opisie każdego produktu.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -291,7 +371,7 @@ export async function ProductPageLayout({
           </div>
         </section>
       )}
-    </>
+    </div>
   );
 }
 

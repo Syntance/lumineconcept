@@ -162,7 +162,7 @@ export function ProductCard({
               </AddToCartButton>
             </div>
           ) : (
-            <div className="relative shrink-0 flex items-center justify-center rounded-md border border-[#EEE8E0] bg-white py-2 px-3 transition-all duration-200 group-hover:bg-[#EEE8E0]">
+            <div className="relative shrink-0 flex items-center justify-center rounded-md border border-brand-100 bg-white py-2 px-3 transition-all duration-200 group-hover:bg-brand-100">
               <span className="transition-opacity duration-200 group-hover:opacity-0">
                 <PriceDisplay
                   amount={price}

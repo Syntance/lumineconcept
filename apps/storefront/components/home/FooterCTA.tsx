@@ -40,7 +40,7 @@ export async function FooterCTA() {
         <div className="absolute inset-0 bg-brand-800/75" />
 
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h2 className="font-display text-3xl text-white tracking-[0.08em] lg:text-4xl">
+          <h2 className="font-display text-4xl text-white tracking-[0.08em] lg:text-5xl">
             Gotowa na branding, który wyróżni Twój salon?
           </h2>
           <div className="mt-4 mx-auto h-px w-12 bg-accent-light" />
@@ -48,13 +48,13 @@ export async function FooterCTA() {
           <div className="mt-10 flex justify-center">
             <Link
               href="/sklep"
-              className="inline-flex items-center justify-center border border-white px-10 py-3.5 text-[13.2px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900"
+              className="inline-flex items-center justify-center border border-white px-10 py-3.5 text-[14.2px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-brand-900"
             >
               Zobacz sklep &rarr;
             </Link>
           </div>
 
-          <p className="mt-8 text-base text-brand-400">
+          <p className="mt-8 text-lg text-brand-400">
             Wolisz napisać?{" "}
             <a
               href="mailto:kontakt@lumineconcept.pl"
@@ -77,7 +77,7 @@ export async function FooterCTA() {
 
       <section className="py-14 lg:py-20 bg-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
+          <h2 className="font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
             Jesteśmy na Instagramie
           </h2>
           <div className="mt-3 mx-auto h-px w-12 bg-accent" />
@@ -123,7 +123,7 @@ export async function FooterCTA() {
             href={IG_PROFILE}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center gap-2 text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
+            className="mt-6 inline-flex items-center gap-2 text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
           >
             Zobacz nasze realizacje &rarr;
           </a>

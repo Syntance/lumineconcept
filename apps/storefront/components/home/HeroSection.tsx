@@ -20,7 +20,7 @@ export function HeroSection() {
       {/* Łukowy cień */}
       <div
         aria-hidden
-        className="pointer-events-none absolute top-0 z-[5] backdrop-blur-[8px]"
+        className="pointer-events-none absolute top-0 z-5 backdrop-blur-sm"
         style={{
           left: "calc(5% + 60px)",
           width: "min(350px, 35%)",
@@ -44,12 +44,10 @@ export function HeroSection() {
           </h1>
 
           <p className="mt-4 font-sans font-medium text-[1.175rem] uppercase tracking-[0.15em] text-white/80 leading-tight sm:text-[1.4rem] lg:text-[1.7rem]">
-            Twój salon zasługuje
-            <br />
-            na zapamiętywalny branding
+            Wyróżnij swój salon
           </p>
 
-          <p className="mt-4 font-sans text-sm tracking-[0.1em] text-white/80 sm:text-base">
+          <p className="mt-4 font-sans text-sm tracking-widest text-white/80 sm:text-base">
             Logo 3D, cenniki i oznaczenia z plexi
           </p>
 
