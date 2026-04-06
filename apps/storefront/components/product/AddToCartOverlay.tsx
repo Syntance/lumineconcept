@@ -2,6 +2,7 @@
 
 import { useCallback, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import type { GlobalConfigOption } from "@/lib/products/global-config";
 import { MiniConfiguratorModal } from "./MiniConfiguratorModal";
 
 interface AddToCartButtonProps {
@@ -13,6 +14,8 @@ interface AddToCartButtonProps {
   options?: Record<string, string[]>;
   linksCount?: number;
   href?: string;
+  metadata?: Record<string, unknown>;
+  globalColors?: GlobalConfigOption[];
   children: ReactNode;
 }
 
@@ -25,6 +28,8 @@ export function AddToCartButton({
   options,
   linksCount,
   href,
+  metadata,
+  globalColors,
   children,
 }: AddToCartButtonProps) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -66,6 +71,8 @@ export function AddToCartButton({
             options={options ?? {}}
             linksCount={linksCount ?? 0}
             href={href}
+            metadata={metadata}
+            globalColors={globalColors}
           />,
           document.body,
         )}
