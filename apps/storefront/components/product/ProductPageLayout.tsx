@@ -149,7 +149,7 @@ export async function ProductPageLayout({
       />
 
       {/* Breadcrumbs — ten sam kontener co na /sklep (max-w-4xl + container) */}
-      <div className="container mx-auto max-w-4xl px-4 pt-6 lg:pt-8">
+      <div className="container mx-auto max-w-4xl px-4 pt-10 pb-5 lg:pt-12 lg:pb-6">
         <Breadcrumbs
           className="mb-0"
           items={[
