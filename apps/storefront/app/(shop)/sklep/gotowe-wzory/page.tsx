@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
+import type { LucideIcon } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
 import { sanityClient } from "@/lib/sanity/client";
 import { SITE_SETTINGS_QUERY, TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
@@ -11,6 +13,14 @@ import { getGlobalProductConfig } from "@/lib/products/global-config";
 import { ShopGridClient } from "./client";
 
 const INITIAL_PAGE_SIZE = 24;
+
+const PURCHASE_STEPS: readonly { label: string; Icon?: LucideIcon }[] = [
+  { label: "Personalizacja", Icon: Sparkles },
+  { label: "💳 Płatność" },
+  { label: "📐 Przygotowujemy projekt" },
+  { label: "✅ Twoja akceptacja" },
+  { label: "📦 Realizacja i wysyłka" },
+];
 
 export const metadata: Metadata = {
   title: "Gotowe wzory z plexi — cenniki, tabliczki, menu, QR | Lumine Concept",
@@ -104,27 +114,50 @@ export default async function GotoweWzoryPage({
     <>
       {/* Hero */}
       <section className="bg-brand-50 py-14 lg:py-20">
-        <div className="container mx-auto max-w-7xl px-4 text-center">
+        <div className="container mx-auto max-w-4xl px-4">
           <Breadcrumbs
+            className="mb-0"
             items={[
               { label: "Strona główna", href: "/" },
               { label: "Sklep", href: "/sklep" },
               { label: "Gotowe wzory" },
             ]}
           />
-          <h1 className="font-display text-3xl tracking-[0.06em] text-brand-800 lg:text-4xl">
-            Gotowe wzory z plexi — kup od ręki, realizacja ok. 10 dni roboczych
+        </div>
+        <div className="container mx-auto max-w-7xl px-4 pt-6 text-center lg:pt-8">
+          <h1 className="font-display text-4xl tracking-[0.06em] text-brand-800 lg:text-5xl">
+            Gotowe wzory z plexi
           </h1>
-          <p className="mt-4 mx-auto max-w-2xl text-brand-600 leading-relaxed">
-            Cenniki, tabliczki, oznaczenia, logo — gotowe wzory do Twojego salonu. Bez czekania na projekt.
+          <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-600 leading-relaxed">
+            Cenniki, tabliczki, oznaczenia, logo — spersonalizuj na własne potrzeby.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3 text-xs font-medium uppercase tracking-wider text-brand-500">
-            <span className="rounded-full border border-brand-200 px-4 py-1.5">Szybka wysyłka</span>
-            <span className="rounded-full border border-brand-200 px-4 py-1.5">Płatność online</span>
-            <span className="rounded-full border border-brand-200 px-4 py-1.5">
-              {trustBar?.realizations ?? "6 000+"} realizacji
-            </span>
-          </div>
+          <nav
+            aria-label="Etapy zakupu"
+            className="mt-8 flex flex-wrap items-center justify-center gap-x-1 gap-y-3 text-sm font-medium leading-snug text-brand-700 sm:text-base"
+          >
+            {PURCHASE_STEPS.map((step, i) => {
+              const StepIcon = step.Icon;
+              return (
+                <Fragment key={step.label}>
+                  {i > 0 && (
+                    <span className="mx-1.5 text-brand-400 lg:mx-2" aria-hidden>
+                      →
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    {StepIcon && (
+                      <StepIcon
+                        className="h-4 w-4 shrink-0 text-accent"
+                        strokeWidth={1.75}
+                        aria-hidden
+                      />
+                    )}
+                    {step.label}
+                  </span>
+                </Fragment>
+              );
+            })}
+          </nav>
         </div>
       </section>
 
@@ -148,7 +181,7 @@ export default async function GotoweWzoryPage({
       {/* Trust bar */}
       <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
         <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-brand-600">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-600">
             <span>📷 {trustBar?.followers ?? "25 000+"} obserwujących</span>
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
@@ -160,10 +193,10 @@ export default async function GotoweWzoryPage({
             <div className="mt-10 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
               {displayTestimonials.map((t) => (
                 <blockquote key={t._id} className="rounded-xl bg-white p-6 text-left shadow-sm">
-                  <p className="text-sm italic text-brand-700 leading-relaxed">
+                  <p className="text-base italic text-brand-700 leading-relaxed">
                     &ldquo;{t.quote}&rdquo;
                   </p>
-                  <footer className="mt-3 text-xs text-brand-500">
+                  <footer className="mt-3 text-sm text-brand-500">
                     — {t.name}{t.company ? `, ${t.company}` : ""}
                   </footer>
                 </blockquote>

@@ -40,7 +40,7 @@ export function SocialProofSection() {
                 <p className="mt-3 text-base font-medium uppercase tracking-widest text-brand-800">
                   {item.title}
                 </p>
-                <p className="mt-1 text-sm text-brand-500 leading-relaxed">
+                <p className="mt-1 text-base text-brand-500 leading-relaxed">
                   {item.desc}
                 </p>
               </div>

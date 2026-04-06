@@ -109,7 +109,7 @@ export default async function ShopHubPage() {
               className="pointer-events-none absolute left-1/2 top-0 z-0 h-full w-screen -translate-x-1/2 bg-[linear-gradient(to_bottom,white_0%,white_50%,var(--color-brand-100)_50%,var(--color-brand-100)_100%)]"
               aria-hidden
             />
-            <h1 className="relative z-10 mt-0 font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
+            <h1 className="relative z-10 mt-0 font-display text-4xl tracking-widest text-brand-800 lg:text-5xl">
               Sklep
             </h1>
           </div>
@@ -152,7 +152,7 @@ export default async function ShopHubPage() {
                     <div className="inline-block max-w-[min(100%,13rem)] transition-all duration-300 group-hover:rounded-md group-hover:px-1.5 group-hover:py-0.5 group-hover:bg-white/25 group-hover:backdrop-blur-sm">
                       <h2
                         className={cn(
-                          "text-center font-display text-xl tracking-wide text-brand-800 transition-colors duration-300 lg:text-2xl",
+                          "text-center font-display text-2xl tracking-wide text-brand-800 transition-colors duration-300 lg:text-3xl",
                           index === 0 && "group-hover:text-black",
                         )}
                       >
@@ -165,10 +165,10 @@ export default async function ShopHubPage() {
 
                   {/* Opis + CTA – blur przy CTA; mt-auto wyrównuje linki na dole kafelka */}
                   <div className="shop-category-body relative flex min-h-0 flex-1 flex-col items-center text-center transition-transform duration-700 ease-in-out group-hover:translate-y-6">
-                    <p className="w-full max-w-[min(100%,13rem)] shrink-0 text-sm leading-relaxed text-brand-400 transition-opacity duration-300 group-hover:opacity-0">
+                    <p className="w-full max-w-[min(100%,13rem)] shrink-0 text-base leading-relaxed text-brand-400 transition-opacity duration-300 group-hover:opacity-0">
                       {cat.description}
                     </p>
-                    <span className="mt-auto inline-flex w-fit max-w-full items-center justify-center gap-2 self-center whitespace-nowrap pt-4 text-xs font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:rounded-md group-hover:px-1 group-hover:py-0.5 group-hover:bg-white/25 group-hover:backdrop-blur-sm group-hover:text-brand-900">
+                    <span className="mt-auto inline-flex w-fit max-w-full items-center justify-center gap-2 self-center whitespace-nowrap pt-4 text-sm font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:rounded-md group-hover:px-1 group-hover:py-0.5 group-hover:bg-white/25 group-hover:backdrop-blur-sm group-hover:text-brand-900">
                       {cat.cta}
                       <span aria-hidden="true" className="shrink-0">
                         &rarr;
@@ -208,7 +208,7 @@ export default async function ShopHubPage() {
           <div className="bg-brand-50 pt-3 pb-10 md:pt-4 lg:pt-4 lg:pb-10">
             <div className="container mx-auto px-4">
               <div className="text-center mb-10 lg:mb-12">
-                <h2 className="font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
+                <h2 className="font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
                   Bestsellery
                 </h2>
                 <div className="mt-3 mx-auto h-px w-12 bg-accent" />
@@ -244,7 +244,7 @@ export default async function ShopHubPage() {
                           imageAreaClassName="bg-white"
                         />
                       </div>
-                      <p className="text-center text-base font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">
+                      <p className="text-center text-lg font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">
                         {product.title}
                       </p>
                       <div className="flex w-full justify-center">
@@ -258,7 +258,7 @@ export default async function ShopHubPage() {
               <div className="mt-10 text-center">
                 <Link
                   href="/sklep/gotowe-wzory"
-                  className="text-[13.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
+                  className="text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
                 >
                   Zobacz cały sklep &rarr;
                 </Link>
@@ -271,15 +271,15 @@ export default async function ShopHubPage() {
       {/* Custom CTA */}
       <section className="bg-white py-16 lg:py-20">
         <div className="container mx-auto max-w-2xl px-4 text-center">
-          <p className="font-display text-xl tracking-wide text-brand-800 lg:text-2xl">
+          <p className="font-display text-2xl tracking-wide text-brand-800 lg:text-3xl">
             Szukasz czegoś na zamówienie?
           </p>
-          <p className="mt-3 text-sm text-brand-500">
+          <p className="mt-3 text-base text-brand-500">
             Logo z własnym projektem, cennik pod wymiar — wycena w 24h
           </p>
           <Link
             href="/logo-3d/#formularz"
-            className="mt-6 inline-flex items-center justify-center rounded border border-brand-300 px-8 py-3 text-[11px] font-medium uppercase tracking-[0.2em] text-brand-700 transition-colors hover:bg-brand-50 hover:text-brand-900"
+            className="mt-6 inline-flex items-center justify-center rounded border border-brand-300 px-8 py-3 text-sm font-medium uppercase tracking-[0.2em] text-brand-700 transition-colors hover:bg-brand-50 hover:text-brand-900"
           >
             Zamów wycenę &rarr;
           </Link>
@@ -289,7 +289,7 @@ export default async function ShopHubPage() {
       {/* Trust bar */}
       <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
         <div className="container mx-auto max-w-4xl px-4 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px] text-brand-500">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-500">
             <span>{trustBar?.followers ?? "25 000+"} obserwujących</span>
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
@@ -301,10 +301,10 @@ export default async function ShopHubPage() {
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
               {displayTestimonials.map((t) => (
                 <blockquote key={t._id} className="text-center">
-                  <p className="text-sm italic leading-relaxed text-brand-600">
+                  <p className="text-base italic leading-relaxed text-brand-600">
                     &ldquo;{t.quote}&rdquo;
                   </p>
-                  <footer className="mt-2 text-xs text-brand-400">
+                  <footer className="mt-2 text-sm text-brand-400">
                     — {t.name}{t.company ? `, ${t.company}` : ""}
                   </footer>
                 </blockquote>
@@ -314,7 +314,7 @@ export default async function ShopHubPage() {
 
           <Link
             href="/dlaczego-lumine#opinie"
-            className="mt-8 inline-block text-[11px] font-medium uppercase tracking-[0.2em] text-brand-500 hover:text-brand-900 transition-colors"
+            className="mt-8 inline-block text-sm font-medium uppercase tracking-[0.2em] text-brand-500 hover:text-brand-900 transition-colors"
           >
             Więcej opinii &rarr;
           </Link>

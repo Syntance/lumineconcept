@@ -212,13 +212,13 @@ export function ShopGridClient({
 
         <div className="hidden lg:flex lg:flex-col">
           <div className="flex min-h-9 w-full items-center justify-between gap-4">
-            <p className="min-w-0 flex-1 text-sm leading-snug text-brand-600" aria-live="polite">
+            <p className="min-w-0 flex-1 text-base leading-snug text-brand-600" aria-live="polite">
               {countBlock}
             </p>
             <select
               value={filters.sort}
               onChange={(e) => handleFiltersChange({ ...filters, sort: e.target.value })}
-              className="h-9 shrink-0 rounded-md border border-brand-200 bg-white px-3 py-1.5 text-xs text-brand-700"
+              className="h-9 shrink-0 rounded-md border border-brand-200 bg-white px-3 py-1.5 text-sm text-brand-700"
               aria-label="Sortowanie"
             >
               {SORT_OPTIONS.map((opt) => (
@@ -249,7 +249,7 @@ export function ShopGridClient({
           onFiltersChange={handleFiltersChange}
         />
 
-        <p className="mt-4 text-sm text-brand-600 lg:hidden" aria-live="polite">
+        <p className="mt-4 text-base text-brand-600 lg:hidden" aria-live="polite">
           {countBlock}
         </p>
 
@@ -293,7 +293,7 @@ export function ShopGridClient({
                   type="button"
                   onClick={() => void loadMore()}
                   disabled={loadingMore}
-                  className="rounded-md border border-brand-200 bg-white px-6 py-2.5 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50 disabled:opacity-50"
+                  className="rounded-md border border-brand-200 bg-white px-6 py-2.5 text-base font-medium text-brand-800 transition-colors hover:bg-brand-50 disabled:opacity-50"
                 >
                   {loadingMore ? "Ładowanie…" : "Pokaż więcej"}
                 </button>
@@ -318,7 +318,7 @@ export function ShopGridClient({
                   priceMax: undefined,
                 })
               }
-              className="mt-3 text-sm text-accent underline underline-offset-2 hover:text-accent-dark"
+              className="mt-3 text-base text-accent underline underline-offset-2 hover:text-accent-dark"
             >
               Wyczyść filtry
             </button>

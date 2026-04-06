@@ -81,6 +81,32 @@ export interface ProductDimensionParts {
 }
 
 /**
+ * Jedna linia „szer × wys [jednostka]” (np. „23 × 25 cm”) zamiast osobnych etykiet.
+ * Gdy jednostki się różnią lub format nietypowy — łączy przez „ × ”.
+ */
+export function formatDimensionsWxH(
+  width: string | null,
+  height: string | null,
+): string | null {
+  if (width && height) {
+    const w = width.trim();
+    const h = height.trim();
+    const re = /^([\d\s,\.]+)\s*(cm|mm|m)\s*$/i;
+    const mw = w.match(re);
+    const mh = h.match(re);
+    if (mw && mh && mw[2].toLowerCase() === mh[2].toLowerCase()) {
+      const nw = mw[1].replace(/\s/g, "").replace(",", ".");
+      const nh = mh[1].replace(/\s/g, "").replace(",", ".");
+      return `${nw} × ${nh} ${mw[2]}`;
+    }
+    return `${w} × ${h}`;
+  }
+  if (width) return width.trim();
+  if (height) return height.trim();
+  return null;
+}
+
+/**
  * Wymiary pod PDP: osobno szerokość, wysokość, grubość — z metadata lub z parsowania `wymiary`.
  */
 export function getProductDimensionParts(

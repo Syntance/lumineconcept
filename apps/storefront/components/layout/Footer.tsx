@@ -35,14 +35,14 @@ export function Footer() {
                 className="h-8 w-auto brightness-0 invert"
               />
             </Link>
-            <p className="mt-4 text-sm text-brand-300 max-w-xs">
+            <p className="mt-4 text-base text-brand-300 max-w-xs">
               Produkty plexi i branding dla salonów beauty. Tworzymy z pasją, dostarczamy z precyzją.
             </p>
           </div>
 
           {Object.entries(FOOTER_LINKS).map(([title, links]) => (
             <div key={title}>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+              <h3 className="text-base font-semibold uppercase tracking-wider text-white">
                 {title}
               </h3>
               <ul className="mt-4 space-y-2">
@@ -50,7 +50,7 @@ export function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-brand-300 hover:text-white transition-colors"
+                      className="text-base text-brand-300 hover:text-white transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -62,7 +62,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t border-brand-700 pt-3 lg:mt-10 lg:pt-4">
-          <p className="text-center text-xs text-brand-400 lg:text-left">
+          <p className="text-center text-sm text-brand-400 lg:text-left">
             &copy; {new Date().getFullYear()} Lumine Concept. Wszelkie prawa zastrzeżone.
           </p>
         </div>
