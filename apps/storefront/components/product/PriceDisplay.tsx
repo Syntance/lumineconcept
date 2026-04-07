@@ -64,7 +64,7 @@ export function PriceDisplay({
       <span
         style={sizeStyle}
         className={cn(
-          "font-semibold",
+          "font-display font-semibold italic",
           sizeClass,
           hasDiscount ? "text-red-600" : "text-brand-800",
         )}

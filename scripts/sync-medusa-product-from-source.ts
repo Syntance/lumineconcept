@@ -308,7 +308,7 @@ function buildVariantCreatePayload(
   return {
     title: sourceVariant.title,
     sku: sourceVariant.sku ?? undefined,
-    manage_inventory: sourceVariant.manage_inventory ?? true,
+    manage_inventory: sourceVariant.manage_inventory ?? false,
     allow_backorder: sourceVariant.allow_backorder ?? false,
     metadata: sourceVariant.metadata ?? undefined,
     prices,

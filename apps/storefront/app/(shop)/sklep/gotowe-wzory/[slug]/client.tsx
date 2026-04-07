@@ -46,6 +46,8 @@ interface ProductPageClientProps {
       options: Record<string, string>;
       price: number;
       inventory_quantity: number;
+      /** false = bez śledzenia stanu (Medusa), zawsze można zamówić */
+      manage_inventory?: boolean;
     }>;
     metadata?: Record<string, unknown>;
     images?: Array<{ id: string; url: string; alt?: string }>;
@@ -273,7 +275,12 @@ export function ProductPageClient({
     return false;
   }, [calloutEnabled]);
 
-  const qty = selectedVariant?.inventory_quantity ?? 0;
+  /** Medusa: manage_inventory === true → limit ze stanu; false/undefined → na zamówienie (bez limitu ze sklepu) */
+  const tracksInventory = selectedVariant?.manage_inventory === true;
+  const stockQty = selectedVariant?.inventory_quantity ?? 0;
+  const availableToOrder =
+    !!selectedVariant && (!tracksInventory || stockQty > 0);
+  const maxOrderQty = !tracksInventory ? 99 : stockQty;
 
   const showValidationCallout =
     !allLinksProvided ||
@@ -306,19 +313,19 @@ export function ProductPageClient({
           matDisabledSet={matDisabledSet}
         />
 
-        {selectedVariant && qty > 5 && (
+        {selectedVariant && tracksInventory && stockQty > 5 && (
           <p className="flex items-center gap-1.5 text-sm text-green-700">
             <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
             W magazynie — realizacja ok. 10 dni roboczych
           </p>
         )}
-        {selectedVariant && qty > 0 && qty <= 5 && (
+        {selectedVariant && tracksInventory && stockQty > 0 && stockQty <= 5 && (
           <p className="flex items-center gap-1.5 text-sm text-orange-600 animate-pulse">
             <span className="inline-block h-2 w-2 rounded-full bg-orange-500" />
-            Ostatnie {qty} szt. w magazynie!
+            Ostatnie {stockQty} szt. w magazynie!
           </p>
         )}
-        {selectedVariant && qty === 0 && (
+        {selectedVariant && tracksInventory && stockQty === 0 && (
           <p className="flex items-center gap-1.5 text-sm text-red-600">
             <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
             Produkt chwilowo niedostępny
@@ -358,12 +365,12 @@ export function ProductPageClient({
             }}
             disabled={
               !selectedVariant ||
-              qty === 0 ||
+              !availableToOrder ||
               !allLinksProvided ||
               !allTextFieldsValid ||
               !allColorChoicesComplete
             }
-            maxQuantity={qty > 0 ? qty : undefined}
+            maxQuantity={maxOrderQty}
             onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
             metadata={buildMetadata()}
           />
@@ -389,7 +396,7 @@ export function ProductPageClient({
               }}
               disabled={
                 !selectedVariant ||
-                qty === 0 ||
+                !availableToOrder ||
                 !allLinksProvided ||
                 !allTextFieldsValid ||
                 !allColorChoicesComplete

@@ -74,7 +74,7 @@ export function AddToCartButton({
         type="button"
         onClick={handleAddToCart}
         disabled={disabled || !variantId || isAdding}
-        className="flex shrink-0 items-center justify-center gap-2 rounded-md bg-brand-800 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex shrink-0 items-center justify-center gap-2 rounded-md border border-brand-300 bg-brand-800 px-4 py-2.5 font-display text-xs font-semibold italic text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isAdding ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -86,33 +86,44 @@ export function AddToCartButton({
     );
   }
 
-  return (
-    <div className="flex items-stretch gap-0">
-      {/* Quantity selector */}
-      <div className="flex items-center border border-r-0 border-brand-300">
-        <span className="flex h-full w-11 items-center justify-center text-sm font-medium tabular-nums text-brand-800">
-          {quantity}
-        </span>
-        <button
-          type="button"
-          onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
-          disabled={quantity >= maxQuantity}
-          className="flex h-full items-center border-l border-brand-300 px-3 text-brand-600 hover:text-brand-900 transition-colors disabled:opacity-40"
-          aria-label="Zwiększ ilość"
-        >
-          +
-        </button>
-      </div>
+  const stepperBtn =
+    "flex size-11 shrink-0 items-center justify-center border border-brand-300 bg-white font-display text-base leading-none text-neutral-900 transition-colors hover:border-brand-400 hover:bg-brand-50 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40";
 
-      {/* Add to cart */}
+  return (
+    <div className="flex items-stretch gap-2">
+      <button
+        type="button"
+        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+        disabled={quantity <= 1}
+        className={stepperBtn}
+        aria-label="Zmniejsz ilość"
+      >
+        −
+      </button>
+      <div
+        className="flex size-11 shrink-0 items-center justify-center border border-brand-300 bg-white font-display text-base tabular-nums text-neutral-900"
+        aria-live="polite"
+      >
+        {quantity}
+      </div>
+      <button
+        type="button"
+        onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+        disabled={quantity >= maxQuantity}
+        className={stepperBtn}
+        aria-label="Zwiększ ilość"
+      >
+        +
+      </button>
+
       <button
         type="button"
         onClick={handleAddToCart}
         disabled={disabled || !variantId || isAdding}
-        className="flex flex-1 items-center justify-center gap-2 bg-brand-800 px-6 py-3.5 font-display text-[15px] italic tracking-wide text-white transition-colors hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 border border-brand-300 bg-brand-800 px-4 font-display text-[15px] italic tracking-wide text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isAdding ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-white" />
         ) : null}
         dodaj do koszyka
       </button>

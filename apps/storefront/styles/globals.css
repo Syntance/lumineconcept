@@ -72,6 +72,11 @@
     font-synthesis: none;
   }
 
+  /* Chronicle bez pliku italic — bez syntezy kursywa się nie renderuje */
+  .font-display.italic {
+    font-synthesis: style;
+  }
+
   /* Jawny Chronicle (Next: --font-chronicle) — gdy ma być na pewno Chronicle, nie „generic serif” */
   .font-chronicle {
     font-family: var(--font-chronicle), Georgia, serif;

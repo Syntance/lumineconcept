@@ -47,7 +47,7 @@ async function _getProductByHandle(handle: string) {
       handle,
       region_id: regionId,
       fields:
-        "+variants.calculated_price,+variants.inventory_quantity,+variants.metadata,*images,+thumbnail,+metadata,+options",
+        "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options",
     });
 
     return response.products[0] ?? null;
