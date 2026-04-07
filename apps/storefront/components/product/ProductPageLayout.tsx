@@ -43,6 +43,8 @@ interface ProductPageLayoutProps {
         options: Record<string, string>;
         price: number;
         inventory_quantity: number;
+        /** false = produkcja na zamówienie, bez limitu ze stanu magazynowego */
+        manage_inventory?: boolean;
       }>;
       metadata?: Record<string, unknown>;
       images?: Array<{ id: string; url: string; alt?: string }>;
@@ -88,6 +90,7 @@ export async function ProductPageLayout({
     options: Record<string, string>;
     calculated_price?: { calculated_amount: number };
     inventory_quantity: number;
+    manage_inventory?: boolean;
     metadata?: Record<string, unknown>;
   }>;
   const options = (product.options ?? []) as unknown as Array<{
@@ -120,7 +123,7 @@ export async function ProductPageLayout({
       price: (v.calculated_price?.calculated_amount ?? 0) / 100,
       priceCurrency: "PLN",
       availability:
-        v.inventory_quantity > 0
+        v.manage_inventory === false || v.inventory_quantity > 0
           ? "https://schema.org/InStock"
           : "https://schema.org/OutOfStock",
     })),
@@ -237,6 +240,7 @@ export async function ProductPageLayout({
                   options: v.options,
                   price: v.calculated_price?.calculated_amount ?? 0,
                   inventory_quantity: v.inventory_quantity,
+                  manage_inventory: v.manage_inventory,
                 })),
                 metadata,
                 images: images.map((img) => ({
