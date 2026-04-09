@@ -78,7 +78,11 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
     title: "Czas realizacji i wysyłka",
     content: (
       <div className="space-y-3 text-base text-brand-700">
-        <p>Czas realizacji zamówienia: <strong>około 10 dni roboczych</strong></p>
+        <p>
+          Czas realizacji zamówienia to <strong>około 10 dni roboczych</strong>
+          <br />
+          lub <strong>3 dni robocze</strong> z opcją ekspress.
+        </p>
         <p>
           <strong>Kurier DPD</strong> — przesyłka kurierska dostarczona pod wskazany adres, koszt od{" "}
           <strong>25 zł</strong>.
@@ -91,7 +95,7 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
     <div className="space-y-6">
       {tabs.map((tab, i) => (
         <details key={tab.title} className="group" open={i === 0}>
-          <summary className="cursor-pointer border-b border-brand-200 pb-3 text-base font-medium text-brand-500 group-open:text-brand-900 transition-colors">
+          <summary className="cursor-pointer list-none border-b border-brand-200 pb-3 text-base font-medium text-brand-500 group-open:text-brand-900 transition-colors [&::-webkit-details-marker]:hidden">
             {tab.title}
           </summary>
           <div className="pt-4">{tab.content}</div>

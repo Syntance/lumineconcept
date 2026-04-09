@@ -88,7 +88,7 @@ export async function BestsellersSection() {
                   {product.title}
                 </p>
                 <div className="flex w-full justify-center">
-                  <PriceDisplay amount={price} size="lg" />
+                  <PriceDisplay amount={price} size="lg" listing />
                 </div>
               </Link>
             );

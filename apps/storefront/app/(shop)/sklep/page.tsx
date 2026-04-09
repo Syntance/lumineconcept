@@ -248,7 +248,7 @@ export default async function ShopHubPage() {
                         {product.title}
                       </p>
                       <div className="flex w-full justify-center">
-                        <PriceDisplay amount={price} />
+                        <PriceDisplay amount={price} listing />
                       </div>
                     </Link>
                   );

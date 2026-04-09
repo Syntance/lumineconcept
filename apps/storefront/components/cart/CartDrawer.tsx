@@ -7,10 +7,18 @@ import { useCart } from "@/hooks/useCart";
 import { CartItem } from "./CartItem";
 import { CartSummary } from "./CartSummary";
 import { CartUpsell } from "./CartUpsell";
+import { ExpressToggle } from "./ExpressToggle";
 import { trackReferralApplied, trackCartViewed } from "@/lib/analytics/events";
 
 export function CartDrawer() {
-  const { isOpen, closeCart, items, itemCount, applyDiscount } = useCart();
+  const {
+    isOpen,
+    closeCart,
+    items,
+    itemCount,
+    applyDiscount,
+    expressDelivery,
+  } = useCart();
 
   const [referralCode, setReferralCode] = useState("");
   const [referralStatus, setReferralStatus] = useState<
@@ -128,48 +136,52 @@ export function CartDrawer() {
                 ))}
               </div>
 
-              {/* Upsell */}
-              <div className="px-6 pt-2 pb-4">
-                <CartUpsell currentItemIds={items.map((i) => i.variant_id ?? i.id)} />
+              {/* Ekspress + kupon: zawsze tuż pod produktami */}
+              <div className="mx-6 mt-4 space-y-3">
+                <ExpressToggle />
+
+                <div className="rounded-lg border border-brand-100 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Gift className="h-4 w-4 text-brand-400" />
+                    <span className="text-xs font-medium tracking-wide text-brand-600">
+                      Kod rabatowy
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={(e) => {
+                        setReferralCode(e.target.value);
+                        if (referralStatus !== "idle") setReferralStatus("idle");
+                      }}
+                      placeholder="Wpisz kod..."
+                      className="flex-1 rounded-md border border-brand-200 bg-transparent px-3 py-2 text-xs text-brand-700 placeholder:text-brand-300 focus:border-brand-400 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyReferral}
+                      disabled={
+                        referralStatus === "loading" || referralStatus === "success"
+                      }
+                      className="shrink-0 rounded-md bg-brand-800 px-4 py-2 text-xs font-medium tracking-wide text-white transition-colors hover:bg-brand-700 disabled:opacity-40"
+                    >
+                      {referralStatus === "loading" ? "..." : "Zastosuj"}
+                    </button>
+                  </div>
+                  {referralMessage && (
+                    <p
+                      className={`mt-2 text-[11px] ${referralStatus === "success" ? "text-green-600" : "text-red-500"}`}
+                    >
+                      {referralMessage}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Referral */}
-              <div className="mx-6 mb-4 rounded-lg border border-brand-100 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-brand-400" />
-                  <span className="text-xs font-medium tracking-wide text-brand-600">
-                    Kod rabatowy
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={referralCode}
-                    onChange={(e) => {
-                      setReferralCode(e.target.value);
-                      if (referralStatus !== "idle") setReferralStatus("idle");
-                    }}
-                    placeholder="Wpisz kod..."
-                    className="flex-1 rounded-md border border-brand-200 bg-transparent px-3 py-2 text-xs text-brand-700 placeholder:text-brand-300 focus:border-brand-400 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyReferral}
-                    disabled={
-                      referralStatus === "loading" || referralStatus === "success"
-                    }
-                    className="shrink-0 rounded-md bg-brand-800 px-4 py-2 text-xs font-medium tracking-wide text-white transition-colors hover:bg-brand-700 disabled:opacity-40"
-                  >
-                    {referralStatus === "loading" ? "..." : "Zastosuj"}
-                  </button>
-                </div>
-                {referralMessage && (
-                  <p
-                    className={`mt-2 text-[11px] ${referralStatus === "success" ? "text-green-600" : "text-red-500"}`}
-                  >
-                    {referralMessage}
-                  </p>
-                )}
+              {/* Upsell: ładuje się async — na dole, nie przesuwa ważnych elementów */}
+              <div className="px-6 pt-4 pb-4">
+                <CartUpsell currentItemIds={items.map((i) => i.variant_id ?? i.id)} />
               </div>
             </div>
 
@@ -201,7 +213,11 @@ export function CartDrawer() {
               <div className="flex items-center justify-center gap-4 border-t border-brand-50 px-6 py-3 text-[10px] uppercase tracking-widest text-brand-400">
                 <span>Bezpieczna płatność</span>
                 <span className="text-brand-200">·</span>
-                <span>Realizacja ok. 10 dni rob.</span>
+                <span>
+                  {expressDelivery
+                    ? "Ekspress: ok. 3 dni rob."
+                    : "Realizacja ok. 10 dni rob."}
+                </span>
               </div>
             </div>
           </>

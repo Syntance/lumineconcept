@@ -159,6 +159,7 @@ export function ProductCard({
                   compareAtAmount={compareAtPrice}
                   currency={currency}
                   size="lg"
+                  listing
                 />
               </AddToCartButton>
             </div>
@@ -170,6 +171,7 @@ export function ProductCard({
                   compareAtAmount={compareAtPrice}
                   currency={currency}
                   size="lg"
+                  listing
                 />
               </span>
               <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">

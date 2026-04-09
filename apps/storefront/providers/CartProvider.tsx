@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -30,6 +31,8 @@ interface CartState {
   tax_total: number;
   total: number;
   itemCount: number;
+  /** Metadata koszyka (Medusa), m.in. express_delivery */
+  metadata: Record<string, string>;
 }
 
 interface CartContextType extends CartState {
@@ -42,6 +45,9 @@ interface CartContextType extends CartState {
   removeItem: (lineItemId: string) => Promise<void>;
   refreshCart: () => Promise<void>;
   applyDiscount: (code: string) => Promise<void>;
+  /** true, gdy w metadata jest express_delivery = true / "true" */
+  expressDelivery: boolean;
+  setExpressDelivery: (enabled: boolean) => Promise<void>;
 }
 
 const CART_ID_KEY = "lumine_cart_id";
@@ -72,7 +78,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     tax_total: 0,
     total: 0,
     itemCount: 0,
+    metadata: {},
   });
+
+  const normalizeCartMetadata = (raw: unknown): Record<string, string> => {
+    if (!raw || typeof raw !== "object") return {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (v === undefined || v === null) continue;
+      out[k] = typeof v === "string" ? v : String(v);
+    }
+    return out;
+  };
 
   const updateCartState = useCallback(
     (rawCart: Record<string, unknown>) => {
@@ -87,6 +104,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         tax_total: (rawCart.tax_total as number) ?? 0,
         total: (rawCart.total as number) ?? 0,
         itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
+        metadata: normalizeCartMetadata(rawCart.metadata),
       });
     },
     [],
@@ -124,7 +142,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [updateCartState]);
 
   useEffect(() => {
-    getOrCreateCart();
+    getOrCreateCart().then(() => {
+      try {
+        const saved = localStorage.getItem("lumine_express");
+        if (saved === "true") {
+          setCart((c) => {
+            if (c.metadata.express_delivery === "true") return c;
+            return { ...c, metadata: { ...c.metadata, express_delivery: "true" } };
+          });
+        }
+      } catch { /* SSR / prywatny tryb */ }
+    });
   }, [getOrCreateCart]);
 
   const addItem = useCallback(
@@ -195,8 +223,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);
 
-  const value = useMemo(
-    () => ({
+  /** Ostatnie zapisane żądanie ekspress — ignorujemy przestarzałe odpowiedzi API. */
+  const expressSaveSeq = useRef(0);
+
+  const setExpressDelivery = useCallback(
+    async (enabled: boolean) => {
+      if (!cart.id) return;
+
+      const seq = ++expressSaveSeq.current;
+      const value = enabled ? "true" : "false";
+
+      setCart((c) => ({
+        ...c,
+        metadata: { ...c.metadata, express_delivery: value },
+      }));
+
+      try {
+        localStorage.setItem("lumine_express", value);
+      } catch { /* SSR / prywatny tryb */ }
+
+      const updated = await cartApi.updateCartMetadata(cart.id, {
+        express_delivery: value,
+      });
+      if (seq !== expressSaveSeq.current) return;
+      if (updated) {
+        updateCartState(updated as unknown as Record<string, unknown>);
+      }
+    },
+    [cart.id, updateCartState],
+  );
+
+  const value = useMemo(() => {
+    const ed = cart.metadata.express_delivery;
+    const expressDelivery = ed === "true" || ed === "1";
+    return {
       ...cart,
       isLoading,
       isOpen,
@@ -207,9 +267,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem,
       refreshCart,
       applyDiscount,
-    }),
-    [cart, isLoading, isOpen, openCart, closeCart, addItem, updateItem, removeItem, refreshCart, applyDiscount],
-  );
+      expressDelivery,
+      setExpressDelivery,
+    };
+  }, [
+    cart,
+    isLoading,
+    isOpen,
+    openCart,
+    closeCart,
+    addItem,
+    updateItem,
+    removeItem,
+    refreshCart,
+    applyDiscount,
+    setExpressDelivery,
+  ]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

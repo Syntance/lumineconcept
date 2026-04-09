@@ -10,7 +10,8 @@ import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
-import { collectProductImages } from "@/lib/products/product-images";
+import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
+import { extractSchemaImage } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
 import { formatDimensionsWxH, getProductDimensionParts } from "@/lib/products/dimensions";
 import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
@@ -51,6 +52,7 @@ interface ProductPageLayoutProps {
     };
     checkoutCallout?: CheckoutCallout | null;
     globalColors?: GlobalConfigOption[];
+    schemaImageUrl?: string | null;
   }>;
 }
 
@@ -79,10 +81,11 @@ export async function ProductPageLayout({
   ]);
   if (!product) notFound();
 
-  const images = collectProductImages({
+  const { galleryImages: images, schemaImageUrl } = extractSchemaImage({
     title: product.title,
     images: product.images,
     thumbnail: product.thumbnail as string | null | undefined,
+    metadata: (product.metadata ?? null) as Record<string, unknown> | null,
   });
   const variants = (product.variants ?? []) as unknown as Array<{
     id: string;
@@ -251,44 +254,10 @@ export async function ProductPageLayout({
               }}
               checkoutCallout={siteSettings?.checkoutCallout ?? null}
               globalColors={productConfig.colors}
+              schemaImageUrl={schemaImageUrl}
             />
 
-            {/* Inline delivery info */}
-            <div className="mt-6">
-              <div className="bg-brand-100 p-5 lg:p-6 space-y-4">
-                <h2 className="font-display text-lg font-normal uppercase tracking-wider text-brand-800">
-                  Czas i koszt dostawy
-                </h2>
-                <div className="space-y-3 text-base leading-relaxed text-brand-700">
-                  <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-brand-800">
-                      Sposoby dostawy
-                    </h3>
-                    <p className="mt-1">
-                      Klient może skorzystać z następujących metod dostawy:<br />
-                      Kurier InPost – przesyłka kurierska dostarczona pod wskazany adres, koszt od 20 zł<br />
-                      Paczkomat InPost – przesyłka do odbioru w wybranym punkcie paczkomatowym, koszt od 15 zł
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-brand-800">
-                      Koszty dostawy
-                    </h3>
-                    <p className="mt-1">
-                      Całkowity koszt dostawy zamówienia będzie podany po dodaniu produktów do koszyka i wybraniu preferowanej formy dostawy i metody płatności – w podsumowaniu będzie wskazana dokładna wartość do zapłaty.
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-brand-800">
-                      Czas oczekiwania
-                    </h3>
-                    <p className="mt-1">
-                      Czas realizacji jest podany w opisie każdego produktu.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <DeliveryInfoBlock />
           </div>
         </div>
         </div>

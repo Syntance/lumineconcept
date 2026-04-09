@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { ColorStepPanel } from "./ColorStepPanel";
 import { FileUploadSection, type UploadedFile } from "./FileUploadSection";
 import {
@@ -51,6 +52,8 @@ interface ProductConfiguratorProps {
   coloredSet?: Set<string>;
   mirrorSet?: Set<string>;
   matDisabledSet?: Set<string>;
+  /** URL grafiki-schematu pokazywanej nad polami tekstowymi jako legenda personalizacji. */
+  schemaImageUrl?: string | null;
 }
 
 export function ProductConfigurator({
@@ -74,6 +77,7 @@ export function ProductConfigurator({
   coloredSet = new Set(),
   mirrorSet = new Set(),
   matDisabledSet = new Set(),
+  schemaImageUrl,
 }: ProductConfiguratorProps) {
   const nonColorOptions = options.filter((o) => !isColorOption(o.title));
 
@@ -250,6 +254,24 @@ export function ProductConfigurator({
         );
       })}
 
+      {/* Schema image — legenda personalizacji */}
+      {schemaImageUrl && textFields.length > 0 && (
+        <div className="mx-auto max-w-xs">
+          <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-wider text-brand-500">
+            Schemat personalizacji
+          </p>
+          <div className="relative aspect-square w-full overflow-hidden border border-brand-200">
+            <Image
+              src={schemaImageUrl}
+              alt="Schemat personalizacji produktu"
+              fill
+              className="object-contain"
+              sizes="320px"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Text fields / notes */}
       {textFields.length > 0 && onTextFieldChange && (
         <div className="space-y-4">
@@ -261,13 +283,18 @@ export function ProductConfigurator({
               <div key={field.key}>
                 <label
                   htmlFor={inputId}
-                  className="mb-2 block text-[12px] italic leading-snug text-brand-500"
+                  className="mb-1 block text-[12px] italic leading-snug text-brand-500"
                 >
                   {field.label}
                   {field.required && (
                     <span className="ml-0.5 not-italic text-red-500">*</span>
                   )}
                 </label>
+                {field.hint && (
+                  <p className="mb-2 text-[11px] leading-snug text-brand-400">
+                    {field.hint}
+                  </p>
+                )}
                 {field.multiline ? (
                   <textarea
                     id={inputId}
