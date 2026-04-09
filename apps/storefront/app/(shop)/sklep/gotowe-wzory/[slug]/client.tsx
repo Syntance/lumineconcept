@@ -25,6 +25,7 @@ import {
   type GlobalConfigOption,
 } from "@/lib/products/global-config";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
+import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { trackProductViewed } from "@/lib/analytics/events";
 
@@ -54,6 +55,7 @@ interface ProductPageClientProps {
   };
   checkoutCallout?: CheckoutCallout | null;
   globalColors?: GlobalConfigOption[];
+  schemaImageUrl?: string | null;
 }
 
 function extractMetaKey(optionTitle: string): string {
@@ -66,6 +68,7 @@ export function ProductPageClient({
   product,
   checkoutCallout,
   globalColors = [],
+  schemaImageUrl,
 }: ProductPageClientProps) {
   const router = useRouter();
 
@@ -311,6 +314,7 @@ export function ProductPageClient({
           coloredSet={coloredSet}
           mirrorSet={mirrorSet}
           matDisabledSet={matDisabledSet}
+          schemaImageUrl={schemaImageUrl}
         />
 
         {selectedVariant && tracksInventory && stockQty > 5 && (
@@ -335,7 +339,7 @@ export function ProductPageClient({
         <div ref={ctaRef} className="space-y-4">
           {showValidationCallout && (
             <div
-              className="flex gap-3 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+              className="flex gap-3 rounded-none border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
               role="status"
             >
               <AlertCircle
@@ -355,6 +359,7 @@ export function ProductPageClient({
               </div>
             </div>
           )}
+          <ExpressToggle />
           <AddToCartButton
             variantId={selectedVariant?.id ?? null}
             productData={{

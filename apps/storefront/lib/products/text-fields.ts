@@ -1,6 +1,8 @@
 export interface TextFieldDef {
   key: string;
   label: string;
+  /** Krótki opis widoczny pod labelem — wyjaśnia, którego elementu produktu dotyczy pole. */
+  hint?: string;
   placeholder?: string;
   required?: boolean;
   maxLength?: number;

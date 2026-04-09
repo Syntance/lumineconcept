@@ -10,6 +10,11 @@ interface PriceDisplayProps {
   fontSizePx?: number;
   /** Ciemny badge (PDP) — brązowe tło + biały tekst, kursywa display. */
   variant?: "default" | "badge";
+  /**
+   * Karty w siatce sklepu / listy — mniejsza czcionka, Gilroy, bez kursywy.
+   * Nie ustawiaj na PDP (`variant="badge"` i domyślny blok pod tytułem bez `listing`).
+   */
+  listing?: boolean;
 }
 
 export function PriceDisplay({
@@ -20,6 +25,7 @@ export function PriceDisplay({
   prefix,
   fontSizePx,
   variant = "default",
+  listing = false,
 }: PriceDisplayProps) {
   const hasDiscount = compareAtAmount && compareAtAmount > amount;
   const discountPercent = hasDiscount
@@ -32,9 +38,21 @@ export function PriceDisplay({
     lg: "text-[1.375rem]",
   };
 
+  /** Mniejsze, czytelne kwoty na kafelkach siatki (bez Chronicle + kursywy). */
+  const listingSizeClasses = {
+    sm: "text-sm",
+    md: "text-[0.9375rem]",
+    lg: "text-base",
+  };
+
   const sizeStyle =
     fontSizePx != null ? ({ fontSize: `${fontSizePx}px` } as const) : undefined;
-  const sizeClass = fontSizePx != null ? undefined : sizeClasses[size];
+  const sizeClass =
+    fontSizePx != null
+      ? undefined
+      : listing
+        ? listingSizeClasses[size]
+        : sizeClasses[size];
 
   if (variant === "badge") {
     return (
@@ -64,7 +82,9 @@ export function PriceDisplay({
       <span
         style={sizeStyle}
         className={cn(
-          "font-display font-semibold italic",
+          listing
+            ? "font-sans font-semibold not-italic"
+            : "font-display font-semibold italic",
           sizeClass,
           hasDiscount ? "text-red-600" : "text-brand-800",
         )}
@@ -75,7 +95,11 @@ export function PriceDisplay({
         <>
           <span
             style={sizeStyle}
-            className={cn(sizeClass, "text-brand-400 line-through")}
+            className={cn(
+              sizeClass,
+              "text-brand-400 line-through",
+              listing && "font-sans not-italic",
+            )}
           >
             {formatPrice(compareAtAmount, currency)}
           </span>

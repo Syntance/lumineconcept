@@ -5,6 +5,7 @@ import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { CartItem } from "@/components/cart/CartItem";
 import { CartSummary } from "@/components/cart/CartSummary";
+import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 
 export function KoszykClient() {
@@ -35,15 +36,18 @@ export function KoszykClient() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid gap-8 lg:grid-cols-12 lg:gap-x-10">
+          <div className="space-y-4 lg:col-span-7">
             {items.map((item) => (
               <CartItem key={item.id} item={item} />
             ))}
           </div>
-          <div>
-            <div className="sticky top-24 rounded-lg border border-brand-200 bg-brand-50/50 p-6">
+          <div className="lg:col-span-5">
+            <div className="sticky top-24 rounded-lg border border-brand-200 bg-brand-50/50 p-6 lg:p-7">
               <CartSummary />
+              <div className="mt-4">
+                <ExpressToggle />
+              </div>
               <Link
                 href="/checkout"
                 className="mt-6 block w-full rounded-md bg-brand-900 py-3 text-center text-sm font-semibold text-white hover:bg-brand-800 transition-colors"

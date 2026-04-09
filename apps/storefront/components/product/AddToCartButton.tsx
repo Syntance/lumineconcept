@@ -74,7 +74,7 @@ export function AddToCartButton({
         type="button"
         onClick={handleAddToCart}
         disabled={disabled || !variantId || isAdding}
-        className="flex shrink-0 items-center justify-center gap-2 rounded-md border border-brand-300 bg-brand-800 px-4 py-2.5 font-display text-xs font-semibold italic text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex shrink-0 items-center justify-center gap-2 rounded-none border border-brand-300 bg-brand-800 px-4 py-2.5 font-display text-xs font-semibold italic text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isAdding ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -87,7 +87,7 @@ export function AddToCartButton({
   }
 
   const stepperBtn =
-    "flex size-11 shrink-0 items-center justify-center border border-brand-300 bg-white font-display text-base leading-none text-neutral-900 transition-colors hover:border-brand-400 hover:bg-brand-50 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40";
+    "flex size-11 shrink-0 items-center justify-center rounded-none border border-brand-300 bg-white font-display text-base leading-none text-neutral-900 transition-colors hover:border-brand-400 hover:bg-brand-50 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
     <div className="flex items-stretch gap-2">
@@ -101,7 +101,7 @@ export function AddToCartButton({
         −
       </button>
       <div
-        className="flex size-11 shrink-0 items-center justify-center border border-brand-300 bg-white font-display text-base tabular-nums text-neutral-900"
+        className="flex size-11 shrink-0 items-center justify-center rounded-none border border-brand-300 bg-white font-display text-base tabular-nums text-neutral-900"
         aria-live="polite"
       >
         {quantity}
@@ -120,7 +120,7 @@ export function AddToCartButton({
         type="button"
         onClick={handleAddToCart}
         disabled={disabled || !variantId || isAdding}
-        className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 border border-brand-300 bg-brand-800 px-4 font-display text-[15px] italic tracking-wide text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-none border border-brand-300 bg-brand-800 px-4 font-display text-[15px] italic tracking-wide text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isAdding ? (
           <Loader2 className="h-4 w-4 shrink-0 animate-spin text-white" />

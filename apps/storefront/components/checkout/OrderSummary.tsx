@@ -1,10 +1,11 @@
 "use client";
 
 import { useCart } from "@/hooks/useCart";
+import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { formatPrice } from "@/lib/utils";
 
 export function OrderSummary() {
-  const { items, subtotal, shipping_total, tax_total, total } = useCart();
+  const { items, subtotal, shipping_total, tax_total, total, expressDelivery } = useCart();
 
   return (
     <div className="rounded-lg border border-brand-200 bg-brand-50/50 p-6">
@@ -41,11 +42,21 @@ export function OrderSummary() {
         ))}
       </div>
 
+      <div className="mb-4">
+        <ExpressToggle compact />
+      </div>
+
       <div className="border-t border-brand-200 pt-4 space-y-2 text-sm">
         <div className="flex justify-between">
           <span className="text-brand-600">Produkty</span>
           <span className="font-medium tabular-nums text-brand-800">
             {formatPrice(subtotal)}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-brand-600">Realizacja</span>
+          <span className="font-medium text-brand-800">
+            {expressDelivery ? "Ekspress: ok. 3 dni rob." : "ok. 10 dni rob."}
           </span>
         </div>
         <div className="flex justify-between">
