@@ -74,22 +74,7 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
     });
   }
 
-  tabs.push({
-    title: "Czas realizacji i wysyłka",
-    content: (
-      <div className="space-y-3 text-base text-brand-700">
-        <p>
-          Czas realizacji zamówienia to <strong>około 10 dni roboczych</strong>
-          <br />
-          lub <strong>3 dni robocze</strong> z opcją ekspress.
-        </p>
-        <p>
-          <strong>Kurier DPD</strong> — przesyłka kurierska dostarczona pod wskazany adres, koszt od{" "}
-          <strong>25 zł</strong>.
-        </p>
-      </div>
-    ),
-  });
+  if (tabs.length === 0) return null;
 
   return (
     <div className="space-y-6">

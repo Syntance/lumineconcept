@@ -11,6 +11,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
+import { ProductFulfillmentStepper } from "@/components/product/ProductFulfillmentStepper";
 import { extractSchemaImage } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
 import { formatDimensionsWxH, getProductDimensionParts } from "@/lib/products/dimensions";
@@ -150,7 +151,7 @@ export async function ProductPageLayout({
       <div className="bg-brand-50">
         <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:gap-10">
-          <div className="min-w-0">
+          <div className="min-w-0 pb-[8px]">
             <div className="lg:sticky lg:z-10 lg:top-[calc(var(--header-sticky-height)+var(--product-gallery-sticky-gap)+env(safe-area-inset-top,0px))]">
               <ProductGallery
                 images={images.map((img) => ({
@@ -196,10 +197,14 @@ export async function ProductPageLayout({
 
             <PriceDisplay amount={price} variant="badge" />
 
-            <div className="flex items-center gap-4 pt-3 pb-1">
+            <div className="pt-3">
+              <ProductFulfillmentStepper />
+            </div>
+
+            <div className="flex items-center gap-4 pt-4 pb-1">
               <span className="h-px flex-1 bg-brand-300" />
               <span className="whitespace-nowrap text-xs font-bold uppercase tracking-[0.2em] text-brand-700 sm:text-sm">
-                Skonfiguruj swój produkt:
+                Skonfiguruj swój produkt
               </span>
               <span className="h-px flex-1 bg-brand-300" />
             </div>
