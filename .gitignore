@@ -16,6 +16,7 @@ apps/backend/medusa-config.js.map
 apps/backend/medusa-config.d.ts
 apps/backend/medusa-config.d.ts.map
 uploads/
+!apps/backend/src/api/**/uploads/
 static/
 scripts/sync-medusa-product.env
 scripts/fill-product-dimensions.env

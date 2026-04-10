@@ -36,7 +36,7 @@ export function initMetaPixel() {
   document.head.appendChild(script);
 
   window.fbq("init", PIXEL_ID);
-  window.fbq("track", "PageView");
+  // PageView wysyła trackPageView() (PostHogProvider + nawigacja SPA), żeby uniknąć podwójnego hitu przy pierwszym renderze
 }
 
 export function trackMetaEvent(
