@@ -10,8 +10,8 @@ import { defaultStoreCartFields } from "@medusajs/medusa/api/store/carts/query-c
 /**
  * POST /store/custom/cart-express
  *
- * Aktualizuje wyłącznie metadata.express_delivery przez Cart Module — bez updateCartWorkflow
- * (workflow potrafi zwracać 500 przy problemach z Redis / refresh line items przy samej zmianie metadata).
+ * Ustawia metadata.express_delivery oraz express_fee_minor (50% subtotal w groszach, 0 gdy wyłączone)
+ * przez Cart Module — bez updateCartWorkflow (workflow potrafi zwracać 500 przy lock / refresh line items).
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const body = req.body as { cart_id?: string; express_delivery?: boolean };
@@ -36,6 +36,26 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.status(400).json({ message: "Koszyk jest już zakończony" });
   }
 
+  const remoteQuery = req.scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY);
+  const queryObject = remoteQueryObjectFromString({
+    entryPoint: "cart",
+    variables: { filters: { id: cartId } },
+    fields: defaultStoreCartFields,
+  });
+  const [cartSnapshot] = await remoteQuery(queryObject);
+  if (!cartSnapshot) {
+    throw new MedusaError(MedusaError.Types.NOT_FOUND, `Cart ${cartId} not found`);
+  }
+
+  const subRaw = (cartSnapshot as { subtotal?: unknown }).subtotal;
+  const subtotalNum =
+    typeof subRaw === "number"
+      ? subRaw
+      : typeof subRaw === "string"
+        ? Number(subRaw)
+        : 0;
+  const expressFeeMinor = body.express_delivery ? Math.round(subtotalNum * 0.5) : 0;
+
   const prev =
     existing.metadata && typeof existing.metadata === "object"
       ? { ...existing.metadata }
@@ -43,16 +63,11 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const metadata = {
     ...prev,
     express_delivery: body.express_delivery ? "true" : "false",
+    express_fee_minor: String(expressFeeMinor),
   };
 
   await cartModule.updateCarts([{ id: cartId, metadata }]);
 
-  const remoteQuery = req.scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY);
-  const queryObject = remoteQueryObjectFromString({
-    entryPoint: "cart",
-    variables: { filters: { id: cartId } },
-    fields: defaultStoreCartFields,
-  });
   const [cart] = await remoteQuery(queryObject);
   if (!cart) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, `Cart ${cartId} not found after update`);

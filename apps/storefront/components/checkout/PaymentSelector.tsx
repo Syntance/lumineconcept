@@ -40,9 +40,9 @@ export function PaymentSelector({
   selectedProviderId,
   onSelect,
 }: PaymentSelectorProps) {
-  const { total } = useCart();
+  const { grandTotal } = useCart();
   const isPayPoEligible =
-    total >= PAYPO_MIN_AMOUNT && total <= PAYPO_MAX_AMOUNT;
+    grandTotal >= PAYPO_MIN_AMOUNT && grandTotal <= PAYPO_MAX_AMOUNT;
 
   return (
     <div className="space-y-3">
@@ -102,7 +102,7 @@ export function PaymentSelector({
                     <p className="text-xs text-purple-700">
                       Zapłać{" "}
                       <span className="font-medium text-brand-800 tabular-nums">
-                        {formatPrice(total)}
+                        {formatPrice(grandTotal)}
                       </span>{" "}
                       za 30 dni — 0 zł odsetek
                     </p>

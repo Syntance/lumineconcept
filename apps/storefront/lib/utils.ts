@@ -10,11 +10,12 @@ export function formatPrice(
   currency = "PLN",
   locale = "pl-PL",
 ): string {
+  const cents = typeof amount === "number" && Number.isFinite(amount) ? amount : 0;
   const raw = new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
-  }).format(amount / 100);
+  }).format(cents / 100);
 
   // Większy odstęp między przecinkiem a groszami (pl-PL: „12,34 zł” → „12, 34 zł”)
   return raw.replace(/,(\d)/g, ",\u2009$1");

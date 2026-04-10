@@ -5,7 +5,15 @@ import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { formatPrice } from "@/lib/utils";
 
 export function OrderSummary() {
-  const { items, subtotal, shipping_total, tax_total, total, expressDelivery } = useCart();
+  const {
+    items,
+    subtotal,
+    shipping_total,
+    tax_total,
+    expressDelivery,
+    expressSurcharge,
+    grandTotal,
+  } = useCart();
 
   return (
     <div className="rounded-lg border border-brand-200 bg-brand-50/50 p-6">
@@ -56,7 +64,9 @@ export function OrderSummary() {
         <div className="flex justify-between">
           <span className="text-brand-600">Realizacja</span>
           <span className="font-medium text-brand-800">
-            {expressDelivery ? "Ekspress: ok. 3 dni rob." : "ok. 10 dni rob."}
+            {expressDelivery
+              ? "Ekspress: 3 dni robocze"
+              : "ok. 10 dni roboczych"}
           </span>
         </div>
         <div className="flex justify-between">
@@ -65,6 +75,14 @@ export function OrderSummary() {
             {shipping_total > 0 ? formatPrice(shipping_total) : "—"}
           </span>
         </div>
+        {expressDelivery && expressSurcharge > 0 && (
+          <div className="flex justify-between">
+            <span className="text-brand-600">Ekspress (+50% produktów)</span>
+            <span className="font-medium tabular-nums text-brand-800">
+              {formatPrice(expressSurcharge)}
+            </span>
+          </div>
+        )}
         {tax_total > 0 && (
           <div className="flex justify-between">
             <span className="text-brand-600">VAT</span>
@@ -75,7 +93,7 @@ export function OrderSummary() {
         )}
         <div className="flex justify-between border-t border-brand-200 pt-2 text-base font-semibold text-brand-800">
           <span>Do zapłaty</span>
-          <span className="tabular-nums">{formatPrice(total)}</span>
+          <span className="tabular-nums">{formatPrice(grandTotal)}</span>
         </div>
       </div>
     </div>

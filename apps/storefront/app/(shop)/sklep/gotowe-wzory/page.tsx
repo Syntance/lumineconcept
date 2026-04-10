@@ -186,7 +186,7 @@ export default async function GotoweWzoryPage({
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
             <span className="text-brand-300">·</span>
-            <span>{trustBar?.shippingLabel ?? "Realizacja ok. 10 dni rob."}</span>
+            <span>{trustBar?.shippingLabel ?? "Realizacja ok. 10 dni roboczych"}</span>
           </div>
 
           {displayTestimonials.length > 0 && (
