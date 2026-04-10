@@ -44,6 +44,7 @@ interface ProductConfiguratorProps {
   links?: string[];
   onLinksChange?: (links: string[]) => void;
   uploadsCount?: number;
+  uploadsLabel?: string;
   uploadedFiles?: UploadedFile[];
   onUploadedFilesChange?: (files: UploadedFile[]) => void;
   globalColors?: GlobalConfigOption[];
@@ -69,6 +70,7 @@ export function ProductConfigurator({
   links = [],
   onLinksChange,
   uploadsCount = 0,
+  uploadsLabel,
   uploadedFiles = [],
   onUploadedFilesChange,
   globalColors = [],
@@ -341,6 +343,7 @@ export function ProductConfigurator({
       {uploadsCount > 0 && onUploadedFilesChange && (
         <FileUploadSection
           maxFiles={Math.min(uploadsCount, 5)}
+          label={uploadsLabel}
           files={uploadedFiles}
           onFilesChange={onUploadedFilesChange}
         />

@@ -11,6 +11,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   res.json({
     uploads_enabled: meta.uploads_enabled === "true" || meta.uploads_enabled === true,
     uploads_count: Number(meta.uploads_count) || 5,
+    uploads_label: typeof meta.uploads_label === "string" ? meta.uploads_label : "",
   })
 }
 
@@ -20,6 +21,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const body = req.body as {
     uploads_enabled?: boolean
     uploads_count?: number
+    uploads_label?: string
   }
 
   const product = await productService.retrieveProduct(req.params.id)
@@ -33,14 +35,19 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     typeof body.uploads_count === "number" && body.uploads_count >= 1
       ? Math.min(body.uploads_count, 5)
       : Number(existingMeta.uploads_count) || 5
+  const label =
+    typeof body.uploads_label === "string"
+      ? body.uploads_label.trim()
+      : (typeof existingMeta.uploads_label === "string" ? existingMeta.uploads_label : "")
 
   await productService.updateProducts(req.params.id, {
     metadata: {
       ...existingMeta,
       uploads_enabled: String(enabled),
       uploads_count: String(count),
+      uploads_label: label,
     },
   })
 
-  res.json({ uploads_enabled: enabled, uploads_count: count })
+  res.json({ uploads_enabled: enabled, uploads_count: count, uploads_label: label })
 }
