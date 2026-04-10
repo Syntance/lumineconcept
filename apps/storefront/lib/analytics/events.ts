@@ -11,6 +11,12 @@ export function trackEvent(
 
 export function trackPageView(url: string, title: string) {
   capturePostHogEvent("$pageview", { $current_url: url, $title: title });
+  trackMetaEvent("PageView");
+}
+
+/** Tylko Meta PageView — gdy użytkownik dopiero wyraził zgodę na analitykę (PostHog dostał już ścieżkę przy braku zgody). */
+export function trackMetaPageViewOnly() {
+  trackMetaEvent("PageView");
 }
 
 export function trackProductViewed(product: {

@@ -161,6 +161,8 @@ export function ProductPageClient({
   const allLinksProvided = linksCount === 0 || links.slice(0, linksCount).every((l) => l.trim().length > 0);
 
   const uploadsCount = useMemo(() => {
+    const enabledRaw = product.metadata?.uploads_enabled;
+    if (enabledRaw !== "true" && enabledRaw !== true) return 0;
     const raw = product.metadata?.uploads_count;
     const n = Number(raw);
     if (Number.isFinite(n) && n > 0) return Math.min(n, 5);

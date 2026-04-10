@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { initPostHog, optInPostHog, optOutPostHog } from "@/lib/analytics/posthog";
-import { trackPageView } from "@/lib/analytics/events";
+import { initMetaPixel } from "@/lib/analytics/meta-pixel";
+import { trackMetaPageViewOnly, trackPageView } from "@/lib/analytics/events";
 
 declare global {
   interface Window {
@@ -16,17 +17,33 @@ declare global {
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const pathnameRef = useRef(pathname);
+  const searchParamsRef = useRef(searchParams);
+  const prevAnalyticsConsentRef = useRef<boolean | undefined>(undefined);
+
+  pathnameRef.current = pathname;
+  searchParamsRef.current = searchParams;
 
   useEffect(() => {
     initPostHog();
 
     const checkConsent = () => {
       const consent = window.CookieYes?.getConsent();
-      if (consent?.analytics) {
+      const analytics = !!consent?.analytics;
+
+      if (analytics) {
         optInPostHog();
+        initMetaPixel();
+        // Pierwsze załadowanie przy zapisanej zgodzie: PageView idzie z efektu pathname.
+        // Zgoda udzielona później (wcześniej false): jeden PageView dla bieżącego URL po init pixela.
+        if (prevAnalyticsConsentRef.current === false) {
+          trackMetaPageViewOnly();
+        }
       } else {
         optOutPostHog();
       }
+
+      prevAnalyticsConsentRef.current = analytics;
     };
 
     checkConsent();
