@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -9,6 +9,8 @@ interface ErrorProps {
 }
 
 export default function GlobalError({ error, reset }: ErrorProps) {
+  const router = useRouter();
+
   useEffect(() => {
     console.error("[GlobalError]", error);
   }, [error]);
@@ -24,7 +26,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
       <p className="max-w-sm text-sm text-brand-500">
         Przepraszamy za utrudnienia. Spróbuj odświeżyć stronę lub wróć do sklepu.
       </p>
-      <div className="flex gap-4">
+      <div className="flex flex-col items-center gap-3 sm:flex-row">
         <button
           type="button"
           onClick={reset}
@@ -32,12 +34,19 @@ export default function GlobalError({ error, reset }: ErrorProps) {
         >
           Spróbuj ponownie
         </button>
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/sklep");
+            }
+          }}
           className="rounded-md bg-accent px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-dark"
         >
-          Strona główna
-        </Link>
+          Wróć do poprzedniej strony
+        </button>
       </div>
     </div>
   );
