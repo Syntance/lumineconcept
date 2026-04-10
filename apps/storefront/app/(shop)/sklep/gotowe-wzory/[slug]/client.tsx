@@ -169,6 +169,11 @@ export function ProductPageClient({
     return 5;
   }, [product.metadata]);
 
+  const uploadsLabel = useMemo(() => {
+    const raw = product.metadata?.uploads_label;
+    return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
+  }, [product.metadata]);
+
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
   const ctaRef = useRef<HTMLDivElement>(null);
@@ -308,6 +313,7 @@ export function ProductPageClient({
           links={links}
           onLinksChange={setLinks}
           uploadsCount={uploadsCount}
+          uploadsLabel={uploadsLabel}
           uploadedFiles={uploadedFiles}
           onUploadedFilesChange={setUploadedFiles}
           globalColors={globalColors}

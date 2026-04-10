@@ -17,12 +17,14 @@ function isImageFilename(name: string): boolean {
 
 interface FileUploadSectionProps {
   maxFiles?: number;
+  label?: string;
   files: UploadedFile[];
   onFilesChange: (files: UploadedFile[]) => void;
 }
 
 export function FileUploadSection({
   maxFiles = MAX_FILES,
+  label,
   files,
   onFilesChange,
 }: FileUploadSectionProps) {
@@ -97,7 +99,7 @@ export function FileUploadSection({
   return (
     <div className="space-y-3">
       <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-brand-700">
-        Wgraj swoje logo lub elementy
+        {label || "Wgraj swoje logo lub elementy"}
       </p>
 
       <div className="flex flex-wrap items-center gap-3">

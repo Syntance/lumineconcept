@@ -17,40 +17,45 @@ const ProductUploadsWidget = ({
 }: DetailWidgetProps<AdminProduct>) => {
   const [enabled, setEnabled] = useState(false)
   const [maxFiles, setMaxFiles] = useState(5)
+  const [label, setLabel] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
     sdk.client
-      .fetch<{ uploads_enabled: boolean; uploads_count: number }>(
+      .fetch<{ uploads_enabled: boolean; uploads_count: number; uploads_label: string }>(
         `/admin/products/${product.id}/uploads`,
         { method: "GET" },
       )
       .then((res) => {
         setEnabled(res.uploads_enabled)
         setMaxFiles(res.uploads_count)
+        setLabel(res.uploads_label)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [product.id])
 
   const save = useCallback(
-    async (newEnabled: boolean, newCount: number) => {
+    async (newEnabled: boolean, newCount: number, newLabel: string) => {
       setSaving(true)
       try {
         const res = await sdk.client.fetch<{
           uploads_enabled: boolean
           uploads_count: number
+          uploads_label: string
         }>(`/admin/products/${product.id}/uploads`, {
           method: "POST",
           body: {
             uploads_enabled: newEnabled,
             uploads_count: newCount,
+            uploads_label: newLabel,
           },
         })
         setEnabled(res.uploads_enabled)
         setMaxFiles(res.uploads_count)
+        setLabel(res.uploads_label)
         setToast("Zapisano!")
         setTimeout(() => setToast(null), 2000)
       } catch {
@@ -65,7 +70,7 @@ const ProductUploadsWidget = ({
 
   const handleToggle = (checked: boolean) => {
     setEnabled(checked)
-    save(checked, maxFiles)
+    save(checked, maxFiles, label)
   }
 
   const handleCountChange = (value: string) => {
@@ -74,7 +79,11 @@ const ProductUploadsWidget = ({
   }
 
   const handleCountBlur = () => {
-    save(enabled, maxFiles)
+    save(enabled, maxFiles, label)
+  }
+
+  const handleLabelBlur = () => {
+    save(enabled, maxFiles, label)
   }
 
   if (loading) {
@@ -126,19 +135,35 @@ const ProductUploadsWidget = ({
         </div>
 
         {enabled && (
-          <div className="mt-3 flex items-center gap-2">
-            <Label size="xsmall">Maks. plików (1–5):</Label>
-            <Input
-              size="small"
-              type="number"
-              className="w-20"
-              min={1}
-              max={5}
-              value={maxFiles}
-              onChange={(e) => handleCountChange(e.target.value)}
-              onBlur={handleCountBlur}
-              disabled={saving}
-            />
+          <div className="mt-3 space-y-3">
+            <div>
+              <Label size="xsmall" className="mb-1">Nagłówek sekcji (opcjonalnie):</Label>
+              <Input
+                size="small"
+                placeholder="Wgraj swoje logo lub elementy"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                onBlur={handleLabelBlur}
+                disabled={saving}
+              />
+              <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                Pusty = domyślny: „Wgraj swoje logo lub elementy"
+              </Text>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label size="xsmall">Maks. plików (1–5):</Label>
+              <Input
+                size="small"
+                type="number"
+                className="w-20"
+                min={1}
+                max={5}
+                value={maxFiles}
+                onChange={(e) => handleCountChange(e.target.value)}
+                onBlur={handleCountBlur}
+                disabled={saving}
+              />
+            </div>
           </div>
         )}
       </div>
