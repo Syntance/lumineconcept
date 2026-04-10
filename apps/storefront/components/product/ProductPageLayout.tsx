@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getProductByHandle, getProducts } from "@/lib/medusa/products";
 import { sanityClient } from "@/lib/sanity/client";
@@ -63,11 +63,8 @@ export async function ProductPageLayout({
   categoryHref,
   ProductPageClient,
 }: ProductPageLayoutProps) {
-  const [product, faqs, siteSettings, productConfig] = await Promise.all([
+  const [product, siteSettings, productConfig] = await Promise.all([
     getProductData(slug),
-    sanityClient
-      .fetch<ProductFaq[]>(PRODUCT_FAQ_QUERY, { handle: slug }, { next: { revalidate: 300 } })
-      .catch(() => []),
     sanityClient
       .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
       .catch(() => null),
@@ -110,8 +107,6 @@ export async function ProductPageLayout({
   const dimensionsWxHLine = formatDimensionsWxH(dimensionParts.width, dimensionParts.height);
   const price = firstVariant?.calculated_price?.calculated_amount ?? 0;
 
-  const crossSellProducts = await loadCrossSell(metadata, basePath);
-
   const productUrl = `${SITE_URL}${basePath}/${slug}`;
 
   const productJsonLd: Record<string, unknown> = {
@@ -132,29 +127,15 @@ export async function ProductPageLayout({
     })),
   };
 
-  const faqJsonLd =
-    faqs.length > 0
-      ? {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: faqs.map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
-          })),
-        }
-      : null;
-
   return (
     <div>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify([productJsonLd, ...(faqJsonLd ? [faqJsonLd] : [])]),
+          __html: JSON.stringify([productJsonLd]),
         }}
       />
 
-      {/* Breadcrumbs — ten sam kontener co na /sklep (max-w-4xl + container) */}
       <div className="container mx-auto max-w-4xl px-4 pt-10 pb-5 lg:pt-12 lg:pb-6">
         <Breadcrumbs
           className="mb-0"
@@ -166,11 +147,9 @@ export async function ProductPageLayout({
         />
       </div>
 
-      {/* Tło sekcji: brand-50 (#F5F1EC) — między białym a #EEE8E0 z brandbooku */}
       <div className="bg-brand-50">
         <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:gap-10">
-          {/* Galeria: sticky — lewa kolumna rozciąga się do wysokości opisu, zdjęcie „przypięte” przy scrollu */}
           <div className="min-w-0">
             <div className="lg:sticky lg:z-10 lg:top-[calc(var(--header-sticky-height)+var(--product-gallery-sticky-gap)+env(safe-area-inset-top,0px))]">
               <ProductGallery
@@ -184,13 +163,11 @@ export async function ProductPageLayout({
             </div>
           </div>
 
-          {/* Product info */}
           <div className="space-y-4">
             <h1 className="font-display text-2xl font-normal uppercase tracking-wider text-brand-800 sm:text-3xl lg:text-4xl lg:leading-tight">
               {product.title}
             </h1>
 
-            {/* Wymiary → Materiał → cena (opis pod tytułem usunięty — opis zostaje w zakładce „Opis”) */}
             {(dimensionParts.width ||
               dimensionParts.height ||
               dimensionParts.dimensionsFallback ||
@@ -219,7 +196,6 @@ export async function ProductPageLayout({
 
             <PriceDisplay amount={price} variant="badge" />
 
-            {/* Configurator header */}
             <div className="flex items-center gap-4 pt-3 pb-1">
               <span className="h-px flex-1 bg-brand-300" />
               <span className="whitespace-nowrap text-xs font-bold uppercase tracking-[0.2em] text-brand-700 sm:text-sm">
@@ -273,74 +249,144 @@ export async function ProductPageLayout({
       {/* Reviews */}
       <ProductReviews />
 
-      {/* Cross-sell */}
-      {crossSellProducts.length > 0 && (
-        <section className="border-t border-brand-100 bg-white">
-          <div className="container mx-auto max-w-7xl px-4 py-10 lg:py-14">
-            <h2 className="mb-8 text-center font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
-              Może Ci się spodobać
-            </h2>
-            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-              {crossSellProducts.map((p) => {
-                const firstVariant = (p.variants as unknown as
-                  | Array<{ id: string; metadata?: Record<string, unknown> }>
-                  | undefined)?.[0];
-                return (
-                  <ProductCard
-                    key={p.id}
-                    handle={p.handle ?? ""}
-                    title={p.title}
-                    thumbnail={p.thumbnail ?? null}
-                    price={extractPrice(p.variants?.[0])}
-                    href={`${basePath}/${p.handle}`}
-                    variantId={firstVariant?.id}
-                    productId={p.id}
-                    productMetadata={
-                      (p.metadata ?? undefined) as Record<string, unknown> | undefined
-                    }
-                    variantMetadata={firstVariant?.metadata}
-                    globalColors={productConfig.colors}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Cross-sell — streamed via Suspense (nie blokuje galerii / konfiguratora) */}
+      <Suspense fallback={<CrossSellSkeleton />}>
+        <CrossSellSection metadata={metadata} basePath={basePath} globalColors={productConfig.colors} />
+      </Suspense>
 
-      {/* FAQ */}
-      {faqs.length > 0 && (
-        <section className="border-t border-brand-100 bg-brand-50">
-          <div className="container mx-auto max-w-3xl px-4 py-10 lg:py-14">
-            <h2 className="mb-8 text-center font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
-              Często zadawane pytania
-            </h2>
-            <div className="space-y-4">
-              {faqs.map((faq) => (
-                <details
-                  key={faq._id}
-                  className="group rounded-xl bg-white p-5 shadow-sm"
-                >
-                  <summary className="flex cursor-pointer items-center justify-between text-base font-medium text-brand-800">
-                    {faq.question}
-                    <span className="ml-2 text-brand-400 transition-transform group-open:rotate-45">
-                      +
-                    </span>
-                  </summary>
-                  <p className="mt-3 text-base leading-relaxed text-brand-600">
-                    {faq.answer}
-                  </p>
-                </details>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* FAQ — streamed via Suspense */}
+      <Suspense fallback={null}>
+        <FaqSection slug={slug} />
+      </Suspense>
     </div>
   );
 }
 
-async function loadCrossSell(metadata: Record<string, unknown>, basePath: string) {
+/* ── Async streamed: Cross-sell ─────────────────────────────────── */
+
+async function CrossSellSection({
+  metadata,
+  basePath,
+  globalColors,
+}: {
+  metadata: Record<string, unknown>;
+  basePath: string;
+  globalColors: GlobalConfigOption[];
+}) {
+  const crossSellProducts = await loadCrossSell(metadata, basePath);
+  if (crossSellProducts.length === 0) return null;
+
+  return (
+    <section className="border-t border-brand-100 bg-white">
+      <div className="container mx-auto max-w-7xl px-4 py-10 lg:py-14">
+        <h2 className="mb-8 text-center font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
+          Może Ci się spodobać
+        </h2>
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          {crossSellProducts.map((p) => {
+            const fv = (p.variants as unknown as
+              | Array<{ id: string; metadata?: Record<string, unknown> }>
+              | undefined)?.[0];
+            return (
+              <ProductCard
+                key={p.id}
+                handle={p.handle ?? ""}
+                title={p.title}
+                thumbnail={p.thumbnail ?? null}
+                price={extractPrice(p.variants?.[0])}
+                href={`${basePath}/${p.handle}`}
+                variantId={fv?.id}
+                productId={p.id}
+                productMetadata={
+                  (p.metadata ?? undefined) as Record<string, unknown> | undefined
+                }
+                variantMetadata={fv?.metadata}
+                globalColors={globalColors}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CrossSellSkeleton() {
+  return (
+    <section className="border-t border-brand-100 bg-white animate-pulse">
+      <div className="container mx-auto max-w-7xl px-4 py-10 lg:py-14">
+        <div className="mx-auto mb-8 h-8 w-56 rounded bg-brand-200" />
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-3">
+              <div className="aspect-square rounded-lg bg-brand-100" />
+              <div className="h-4 w-3/4 rounded bg-brand-200" />
+              <div className="h-4 w-1/3 rounded bg-brand-200" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── Async streamed: FAQ ────────────────────────────────────────── */
+
+async function FaqSection({ slug }: { slug: string }) {
+  const faqs = await sanityClient
+    .fetch<ProductFaq[]>(PRODUCT_FAQ_QUERY, { handle: slug }, { next: { revalidate: 300 } })
+    .catch(() => []);
+
+  if (faqs.length === 0) return null;
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqs.map((f) => ({
+              "@type": "Question",
+              name: f.question,
+              acceptedAnswer: { "@type": "Answer", text: f.answer },
+            })),
+          }),
+        }}
+      />
+      <section className="border-t border-brand-100 bg-brand-50">
+        <div className="container mx-auto max-w-3xl px-4 py-10 lg:py-14">
+          <h2 className="mb-8 text-center font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
+            Często zadawane pytania
+          </h2>
+          <div className="space-y-4">
+            {faqs.map((faq) => (
+              <details
+                key={faq._id}
+                className="group rounded-xl bg-white p-5 shadow-sm"
+              >
+                <summary className="flex cursor-pointer items-center justify-between text-base font-medium text-brand-800">
+                  {faq.question}
+                  <span className="ml-2 text-brand-400 transition-transform group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 text-base leading-relaxed text-brand-600">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ── Helper ─────────────────────────────────────────────────────── */
+
+async function loadCrossSell(metadata: Record<string, unknown>, _basePath: string) {
   const handles =
     (metadata.crossSellHandles as string | undefined)
       ?.split(",")

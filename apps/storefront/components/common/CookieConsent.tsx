@@ -20,7 +20,7 @@ export function CookieConsent() {
     <Script
       id="cookieyes"
       src="https://cdn-cookieyes.com/client_data/YOUR_COOKIEYES_ID/script.js"
-      strategy="beforeInteractive"
+      strategy="afterInteractive"
     />
   );
 }

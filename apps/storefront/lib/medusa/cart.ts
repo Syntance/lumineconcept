@@ -1,15 +1,25 @@
 import { medusa } from "./client";
 import { getPolishRegionId } from "./region";
 
+/**
+ * Medusa 2 domyślnie nie zwraca `items.total` w koszyku — bez tego UI pokazuje „NaN zł”.
+ * `*items` rozszerza pola pozycji (w tym sumy), `+` dokłada brakujące do domyślnego zestawu.
+ */
+const CART_RETRIEVE_QUERY = {
+  fields:
+    "+items.total,+items.subtotal,+items.unit_price,+items.quantity,+subtotal,+total,+tax_total,+shipping_total",
+};
+
 export async function createCart() {
-  const response = await medusa.store.cart.create({
-    region_id: await getPolishRegionId(),
-  });
+  const response = await medusa.store.cart.create(
+    { region_id: await getPolishRegionId() },
+    CART_RETRIEVE_QUERY,
+  );
   return response.cart;
 }
 
 export async function getCart(cartId: string) {
-  const response = await medusa.store.cart.retrieve(cartId);
+  const response = await medusa.store.cart.retrieve(cartId, CART_RETRIEVE_QUERY);
   return response.cart;
 }
 
@@ -19,11 +29,15 @@ export async function addLineItem(
   quantity: number,
   metadata?: Record<string, string>,
 ) {
-  const response = await medusa.store.cart.createLineItem(cartId, {
-    variant_id: variantId,
-    quantity,
-    ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
-  });
+  const response = await medusa.store.cart.createLineItem(
+    cartId,
+    {
+      variant_id: variantId,
+      quantity,
+      ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
+    },
+    CART_RETRIEVE_QUERY,
+  );
   return response.cart;
 }
 
@@ -32,9 +46,14 @@ export async function updateLineItem(
   lineItemId: string,
   quantity: number,
 ) {
-  const response = await medusa.store.cart.updateLineItem(cartId, lineItemId, {
-    quantity,
-  });
+  const response = await medusa.store.cart.updateLineItem(
+    cartId,
+    lineItemId,
+    {
+      quantity,
+    },
+    CART_RETRIEVE_QUERY,
+  );
   return response.cart;
 }
 
@@ -44,9 +63,13 @@ export async function removeLineItem(cartId: string, lineItemId: string) {
 }
 
 export async function applyPromotionCode(cartId: string, code: string) {
-  const response = await medusa.store.cart.update(cartId, {
-    promo_codes: [code],
-  });
+  const response = await medusa.store.cart.update(
+    cartId,
+    {
+      promo_codes: [code],
+    },
+    CART_RETRIEVE_QUERY,
+  );
   return response.cart;
 }
 

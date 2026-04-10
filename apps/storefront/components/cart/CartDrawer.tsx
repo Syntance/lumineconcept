@@ -215,8 +215,8 @@ export function CartDrawer() {
                 <span className="text-brand-200">·</span>
                 <span>
                   {expressDelivery
-                    ? "Ekspress: ok. 3 dni rob."
-                    : "Realizacja ok. 10 dni rob."}
+                    ? "Ekspress: 3 dni robocze"
+                    : "Realizacja ok. 10 dni roboczych"}
                 </span>
               </div>
             </div>

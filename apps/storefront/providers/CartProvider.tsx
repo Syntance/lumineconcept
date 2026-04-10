@@ -48,11 +48,39 @@ interface CartContextType extends CartState {
   /** true, gdy w metadata jest express_delivery = true / "true" */
   expressDelivery: boolean;
   setExpressDelivery: (enabled: boolean) => Promise<void>;
+  /** Dopłata ekspress: 50% sumy produktów (subtotal), w groszach */
+  expressSurcharge: number;
+  /** total z Medusy + expressSurcharge (gdy ekspress włączony) */
+  grandTotal: number;
 }
 
 const CART_ID_KEY = "lumine_cart_id";
 
 const CartContext = createContext<CartContextType | null>(null);
+
+/** Kwota w groszach z odpowiedzi Medusy (czasem brak `total` na pozycji). */
+function minorFromUnknown(v: unknown): number | undefined {
+  if (v === null || v === undefined) return undefined;
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+}
+
+function lineItemTotalMinor(item: Record<string, unknown>): number {
+  for (const key of ["total", "subtotal"]) {
+    const m = minorFromUnknown(item[key]);
+    if (m !== undefined && m >= 0) return m;
+  }
+  const unit = minorFromUnknown(item.unit_price);
+  const qty = minorFromUnknown(item.quantity) ?? 1;
+  if (unit !== undefined && unit >= 0 && qty > 0) {
+    return Math.round(unit * qty);
+  }
+  return 0;
+}
 
 function mapCartItems(items: Array<Record<string, unknown>>): CartItem[] {
   return items.map((item) => ({
@@ -60,9 +88,9 @@ function mapCartItems(items: Array<Record<string, unknown>>): CartItem[] {
     variant_id: item.variant_id as string,
     title: item.title as string,
     thumbnail: item.thumbnail as string | undefined,
-    quantity: item.quantity as number,
-    unit_price: item.unit_price as number,
-    total: item.total as number,
+    quantity: Math.max(1, Math.round(minorFromUnknown(item.quantity) ?? 1)),
+    unit_price: minorFromUnknown(item.unit_price) ?? 0,
+    total: lineItemTotalMinor(item),
     metadata: item.metadata as Record<string, string> | undefined,
   }));
 }
@@ -256,6 +284,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => {
     const ed = cart.metadata.express_delivery;
     const expressDelivery = ed === "true" || ed === "1";
+    const expressSurcharge = expressDelivery
+      ? Math.round(cart.subtotal * 0.5)
+      : 0;
+    const grandTotal = cart.total + expressSurcharge;
     return {
       ...cart,
       isLoading,
@@ -269,6 +301,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       applyDiscount,
       expressDelivery,
       setExpressDelivery,
+      expressSurcharge,
+      grandTotal,
     };
   }, [
     cart,

@@ -28,7 +28,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
         />
         <span className="text-xs font-medium text-brand-800">
           Ekspress{" "}
-          <span className="font-normal text-brand-500">(ok. 3 dni rob.)</span>
+          <span className="font-normal text-brand-500">(3 dni robocze)</span>
         </span>
       </label>
     );
@@ -48,7 +48,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
       </div>
 
       <p className="mt-2 text-[11px] leading-snug text-brand-600">
-        ok. 3 dni robocze zamiast ok. 10 — potrzebujesz szybciej?
+        ok. 3 dni robocze zamiast ok. 10 dni roboczych — potrzebujesz szybciej?
       </p>
 
       <label className="mt-3 flex cursor-pointer items-center gap-2.5">
