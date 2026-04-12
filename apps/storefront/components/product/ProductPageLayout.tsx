@@ -23,7 +23,16 @@ import {
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
-function extractPrice(variant: unknown): number {
+function extractBasePrice(metadata: Record<string, unknown> | undefined | null): number | null {
+  const raw = metadata?.base_price;
+  if (raw === undefined || raw === null || raw === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function extractPrice(variant: unknown, metadata?: Record<string, unknown> | null): number {
+  const bp = extractBasePrice(metadata);
+  if (bp !== null) return bp;
   const v = variant as Record<string, unknown> | null;
   const cp = v?.calculated_price as Record<string, unknown> | undefined;
   return Number(cp?.calculated_amount ?? 0);
@@ -106,7 +115,7 @@ export async function ProductPageLayout({
     firstVariant?.metadata ?? null,
   );
   const dimensionsWxHLine = formatDimensionsWxH(dimensionParts.width, dimensionParts.height);
-  const price = firstVariant?.calculated_price?.calculated_amount ?? 0;
+  const price = extractBasePrice(metadata) ?? firstVariant?.calculated_price?.calculated_amount ?? 0;
 
   const productUrl = `${SITE_URL}${basePath}/${slug}`;
 
@@ -119,7 +128,7 @@ export async function ProductPageLayout({
     url: productUrl,
     offers: variants.map((v) => ({
       "@type": "Offer",
-      price: (v.calculated_price?.calculated_amount ?? 0) / 100,
+      price: (extractBasePrice(metadata) ?? v.calculated_price?.calculated_amount ?? 0) / 100,
       priceCurrency: "PLN",
       availability:
         v.manage_inventory === false || v.inventory_quantity > 0
@@ -298,7 +307,7 @@ async function CrossSellSection({
                 handle={p.handle ?? ""}
                 title={p.title}
                 thumbnail={p.thumbnail ?? null}
-                price={extractPrice(p.variants?.[0])}
+                price={extractPrice(p.variants?.[0], p.metadata as Record<string, unknown> | undefined)}
                 href={`${basePath}/${p.handle}`}
                 variantId={fv?.id}
                 productId={p.id}

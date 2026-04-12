@@ -62,12 +62,16 @@ export function medusaProductToSimple(p: Record<string, unknown>): SimpleProduct
   const hasMeta = p.metadata && typeof p.metadata === "object";
   const firstVariantMetadata = v0?.metadata;
 
+  const bpRaw = meta.base_price;
+  const bpNum = (bpRaw !== undefined && bpRaw !== null && bpRaw !== "") ? Number(bpRaw) : NaN;
+  const basePrice = Number.isFinite(bpNum) && bpNum > 0 ? bpNum : null;
+
   return {
     id: String(p.id ?? ""),
     handle: String(p.handle ?? ""),
     title: String(p.title ?? ""),
     thumbnail,
-    price: minPriceFromVariants(variants),
+    price: basePrice ?? minPriceFromVariants(variants),
     hasVariantPrices: hasMultiplePrices(variants),
     variantId: v0?.id ?? null,
     tags: ((p.tags ?? []) as Array<{ value?: string }>).map((t) =>

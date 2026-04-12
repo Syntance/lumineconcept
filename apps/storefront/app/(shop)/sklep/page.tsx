@@ -22,7 +22,16 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-function extractPrice(variant: unknown): number {
+function extractBasePrice(metadata: Record<string, unknown> | undefined | null): number | null {
+  const raw = metadata?.base_price;
+  if (raw === undefined || raw === null || raw === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function extractPrice(variant: unknown, metadata?: Record<string, unknown> | null): number {
+  const bp = extractBasePrice(metadata);
+  if (bp !== null) return bp;
   const v = variant as Record<string, unknown> | null;
   const cp = v?.calculated_price as Record<string, unknown> | undefined;
   return Number(cp?.calculated_amount ?? 0);
@@ -223,7 +232,7 @@ export default async function ShopHubPage() {
                         ? "arch-down"
                         : "square";
                   const sharpCorners = index === 1 || index === 3;
-                  const price = extractPrice(product.variants?.[0]);
+                  const price = extractPrice(product.variants?.[0], product.metadata as Record<string, unknown> | undefined);
                   return (
                     <Link
                       key={product.handle ?? product.id}
