@@ -189,14 +189,23 @@ export function ProductPageClient({
     }),
   );
 
+  const basePrice = useMemo(() => {
+    const raw = product.metadata?.base_price;
+    if (raw === undefined || raw === null || raw === "") return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [product.metadata]);
+
+  const displayPrice = basePrice ?? selectedVariant?.price ?? 0;
+
   useEffect(() => {
     trackProductViewed({
       id: product.id,
       title: product.title,
-      price: selectedVariant?.price ?? 0,
+      price: displayPrice,
       currency: "PLN",
     });
-  }, [product.id, product.title, selectedVariant?.price]);
+  }, [product.id, product.title, displayPrice]);
 
   useEffect(() => {
     const el = ctaRef.current;
@@ -373,7 +382,7 @@ export function ProductPageClient({
             productData={{
               id: product.id,
               title: product.title,
-              price: selectedVariant?.price ?? 0,
+              price: displayPrice,
               currency: "PLN",
             }}
             disabled={
@@ -397,14 +406,14 @@ export function ProductPageClient({
               <p className="truncate text-base font-medium text-brand-800">
                 {product.title}
               </p>
-              <PriceDisplay amount={selectedVariant?.price ?? 0} size="sm" />
+              <PriceDisplay amount={displayPrice} size="sm" />
             </div>
             <AddToCartButton
               variantId={selectedVariant?.id ?? null}
               productData={{
                 id: product.id,
                 title: product.title,
-                price: selectedVariant?.price ?? 0,
+                price: displayPrice,
                 currency: "PLN",
               }}
               disabled={
