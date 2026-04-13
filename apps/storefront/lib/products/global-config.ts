@@ -89,11 +89,13 @@ async function _fetchGlobalConfig(): Promise<GlobalProductConfig> {
 
   if (!res.ok) {
     if (process.env.NODE_ENV === "development" && !getPublishableKey()) {
-      console.error(
+      console.warn(
         "[global-config] Brak publishable API key: ustaw MEDUSA_PUBLISHABLE_KEY lub NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY w apps/storefront/.env.local (Medusa Admin → Settings → Publishable API keys).",
       )
-    } else {
-      console.error("Failed to fetch global product config:", res.status)
+    } else if (process.env.NODE_ENV === "development") {
+      console.warn(
+        `[global-config] /store/product-config → HTTP ${res.status} (Medusa wyłączona lub 502). Konfigurator: puste opcje globalne.`,
+      )
     }
     return { colors: [], sizes: [], materials: [], led: [], finishes: [] }
   }

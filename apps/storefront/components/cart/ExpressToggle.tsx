@@ -48,7 +48,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
           </span>
           <span className="text-base font-normal text-brand-800">
             {" "}
-            - <strong className="font-semibold">3 dni</strong> robocze zamiast 10
+            - <strong className="font-semibold">3 dni</strong> robocze zamiast 10.
           </span>
         </p>
       </div>

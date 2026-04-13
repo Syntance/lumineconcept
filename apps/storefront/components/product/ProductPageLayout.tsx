@@ -74,7 +74,7 @@ export async function ProductPageLayout({
   ProductPageClient,
 }: ProductPageLayoutProps) {
   const [product, siteSettings, productConfig] = await Promise.all([
-    getProductData(slug),
+    getProductData(slug).catch(() => null),
     sanityClient
       .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
       .catch(() => null),

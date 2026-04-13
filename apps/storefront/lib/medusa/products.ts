@@ -3,10 +3,12 @@ import { medusa } from "./client";
 import { getPolishRegionId } from "./region";
 
 function logMedusaFailure(context: string, error: unknown) {
-  console.error(
-    `[medusa] ${context} — backend niedostępny lub błąd HTTP (np. 502). Uruchom Medusę (pnpm dev w apps/backend) i sprawdź NEXT_PUBLIC_MEDUSA_BACKEND_URL.`,
-    error,
-  );
+  const msg = `[medusa] ${context} — backend niedostępny lub błąd HTTP (np. 502). Uruchom Medusę (apps/backend) i sprawdź MEDUSA_BACKEND_URL / NEXT_PUBLIC_MEDUSA_REGION_ID.`;
+  if (process.env.NODE_ENV === "development") {
+    console.warn(msg, error);
+  } else {
+    console.error(msg, error);
+  }
 }
 
 async function _getProducts(params?: {

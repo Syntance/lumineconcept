@@ -3,8 +3,9 @@ import { cn } from "@/lib/utils";
 const STEPS = [
   {
     n: 1,
-    label: "Konfiguracja",
-    short: "Ustalasz kolory, rozmiar oraz treści",
+    label: "Konfiguracja i płatność",
+    short:
+      "Ustalasz kolory, treści oraz opłacasz zamówienie.",
   },
   {
     n: 2,
