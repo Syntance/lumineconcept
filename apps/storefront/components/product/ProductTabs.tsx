@@ -1,5 +1,7 @@
+import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
 import {
   extractDimensionsFromProductDescription,
+  getProductDimensionParts,
   getProductDimensionsLabel,
   stripHtmlForDimensions,
 } from "@/lib/products/dimensions";
@@ -30,6 +32,11 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
   const spec = metadata.specyfikacja as string | undefined;
   const tabs: Array<{ title: string; content: React.ReactNode }> = [];
 
+  const dimensionParts = getProductDimensionParts(metadata, null);
+  const materialDescriptionLine =
+    dimensionParts.thickness &&
+    `${PDP_MATERIAL_ACRYLIC} ${dimensionParts.thickness} grubości`;
+
   const dimensionsInOpis =
     getProductDimensionsLabel(metadata) ??
     extractDimensionsFromProductDescription(
@@ -51,12 +58,24 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
                 <span className="text-brand-500">Wymiary:</span>{" "}
                 {split.dimensionsLine.replace(/^Wymiary\s*[:\-–—]\s*/i, "").trim()}
               </p>
+              {materialDescriptionLine && (
+                <p className="mt-1">
+                  <span className="text-brand-500">Materiał:</span>{" "}
+                  {materialDescriptionLine}
+                </p>
+              )}
             </>
           ) : (
             <>
               {dimensionsInOpis && (
                 <p className="mb-3 font-sans text-base leading-relaxed text-brand-700">
                   <span className="text-brand-500">Wymiary:</span> {dimensionsInOpis}
+                </p>
+              )}
+              {materialDescriptionLine && (
+                <p className="mb-3 font-sans text-base leading-relaxed text-brand-700">
+                  <span className="text-brand-500">Materiał:</span>{" "}
+                  {materialDescriptionLine}
                 </p>
               )}
               <p>{description}</p>
