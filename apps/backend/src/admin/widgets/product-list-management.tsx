@@ -17,6 +17,7 @@ interface ProductRow {
   categories?: Array<{ id: string; name: string }>
   variants?: Array<{ id: string }>
   metadata?: Record<string, unknown> | null
+  display_price_grosz?: number | null
 }
 
 function formatGrToZl(grosz: number): string {
@@ -41,9 +42,8 @@ const ProductListManagement = () => {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const fields = encodeURIComponent("+metadata,*categories")
       const res = await sdk.client.fetch<{ products: ProductRow[] }>(
-        `/admin/products?fields=${fields}&limit=200&order=title`,
+        `/admin/product-management/products`,
         { method: "GET" },
       )
       setProducts(res.products)
@@ -79,9 +79,14 @@ const ProductListManagement = () => {
   }
 
   const startEdit = (product: ProductRow) => {
-    const raw = product.metadata?.base_price
-    const n = Number(raw)
-    setEditValue(Number.isFinite(n) && n > 0 ? formatGrToZl(n) : "")
+    const rawMeta = product.metadata?.base_price
+    const nMeta = Number(rawMeta)
+    const fromMeta = Number.isFinite(nMeta) && nMeta > 0 ? nMeta : null
+    const effective =
+      fromMeta ?? (product.display_price_grosz && product.display_price_grosz > 0
+        ? product.display_price_grosz
+        : null)
+    setEditValue(effective ? formatGrToZl(effective) : "")
     setEditingId(product.id)
   }
 
@@ -92,19 +97,7 @@ const ProductListManagement = () => {
         `/admin/products/${productId}/base-price`,
         { method: "POST", body: { base_price: grosz } },
       )
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === productId
-            ? {
-                ...p,
-                metadata: {
-                  ...(p.metadata ?? {}),
-                  base_price: grosz ? String(grosz) : "",
-                },
-              }
-            : p,
-        ),
-      )
+      await fetchProducts()
     } catch {
       /* ignore */
     }
@@ -125,8 +118,8 @@ const ProductListManagement = () => {
     (p) => p.status === "published",
   ).length
   const pricedCount = products.filter((p) => {
-    const n = Number(p.metadata?.base_price)
-    return Number.isFinite(n) && n > 0
+    const g = p.display_price_grosz
+    return typeof g === "number" && g > 0
   }).length
 
   if (loading) return null
@@ -188,9 +181,9 @@ const ProductListManagement = () => {
               <tbody className="divide-y divide-ui-border-base">
                 {filtered.map((product) => {
                   const isPublished = product.status === "published"
-                  const raw = product.metadata?.base_price
-                  const priceGr = Number(raw)
-                  const hasPrice = Number.isFinite(priceGr) && priceGr > 0
+                  const priceGr = product.display_price_grosz ?? null
+                  const hasPrice =
+                    typeof priceGr === "number" && priceGr > 0
                   const isEditing = editingId === product.id
 
                   return (
@@ -253,7 +246,7 @@ const ProductListManagement = () => {
                             onClick={() => startEdit(product)}
                             title="Kliknij aby edytować cenę"
                           >
-                            {hasPrice
+                            {hasPrice && priceGr != null
                               ? formatGrToZl(priceGr) + " zł"
                               : "Ustaw cenę"}
                           </button>
