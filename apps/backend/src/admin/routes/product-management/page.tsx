@@ -10,22 +10,7 @@ import {
 import { ShoppingBag } from "@medusajs/icons"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { sdk } from "../../lib/sdk"
-import { enrichFromLegacyProducts } from "../../lib/product-management-utils"
-
-interface ProductRow {
-  id: string
-  title: string
-  thumbnail: string | null
-  status: string
-  categories?: Array<{ id: string; name: string }>
-  variants?: Array<{
-    id: string
-    prices?: Array<{ amount?: unknown }>
-  }>
-  metadata?: Record<string, unknown> | null
-  /** Min z cen wariantów (grosze) lub base_price — jak w sklepie */
-  display_price_grosz?: number | null
-}
+import { mapProductRows, type ProductRowRaw, type ProductRowUI } from "../../lib/product-management-utils"
 
 function formatGrToZl(grosz: number): string {
   return (grosz / 100).toFixed(2).replace(".", ",")
@@ -38,8 +23,10 @@ function parseZlToGr(input: string): number | null {
   return Math.round(n * 100)
 }
 
+const FIELDS = "+metadata,+thumbnail,*categories,*variants,*variants.prices,*images"
+
 const ProductManagementPage = () => {
-  const [products, setProducts] = useState<ProductRow[]>([])
+  const [products, setProducts] = useState<ProductRowUI[]>([])
   const [loading, setLoading] = useState(true)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [search, setSearch] = useState("")
@@ -48,35 +35,14 @@ const ProductManagementPage = () => {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await sdk.client.fetch<{ products: ProductRow[] }>(
-        `/admin/product-management/products`,
+      const fields = encodeURIComponent(FIELDS)
+      const res = await sdk.client.fetch<{ products: ProductRowRaw[] }>(
+        `/admin/products?fields=${fields}&limit=500&order=title`,
         { method: "GET" },
       )
-      let list = res.products ?? []
-      if (list.length === 0) {
-        const fields = encodeURIComponent(
-          "+metadata,*categories,*variants,*variants.prices,*images",
-        )
-        const legacy = await sdk.client.fetch<{ products: ProductRow[] }>(
-          `/admin/products?fields=${fields}&limit=500&order=title`,
-          { method: "GET" },
-        )
-        list = enrichFromLegacyProducts(legacy.products ?? [])
-      }
-      setProducts(list)
+      setProducts(mapProductRows(res.products ?? []))
     } catch {
-      try {
-        const fields = encodeURIComponent(
-          "+metadata,*categories,*variants,*variants.prices,*images",
-        )
-        const legacy = await sdk.client.fetch<{ products: ProductRow[] }>(
-          `/admin/products?fields=${fields}&limit=500&order=title`,
-          { method: "GET" },
-        )
-        setProducts(enrichFromLegacyProducts(legacy.products ?? []))
-      } catch {
-        setProducts([])
-      }
+      setProducts([])
     } finally {
       setLoading(false)
     }
@@ -86,7 +52,7 @@ const ProductManagementPage = () => {
     fetchProducts()
   }, [fetchProducts])
 
-  const toggleVisibility = async (product: ProductRow) => {
+  const toggleVisibility = async (product: ProductRowUI) => {
     const newStatus = product.status === "published" ? "draft" : "published"
     setTogglingId(product.id)
     try {
@@ -106,15 +72,9 @@ const ProductManagementPage = () => {
     }
   }
 
-  const startEdit = (product: ProductRow) => {
-    const rawMeta = product.metadata?.base_price
-    const nMeta = Number(rawMeta)
-    const fromMeta = Number.isFinite(nMeta) && nMeta > 0 ? nMeta : null
-    const effective =
-      fromMeta ?? (product.display_price_grosz && product.display_price_grosz > 0
-        ? product.display_price_grosz
-        : null)
-    setEditValue(effective ? formatGrToZl(effective) : "")
+  const startEdit = (product: ProductRowUI) => {
+    const g = product.display_price_grosz
+    setEditValue(g && g > 0 ? formatGrToZl(g) : "")
     setEditingId(product.id)
   }
 
@@ -138,17 +98,16 @@ const ProductManagementPage = () => {
     return products.filter(
       (p) =>
         p.title.toLowerCase().includes(q) ||
-        p.categories?.some((c) => c.name.toLowerCase().includes(q)),
+        p.categories.some((c) => c.name.toLowerCase().includes(q)),
     )
   }, [products, search])
 
   const publishedCount = products.filter(
     (p) => p.status === "published",
   ).length
-  const pricedCount = products.filter((p) => {
-    const g = p.display_price_grosz
-    return typeof g === "number" && g > 0
-  }).length
+  const pricedCount = products.filter(
+    (p) => typeof p.display_price_grosz === "number" && p.display_price_grosz > 0,
+  ).length
 
   if (loading) {
     return (
@@ -201,9 +160,8 @@ const ProductManagementPage = () => {
           <tbody className="divide-y divide-ui-border-base">
             {filtered.map((product) => {
               const isPublished = product.status === "published"
-              const priceGr = product.display_price_grosz ?? null
-              const hasPrice =
-                typeof priceGr === "number" && priceGr > 0
+              const priceGr = product.display_price_grosz
+              const hasPrice = typeof priceGr === "number" && priceGr > 0
               const isEditing = editingId === product.id
 
               return (
@@ -233,7 +191,7 @@ const ProductManagementPage = () => {
                     </a>
                   </td>
                   <td className="max-w-[180px] truncate px-4 py-2.5 text-ui-fg-subtle">
-                    {product.categories?.length
+                    {product.categories.length
                       ? product.categories.map((c) => c.name).join(", ")
                       : "—"}
                   </td>
@@ -273,7 +231,7 @@ const ProductManagementPage = () => {
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-center text-ui-fg-subtle">
-                    {product.variants?.length ?? 0}
+                    {product.variantCount}
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
