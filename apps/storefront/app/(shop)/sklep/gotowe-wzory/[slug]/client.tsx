@@ -176,6 +176,12 @@ export function ProductPageClient({
 
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
+  /** Produkt wyłącznie z wgrywaniem plików (bez pól tekstowych i linków QR) */
+  const uploadOnlyProduct =
+    uploadsCount > 0 && textFields.length === 0 && linksCount === 0;
+  const uploadsComplete =
+    !uploadOnlyProduct || uploadedFiles.length > 0;
+
   const ctaRef = useRef<HTMLDivElement>(null);
   const [calloutAction, setCalloutAction] = useState<
     "cart" | "checkout" | null
@@ -277,6 +283,7 @@ export function ProductPageClient({
     checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
 
   const configIncomplete =
+    !uploadsComplete ||
     !allLinksProvided ||
     !allTextFieldsValid ||
     (!allColorChoicesComplete && colorOptionTitles.length > 0);
@@ -376,6 +383,9 @@ export function ProductPageClient({
                 )}
                 {!allLinksProvided && (
                   <li>Podaj wszystkie wymagane linki do kodów QR</li>
+                )}
+                {!uploadsComplete && (
+                  <li>Wgraj co najmniej jeden plik w sekcji wgrywania treści</li>
                 )}
               </ul>
               <button
