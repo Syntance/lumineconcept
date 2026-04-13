@@ -1,10 +1,39 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { cloudinaryLoader } from "@/lib/cloudinary/utils";
-import { cn } from "@/lib/utils";
 import { CloudinaryImage } from "../common/CloudinaryImage";
+
+const ASPECT_W = 10;
+const ASPECT_H = 11;
+const RESERVED_HEIGHT_PX = 200;
+
+function useGalleryMaxWidth() {
+  const [maxW, setMaxW] = useState<number | null>(null);
+
+  useEffect(() => {
+    function calc() {
+      if (window.innerWidth < 1024) {
+        setMaxW(null);
+        return;
+      }
+      const available = window.innerHeight - RESERVED_HEIGHT_PX;
+      if (available <= 0) {
+        setMaxW(null);
+        return;
+      }
+      const maxWidth = available * (ASPECT_W / ASPECT_H);
+      setMaxW(maxWidth);
+    }
+
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
+
+  return maxW;
+}
 
 function GalleryMainImage({ url, alt }: { url: string; alt: string }) {
   const isExternal = url.startsWith("http");
@@ -52,6 +81,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
   const [panOrigin, setPanOrigin] = useState({ x: 50, y: 50 });
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const mainRef = useRef<HTMLDivElement>(null);
+  const galleryMaxW = useGalleryMaxWidth();
 
   const goTo = useCallback(
     (index: number) => {
@@ -113,28 +143,32 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
 
   const selectedImage = images[selectedIndex];
 
+  const constrainStyle: React.CSSProperties | undefined =
+    galleryMaxW != null ? { maxWidth: galleryMaxW } : undefined;
+
   return (
-    <div className="relative isolate w-full overflow-visible pb-3 pr-4">
-      <div className="relative z-10 flex flex-col gap-3 lg:flex-row-reverse lg:items-start lg:gap-4">
-        {/* Główne zdjęcie — na mobile na górze, na lg po prawej (flex-row-reverse) */}
+    <div className="relative isolate w-full overflow-visible">
+      {/* Desktop: miniatury + zdjęcie + kwadrat tła — maxWidth ogranicza, ml-auto przykleja do prawej */}
+      <div
+        className="relative ml-auto flex flex-col gap-3 lg:flex-row-reverse lg:items-start lg:gap-4"
+        style={constrainStyle}
+      >
+        {/* Główne zdjęcie + kwadrat tła */}
         <div className="relative min-w-0 flex-1">
-          <div className="relative w-full overflow-visible">
+          {/* Na mobile: bez paddingu/kwadrat; na desktop: kwadrat z proporcjonalnym offsetem */}
+          <div className="relative w-full lg:pb-[5%] lg:pr-[5%]">
+            {/* Kwadrat tła — tylko desktop */}
             <div
               aria-hidden
-              className={cn(
-                "pointer-events-none absolute -z-10 bg-brand-100 top-[20%] -right-4 -bottom-4 sm:-right-5 sm:-bottom-5",
-                /* Do lewej krawędzi strony: margines kontenera PDP + padding (+ na lg miniatury + gap) */
-                "left-[calc(-1*(max(0px,(100vw-min(102rem,calc(100vw-2rem)))/2)+1rem))]",
-                images.length > 1
-                  ? "lg:left-[calc(-1*(max(0px,(100vw-min(102rem,calc(100vw-2rem)))/2)+2rem+5.25rem+1rem))]"
-                  : "lg:left-[calc(-1*(max(0px,(100vw-min(102rem,calc(100vw-2rem)))/2)+2rem))]",
-              )}
+              className="pointer-events-none absolute bottom-0 right-0 top-[20%] -z-10 hidden bg-brand-100 lg:block"
+              style={{ left: "min(0px, calc(-1 * (100vw - 100%)))" }}
             />
             <div
               ref={mainRef}
-              className={`relative mx-auto aspect-10/11 w-full max-w-[min(100%,calc(min(87vh,calc(100svh-6rem))*10/11))] overflow-hidden ${
+              className={`relative mx-auto aspect-10/11 w-full overflow-hidden lg:mx-0 lg:!max-h-none ${
                 zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
               }`}
+              style={{ maxHeight: "calc(100dvh - 14rem)" }}
               onClick={handleMainClick}
               onMouseMove={handleMouseMove}
               onMouseLeave={() => zoomed && setZoomed(false)}
@@ -181,10 +215,10 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
           </div>
         </div>
 
-        {/* Miniatury: pasek poziomy na mobile; na lg kolumna po lewej, przewijalna w pionie */}
+        {/* Miniatury — na mobile: poziomy pasek pod zdjęciem, wyśrodkowany; na desktop: kolumna po lewej */}
         {images.length > 1 && (
           <div
-            className="flex gap-3 overflow-x-auto pb-1 pt-1 lg:w-21 lg:shrink-0 lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0 lg:max-h-[min(87vh,calc(100vh-10rem))] lg:gap-2"
+            className="flex justify-center gap-2 overflow-x-auto pb-1 pt-1 lg:w-21 lg:shrink-0 lg:flex-col lg:justify-start lg:gap-2 lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0 lg:max-h-[min(87vh,calc(100vh-10rem))]"
             role="tablist"
             aria-label="Galeria produktu"
           >
@@ -193,7 +227,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 key={image.id}
                 type="button"
                 onClick={() => goTo(index)}
-                className={`relative h-20 w-20 shrink-0 overflow-hidden border transition-colors lg:h-18 lg:w-18 ${
+                className={`relative h-14 w-14 shrink-0 overflow-hidden border transition-colors lg:h-18 lg:w-18 ${
                   index === selectedIndex
                     ? "border-brand-400"
                     : "border-transparent hover:border-brand-200"

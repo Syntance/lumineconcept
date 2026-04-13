@@ -7,9 +7,10 @@ import { CartItem } from "@/components/cart/CartItem";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { PayPoPromo } from "@/components/marketing/PayPoPromo";
 
 export function KoszykClient() {
-  const { items, itemCount } = useCart();
+  const { items, itemCount, grandTotal } = useCart();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -45,6 +46,9 @@ export function KoszykClient() {
           <div className="lg:col-span-5">
             <div className="sticky top-24 rounded-lg border border-brand-200 bg-brand-50/50 p-6 lg:p-7">
               <CartSummary />
+              <div className="mt-4">
+                <PayPoPromo price={grandTotal} />
+              </div>
               <div className="mt-4">
                 <ExpressToggle />
               </div>
