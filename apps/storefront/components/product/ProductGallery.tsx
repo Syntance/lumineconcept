@@ -18,7 +18,7 @@ function GalleryMainImage({ url, alt }: { url: string; alt: string }) {
         fill
         priority
         className="object-cover object-center"
-        sizes="(max-width: 1024px) 100vw, 50vw"
+        sizes="(max-width: 1024px) 100vw, (max-width: 1920px) 50vw, 1120px"
         unoptimized={isLocal}
       />
     );
@@ -32,7 +32,7 @@ function GalleryMainImage({ url, alt }: { url: string; alt: string }) {
       fill
       priority
       className="object-cover object-center"
-      sizes="(max-width: 1024px) 100vw, 50vw"
+      sizes="(max-width: 1024px) 100vw, (max-width: 1920px) 50vw, 1120px"
     />
   );
 }
@@ -123,16 +123,16 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
               aria-hidden
               className={cn(
                 "pointer-events-none absolute -z-10 bg-brand-100 top-[20%] -right-4 -bottom-4 sm:-right-5 sm:-bottom-5",
-                /* Do lewej krawędzi strony: margines max-w-7xl + padding kontenera (+ na lg miniatury + gap) */
-                "left-[calc(-1*(max(0px,(100vw-80rem)/2)+1rem))]",
+                /* Do lewej krawędzi strony: margines kontenera PDP + padding (+ na lg miniatury + gap) */
+                "left-[calc(-1*(max(0px,(100vw-min(102rem,calc(100vw-2rem)))/2)+1rem))]",
                 images.length > 1
-                  ? "lg:left-[calc(-1*(max(0px,(100vw-80rem)/2)+2rem+5.25rem+1rem))]"
-                  : "lg:left-[calc(-1*(max(0px,(100vw-80rem)/2)+2rem))]",
+                  ? "lg:left-[calc(-1*(max(0px,(100vw-min(102rem,calc(100vw-2rem)))/2)+2rem+5.25rem+1rem))]"
+                  : "lg:left-[calc(-1*(max(0px,(100vw-min(102rem,calc(100vw-2rem)))/2)+2rem))]",
               )}
             />
             <div
               ref={mainRef}
-              className={`relative aspect-10/11 overflow-hidden ${
+              className={`relative mx-auto aspect-10/11 w-full max-w-[min(100%,calc(min(87vh,calc(100svh-6rem))*10/11))] overflow-hidden ${
                 zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
               }`}
               onClick={handleMainClick}
@@ -184,7 +184,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
         {/* Miniatury: pasek poziomy na mobile; na lg kolumna po lewej, przewijalna w pionie */}
         {images.length > 1 && (
           <div
-            className="flex gap-3 overflow-x-auto pb-1 pt-1 lg:w-21 lg:shrink-0 lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0 lg:max-h-[min(85vh,calc(100vh-10rem))] lg:gap-2"
+            className="flex gap-3 overflow-x-auto pb-1 pt-1 lg:w-21 lg:shrink-0 lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0 lg:max-h-[min(87vh,calc(100vh-10rem))] lg:gap-2"
             role="tablist"
             aria-label="Galeria produktu"
           >

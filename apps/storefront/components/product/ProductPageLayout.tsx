@@ -162,7 +162,7 @@ export async function ProductPageLayout({
       </div>
 
       <div className="bg-brand-50">
-        <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
+        <div className="mx-auto max-w-[min(102rem,calc(100vw-2rem))] px-4 py-6 lg:px-8 lg:py-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:gap-10">
           <div className="min-w-0 pb-[8px]">
             <div className="lg:sticky lg:z-10 lg:top-[calc(var(--header-sticky-height)+var(--product-gallery-sticky-gap)+env(safe-area-inset-top,0px))]">
@@ -259,7 +259,7 @@ export async function ProductPageLayout({
 
       {/* Tabs */}
       <section className="border-t border-brand-100 bg-brand-50">
-        <div className="container mx-auto max-w-7xl px-4 py-10 lg:py-14">
+        <div className="container mx-auto max-w-[min(102rem,calc(100vw-2rem))] px-4 py-10 lg:py-14">
           <ProductTabs description={product.description ?? null} metadata={metadata} />
         </div>
       </section>
@@ -296,7 +296,7 @@ async function CrossSellSection({
 
   return (
     <section className="border-t border-brand-100 bg-white">
-      <div className="container mx-auto max-w-7xl px-4 py-10 lg:py-14">
+      <div className="container mx-auto max-w-[min(102rem,calc(100vw-2rem))] px-4 py-10 lg:py-14">
         <h2 className="mb-8 text-center font-display text-2xl tracking-widest text-brand-800 lg:text-3xl">
           Może Ci się spodobać
         </h2>
@@ -332,7 +332,7 @@ async function CrossSellSection({
 function CrossSellSkeleton() {
   return (
     <section className="border-t border-brand-100 bg-white animate-pulse">
-      <div className="container mx-auto max-w-7xl px-4 py-10 lg:py-14">
+      <div className="container mx-auto max-w-[min(102rem,calc(100vw-2rem))] px-4 py-10 lg:py-14">
         <div className="mx-auto mb-8 h-8 w-56 rounded bg-brand-200" />
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (

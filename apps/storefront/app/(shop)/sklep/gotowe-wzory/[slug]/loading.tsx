@@ -13,7 +13,7 @@ export default function ProductLoading() {
       </div>
 
       <div className="bg-brand-50">
-        <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
+        <div className="mx-auto max-w-[min(102rem,calc(100vw-2rem))] px-4 py-6 lg:px-8 lg:py-8">
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
             {/* Gallery skeleton */}
             <div className="space-y-3">
