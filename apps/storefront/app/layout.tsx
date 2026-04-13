@@ -117,7 +117,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl" className={`${gilroy.variable} ${chronicle.variable} ${binerka.variable}`}>
-      <body className="min-h-screen bg-white antialiased">
+      <body className="min-h-screen overflow-x-hidden bg-white antialiased">
         <CookieConsent />
         <Providers>{children}</Providers>
       </body>

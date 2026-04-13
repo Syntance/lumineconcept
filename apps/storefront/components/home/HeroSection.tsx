@@ -41,7 +41,7 @@ const scale = {
 
 export function HeroSection({ children }: { children?: React.ReactNode }) {
   return (
-    <section className="relative flex min-h-[52vmin] w-full flex-col" style={{ minHeight: "min(92dvh, 96vmin)" }}>
+    <section className="relative flex min-h-[52vmin] w-full flex-col overflow-x-hidden" style={{ minHeight: "min(92dvh, 96vmin)" }}>
       <Image
         src="/images/hero.png"
         alt=""
