@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useId } from "react";
-import { ChevronDown } from "lucide-react";
 import {
   CUSTOM_COLOR_VALUE,
   getColorHex,
@@ -18,6 +17,11 @@ interface ColorStepPanelProps {
   matFinish: boolean;
   onMatFinishChange: (enabled: boolean) => void;
   defaultExpanded?: boolean;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
+  showNextButton?: boolean;
+  onNext?: () => void;
+  nextButtonLabel?: string;
   colorMap: Record<string, string>;
   coloredSet: Set<string>;
   mirrorSet: Set<string>;
@@ -33,15 +37,21 @@ export function ColorStepPanel({
   matFinish,
   onMatFinishChange,
   defaultExpanded = false,
+  expanded,
+  onExpandedChange,
+  showNextButton = false,
+  onNext,
+  nextButtonLabel = "Następny \u2192",
   colorMap,
   coloredSet,
   mirrorSet,
   matDisabledSet,
 }: ColorStepPanelProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
   const [hexInput, setHexInput] = useState(customColor ?? "#000000");
   const colorInputRef = useRef<HTMLInputElement>(null);
   const uniqueId = useId();
+  const isExpanded = expanded ?? internalExpanded;
 
   const isCustomSelected = selectedColor === CUSTOM_COLOR_VALUE;
   const standardColors = option.values.filter(
@@ -122,31 +132,13 @@ export function ColorStepPanel({
 
   return (
     <div>
-      {/* Label + underline trigger — like the reference */}
-      <button
-        type="button"
-        onClick={() => setExpanded((prev) => !prev)}
-        className="flex w-full items-center gap-3 py-1.5 text-left"
-        aria-expanded={expanded}
-      >
-        <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.15em] text-brand-700">
-          {option.title}
-        </span>
-        <span className="h-px flex-1 bg-brand-300" />
-        <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 text-brand-500 transition-transform duration-200 ${
-            expanded ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
       <div
         className={`grid transition-all duration-200 ease-in-out ${
-          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >
         <div className="overflow-hidden">
-          <div className="space-y-3 bg-brand-100 px-3 pb-4 pt-3 mt-1">
+          <div className="space-y-3 px-3 pb-4 pt-3 mt-1">
             {standardColors.length > 0 && (
               <div>
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
@@ -302,6 +294,25 @@ export function ColorStepPanel({
                 )}
               </button>
             </div>
+
+            {showNextButton && onNext && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (expanded === undefined) {
+                      setInternalExpanded(false);
+                    } else {
+                      onExpandedChange?.(false);
+                    }
+                    onNext();
+                  }}
+                  className="w-full rounded-lg border border-[#AF7C61]/50 bg-white px-4 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:border-[#AF7C61] hover:bg-brand-50"
+                >
+                  {nextButtonLabel}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

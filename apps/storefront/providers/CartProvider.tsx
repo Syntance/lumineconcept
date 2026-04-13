@@ -40,7 +40,12 @@ interface CartContextType extends CartState {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addItem: (variantId: string, quantity?: number, metadata?: Record<string, string>) => Promise<void>;
+  addItem: (
+    variantId: string,
+    quantity?: number,
+    metadata?: Record<string, string>,
+    openDrawer?: boolean,
+  ) => Promise<void>;
   updateItem: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
   refreshCart: () => Promise<void>;
@@ -184,13 +189,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [getOrCreateCart]);
 
   const addItem = useCallback(
-    async (variantId: string, quantity = 1, metadata?: Record<string, string>) => {
+    async (
+      variantId: string,
+      quantity = 1,
+      metadata?: Record<string, string>,
+      openDrawer = true,
+    ) => {
       if (!cart.id) return;
       setIsLoading(true);
       try {
         const updated = await cartApi.addLineItem(cart.id, variantId, quantity, metadata);
         updateCartState(updated as unknown as Record<string, unknown>);
-        setIsOpen(true);
+        if (openDrawer) {
+          setIsOpen(true);
+        }
       } finally {
         setIsLoading(false);
       }

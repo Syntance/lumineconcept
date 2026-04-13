@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle } from "lucide-react";
 import {
   ProductConfigurator,
   type ColorCustomization,
@@ -28,6 +27,7 @@ import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { trackProductViewed } from "@/lib/analytics/events";
+import { PayPoPromo } from "@/components/marketing/PayPoPromo";
 
 interface CheckoutCallout {
   enabled?: boolean;
@@ -177,10 +177,11 @@ export function ProductPageClient({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
   const ctaRef = useRef<HTMLDivElement>(null);
-  const [showSticky, setShowSticky] = useState(false);
   const [calloutAction, setCalloutAction] = useState<
     "cart" | "checkout" | null
   >(null);
+  const [showIncompleteConfigBanner, setShowIncompleteConfigBanner] =
+    useState(false);
 
   const selectedVariant = product.variants.find((variant) =>
     Object.entries(selectedOptions).every(([key, value]) => {
@@ -207,18 +208,6 @@ export function ProductPageClient({
       currency: "PLN",
     });
   }, [product.id, product.title, displayPrice]);
-
-  useEffect(() => {
-    const el = ctaRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowSticky(!entry.isIntersecting),
-      { threshold: 0 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     if (!calloutAction) return;
@@ -287,13 +276,29 @@ export function ProductPageClient({
   const calloutEnabled =
     checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
 
+  const configIncomplete =
+    !allLinksProvided ||
+    !allTextFieldsValid ||
+    (!allColorChoicesComplete && colorOptionTitles.length > 0);
+
+  useEffect(() => {
+    if (!configIncomplete) {
+      setShowIncompleteConfigBanner(false);
+    }
+  }, [configIncomplete]);
+
   const handleBeforeAdd = useCallback(() => {
+    if (configIncomplete) {
+      setShowIncompleteConfigBanner(true);
+      ctaRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return true;
+    }
     if (calloutEnabled) {
       setCalloutAction("cart");
       return true;
     }
     return false;
-  }, [calloutEnabled]);
+  }, [configIncomplete, calloutEnabled]);
 
   /** Medusa: manage_inventory === true → limit ze stanu; false/undefined → na zamówienie (bez limitu ze sklepu) */
   const tracksInventory = selectedVariant?.manage_inventory === true;
@@ -301,11 +306,6 @@ export function ProductPageClient({
   const availableToOrder =
     !!selectedVariant && (!tracksInventory || stockQty > 0);
   const maxOrderQty = !tracksInventory ? 99 : stockQty;
-
-  const showValidationCallout =
-    !allLinksProvided ||
-    !allTextFieldsValid ||
-    (!allColorChoicesComplete && colorOptionTitles.length > 0);
 
   return (
     <>
@@ -355,29 +355,40 @@ export function ProductPageClient({
         )}
 
         <div ref={ctaRef} className="space-y-4">
-          {showValidationCallout && (
+          {showIncompleteConfigBanner && configIncomplete && (
             <div
-              className="flex gap-3 rounded-none border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+              className="rounded-lg border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-brand-50/80 px-5 py-4 shadow-sm"
               role="status"
+              aria-live="polite"
             >
-              <AlertCircle
-                className="h-5 w-5 shrink-0 text-red-600"
-                aria-hidden
-              />
-              <div className="flex min-w-0 flex-col gap-1.5">
-                {!allLinksProvided && (
-                  <p>Uzupełnij wszystkie linki do kodów QR</p>
+              <p className="font-display text-base font-semibold tracking-wide text-brand-800">
+                Jeszcze chwila — dokończ konfigurację
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-brand-600">
+                Żeby dodać produkt do koszyka, uzupełnij poniższe elementy:
+              </p>
+              <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-brand-700">
+                {!allColorChoicesComplete && colorOptionTitles.length > 0 && (
+                  <li>Wybierz kolor dla każdego etapu konfiguracji</li>
                 )}
                 {!allTextFieldsValid && (
-                  <p>Uzupełnij wymagane pola tekstowe</p>
+                  <li>Uzupełnij wymagane pola tekstowe</li>
                 )}
-                {!allColorChoicesComplete && colorOptionTitles.length > 0 && (
-                  <p>Wybierz kolor dla każdego elementu konfiguracji</p>
+                {!allLinksProvided && (
+                  <li>Podaj wszystkie wymagane linki do kodów QR</li>
                 )}
-              </div>
+              </ul>
+              <button
+                type="button"
+                onClick={() => setShowIncompleteConfigBanner(false)}
+                className="mt-4 text-sm font-medium text-brand-500 underline-offset-2 transition-colors hover:text-brand-800 hover:underline"
+              >
+                Zamknij komunikat
+              </button>
             </div>
           )}
           <ExpressToggle />
+          <PayPoPromo price={displayPrice} />
           <AddToCartButton
             variantId={selectedVariant?.id ?? null}
             productData={{
@@ -386,51 +397,15 @@ export function ProductPageClient({
               price: displayPrice,
               currency: "PLN",
             }}
-            disabled={
-              !selectedVariant ||
-              !availableToOrder ||
-              !allLinksProvided ||
-              !allTextFieldsValid ||
-              !allColorChoicesComplete
-            }
+            disabled={!selectedVariant || !availableToOrder}
             maxQuantity={maxOrderQty}
-            onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
+            onBeforeAdd={handleBeforeAdd}
             metadata={buildMetadata()}
           />
         </div>
       </div>
 
-      {showSticky && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white/95 p-3 backdrop-blur-sm lg:hidden">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-base font-medium text-brand-800">
-                {product.title}
-              </p>
-              <PriceDisplay amount={displayPrice} size="sm" />
-            </div>
-            <AddToCartButton
-              variantId={selectedVariant?.id ?? null}
-              productData={{
-                id: product.id,
-                title: product.title,
-                price: displayPrice,
-                currency: "PLN",
-              }}
-              disabled={
-                !selectedVariant ||
-                !availableToOrder ||
-                !allLinksProvided ||
-                !allTextFieldsValid ||
-                !allColorChoicesComplete
-              }
-              compact
-              onBeforeAdd={calloutEnabled ? handleBeforeAdd : undefined}
-              metadata={buildMetadata()}
-            />
-          </div>
-        </div>
-      )}
+      {/* Sticky bar usunięty — na mobile użytkownik scrolluje do przycisku */}
 
       {calloutAction && (
         <div

@@ -18,8 +18,11 @@ export function useCart() {
       },
       quantity = 1,
       metadata?: Record<string, string>,
+      options?: {
+        openDrawer?: boolean;
+      },
     ) => {
-      await cart.addItem(variantId, quantity, metadata);
+      await cart.addItem(variantId, quantity, metadata, options?.openDrawer ?? true);
       trackAddToCart({
         id: productData.id,
         title: productData.title,
