@@ -1,20 +1,20 @@
-import { Shield, Truck, CreditCard } from "lucide-react";
+import { Clock, Truck, Wallet } from "lucide-react";
 
 const BADGES = [
   {
-    icon: Shield,
-    title: "Bezpieczne płatności",
-    description: "Przelewy24, BLIK, karty",
+    icon: Wallet,
+    title: "Przelewy24",
+    description: "BLIK, przelew, karta",
   },
   {
     icon: Truck,
-    title: "Czas realizacji",
-    description: "około 10 dni roboczych",
+    title: "DPD",
+    description: "Przesyłka kurierska",
   },
   {
-    icon: CreditCard,
-    title: "Kup teraz, zapłać później",
-    description: "PayPo — 30 dni bez odsetek",
+    icon: Clock,
+    title: "PayPo",
+    description: "Kup teraz, zapłać za 30 dni",
   },
 ] as const;
 

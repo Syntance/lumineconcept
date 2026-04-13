@@ -27,7 +27,8 @@ import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { trackProductViewed } from "@/lib/analytics/events";
-import { PayPoPromo } from "@/components/marketing/PayPoPromo";
+import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
+import { DeliveryTrustBadges } from "@/components/product/DeliveryTrustBadges";
 
 interface CheckoutCallout {
   enabled?: boolean;
@@ -183,10 +184,14 @@ export function ProductPageClient({
     !uploadOnlyProduct || uploadedFiles.length > 0;
 
   const ctaRef = useRef<HTMLDivElement>(null);
+  const configuratorRef = useRef<HTMLDivElement>(null);
   const [calloutAction, setCalloutAction] = useState<
     "cart" | "checkout" | null
   >(null);
   const [showIncompleteConfigBanner, setShowIncompleteConfigBanner] =
+    useState(false);
+  /** true = kliknięto „Kup teraz”, false = „Dodaj do koszyka” */
+  const [incompleteModalFromCheckout, setIncompleteModalFromCheckout] =
     useState(false);
 
   const selectedVariant = product.variants.find((variant) =>
@@ -223,6 +228,15 @@ export function ProductPageClient({
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, [calloutAction]);
+
+  useEffect(() => {
+    if (!showIncompleteConfigBanner) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowIncompleteConfigBanner(false);
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [showIncompleteConfigBanner]);
 
   const handleOptionChange = (optionTitle: string, value: string) => {
     setSelectedOptions((prev) => ({ ...prev, [optionTitle]: value }));
@@ -294,18 +308,31 @@ export function ProductPageClient({
     }
   }, [configIncomplete]);
 
-  const handleBeforeAdd = useCallback(() => {
-    if (configIncomplete) {
-      setShowIncompleteConfigBanner(true);
-      ctaRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      return true;
-    }
-    if (calloutEnabled) {
-      setCalloutAction("cart");
-      return true;
-    }
-    return false;
-  }, [configIncomplete, calloutEnabled]);
+  const handleFinishConfigNavigation = useCallback(() => {
+    setShowIncompleteConfigBanner(false);
+    requestAnimationFrame(() => {
+      const el = configuratorRef.current;
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.focus({ preventScroll: true });
+    });
+  }, []);
+
+  const handleBeforeAdd = useCallback(
+    ({ checkoutAfterAdd }: { checkoutAfterAdd: boolean }) => {
+      if (configIncomplete) {
+        setIncompleteModalFromCheckout(checkoutAfterAdd);
+        setShowIncompleteConfigBanner(true);
+        return true;
+      }
+      if (calloutEnabled) {
+        setCalloutAction("cart");
+        return true;
+      }
+      return false;
+    },
+    [configIncomplete, calloutEnabled],
+  );
 
   /** Medusa: manage_inventory === true → limit ze stanu; false/undefined → na zamówienie (bez limitu ze sklepu) */
   const tracksInventory = selectedVariant?.manage_inventory === true;
@@ -317,30 +344,36 @@ export function ProductPageClient({
   return (
     <>
       <div className="space-y-6">
-        <ProductConfigurator
-          options={nonColorOptions}
-          selectedOptions={selectedOptions}
-          onOptionChange={handleOptionChange}
-          colorCustomizations={colorCustomizations}
-          onColorCustomizationChange={handleColorCustomizationChange}
-          textFields={textFields}
-          textFieldValues={textFieldValues}
-          onTextFieldChange={handleTextFieldChange}
-          linksCount={linksCount}
-          links={links}
-          onLinksChange={setLinks}
-          uploadsCount={uploadsCount}
-          uploadsLabel={uploadsLabel}
-          uploadedFiles={uploadedFiles}
-          onUploadedFilesChange={setUploadedFiles}
-          globalColors={globalColors}
-          colorOptionTitles={colorOptionTitles}
-          colorMap={colorMap}
-          coloredSet={coloredSet}
-          mirrorSet={mirrorSet}
-          matDisabledSet={matDisabledSet}
-          schemaImageUrl={schemaImageUrl}
-        />
+        <div
+          ref={configuratorRef}
+          className="scroll-mt-24 md:scroll-mt-28"
+          tabIndex={-1}
+        >
+          <ProductConfigurator
+            options={nonColorOptions}
+            selectedOptions={selectedOptions}
+            onOptionChange={handleOptionChange}
+            colorCustomizations={colorCustomizations}
+            onColorCustomizationChange={handleColorCustomizationChange}
+            textFields={textFields}
+            textFieldValues={textFieldValues}
+            onTextFieldChange={handleTextFieldChange}
+            linksCount={linksCount}
+            links={links}
+            onLinksChange={setLinks}
+            uploadsCount={uploadsCount}
+            uploadsLabel={uploadsLabel}
+            uploadedFiles={uploadedFiles}
+            onUploadedFilesChange={setUploadedFiles}
+            globalColors={globalColors}
+            colorOptionTitles={colorOptionTitles}
+            colorMap={colorMap}
+            coloredSet={coloredSet}
+            mirrorSet={mirrorSet}
+            matDisabledSet={matDisabledSet}
+            schemaImageUrl={schemaImageUrl}
+          />
+        </div>
 
         {selectedVariant && tracksInventory && stockQty > 5 && (
           <p className="flex items-center gap-1.5 text-sm text-green-700">
@@ -362,43 +395,7 @@ export function ProductPageClient({
         )}
 
         <div ref={ctaRef} className="space-y-4">
-          {showIncompleteConfigBanner && configIncomplete && (
-            <div
-              className="rounded-lg border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-brand-50/80 px-5 py-4 shadow-sm"
-              role="status"
-              aria-live="polite"
-            >
-              <p className="font-display text-base font-semibold tracking-wide text-brand-800">
-                Jeszcze chwila — dokończ konfigurację
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-brand-600">
-                Żeby dodać produkt do koszyka, uzupełnij poniższe elementy:
-              </p>
-              <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-brand-700">
-                {!allColorChoicesComplete && colorOptionTitles.length > 0 && (
-                  <li>Wybierz kolor dla każdego etapu konfiguracji</li>
-                )}
-                {!allTextFieldsValid && (
-                  <li>Uzupełnij wymagane pola tekstowe</li>
-                )}
-                {!allLinksProvided && (
-                  <li>Podaj wszystkie wymagane linki do kodów QR</li>
-                )}
-                {!uploadsComplete && (
-                  <li>Wgraj co najmniej jeden plik w sekcji wgrywania treści</li>
-                )}
-              </ul>
-              <button
-                type="button"
-                onClick={() => setShowIncompleteConfigBanner(false)}
-                className="mt-4 text-sm font-medium text-brand-500 underline-offset-2 transition-colors hover:text-brand-800 hover:underline"
-              >
-                Zamknij komunikat
-              </button>
-            </div>
-          )}
           <ExpressToggle />
-          <PayPoPromo price={displayPrice} />
           <AddToCartButton
             variantId={selectedVariant?.id ?? null}
             productData={{
@@ -413,9 +410,62 @@ export function ProductPageClient({
             metadata={buildMetadata()}
           />
         </div>
+
+        <div className="mt-8 space-y-10">
+          <DeliveryInfoBlock />
+          <DeliveryTrustBadges price={displayPrice} />
+        </div>
       </div>
 
       {/* Sticky bar usunięty — na mobile użytkownik scrolluje do przycisku */}
+
+      {showIncompleteConfigBanner && configIncomplete && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onClick={() => setShowIncompleteConfigBanner(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="incomplete-config-title"
+        >
+          <div
+            className="w-full max-w-md rounded-lg border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-brand-50/80 px-5 py-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p
+              id="incomplete-config-title"
+              className="font-display text-base font-semibold tracking-wide text-brand-800"
+            >
+              Jeszcze chwila — dokończ konfigurację
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-brand-600">
+              {incompleteModalFromCheckout
+                ? "Żeby przejść dalej, uzupełnij poniższe elementy:"
+                : "Żeby dodać produkt do koszyka, uzupełnij poniższe elementy:"}
+            </p>
+            <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-brand-700">
+              {!allColorChoicesComplete && colorOptionTitles.length > 0 && (
+                <li>Wybierz kolor dla każdego etapu konfiguracji</li>
+              )}
+              {!allTextFieldsValid && (
+                <li>Uzupełnij wymagane pola tekstowe</li>
+              )}
+              {!allLinksProvided && (
+                <li>Podaj wszystkie wymagane linki do kodów QR</li>
+              )}
+              {!uploadsComplete && (
+                <li>Wgraj co najmniej jeden plik w sekcji wgrywania treści</li>
+              )}
+            </ul>
+            <button
+              type="button"
+              onClick={handleFinishConfigNavigation}
+              className="mt-5 w-full rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              Dokończ konfigurację
+            </button>
+          </div>
+        </div>
+      )}
 
       {calloutAction && (
         <div

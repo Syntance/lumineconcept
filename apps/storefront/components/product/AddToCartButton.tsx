@@ -16,8 +16,11 @@ interface AddToCartButtonProps {
   disabled?: boolean;
   compact?: boolean;
   maxQuantity?: number;
-  /** If provided, called before adding to cart. Return true to prevent the default add-to-cart action (e.g. to show a callout first). */
-  onBeforeAdd?: () => boolean;
+  /**
+   * If provided, called before adding to cart. Return true to prevent the default action.
+   * `checkoutAfterAdd` is true when the user chose „Kup teraz” (checkout), false for „Dodaj do koszyka”.
+   */
+  onBeforeAdd?: (ctx: { checkoutAfterAdd: boolean }) => boolean;
   metadata?: Record<string, string>;
 }
 
@@ -59,7 +62,7 @@ export function AddToCartButton({
   const handleAddToCart = (checkoutAfterAdd: boolean) => {
     if (!variantId) return;
     const redirect = checkoutAfterAdd ? "/checkout" : null;
-    if (onBeforeAdd?.()) {
+    if (onBeforeAdd?.({ checkoutAfterAdd })) {
       pendingRedirectRef.current = redirect;
       setPendingFromCallout(true);
       return;
@@ -110,9 +113,12 @@ export function AddToCartButton({
 
   const ctaDisabled = disabled || !variantId || isAdding;
 
+  const ctaBtn =
+    "flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-none border border-brand-300 px-3 font-display text-[13px] italic tracking-wide transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-[15px]";
+
   return (
-    <div className="flex min-h-11 w-full min-w-0 flex-nowrap items-stretch gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="flex shrink-0 items-stretch gap-2">
+    <div className="flex w-full min-w-0 flex-col gap-3 sm:grid sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] sm:items-stretch sm:gap-3">
+      <div className="flex shrink-0 items-stretch justify-center gap-2 sm:justify-start">
         <button
           type="button"
           onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -139,28 +145,30 @@ export function AddToCartButton({
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => handleAddToCart(false)}
-        disabled={ctaDisabled}
-        className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-none border border-brand-300 bg-brand-800 px-2 font-display text-[13px] italic tracking-wide text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:px-3 sm:text-[15px]"
-      >
-        {isAdding ? (
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-white" />
-        ) : null}
-        dodaj do koszyka
-      </button>
-      <button
-        type="button"
-        onClick={() => handleAddToCart(true)}
-        disabled={ctaDisabled}
-        className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-none border border-brand-300 bg-white px-2 font-display text-[13px] italic tracking-wide text-brand-800 transition-colors hover:border-brand-400 hover:bg-brand-50 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:px-3 sm:text-[15px]"
-      >
-        {isAdding ? (
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-brand-800" />
-        ) : null}
-        Kup teraz
-      </button>
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:contents">
+        <button
+          type="button"
+          onClick={() => handleAddToCart(true)}
+          disabled={ctaDisabled}
+          className={`${ctaBtn} bg-brand-800 tracking-wide text-white hover:border-brand-400 hover:bg-brand-900 focus-visible:border-brand-500`}
+        >
+          {isAdding ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-white" />
+          ) : null}
+          Kup teraz
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAddToCart(false)}
+          disabled={ctaDisabled}
+          className={`${ctaBtn} bg-white tracking-wide text-brand-800 hover:border-brand-400 hover:bg-brand-50 focus-visible:border-brand-500`}
+        >
+          {isAdding ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-brand-800" />
+          ) : null}
+          dodaj do koszyka
+        </button>
+      </div>
     </div>
   );
 }

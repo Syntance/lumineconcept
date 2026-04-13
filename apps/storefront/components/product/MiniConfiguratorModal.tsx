@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { cn } from "@/lib/utils";
 import { PriceDisplay } from "./PriceDisplay";
 import {
   CUSTOM_COLOR_VALUE,
@@ -82,7 +83,13 @@ function ColorPicker({
     const isMilky = value.toLowerCase() === "mleczny";
 
     return (
-      <div key={value} className="flex flex-col items-center gap-0.5">
+      <div
+        key={value}
+        className={cn(
+          "flex flex-col items-center gap-0.5 rounded-md p-0.5 transition-colors",
+          isSelected && "bg-brand-50",
+        )}
+      >
         <button
           type="button"
           onClick={() => {
@@ -174,7 +181,7 @@ function ColorPicker({
         </button>
 
         {isCustom && (
-          <>
+          <div className="flex flex-wrap items-center gap-1.5 rounded-md bg-brand-50 px-1.5 py-1.5">
             <button
               type="button"
               onClick={() => colorInputRef.current?.click()}
@@ -203,10 +210,10 @@ function ColorPicker({
                 }
               }}
               placeholder="#000000"
-              className="w-20 rounded-md border border-brand-200 px-2 py-1 text-xs font-mono text-brand-700 focus:border-accent focus:outline-none"
+              className="w-20 rounded-md border border-brand-200 bg-white px-2 py-1 text-xs font-mono text-brand-700 focus:border-accent focus:outline-none"
               maxLength={7}
             />
-          </>
+          </div>
         )}
         </div>
       </div>
@@ -455,7 +462,9 @@ export function MiniConfiguratorModal({
                   }}
                   placeholder={`Link ${linksCount > 1 ? `#${i + 1}` : ""} — https://...`}
                   className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
-                    links[i]?.trim() ? "border-brand-200 focus:border-accent" : "border-red-300 focus:border-red-400"
+                    links[i]?.trim()
+                      ? "border-brand-200 bg-brand-50 focus:border-accent"
+                      : "border-red-300 bg-white focus:border-red-400"
                   }`}
                   required
                 />
@@ -493,9 +502,9 @@ export function MiniConfiguratorModal({
                         maxLength={max}
                         className={`w-full resize-none rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
                           field.required && !value.trim()
-                            ? "border-red-300 focus:border-red-400"
+                            ? "border-red-300 bg-white focus:border-red-400"
                             : "border-brand-200 focus:border-accent"
-                        }`}
+                        } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
                       />
                     ) : (
                       <input
@@ -511,9 +520,9 @@ export function MiniConfiguratorModal({
                         maxLength={max}
                         className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
                           field.required && !value.trim()
-                            ? "border-red-300 focus:border-red-400"
+                            ? "border-red-300 bg-white focus:border-red-400"
                             : "border-brand-200 focus:border-accent"
-                        }`}
+                        } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
                       />
                     )}
                   </div>

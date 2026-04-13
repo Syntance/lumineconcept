@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useId } from "react";
+import { cn } from "@/lib/utils";
 import {
   CUSTOM_COLOR_VALUE,
   getColorHex,
@@ -84,7 +85,10 @@ export function ColorStepPanel({
     return (
       <div
         key={value}
-        className="flex flex-col items-center gap-1"
+        className={cn(
+          "flex flex-col items-center gap-1 rounded-lg p-1 transition-colors",
+          isSelected && "bg-brand-50",
+        )}
       >
         <button
           type="button"
@@ -123,7 +127,7 @@ export function ColorStepPanel({
             </svg>
           )}
         </button>
-        <span className="max-w-18 text-center text-[9px] leading-tight text-brand-500">
+        <span className="max-w-18 text-center text-xs leading-tight text-brand-500">
           {value}
         </span>
       </div>
@@ -141,7 +145,7 @@ export function ColorStepPanel({
           <div className="space-y-3 px-3 pb-4 pt-3 mt-1">
             {standardColors.length > 0 && (
               <div>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
+                <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
                   Standardowe
                 </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
@@ -152,7 +156,7 @@ export function ColorStepPanel({
 
             {coloredColors.length > 0 && (
               <div>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
+                <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
                   Kolorowe
                 </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
@@ -163,7 +167,7 @@ export function ColorStepPanel({
 
             {mirrorColors.length > 0 && (
               <div>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
+                <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
                   Lustrzane
                 </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
@@ -174,10 +178,10 @@ export function ColorStepPanel({
 
             {/* Custom color */}
             <div>
-              <p className="mb-1.5 text-[11px] font-medium uppercase tracking-widest text-brand-400">
+              <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
                 Indywidualny
               </p>
-              <p className="mb-2 text-[10px] leading-snug text-brand-500/85">
+              <p className="mb-2 text-xs leading-snug text-brand-500/85">
                 Dowolny odcień — wybierz kolor lub wpisz kod HEX poniżej.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -214,11 +218,11 @@ export function ColorStepPanel({
             </div>
 
             {isCustomSelected && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 rounded-lg bg-brand-50 px-2 py-2">
                 <button
                   type="button"
                   onClick={() => colorInputRef.current?.click()}
-                  className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-[#AF7C61]/50"
+                  className="h-9 w-9 shrink-0 cursor-pointer rounded-none border border-[#AF7C61]/50"
                   style={{ backgroundColor: customColor ?? hexInput }}
                   aria-label="Wybierz kolor"
                 >
@@ -246,7 +250,7 @@ export function ColorStepPanel({
                     }
                   }}
                   placeholder="#000000"
-                  className="w-24 rounded-lg border border-[#AF7C61]/50 px-3 py-1.5 text-sm font-mono text-brand-700 focus:border-[#AF7C61] focus:outline-none"
+                  className="w-24 rounded-none border border-[#AF7C61]/50 bg-white px-3 py-1.5 text-sm font-mono text-brand-700 focus:border-[#AF7C61] focus:outline-none"
                   maxLength={7}
                 />
                 <span className="text-xs text-brand-400">Wpisz kod HEX</span>
@@ -259,7 +263,7 @@ export function ColorStepPanel({
                 type="button"
                 onClick={() => matAllowed && onMatFinishChange(!matFinish)}
                 disabled={!matAllowed}
-                className={`flex items-center gap-2.5 rounded-lg border px-4 py-2.5 text-sm transition-colors ${
+                className={`flex items-center gap-2.5 rounded-none border px-4 py-2.5 text-sm transition-colors ${
                   !matAllowed
                     ? "cursor-not-allowed border-[#AF7C61]/50 bg-brand-50 text-brand-600"
                     : matFinish
@@ -288,7 +292,7 @@ export function ColorStepPanel({
                 </span>
                 Mat
                 {!matAllowed && (
-                  <span className="text-[10px] font-normal text-brand-700">
+                  <span className="text-xs font-normal text-brand-700">
                     (niedostępne dla tego koloru)
                   </span>
                 )}
@@ -307,7 +311,7 @@ export function ColorStepPanel({
                     }
                     onNext();
                   }}
-                  className="w-full rounded-lg border border-[#AF7C61]/50 bg-white px-4 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:border-[#AF7C61] hover:bg-brand-50"
+                  className="w-full rounded-none border border-[#AF7C61]/50 bg-white px-4 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:border-[#AF7C61] hover:bg-brand-50"
                 >
                   {nextButtonLabel}
                 </button>
