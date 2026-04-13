@@ -62,11 +62,10 @@ export async function BestsellersSection() {
                   ? "arch-down"
                   : "square";
             const sharpCorners = index === 1 || index === 3;
+            const variantPrice = product.variants?.[0]?.calculated_price?.calculated_amount ?? 0;
             const bpRaw = (product.metadata as Record<string, unknown> | undefined)?.base_price;
             const bp = bpRaw !== undefined && bpRaw !== null && bpRaw !== "" ? Number(bpRaw) : null;
-            const price = (bp !== null && Number.isFinite(bp) && bp > 0)
-              ? bp
-              : (product.variants?.[0]?.calculated_price?.calculated_amount ?? 0);
+            const price = variantPrice > 0 ? variantPrice : ((bp !== null && Number.isFinite(bp) && bp > 0) ? bp : 0);
             return (
               <Link
                 key={product.handle}

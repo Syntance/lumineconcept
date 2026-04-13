@@ -196,7 +196,8 @@ export function ProductPageClient({
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [product.metadata]);
 
-  const displayPrice = basePrice ?? selectedVariant?.price ?? 0;
+  const variantHasPrice = selectedVariant?.price != null && selectedVariant.price > 0;
+  const displayPrice = variantHasPrice ? selectedVariant.price : (basePrice ?? 0);
 
   useEffect(() => {
     trackProductViewed({

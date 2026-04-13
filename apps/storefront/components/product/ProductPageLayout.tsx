@@ -30,12 +30,13 @@ function extractBasePrice(metadata: Record<string, unknown> | undefined | null):
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** Wariant z ceną > 0 nadpisuje base_price; brak ceny wariantu → base_price. */
 function extractPrice(variant: unknown, metadata?: Record<string, unknown> | null): number {
-  const bp = extractBasePrice(metadata);
-  if (bp !== null) return bp;
   const v = variant as Record<string, unknown> | null;
   const cp = v?.calculated_price as Record<string, unknown> | undefined;
-  return Number(cp?.calculated_amount ?? 0);
+  const variantPrice = Number(cp?.calculated_amount ?? 0);
+  if (variantPrice > 0) return variantPrice;
+  return extractBasePrice(metadata) ?? 0;
 }
 
 interface ProductPageLayoutProps {
@@ -115,7 +116,8 @@ export async function ProductPageLayout({
     firstVariant?.metadata ?? null,
   );
   const dimensionsWxHLine = formatDimensionsWxH(dimensionParts.width, dimensionParts.height);
-  const price = extractBasePrice(metadata) ?? firstVariant?.calculated_price?.calculated_amount ?? 0;
+  const firstVariantPrice = firstVariant?.calculated_price?.calculated_amount ?? 0;
+  const price = firstVariantPrice > 0 ? firstVariantPrice : (extractBasePrice(metadata) ?? 0);
 
   const productUrl = `${SITE_URL}${basePath}/${slug}`;
 
@@ -128,7 +130,9 @@ export async function ProductPageLayout({
     url: productUrl,
     offers: variants.map((v) => ({
       "@type": "Offer",
-      price: (extractBasePrice(metadata) ?? v.calculated_price?.calculated_amount ?? 0) / 100,
+      price: ((v.calculated_price?.calculated_amount ?? 0) > 0
+        ? (v.calculated_price?.calculated_amount ?? 0)
+        : (extractBasePrice(metadata) ?? 0)) / 100,
       priceCurrency: "PLN",
       availability:
         v.manage_inventory === false || v.inventory_quantity > 0

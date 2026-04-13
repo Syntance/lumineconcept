@@ -71,7 +71,7 @@ export function medusaProductToSimple(p: Record<string, unknown>): SimpleProduct
     handle: String(p.handle ?? ""),
     title: String(p.title ?? ""),
     thumbnail,
-    price: basePrice ?? minPriceFromVariants(variants),
+    price: minPriceFromVariants(variants) || (basePrice ?? 0),
     hasVariantPrices: hasMultiplePrices(variants),
     variantId: v0?.id ?? null,
     tags: ((p.tags ?? []) as Array<{ value?: string }>).map((t) =>

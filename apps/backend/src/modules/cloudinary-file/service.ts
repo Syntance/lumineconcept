@@ -41,11 +41,17 @@ export default class CloudinaryFileProviderService extends AbstractFileProviderS
       ? content
       : `data:${file.mimeType};base64,${content}`;
 
+    const isHeic =
+      file.mimeType === "image/heic" ||
+      file.mimeType === "image/heif" ||
+      /\.hei[cf]$/i.test(file.filename || "");
+
     const result = await cloudinary.uploader.upload(base64, {
       folder: this.options_.folder ?? "lumine-products",
       use_filename: true,
       unique_filename: true,
       resource_type: "auto",
+      ...(isHeic ? { format: "jpg" } : {}),
     });
 
     this.logger_.info(

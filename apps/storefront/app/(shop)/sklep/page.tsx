@@ -30,11 +30,11 @@ function extractBasePrice(metadata: Record<string, unknown> | undefined | null):
 }
 
 function extractPrice(variant: unknown, metadata?: Record<string, unknown> | null): number {
-  const bp = extractBasePrice(metadata);
-  if (bp !== null) return bp;
   const v = variant as Record<string, unknown> | null;
   const cp = v?.calculated_price as Record<string, unknown> | undefined;
-  return Number(cp?.calculated_amount ?? 0);
+  const variantPrice = Number(cp?.calculated_amount ?? 0);
+  if (variantPrice > 0) return variantPrice;
+  return extractBasePrice(metadata) ?? 0;
 }
 
 const CATEGORIES = [
