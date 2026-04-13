@@ -28,46 +28,77 @@ function resolveImageUrl(
   return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`
 }
 
+/** Medusa listProducts może zwracać samą tablicę albo krotkę [rekordy, count]. */
+function normalizeProductList(raw: unknown): Array<Record<string, unknown>> {
+  if (raw == null) return []
+  if (Array.isArray(raw)) {
+    if (raw.length === 0) return []
+    if (
+      raw.length === 2 &&
+      Array.isArray(raw[0]) &&
+      typeof raw[1] === "number"
+    ) {
+      return raw[0] as Array<Record<string, unknown>>
+    }
+    const first = raw[0] as Record<string, unknown> | undefined
+    if (first && typeof first.id === "string") {
+      return raw as Array<Record<string, unknown>>
+    }
+    return []
+  }
+  if (typeof raw === "object" && raw !== null && "data" in raw) {
+    const d = (raw as { data: unknown }).data
+    return Array.isArray(d) ? (d as Array<Record<string, unknown>>) : []
+  }
+  return []
+}
+
+type ProductListRow = {
+  id: string
+  title: string
+  status: string
+  thumbnail: string | null
+  metadata?: Record<string, unknown> | null
+  categories?: Array<{ id: string; name: string }>
+  variants?: Array<{ id: string; prices?: Array<{ amount?: unknown }> }>
+  images?: Array<{ url?: string | null }>
+}
+
 /**
  * GET /admin/product-management/products
- * Lista pod stronę „Zarządzanie produktami”: miniatury (thumbnail lub pierwszy obrazek)
- * oraz cena jak w sklepie — min z cen wariantów, inaczej metadata.base_price.
  */
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const productService: IProductModuleService =
     req.scope.resolve(Modules.PRODUCT)
 
-  type ProductListRow = {
-    id: string
-    title: string
-    status: string
-    thumbnail: string | null
-    metadata?: Record<string, unknown> | null
-    categories?: Array<{ id: string; name: string }>
-    variants?: Array<{ id: string; prices?: Array<{ amount?: unknown }> }>
-    images?: Array<{ url?: string | null }>
+  const listOptsBase = {
+    take: 500 as const,
   }
 
-  let products: ProductListRow[]
+  let rawList: unknown
   try {
-    products = (await productService.listProducts(
+    rawList = await productService.listProducts(
       {},
       {
-        relations: ["variants", "variants.prices", "categories", "images"],
-        order: { title: "ASC" },
-        take: 500,
+        ...listOptsBase,
+        relations: ["variants", "variants.prices", "categories", "tags", "images"],
       },
-    )) as ProductListRow[]
+    )
   } catch {
-    products = (await productService.listProducts(
-      {},
-      {
-        relations: ["variants", "variants.prices", "categories"],
-        order: { title: "ASC" },
-        take: 500,
-      },
-    )) as ProductListRow[]
+    try {
+      rawList = await productService.listProducts(
+        {},
+        {
+          ...listOptsBase,
+          relations: ["variants", "variants.prices", "categories", "tags"],
+        },
+      )
+    } catch {
+      rawList = await productService.listProducts({}, { ...listOptsBase })
+    }
   }
+
+  const products = normalizeProductList(rawList) as ProductListRow[]
 
   const rows = products.map((p) => {
     const meta = (p.metadata ?? {}) as Record<string, unknown>

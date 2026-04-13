@@ -8,6 +8,7 @@ import {
 } from "@medusajs/ui"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { sdk } from "../lib/sdk"
+import { enrichFromLegacyProducts } from "../lib/product-management-utils"
 
 interface ProductRow {
   id: string
@@ -15,7 +16,7 @@ interface ProductRow {
   thumbnail: string | null
   status: string
   categories?: Array<{ id: string; name: string }>
-  variants?: Array<{ id: string }>
+  variants?: Array<{ id: string; prices?: Array<{ amount?: unknown }> }>
   metadata?: Record<string, unknown> | null
   display_price_grosz?: number | null
 }
@@ -46,9 +47,31 @@ const ProductListManagement = () => {
         `/admin/product-management/products`,
         { method: "GET" },
       )
-      setProducts(res.products)
+      let list = res.products ?? []
+      if (list.length === 0) {
+        const fields = encodeURIComponent(
+          "+metadata,*categories,*variants,*variants.prices,*images",
+        )
+        const legacy = await sdk.client.fetch<{ products: ProductRow[] }>(
+          `/admin/products?fields=${fields}&limit=500&order=title`,
+          { method: "GET" },
+        )
+        list = enrichFromLegacyProducts(legacy.products ?? []) as ProductRow[]
+      }
+      setProducts(list)
     } catch {
-      /* ignore */
+      try {
+        const fields = encodeURIComponent(
+          "+metadata,*categories,*variants,*variants.prices,*images",
+        )
+        const legacy = await sdk.client.fetch<{ products: ProductRow[] }>(
+          `/admin/products?fields=${fields}&limit=500&order=title`,
+          { method: "GET" },
+        )
+        setProducts(enrichFromLegacyProducts(legacy.products ?? []) as ProductRow[])
+      } catch {
+        setProducts([])
+      }
     } finally {
       setLoading(false)
     }

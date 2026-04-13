@@ -10,6 +10,7 @@ import {
 import { ShoppingBag } from "@medusajs/icons"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { sdk } from "../../lib/sdk"
+import { enrichFromLegacyProducts } from "../../lib/product-management-utils"
 
 interface ProductRow {
   id: string
@@ -17,7 +18,10 @@ interface ProductRow {
   thumbnail: string | null
   status: string
   categories?: Array<{ id: string; name: string }>
-  variants?: Array<{ id: string }>
+  variants?: Array<{
+    id: string
+    prices?: Array<{ amount?: unknown }>
+  }>
   metadata?: Record<string, unknown> | null
   /** Min z cen wariantów (grosze) lub base_price — jak w sklepie */
   display_price_grosz?: number | null
@@ -48,9 +52,31 @@ const ProductManagementPage = () => {
         `/admin/product-management/products`,
         { method: "GET" },
       )
-      setProducts(res.products)
+      let list = res.products ?? []
+      if (list.length === 0) {
+        const fields = encodeURIComponent(
+          "+metadata,*categories,*variants,*variants.prices,*images",
+        )
+        const legacy = await sdk.client.fetch<{ products: ProductRow[] }>(
+          `/admin/products?fields=${fields}&limit=500&order=title`,
+          { method: "GET" },
+        )
+        list = enrichFromLegacyProducts(legacy.products ?? [])
+      }
+      setProducts(list)
     } catch {
-      /* ignore */
+      try {
+        const fields = encodeURIComponent(
+          "+metadata,*categories,*variants,*variants.prices,*images",
+        )
+        const legacy = await sdk.client.fetch<{ products: ProductRow[] }>(
+          `/admin/products?fields=${fields}&limit=500&order=title`,
+          { method: "GET" },
+        )
+        setProducts(enrichFromLegacyProducts(legacy.products ?? []))
+      } catch {
+        setProducts([])
+      }
     } finally {
       setLoading(false)
     }
