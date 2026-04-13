@@ -72,11 +72,11 @@ export default function HomePage() {
         <ReferralBanner />
       </Suspense>
 
-      <HeroSection />
-
-      <Suspense fallback={null}>
-        <HomeTrustMarquee />
-      </Suspense>
+      <HeroSection>
+        <Suspense fallback={null}>
+          <HomeTrustMarquee />
+        </Suspense>
+      </HeroSection>
 
       <Suspense fallback={null}>
         <BestsellersSection />

@@ -2,6 +2,7 @@
 
 import { Clock, Truck, Wallet } from "lucide-react";
 import { isPayPoPriceEligible } from "@/components/marketing/PayPoPromo";
+import { cn } from "@/lib/utils";
 
 interface DeliveryTrustBadgesProps {
   /** Kwota w groszach (Medusa). */
@@ -13,11 +14,14 @@ export function DeliveryTrustBadges({ price }: DeliveryTrustBadgesProps) {
 
   return (
     <div
-      className="flex flex-col gap-4 text-brand-700 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-6 sm:gap-y-3"
+      className={cn(
+        "grid w-full grid-cols-1 gap-4 text-brand-700 sm:items-start sm:gap-6",
+        showPayPo ? "sm:grid-cols-3" : "sm:grid-cols-2",
+      )}
       role="list"
       aria-label="Płatności i dostawa"
     >
-      <div role="listitem" className="flex items-start gap-2.5 sm:max-w-[13rem]">
+      <div role="listitem" className="flex min-w-0 items-start gap-2.5">
         <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
         <div className="min-w-0">
           <p className="text-sm font-semibold text-brand-800">Przelewy24</p>
@@ -27,11 +31,7 @@ export function DeliveryTrustBadges({ price }: DeliveryTrustBadgesProps) {
         </div>
       </div>
 
-      <span className="hidden text-brand-300 sm:inline sm:pt-1" aria-hidden>
-        &middot;
-      </span>
-
-      <div role="listitem" className="flex items-start gap-2.5 sm:max-w-[13rem]">
+      <div role="listitem" className="flex min-w-0 items-start gap-2.5">
         <Truck className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
         <div className="min-w-0">
           <p className="text-sm font-semibold text-brand-800">DPD</p>
@@ -42,23 +42,18 @@ export function DeliveryTrustBadges({ price }: DeliveryTrustBadgesProps) {
       </div>
 
       {showPayPo && (
-        <>
-          <span className="hidden text-brand-300 sm:inline sm:pt-1" aria-hidden>
-            &middot;
-          </span>
-          <div role="listitem" className="flex items-start gap-2.5 sm:max-w-[15rem]">
-            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-brand-800">PayPo</p>
-              <p className="text-xs leading-snug text-brand-700">
-                Kup teraz, zapłać za 30 dni
-              </p>
-              <p className="mt-1 text-[11px] leading-snug text-brand-600">
-                0&nbsp;zł odsetek przy płatności w terminie
-              </p>
-            </div>
+        <div role="listitem" className="flex min-w-0 items-start gap-2.5">
+          <Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-brand-800">PayPo</p>
+            <p className="text-xs leading-snug text-brand-700">
+              Kup teraz, zapłać za 30 dni
+            </p>
+            <p className="mt-1 text-[11px] leading-snug text-brand-600">
+              0&nbsp;zł odsetek przy płatności w terminie
+            </p>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
