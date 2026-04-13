@@ -47,7 +47,7 @@ export async function HomeTrustMarquee() {
   const doubled = [...salons, ...salons];
 
   return (
-    <div className="bg-brand-50 pt-4 pb-2.5 overflow-hidden md:pt-5 md:pb-3">
+    <div className="bg-brand-50 pt-4 pb-4 overflow-hidden md:pt-5 md:pb-4">
       <p className="text-center text-sm font-medium uppercase tracking-[0.25em] text-brand-400 mb-4">
         Zaufały nam
       </p>
