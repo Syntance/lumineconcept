@@ -39,17 +39,41 @@ const ProductBasePriceWidget = ({
   }
 
   useEffect(() => {
-    sdk.client
-      .fetch<{ base_price: number | null }>(
-        `/admin/products/${product.id}/base-price`,
-        { method: "GET" },
-      )
-      .then((res) => {
-        setPriceGrosz(res.base_price)
-        setInputValue(res.base_price ? formatGroszToZl(res.base_price) : "")
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    const fetchPrice = async () => {
+      try {
+        const res = await sdk.client.fetch<{ base_price: number | null }>(
+          `/admin/products/${product.id}/base-price`,
+          { method: "GET" },
+        )
+        if (res.base_price) {
+          setPriceGrosz(res.base_price)
+          setInputValue(formatGroszToZl(res.base_price))
+        } else {
+          const fields = encodeURIComponent("*variants,*variants.prices")
+          const prodRes = await sdk.client.fetch<{
+            product: {
+              variants?: Array<{
+                prices?: Array<{ amount?: number }>
+              }>
+            }
+          }>(
+            `/admin/products/${product.id}?fields=${fields}`,
+            { method: "GET" },
+          )
+          const amounts = (prodRes.product?.variants ?? [])
+            .flatMap((v) => (v.prices ?? []).map((p) => Number(p.amount ?? 0)))
+            .filter((n) => Number.isFinite(n) && n > 0)
+          const minPrice = amounts.length > 0 ? Math.min(...amounts) : null
+          setPriceGrosz(minPrice)
+          setInputValue(minPrice ? formatGroszToZl(minPrice) : "")
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPrice()
   }, [product.id])
 
   const save = useCallback(
