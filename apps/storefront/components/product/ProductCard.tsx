@@ -5,7 +5,6 @@ import { getProductDimensionsLabel } from "@/lib/products/dimensions";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
 import { CloudinaryImage } from "../common/CloudinaryImage";
 import { PriceDisplay } from "./PriceDisplay";
-import { AddToCartButton } from "./AddToCartOverlay";
 
 export type ProductCardFrameVariant = "square" | "arch-up" | "arch-down";
 
@@ -59,6 +58,7 @@ export function ProductCard({
   variantMetadata,
   globalColors,
 }: ProductCardProps) {
+  const productHref = href ?? `/sklep/gotowe-wzory/${handle}`;
   const dimensionsLabel = getProductDimensionsLabel(productMetadata, variantMetadata);
 
   const sharpSquare = sharpCorners && frameVariant === "square";
@@ -126,13 +126,10 @@ export function ProductCard({
             {badge === "bestseller" ? "Bestseller" : "Nowość"}
           </span>
         )}
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-center bg-brand-900/70 py-2.5 text-[13px] font-semibold uppercase tracking-[0.18em] text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
-          Zobacz produkt
-        </span>
       </div>
       {!imageOnly && (
         <div className="flex min-h-0 flex-1 flex-col justify-between gap-2 p-4">
-          <h3 className="min-h-9 shrink-0 text-xs font-medium leading-snug text-brand-800 line-clamp-2">
+          <h3 className="min-h-11 shrink-0 font-sans text-base font-semibold leading-snug tracking-normal text-brand-800 line-clamp-2">
             {title}
           </h3>
           {dimensionsLabel && (
@@ -140,31 +137,12 @@ export function ProductCard({
               <span className="text-brand-400">Wymiary:</span> {dimensionsLabel}
             </p>
           )}
-          {variantId && productId ? (
-            <div className="pointer-events-auto">
-              <AddToCartButton
-                variantId={variantId}
-                productId={productId}
-                title={title}
-                price={price}
-                thumbnail={thumbnail}
-                options={productOptions}
-                linksCount={linksCount}
-                href={href ?? `/sklep/gotowe-wzory/${handle}`}
-                metadata={productMetadata}
-                globalColors={globalColors}
-              >
-                <PriceDisplay
-                  amount={price}
-                  compareAtAmount={compareAtPrice}
-                  currency={currency}
-                  size="lg"
-                  listing
-                />
-              </AddToCartButton>
-            </div>
-          ) : (
-            <div className="relative shrink-0 flex items-center justify-center rounded-md border border-brand-100 bg-white py-2 px-3 transition-all duration-200 group-hover:bg-brand-100">
+          <div className="pointer-events-auto">
+            <Link
+              href={productHref}
+              className="relative flex w-full items-center justify-center rounded-md border border-brand-100 bg-white py-2 px-3 transition-all duration-200 group-hover:bg-brand-100"
+              aria-label={`Skonfiguruj: ${title}`}
+            >
               <span className="transition-opacity duration-200 group-hover:opacity-0">
                 <PriceDisplay
                   amount={price}
@@ -174,11 +152,11 @@ export function ProductCard({
                   listing
                 />
               </span>
-              <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                Zobacz produkt
+              <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-sm font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                Skonfiguruj
               </span>
-            </div>
-          )}
+            </Link>
+          </div>
         </div>
       )}
     </article>
@@ -187,8 +165,6 @@ export function ProductCard({
   if (linkless) {
     return articleBody;
   }
-
-  const productHref = href ?? `/sklep/gotowe-wzory/${handle}`;
 
   return (
     <div className="group relative flex h-full min-h-0 w-full min-w-0 flex-col">

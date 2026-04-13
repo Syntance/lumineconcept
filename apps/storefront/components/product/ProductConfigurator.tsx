@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import { ColorStepPanel } from "./ColorStepPanel";
 import { FileUploadSection, type UploadedFile } from "./FileUploadSection";
 import {
@@ -99,7 +100,15 @@ export function ProductConfigurator({
             values: globalColors.length > 0 ? colorNames : o.values,
           }));
 
-  const hasMultipleColors = colorOptions.length > 1;
+  /** Pola tekstowe, linki QR itd. — osobno od samego wgrywania plików */
+  const hasEditableContent =
+    textFields.length > 0 || (linksCount > 0 && !!onLinksChange);
+  const hasUploads = uploadsCount > 0 && !!onUploadedFilesChange;
+  /** Drugi przycisk (treści lub wgrywanie); bez tego tylko kolory */
+  const showContentOrUploadTab = hasEditableContent || hasUploads;
+  /** Etykieta drugiego CTA: pełny „wybór treści” albo tylko upload */
+  const secondTabLabel = hasEditableContent ? "Wybór treści" : "Wgraj swoje treści";
+
   const [activeConfiguratorSection, setActiveConfiguratorSection] = useState<
     "colors" | "content" | null
   >("colors");
@@ -118,6 +127,12 @@ export function ProductConfigurator({
     });
   }, [colorOptions.length]);
 
+  useEffect(() => {
+    if (!showContentOrUploadTab && activeConfiguratorSection === "content") {
+      setActiveConfiguratorSection("colors");
+    }
+  }, [showContentOrUploadTab, activeConfiguratorSection]);
+
   const getSelectedColorLabel = (title: string) => {
     const selected = selectedOptions[title];
     if (!selected) return "Nie wybrano";
@@ -132,9 +147,22 @@ export function ProductConfigurator({
     setActiveConfiguratorSection((prev) => (prev === section ? null : section));
   };
 
+  const isLastColorStep =
+    activeColorIndex !== null &&
+    colorOptions.length > 0 &&
+    activeColorIndex >= colorOptions.length - 1;
+  const showNextFromColors =
+    colorOptions.length > 0 &&
+    (!isLastColorStep || showContentOrUploadTab);
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2">
+      <div
+        className={cn(
+          "grid gap-2",
+          showContentOrUploadTab ? "grid-cols-2" : "grid-cols-1",
+        )}
+      >
         <button
           type="button"
           onClick={() => toggleConfiguratorSection("colors")}
@@ -147,18 +175,21 @@ export function ProductConfigurator({
         >
           Wybór kolorów
         </button>
-        <button
-          type="button"
-          onClick={() => toggleConfiguratorSection("content")}
-          className={`rounded-none border px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
-            activeConfiguratorSection === "content"
-              ? "border-brand-600 bg-brand-800 text-white"
-              : "border-brand-300 bg-white text-brand-800 hover:border-brand-500 hover:bg-brand-50"
-          }`}
-          aria-pressed={activeConfiguratorSection === "content"}
-        >
-          Wybór treści
-        </button>
+        {showContentOrUploadTab && (
+          <button
+            type="button"
+            onClick={() => toggleConfiguratorSection("content")}
+            className={`rounded-none border px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
+              activeConfiguratorSection === "content"
+                ? "border-brand-600 bg-brand-800 text-white"
+                : "border-brand-300 bg-white text-brand-800 hover:border-brand-500 hover:bg-brand-50"
+            }`}
+            aria-pressed={activeConfiguratorSection === "content"}
+            aria-label={secondTabLabel}
+          >
+            {secondTabLabel}
+          </button>
+        )}
       </div>
 
       {activeConfiguratorSection && (
@@ -204,18 +235,22 @@ export function ProductConfigurator({
                   option={colorOptions[activeColorIndex]}
                   expanded
                   onExpandedChange={() => {}}
-                  showNextButton
+                  showNextButton={showNextFromColors}
                   onNext={() => {
                     if (activeColorIndex < colorOptions.length - 1) {
                       setActiveColorIndex((prev) => (prev === null ? 0 : prev + 1));
                       return;
                     }
-                    setActiveConfiguratorSection("content");
+                    if (showContentOrUploadTab) {
+                      setActiveConfiguratorSection("content");
+                    }
                   }}
                   nextButtonLabel={
                     activeColorIndex < colorOptions.length - 1
                       ? `${colorOptions[activeColorIndex + 1]?.title ?? "Następny"} →`
-                      : "Wybór treści →"
+                      : hasEditableContent
+                        ? "Wybór treści →"
+                        : "Wgraj swoje treści →"
                   }
                   selectedColor={
                     selectedOptions[colorOptions[activeColorIndex].title] ?? ""
@@ -360,7 +395,7 @@ export function ProductConfigurator({
 
         {activeConfiguratorSection === "content" && (
           <>
-          {schemaImageUrl && textFields.length > 0 && (
+          {hasEditableContent && schemaImageUrl && textFields.length > 0 && (
             <div className="mx-auto max-w-xs">
               <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-wider text-brand-500">
                 Schemat personalizacji
@@ -377,7 +412,7 @@ export function ProductConfigurator({
             </div>
           )}
 
-          {textFields.length > 0 && onTextFieldChange && (
+          {hasEditableContent && textFields.length > 0 && onTextFieldChange && (
             <div className="space-y-4">
               {textFields.map((field) => {
                 const value = textFieldValues[field.key] ?? "";
@@ -444,7 +479,7 @@ export function ProductConfigurator({
             </div>
           )}
 
-          {uploadsCount > 0 && onUploadedFilesChange && (
+          {hasUploads && onUploadedFilesChange && (
             <FileUploadSection
               maxFiles={Math.min(uploadsCount, 5)}
               label={uploadsLabel}
@@ -453,7 +488,7 @@ export function ProductConfigurator({
             />
           )}
 
-          {linksCount > 0 && onLinksChange && (
+          {hasEditableContent && linksCount > 0 && onLinksChange && (
             <div className="space-y-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-700">
