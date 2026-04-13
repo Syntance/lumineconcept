@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ColorStepPanel } from "./ColorStepPanel";
 import { FileUploadSection, type UploadedFile } from "./FileUploadSection";
@@ -166,28 +167,46 @@ export function ProductConfigurator({
         <button
           type="button"
           onClick={() => toggleConfiguratorSection("colors")}
-          className={`rounded-none border px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-none border px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-colors",
             activeConfiguratorSection === "colors"
               ? "border-brand-600 bg-brand-800 text-white"
-              : "border-brand-300 bg-white text-brand-800 hover:border-brand-500 hover:bg-brand-50"
-          }`}
+              : "border-brand-300 bg-white text-brand-800 hover:border-brand-500 hover:bg-brand-50",
+          )}
           aria-pressed={activeConfiguratorSection === "colors"}
+          aria-expanded={activeConfiguratorSection === "colors"}
         >
           Wybór kolorów
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 transition-transform duration-200 ease-out",
+              activeConfiguratorSection === "colors" && "-rotate-180",
+            )}
+            aria-hidden
+          />
         </button>
         {showContentOrUploadTab && (
           <button
             type="button"
             onClick={() => toggleConfiguratorSection("content")}
-            className={`rounded-none border px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-none border px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-colors",
               activeConfiguratorSection === "content"
                 ? "border-brand-600 bg-brand-800 text-white"
-                : "border-brand-300 bg-white text-brand-800 hover:border-brand-500 hover:bg-brand-50"
-            }`}
+                : "border-brand-300 bg-white text-brand-800 hover:border-brand-500 hover:bg-brand-50",
+            )}
             aria-pressed={activeConfiguratorSection === "content"}
+            aria-expanded={activeConfiguratorSection === "content"}
             aria-label={secondTabLabel}
           >
             {secondTabLabel}
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 transition-transform duration-200 ease-out",
+                activeConfiguratorSection === "content" && "-rotate-180",
+              )}
+              aria-hidden
+            />
           </button>
         )}
       </div>
@@ -206,22 +225,25 @@ export function ProductConfigurator({
               >
                 {colorOptions.map((option, idx) => {
                   const isActive = activeColorIndex === idx;
+                  const hasColorChoice = Boolean(selectedOptions[option.title]);
                   return (
                     <button
                       key={option.id}
                       type="button"
                       onClick={() => setActiveColorIndex(idx)}
-                      className={`min-w-0 rounded-md border px-2.5 py-1.5 text-left transition-colors ${
+                      className={`min-w-0 rounded-none border px-2.5 py-1.5 text-left transition-colors ${
                         isActive
                           ? "border-accent bg-accent/10"
-                          : "border-brand-200 bg-white hover:border-brand-400"
+                          : hasColorChoice
+                            ? "border-brand-300 bg-brand-50 hover:border-brand-400"
+                            : "border-brand-200 bg-white hover:border-brand-400"
                       }`}
                       aria-pressed={isActive}
                     >
-                      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-brand-700">
+                      <p className="truncate text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
                         {option.title}
                       </p>
-                      <p className="mt-0.5 truncate text-[11px] text-brand-500">
+                      <p className="mt-0.5 truncate text-xs text-brand-500">
                         {getSelectedColorLabel(option.title)}
                       </p>
                     </button>
@@ -450,7 +472,7 @@ export function ProductConfigurator({
                           field.required && !value.trim()
                             ? "border-red-300 focus:border-red-400"
                             : "border-brand-300 focus:border-brand-500"
-                        }`}
+                        } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
                       />
                     ) : (
                       <input
@@ -465,7 +487,7 @@ export function ProductConfigurator({
                           field.required && !value.trim()
                             ? "border-red-300 focus:border-red-400"
                             : "border-brand-300 focus:border-brand-500"
-                        }`}
+                        } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
                       />
                     )}
                     {value.length > 0 && (
@@ -519,8 +541,8 @@ export function ProductConfigurator({
                     placeholder="https://..."
                     className={`w-full rounded border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-400 focus:outline-none transition-colors ${
                       links[i]?.trim()
-                        ? "border-brand-300 focus:border-brand-500"
-                        : "border-red-300 focus:border-red-400"
+                        ? "border-brand-300 bg-brand-50 focus:border-brand-500"
+                        : "border-red-300 bg-white focus:border-red-400"
                     }`}
                     required
                   />
@@ -535,7 +557,7 @@ export function ProductConfigurator({
                 setActiveConfiguratorSection("colors");
                 setActiveColorIndex(Math.max(0, colorOptions.length - 1));
               }}
-              className="mt-4 w-full rounded-lg border border-[#AF7C61]/50 bg-white px-4 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:border-[#AF7C61] hover:bg-brand-50"
+              className="mt-4 w-full rounded-none border border-[#AF7C61]/50 bg-white px-4 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:border-[#AF7C61] hover:bg-brand-50"
             >
               ← Powrót do kolorów
             </button>

@@ -1,16 +1,19 @@
 import { Clock } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
 
 interface PayPoPromoProps {
   /** Kwota w groszach (Medusa). */
   price: number;
 }
 
-const PAYPO_MIN = 4000;
-const PAYPO_MAX = 300000;
+export const PAYPO_MIN_CENTS = 4000;
+export const PAYPO_MAX_CENTS = 300000;
+
+export function isPayPoPriceEligible(price: number): boolean {
+  return price >= PAYPO_MIN_CENTS && price <= PAYPO_MAX_CENTS;
+}
 
 export function PayPoPromo({ price }: PayPoPromoProps) {
-  const isEligible = price >= PAYPO_MIN && price <= PAYPO_MAX;
+  const isEligible = isPayPoPriceEligible(price);
 
   if (!isEligible) return null;
 
@@ -31,10 +34,7 @@ export function PayPoPromo({ price }: PayPoPromoProps) {
         Kup teraz, zapłać za 30 dni
       </p>
       <p className="mt-2 text-[11px] leading-snug text-brand-600">
-        <span className="font-medium tabular-nums text-brand-800">
-          {formatPrice(price)}
-        </span>{" "}
-        — 0&nbsp;zł odsetek przy płatności w terminie
+        0&nbsp;zł odsetek przy płatności w terminie
       </p>
     </div>
   );

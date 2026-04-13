@@ -10,7 +10,6 @@ import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
-import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
 import { ProductFulfillmentStepper } from "@/components/product/ProductFulfillmentStepper";
 import { extractSchemaImage } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
@@ -154,7 +153,7 @@ export async function ProductPageLayout({
         <Breadcrumbs
           className="mb-0"
           items={[
-            { label: "Home page", href: "/" },
+            { label: "Strona główna", href: "/" },
             { label: categoryLabel, href: categoryHref },
             { label: product.title },
           ]}
@@ -250,8 +249,6 @@ export async function ProductPageLayout({
               globalColors={productConfig.colors}
               schemaImageUrl={schemaImageUrl}
             />
-
-            <DeliveryInfoBlock />
           </div>
         </div>
         </div>
