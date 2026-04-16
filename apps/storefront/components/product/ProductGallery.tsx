@@ -24,7 +24,8 @@ function useGalleryMaxWidth() {
         return;
       }
       const maxWidth = available * (ASPECT_W / ASPECT_H);
-      setMaxW(maxWidth);
+      /** ~10% większy podgląd przy tej samej logice proporcji (aspect, object-cover, miniatury bez zmian). */
+      setMaxW(maxWidth * 1.1);
     }
 
     calc();
