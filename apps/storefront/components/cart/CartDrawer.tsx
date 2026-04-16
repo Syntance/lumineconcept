@@ -90,7 +90,7 @@ export function CartDrawer() {
           <h2 className="font-display text-[24px] font-semibold tracking-wide text-brand-800">
             Koszyk
             {itemCount > 0 && (
-              <span className="ml-2 text-sm font-normal text-brand-400">({itemCount})</span>
+              <span className="ml-2 align-middle text-xl font-normal text-brand-400">({itemCount})</span>
             )}
           </h2>
           <button
