@@ -40,9 +40,9 @@ export function PriceDisplay({
 
   /** Mniejsze, czytelne kwoty na kafelkach siatki (bez Chronicle + kursywy). */
   const listingSizeClasses = {
-    sm: "text-sm",
-    md: "text-[0.9375rem]",
-    lg: "text-base",
+    sm: "text-[0.9375rem]",
+    md: "text-base",
+    lg: "text-lg",
   };
 
   const sizeStyle =
