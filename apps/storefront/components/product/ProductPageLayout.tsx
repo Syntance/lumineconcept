@@ -10,7 +10,6 @@ import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
-import { ProductFulfillmentStepper } from "@/components/product/ProductFulfillmentStepper";
 import { extractSchemaImage } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
 import { formatDimensionsWxH, getProductDimensionParts } from "@/lib/products/dimensions";
@@ -19,6 +18,7 @@ import {
   getGlobalProductConfig,
   type GlobalConfigOption,
 } from "@/lib/products/global-config";
+import { parseProductReviewsFromMetadata } from "@/lib/products/product-reviews";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
@@ -209,13 +209,9 @@ export async function ProductPageLayout({
 
             <PriceDisplay amount={price} variant="badge" />
 
-            <div className="pt-3">
-              <ProductFulfillmentStepper />
-            </div>
-
-            <div className="flex items-center gap-4 pt-4 pb-1">
+            <div className="flex items-center gap-4 pt-2 pb-4">
               <span className="h-px flex-1 bg-brand-300" />
-              <span className="whitespace-nowrap text-xs font-bold uppercase tracking-[0.2em] text-brand-700 sm:text-sm">
+              <span className="whitespace-nowrap text-base font-bold uppercase tracking-[0.2em] text-brand-700">
                 Skonfiguruj swój produkt
               </span>
               <span className="h-px flex-1 bg-brand-300" />
@@ -261,8 +257,10 @@ export async function ProductPageLayout({
         </div>
       </section>
 
-      {/* Reviews */}
-      <ProductReviews />
+      {/* Reviews — metadata.product_reviews (JSON), edycja w Medusa Admin */}
+      <ProductReviews
+        reviews={parseProductReviewsFromMetadata(metadata)}
+      />
 
       {/* Cross-sell — streamed via Suspense (nie blokuje galerii / konfiguratora) */}
       <Suspense fallback={<CrossSellSkeleton />}>

@@ -1,17 +1,21 @@
 import Link from "next/link";
+import {
+  averageRatingFromReviews,
+  type ProductReviewItem,
+} from "@/lib/products/product-reviews";
 
 interface ProductReviewsProps {
-  reviewCount?: number;
-  averageRating?: number;
+  reviews?: ProductReviewItem[];
 }
 
 function Stars({ rating = 0, max = 5 }: { rating?: number; max?: number }) {
+  const full = Math.min(max, Math.max(0, Math.round(rating)));
   return (
-    <div className="flex gap-0.5" aria-label={`Ocena ${rating} z ${max}`}>
+    <div className="flex gap-0.5" aria-label={`Ocena ${full} z ${max}`}>
       {Array.from({ length: max }, (_, i) => (
         <svg
           key={i}
-          className={`h-5 w-5 ${i < rating ? "text-amber-400" : "text-brand-200"}`}
+          className={`h-5 w-5 ${i < full ? "text-amber-400" : "text-brand-200"}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -22,10 +26,11 @@ function Stars({ rating = 0, max = 5 }: { rating?: number; max?: number }) {
   );
 }
 
-export function ProductReviews({
-  reviewCount = 0,
-  averageRating = 0,
-}: ProductReviewsProps) {
+export function ProductReviews({ reviews = [] }: ProductReviewsProps) {
+  const reviewCount = reviews.length;
+  const averageRating =
+    reviewCount > 0 ? averageRatingFromReviews(reviews) : 0;
+
   return (
     <section id="opinie" className="border-t border-brand-100 bg-white py-12 lg:py-16">
       <div className="container mx-auto max-w-3xl px-4 text-center">
@@ -42,6 +47,30 @@ export function ProductReviews({
               : "Brak opinii"}
           </p>
         </div>
+
+        {reviewCount > 0 && (
+          <ul className="mt-10 space-y-6 text-left">
+            {reviews.map((r, i) => (
+              <li
+                key={`${r.author}-${i}`}
+                className="rounded-xl border border-brand-100 bg-brand-50/80 px-5 py-4 text-left shadow-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-brand-800">{r.author}</span>
+                  {r.date && (
+                    <span className="text-xs text-brand-400">{r.date}</span>
+                  )}
+                </div>
+                <div className="mt-2">
+                  <Stars rating={r.rating} />
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-brand-700">
+                  {r.text}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {reviewCount === 0 && (
           <div className="mt-8 rounded-xl border border-brand-100 bg-brand-50 px-6 py-8">

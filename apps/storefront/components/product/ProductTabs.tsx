@@ -1,4 +1,5 @@
 import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
+import { ProductFulfillmentStepper } from "@/components/product/ProductFulfillmentStepper";
 import {
   extractDimensionsFromProductDescription,
   getProductDimensionParts,
@@ -95,6 +96,8 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
 
   if (tabs.length === 0) return null;
 
+  const hasOpisTab = tabs.some((t) => t.title === "Opis");
+
   return (
     <div className="space-y-6">
       {tabs.map((tab, i) => (
@@ -102,9 +105,21 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
           <summary className="cursor-pointer list-none border-b border-brand-200 pb-3 text-base font-medium text-brand-500 group-open:text-brand-900 transition-colors [&::-webkit-details-marker]:hidden">
             {tab.title}
           </summary>
-          <div className="pt-4">{tab.content}</div>
+          <div className="pt-4">
+            {tab.content}
+            {tab.title === "Opis" && (
+              <div className="mt-10">
+                <ProductFulfillmentStepper />
+              </div>
+            )}
+          </div>
         </details>
       ))}
+      {!hasOpisTab && (
+        <div className="mt-10">
+          <ProductFulfillmentStepper />
+        </div>
+      )}
     </div>
   );
 }

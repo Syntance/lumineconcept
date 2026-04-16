@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useId } from "react";
+import { ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   CUSTOM_COLOR_VALUE,
@@ -23,6 +24,8 @@ interface ColorStepPanelProps {
   showNextButton?: boolean;
   onNext?: () => void;
   nextButtonLabel?: string;
+  /** Domyślnie true — wyłącz np. przy etykiecie „Gotowe” na ostatnim kroku. */
+  nextButtonShowArrow?: boolean;
   colorMap: Record<string, string>;
   coloredSet: Set<string>;
   mirrorSet: Set<string>;
@@ -42,7 +45,8 @@ export function ColorStepPanel({
   onExpandedChange,
   showNextButton = false,
   onNext,
-  nextButtonLabel = "Następny \u2192",
+  nextButtonLabel = "Następny",
+  nextButtonShowArrow = true,
   colorMap,
   coloredSet,
   mirrorSet,
@@ -145,7 +149,7 @@ export function ColorStepPanel({
           <div className="space-y-3 px-3 pb-4 pt-3 mt-1">
             {standardColors.length > 0 && (
               <div>
-                <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
                   Standardowe
                 </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
@@ -156,7 +160,7 @@ export function ColorStepPanel({
 
             {coloredColors.length > 0 && (
               <div>
-                <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
                   Kolorowe
                 </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
@@ -167,7 +171,7 @@ export function ColorStepPanel({
 
             {mirrorColors.length > 0 && (
               <div>
-                <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
                   Lustrzane
                 </p>
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
@@ -178,7 +182,7 @@ export function ColorStepPanel({
 
             {/* Custom color */}
             <div>
-              <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.12em] text-brand-700">
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
                 Indywidualny
               </p>
               <p className="mb-2 text-xs leading-snug text-brand-500/85">
@@ -311,9 +315,15 @@ export function ColorStepPanel({
                     }
                     onNext();
                   }}
-                  className="w-full rounded-none border border-[#AF7C61]/50 bg-white px-4 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:border-[#AF7C61] hover:bg-brand-50"
+                  className={cn(
+                    "inline-flex w-full items-center justify-center rounded-none border border-[#AF7C61]/50 bg-white px-4 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:border-[#AF7C61] hover:bg-brand-50",
+                    nextButtonShowArrow && "gap-2",
+                  )}
                 >
                   {nextButtonLabel}
+                  {nextButtonShowArrow && (
+                    <ArrowDown className="h-4 w-4 shrink-0" aria-hidden />
+                  )}
                 </button>
               </div>
             )}
