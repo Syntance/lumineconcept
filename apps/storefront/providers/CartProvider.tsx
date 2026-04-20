@@ -152,9 +152,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (savedId) {
         try {
-          const existing = await cartApi.getCart(savedId);
-          updateCartState(existing as unknown as Record<string, unknown>);
-          return;
+          const existing = (await cartApi.getCart(savedId)) as unknown as
+            Record<string, unknown>;
+          /**
+           * Jeśli zapisany koszyk został już sfinalizowany (np. klient wrócił
+           * na stronę po zakupie albo w środku testu), Medusa zwraca go
+           * normalnie, ale kolejne update'y wywalają się z „Cart is already
+           * completed". Odrzucamy go i tworzymy świeży.
+           */
+          if (existing.completed_at) {
+            localStorage.removeItem(CART_ID_KEY);
+          } else {
+            updateCartState(existing);
+            return;
+          }
         } catch {
           localStorage.removeItem(CART_ID_KEY);
         }
