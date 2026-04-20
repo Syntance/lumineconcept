@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
@@ -45,9 +45,12 @@ export function CheckoutForm() {
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formStarted, setFormStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [preparingDelivery, setPreparingDelivery] = useState(false);
   const [contactSaveError, setContactSaveError] = useState<string | null>(null);
+  const [preparingPayment, setPreparingPayment] = useState(false);
+  const [shippingSaveError, setShippingSaveError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -106,38 +109,14 @@ export function CheckoutForm() {
 
   const handleSubmit = useCallback(async () => {
     if (!cartId) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setSubmitError(null);
     setSubmitting(true);
     trackFormSubmit("checkout_payment");
 
-    const address: Address = {
-      first_name: formData.firstName,
-      last_name: formData.lastName,
-      phone: formData.phone,
-      address_1: formData.address,
-      city: formData.city,
-      postal_code: formData.postalCode,
-      country_code: "pl",
-      ...(formData.wantInvoice && formData.companyName
-        ? { company: formData.companyName }
-        : {}),
-    };
-
     try {
-      await setCartEmail(cartId, formData.email);
-      await updateCartAddress(cartId, address);
-      await selectShippingOption(cartId, formData.shippingOptionId);
-
-      /**
-       * Na razie wymuszamy providera testowego (`pp_system_default`),
-       * żeby Medusa utworzyła zamówienie bez integracji z prawdziwą bramką.
-       * UI wyboru (Przelewy24 / PayPo) zostaje — wrócimy do niego po konfiguracji.
-       */
-      await initPaymentSession(cartId, TEST_PAYMENT_PROVIDER_ID);
-
-      const result = (await completeCart(cartId)) as
-        | { type: "order"; order: { id: string; display_id?: number } }
-        | { type: "cart"; cart: Record<string, unknown>; error?: { message?: string } };
+      const result = await completeCart(cartId);
 
       if (result.type !== "order") {
         const msg =
@@ -178,8 +157,9 @@ export function CheckoutForm() {
           : "Nie udało się złożyć zamówienia. Spróbuj ponownie.";
       setSubmitError(message);
       setSubmitting(false);
+      submittingRef.current = false;
     }
-  }, [cartId, formData, items, total, refreshCart, router]);
+  }, [cartId, items, total, refreshCart, router]);
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -452,17 +432,36 @@ export function CheckoutForm() {
               selectedOptionId={formData.shippingOptionId}
               onSelect={(id: string) => updateField("shippingOptionId", id)}
             />
+            {shippingSaveError && (
+              <p className="text-sm text-red-600" role="alert">
+                {shippingSaveError}
+              </p>
+            )}
             <button
               type="button"
-              onClick={() => {
-                trackFormSubmit("checkout_shipping");
-                trackCheckoutStepCompleted(2, "shipping");
-                setStep(3);
+              onClick={async () => {
+                if (!cartId) return;
+                setShippingSaveError(null);
+                setPreparingPayment(true);
+                try {
+                  trackFormSubmit("checkout_shipping");
+                  trackCheckoutStepCompleted(2, "shipping");
+                  await selectShippingOption(cartId, formData.shippingOptionId);
+                  await initPaymentSession(cartId, TEST_PAYMENT_PROVIDER_ID);
+                  setStep(3);
+                } catch (e) {
+                  console.error("[checkout] zapis dostawy/płatności", e);
+                  setShippingSaveError(
+                    "Nie udało się przygotować płatności. Spróbuj ponownie.",
+                  );
+                } finally {
+                  setPreparingPayment(false);
+                }
               }}
-              disabled={!canGoToStep3}
+              disabled={!canGoToStep3 || !cartId || preparingPayment}
               className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
-              Przejdź do płatności
+              {preparingPayment ? "Przygotowuję płatność…" : "Przejdź do płatności"}
             </button>
           </section>
         )}
