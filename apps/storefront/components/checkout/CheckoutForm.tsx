@@ -46,6 +46,8 @@ export function CheckoutForm() {
   const [formStarted, setFormStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [preparingDelivery, setPreparingDelivery] = useState(false);
+  const [contactSaveError, setContactSaveError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -390,17 +392,52 @@ export function CheckoutForm() {
               </span>
             </label>
 
+            {contactSaveError && (
+              <p className="text-sm text-red-600" role="alert">
+                {contactSaveError}
+              </p>
+            )}
+
             <button
               type="button"
-              onClick={() => {
-                trackFormSubmit("checkout_contact");
-                trackCheckoutStepCompleted(1, "contact");
-                setStep(2);
+              onClick={async () => {
+                if (!cartId) {
+                  setContactSaveError("Brak koszyka — odśwież stronę i spróbuj ponownie.");
+                  return;
+                }
+                setContactSaveError(null);
+                setPreparingDelivery(true);
+                try {
+                  const address: Address = {
+                    first_name: formData.firstName,
+                    last_name: formData.lastName,
+                    phone: formData.phone,
+                    address_1: formData.address,
+                    city: formData.city,
+                    postal_code: formData.postalCode,
+                    country_code: "pl",
+                    ...(formData.wantInvoice && formData.companyName
+                      ? { company: formData.companyName }
+                      : {}),
+                  };
+                  trackFormSubmit("checkout_contact");
+                  trackCheckoutStepCompleted(1, "contact");
+                  await setCartEmail(cartId, formData.email);
+                  await updateCartAddress(cartId, address);
+                  setStep(2);
+                } catch (e) {
+                  console.error("[checkout] zapis przed dostawą", e);
+                  setContactSaveError(
+                    "Nie udało się zapisać danych. Sprawdź połączenie i spróbuj ponownie.",
+                  );
+                } finally {
+                  setPreparingDelivery(false);
+                }
               }}
-              disabled={!canGoToStep2}
+              disabled={!canGoToStep2 || !cartId || preparingDelivery}
               className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
-              Przejdź do dostawy
+              {preparingDelivery ? "Zapisywanie…" : "Przejdź do dostawy"}
             </button>
           </section>
         )}
