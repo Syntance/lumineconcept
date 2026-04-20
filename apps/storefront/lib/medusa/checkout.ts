@@ -72,7 +72,49 @@ export async function initPaymentSession(cartId: string, providerId: string) {
   return response;
 }
 
-export async function completeCart(cartId: string) {
-  const response = await medusa.store.cart.complete(cartId);
-  return response;
+export type CompleteCartResponse =
+  | { type: "order"; order: { id: string; display_id?: number } }
+  | {
+      type: "cart";
+      cart: Record<string, unknown>;
+      error?: { message?: string };
+    };
+
+/**
+ * `cart.complete` potrafi zwrócić 409 „conflicted with another request…”
+ * gdy poprzednia próba wciąż się wykonuje (np. długi cold start Railway).
+ * Ponawiamy kilka razy z krótkim odstępem — każde kolejne wywołanie z tym samym
+ * Idempotency-Key zwraca stan z poprzedniej próby, więc to bezpieczne.
+ */
+export async function completeCart(
+  cartId: string,
+  opts: { retries?: number; delayMs?: number } = {},
+): Promise<CompleteCartResponse> {
+  const retries = opts.retries ?? 4;
+  const delayMs = opts.delayMs ?? 2500;
+  let lastErr: unknown = null;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return (await medusa.store.cart.complete(cartId)) as CompleteCartResponse;
+    } catch (e: unknown) {
+      lastErr = e;
+      const status =
+        (e as { status?: number }).status ??
+        (e as { response?: { status?: number } }).response?.status ??
+        0;
+      const msg = (e as { message?: string }).message ?? "";
+      const isConflict =
+        status === 409 ||
+        /idempotency/i.test(msg) ||
+        /conflict/i.test(msg);
+      if (isConflict && i < retries) {
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error("completeCart: przekroczono limit prób");
 }
