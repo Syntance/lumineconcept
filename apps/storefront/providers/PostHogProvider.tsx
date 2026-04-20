@@ -5,52 +5,45 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { initPostHog, optInPostHog, optOutPostHog } from "@/lib/analytics/posthog";
 import { initMetaPixel } from "@/lib/analytics/meta-pixel";
 import { trackMetaPageViewOnly, trackPageView } from "@/lib/analytics/events";
-
-declare global {
-  interface Window {
-    CookieYes?: {
-      getConsent: () => Record<string, boolean>;
-    };
-  }
-}
+import { CONSENT_EVENT, getConsent } from "@/lib/consent/consent";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const pathnameRef = useRef(pathname);
-  const searchParamsRef = useRef(searchParams);
   const prevAnalyticsConsentRef = useRef<boolean | undefined>(undefined);
-
-  pathnameRef.current = pathname;
-  searchParamsRef.current = searchParams;
+  const prevMarketingConsentRef = useRef<boolean | undefined>(undefined);
 
   useEffect(() => {
     initPostHog();
 
-    const checkConsent = () => {
-      const consent = window.CookieYes?.getConsent();
+    const applyConsent = () => {
+      const consent = getConsent();
       const analytics = !!consent?.analytics;
+      const marketing = !!consent?.marketing;
 
       if (analytics) {
         optInPostHog();
-        initMetaPixel();
-        // Pierwsze załadowanie przy zapisanej zgodzie: PageView idzie z efektu pathname.
-        // Zgoda udzielona później (wcześniej false): jeden PageView dla bieżącego URL po init pixela.
-        if (prevAnalyticsConsentRef.current === false) {
-          trackMetaPageViewOnly();
-        }
       } else {
         optOutPostHog();
       }
 
+      if (marketing) {
+        initMetaPixel();
+        // Zgoda udzielona później (wcześniej false): jeden PageView dla bieżącego URL po init pixela.
+        if (prevMarketingConsentRef.current === false) {
+          trackMetaPageViewOnly();
+        }
+      }
+
       prevAnalyticsConsentRef.current = analytics;
+      prevMarketingConsentRef.current = marketing;
     };
 
-    checkConsent();
-    document.addEventListener("cookieyes_consent_update", checkConsent);
+    applyConsent();
+    window.addEventListener(CONSENT_EVENT, applyConsent);
 
     return () => {
-      document.removeEventListener("cookieyes_consent_update", checkConsent);
+      window.removeEventListener(CONSENT_EVENT, applyConsent);
     };
   }, []);
 
