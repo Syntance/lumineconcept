@@ -1,7 +1,9 @@
 import posthog from "posthog-js";
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
-const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.posthog.com";
+/** Ingest EU Cloud — dashboard jest na eu.posthog.com, SDK musi wysyłać na eu.i.posthog.com */
+const POSTHOG_HOST =
+  process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "https://eu.i.posthog.com";
 
 let initialized = false;
 
