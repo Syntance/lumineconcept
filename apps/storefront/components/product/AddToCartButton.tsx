@@ -2,7 +2,6 @@
 
 import { ShoppingBag, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useCart } from "@/hooks/useCart";
 
 interface AddToCartButtonProps {
@@ -33,7 +32,6 @@ export function AddToCartButton({
   onBeforeAdd,
   metadata,
 }: AddToCartButtonProps) {
-  const router = useRouter();
   const { addItemWithTracking } = useCart();
   const [isAdding, setIsAdding] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -49,14 +47,20 @@ export function AddToCartButton({
         await addItemWithTracking(variantId, productData, quantity, metadata, {
           openDrawer: !redirectTo,
         });
-        if (redirectTo) {
-          router.push(redirectTo);
+        if (redirectTo && typeof window !== "undefined") {
+          /**
+           * Twarda nawigacja zamiast router.push — eliminuje wypadki,
+           * gdy App Router „połyka" przejście między segmentami na produkcji
+           * (obserwowane na Operze/Vercel po dodaniu do koszyka).
+           */
+          window.location.assign(redirectTo);
+          return;
         }
       } finally {
         setIsAdding(false);
       }
     },
-    [variantId, productData, quantity, metadata, addItemWithTracking, router],
+    [variantId, productData, quantity, metadata, addItemWithTracking],
   );
 
   const handleAddToCart = (checkoutAfterAdd: boolean) => {
