@@ -15,7 +15,9 @@ import {
 import { useCart } from "@/hooks/useCart";
 import {
   completeCart,
+  describeMedusaError,
   initPaymentSession,
+  isCartAlreadyCompletedError,
   saveContactDetails,
   selectShippingOption,
 } from "@/lib/medusa/checkout";
@@ -37,6 +39,23 @@ const STEPS = [
 const INPUT_CLASS =
   "w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors";
 const LABEL_CLASS = "block text-sm font-medium text-brand-700 mb-1";
+
+/**
+ * Gdy Medusa oznajmia, że koszyk jest już completed, zużyty cart_id nadal
+ * siedzi w localStorage — bez twardego resetu każdy kolejny klik dostaje
+ * ten sam błąd. Czyścimy lokalny stan i przeładowujemy stronę.
+ */
+function resetStaleCartAndReload() {
+  try {
+    localStorage.removeItem("lumine_cart_id");
+    localStorage.removeItem("lumine_express");
+  } catch {
+    /* prywatny tryb */
+  }
+  if (typeof window !== "undefined") {
+    window.location.assign("/koszyk");
+  }
+}
 
 export function CheckoutForm() {
   const router = useRouter();
@@ -118,9 +137,13 @@ export function CheckoutForm() {
       const result = await completeCart(cartId);
 
       if (result.type !== "order") {
-        const msg =
-          (result as { error?: { message?: string } }).error?.message ??
-          "Nie udało się utworzyć zamówienia (cart nie przeszedł w order).";
+        const err = (result as { error?: { message?: string; code?: string; type?: string } })
+          .error;
+        console.error("[checkout] complete zwrócił cart zamiast order", err, result);
+        const msg = describeMedusaError(
+          err,
+          "Nie udało się utworzyć zamówienia (koszyk nie przeszedł w zamówienie).",
+        );
         throw new Error(msg);
       }
 
@@ -150,10 +173,17 @@ export function CheckoutForm() {
       router.push(`/checkout/potwierdzenie?${qs.toString()}`);
     } catch (e) {
       console.error("[checkout] błąd składania zamówienia", e);
-      const message =
-        e instanceof Error
-          ? e.message
-          : "Nie udało się złożyć zamówienia. Spróbuj ponownie.";
+      if (isCartAlreadyCompletedError(e)) {
+        setSubmitError(
+          "Koszyk został już sfinalizowany wcześniej. Zaraz zaczniesz od nowa…",
+        );
+        setTimeout(resetStaleCartAndReload, 800);
+        return;
+      }
+      const message = describeMedusaError(
+        e,
+        "Nie udało się złożyć zamówienia. Spróbuj ponownie.",
+      );
       setSubmitError(message);
       setSubmitting(false);
       submittingRef.current = false;
@@ -405,13 +435,18 @@ export function CheckoutForm() {
                   setStep(2);
                 } catch (e) {
                   console.error("[checkout] zapis przed dostawą", e);
-                  const detail =
-                    e instanceof Error && e.message
-                      ? ` (${e.message})`
-                      : "";
-                  setContactSaveError(
-                    `Nie udało się zapisać danych. Sprawdź połączenie i spróbuj ponownie.${detail}`,
+                  if (isCartAlreadyCompletedError(e)) {
+                    setContactSaveError(
+                      "Ten koszyk został już sfinalizowany. Za chwilę zaczniesz od nowa…",
+                    );
+                    setTimeout(resetStaleCartAndReload, 800);
+                    return;
+                  }
+                  const message = describeMedusaError(
+                    e,
+                    "Nie udało się zapisać danych. Sprawdź połączenie i spróbuj ponownie.",
                   );
+                  setContactSaveError(message);
                 } finally {
                   setPreparingDelivery(false);
                 }
@@ -453,9 +488,18 @@ export function CheckoutForm() {
                   setStep(3);
                 } catch (e) {
                   console.error("[checkout] zapis dostawy/płatności", e);
-                  setShippingSaveError(
+                  if (isCartAlreadyCompletedError(e)) {
+                    setShippingSaveError(
+                      "Ten koszyk został już sfinalizowany. Za chwilę zaczniesz od nowa…",
+                    );
+                    setTimeout(resetStaleCartAndReload, 800);
+                    return;
+                  }
+                  const message = describeMedusaError(
+                    e,
                     "Nie udało się przygotować płatności. Spróbuj ponownie.",
                   );
+                  setShippingSaveError(message);
                 } finally {
                   setPreparingPayment(false);
                 }

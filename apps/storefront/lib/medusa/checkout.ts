@@ -96,11 +96,41 @@ export type CompleteCartResponse =
   | {
       type: "cart";
       cart: Record<string, unknown>;
-      error?: { message?: string };
+      error?: { message?: string; name?: string; type?: string; code?: string };
     };
 
+/** Rozpoznaje typowy dla Medusy v2 komunikat „Cart is already completed". */
+export function isCartAlreadyCompletedError(e: unknown): boolean {
+  const msg =
+    (e as { message?: string } | null)?.message ??
+    (typeof e === "string" ? e : "") ??
+    "";
+  return /already\s+completed/i.test(msg);
+}
+
 /**
- * `cart.complete` potrafi zwrócić 409 „conflicted with another request…”
+ * Zamienia surowy błąd HTTP z Medusy na sensowny, przetłumaczony komunikat
+ * (Safari pokazywało generic „An unknown error occurred" bez kontekstu).
+ */
+export function describeMedusaError(e: unknown, fallback: string): string {
+  if (!e) return fallback;
+  const raw = e as Record<string, unknown>;
+  const message =
+    (raw.message as string | undefined) ??
+    (raw.error as { message?: string } | undefined)?.message ??
+    "";
+  const type = (raw.type as string | undefined) ?? "";
+  const code = (raw.code as string | undefined) ?? "";
+  if (isCartAlreadyCompletedError(e)) {
+    return "Koszyk został już sfinalizowany. Zacznij od nowa.";
+  }
+  if (message) return message;
+  if (type || code) return `${type || "error"}${code ? ` (${code})` : ""}`;
+  return fallback;
+}
+
+/**
+ * `cart.complete` potrafi zwrócić 409 „conflicted with another request…"
  * gdy poprzednia próba wciąż się wykonuje (np. długi cold start Railway).
  * Ponawiamy kilka razy z krótkim odstępem — każde kolejne wywołanie z tym samym
  * Idempotency-Key zwraca stan z poprzedniej próby, więc to bezpieczne.
@@ -114,7 +144,11 @@ export async function completeCart(
   let lastErr: unknown = null;
   for (let i = 0; i <= retries; i++) {
     try {
-      return (await medusa.store.cart.complete(cartId)) as CompleteCartResponse;
+      const result = (await medusa.store.cart.complete(cartId)) as CompleteCartResponse;
+      if (result.type === "cart" && (result.error?.message || result.error?.code)) {
+        console.warn("[checkout] complete→cart", result.error, result.cart);
+      }
+      return result;
     } catch (e: unknown) {
       lastErr = e;
       const status =
@@ -126,7 +160,8 @@ export async function completeCart(
         status === 409 ||
         /idempotency/i.test(msg) ||
         /conflict/i.test(msg);
-      if (isConflict && i < retries) {
+      const alreadyCompleted = isCartAlreadyCompletedError(e);
+      if (isConflict && !alreadyCompleted && i < retries) {
         await new Promise((r) => setTimeout(r, delayMs));
         continue;
       }
