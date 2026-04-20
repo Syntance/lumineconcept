@@ -124,23 +124,40 @@ export async function ensureLumineShipping(
   });
   messages.push("Powiązano lokalizację z sales channel.");
 
-  const providers = await listFulfillmentProviders(container);
-  const dpdFp = providers.find(
-    (p) =>
-      String(p.id).includes("_dpd_") ||
-      (p as { handle?: string }).handle === "dpd",
-  );
-  const manualFp = providers.find(
-    (p) =>
-      String(p.id).includes("_manual_") ||
-      (p as { handle?: string }).handle === "manual",
-  );
+  const providers = (await listFulfillmentProviders(
+    container,
+  )) as unknown as Array<Record<string, unknown>>;
+  const providerIds = providers
+    .map((p) => String(p.id ?? ""))
+    .filter(Boolean);
+  messages.push(`Providers: ${providerIds.join(", ") || "(brak)"}`);
+
+  const matchProvider = (needle: string) =>
+    providers.find((p) => {
+      const id = String(p.id ?? "").toLowerCase();
+      const handle = String((p as { handle?: string }).handle ?? "").toLowerCase();
+      const identifier = String(
+        (p as { identifier?: string }).identifier ?? "",
+      ).toLowerCase();
+      const n = needle.toLowerCase();
+      return (
+        id === n ||
+        handle === n ||
+        identifier === n ||
+        id.endsWith(`_${n}`) ||
+        id.includes(`_${n}_`) ||
+        id.includes(n)
+      );
+    });
+
+  const dpdFp = matchProvider("dpd");
+  const manualFp = matchProvider("manual");
   if (!dpdFp?.id) {
     return {
       ok: false,
       messages: [
         ...messages,
-        "Brak fulfillment providera DPD (fp_*_dpd). Sprawdź medusa-config (fulfillment providers).",
+        "Brak fulfillment providera DPD. Sprawdź medusa-config (fulfillment providers).",
       ],
     };
   }
@@ -309,7 +326,7 @@ export async function ensureLumineShipping(
         name: OPTION_NAME,
         service_zone_id: serviceZoneId,
         shipping_profile_id: shippingProfileId,
-        provider_id: dpdFp.id,
+        provider_id: String(dpdFp.id),
         data: {
           id: "dpd_courier",
         },
