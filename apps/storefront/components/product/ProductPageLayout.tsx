@@ -9,7 +9,6 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductTabs } from "@/components/product/ProductTabs";
-import { ProductReviews } from "@/components/product/ProductReviews";
 import { extractSchemaImage } from "@/lib/products/product-images";
 import { SITE_URL } from "@/lib/utils";
 import { formatDimensionsWxH, getProductDimensionParts } from "@/lib/products/dimensions";
@@ -18,7 +17,6 @@ import {
   getGlobalProductConfig,
   type GlobalConfigOption,
 } from "@/lib/products/global-config";
-import { parseProductReviewsFromMetadata } from "@/lib/products/product-reviews";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
@@ -256,11 +254,6 @@ export async function ProductPageLayout({
           <ProductTabs description={product.description ?? null} metadata={metadata} />
         </div>
       </section>
-
-      {/* Reviews — metadata.product_reviews (JSON), edycja w Medusa Admin */}
-      <ProductReviews
-        reviews={parseProductReviewsFromMetadata(metadata)}
-      />
 
       {/* Cross-sell — streamed via Suspense (nie blokuje galerii / konfiguratora) */}
       <Suspense fallback={<CrossSellSkeleton />}>
