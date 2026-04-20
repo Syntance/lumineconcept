@@ -1,0 +1,344 @@
+import type { IFulfillmentModuleService, MedusaContainer } from "@medusajs/framework/types";
+import {
+  batchLinksWorkflow,
+  createLocationFulfillmentSetWorkflow,
+  createServiceZonesWorkflow,
+  createShippingOptionsWorkflow,
+  createShippingProfilesWorkflow,
+  createStockLocationsWorkflow,
+  linkSalesChannelsToStockLocationWorkflow,
+} from "@medusajs/medusa/core-flows";
+import { Modules } from "@medusajs/framework/utils";
+
+const LOCATION_NAME = "Magazyn PL";
+const FULFILLMENT_SET_NAME = "Wysyłka";
+const SERVICE_ZONE_NAME = "Polska";
+const SHIPPING_PROFILE_NAME = "Lumine — standard";
+const OPTION_NAME = "Kurier DPD";
+/** Kwota w najmniejszej jednostce waluty (grosze) */
+const DPD_FLAT_AMOUNT = 2500;
+
+export interface EnsureLumineShippingResult {
+  ok: boolean;
+  messages: string[];
+  stock_location_id?: string;
+  fulfillment_set_id?: string;
+  service_zone_id?: string;
+  shipping_profile_id?: string;
+  shipping_option_id?: string;
+  skipped?: boolean;
+}
+
+async function listFulfillmentProviders(container: MedusaContainer) {
+  const fulfillment = container.resolve(
+    Modules.FULFILLMENT,
+  ) as IFulfillmentModuleService;
+  return fulfillment.listFulfillmentProviders({}, {});
+}
+
+async function listShippingOptionsForZone(
+  container: MedusaContainer,
+  serviceZoneId: string,
+) {
+  const fulfillment = container.resolve(
+    Modules.FULFILLMENT,
+  ) as IFulfillmentModuleService;
+  return fulfillment.listShippingOptions({
+    service_zone: { id: serviceZoneId },
+  });
+}
+
+export async function ensureLumineShipping(
+  container: MedusaContainer,
+): Promise<EnsureLumineShippingResult> {
+  const messages: string[] = [];
+  const query = container.resolve("query") as {
+    graph: (args: {
+      entity: string;
+      fields: string[];
+      filters?: Record<string, unknown>;
+    }) => Promise<{ data: Record<string, unknown>[] }>;
+  };
+
+  const { data: salesChannels } = await query.graph({
+    entity: "sales_channel",
+    fields: ["id", "name"],
+  });
+  const defaultSc = salesChannels[0];
+  if (!defaultSc?.id) {
+    return {
+      ok: false,
+      messages: ["Brak sales channel — utwórz kanał w Admin."],
+    };
+  }
+  messages.push(`Sales channel: ${defaultSc.name ?? defaultSc.id}`);
+
+  let { data: stockLocations } = await query.graph({
+    entity: "stock_location",
+    fields: ["id", "name"],
+  });
+
+  let stockLocationId = stockLocations.find(
+    (l) => (l.name as string) === LOCATION_NAME,
+  )?.id as string | undefined;
+  if (!stockLocationId && stockLocations[0]?.id) {
+    stockLocationId = stockLocations[0].id as string;
+    messages.push(`Używam istniejącej lokalizacji: ${stockLocations[0].name}`);
+  }
+
+  if (!stockLocationId) {
+    const { result: created } = await createStockLocationsWorkflow(container).run({
+      input: {
+        locations: [
+          {
+            name: LOCATION_NAME,
+            address: {
+              address_1: "ul. Jana Pawła II",
+              city: "Ryczów",
+              country_code: "pl",
+              postal_code: "34-115",
+            },
+          },
+        ],
+      },
+    });
+    const loc = created?.[0];
+    if (!loc?.id) {
+      return { ok: false, messages: ["Nie udało się utworzyć stock location."] };
+    }
+    stockLocationId = loc.id;
+    messages.push(`Utworzono lokalizację: ${LOCATION_NAME}`);
+    const again = await query.graph({
+      entity: "stock_location",
+      fields: ["id", "name"],
+    });
+    stockLocations = again.data;
+  }
+
+  await linkSalesChannelsToStockLocationWorkflow(container).run({
+    input: {
+      id: stockLocationId,
+      add: [defaultSc.id as string],
+      remove: [],
+    },
+  });
+  messages.push("Powiązano lokalizację z sales channel.");
+
+  const providers = await listFulfillmentProviders(container);
+  const dpdFp = providers.find(
+    (p) =>
+      String(p.id).includes("_dpd_") ||
+      (p as { handle?: string }).handle === "dpd",
+  );
+  const manualFp = providers.find(
+    (p) =>
+      String(p.id).includes("_manual_") ||
+      (p as { handle?: string }).handle === "manual",
+  );
+  if (!dpdFp?.id) {
+    return {
+      ok: false,
+      messages: [
+        ...messages,
+        "Brak fulfillment providera DPD (fp_*_dpd). Sprawdź medusa-config (fulfillment providers).",
+      ],
+    };
+  }
+
+  const toLink = [dpdFp.id];
+  if (manualFp?.id) toLink.push(manualFp.id);
+
+  await batchLinksWorkflow(container).run({
+    input: {
+      create: toLink.map((fulfillment_provider_id) => ({
+        [Modules.STOCK_LOCATION]: { stock_location_id: stockLocationId },
+        [Modules.FULFILLMENT]: { fulfillment_provider_id },
+      })),
+      update: [],
+      delete: [],
+    },
+  });
+  messages.push(`Podłączono fulfillment providers: ${toLink.join(", ")}`);
+
+  const { data: locWithSets } = await query.graph({
+    entity: "stock_location",
+    fields: [
+      "id",
+      "fulfillment_sets.id",
+      "fulfillment_sets.name",
+      "fulfillment_sets.type",
+    ],
+    filters: { id: stockLocationId },
+  });
+  const loc = locWithSets[0] as
+    | {
+        fulfillment_sets?: {
+          id: string;
+          name?: string;
+          type?: string;
+        }[];
+      }
+    | undefined;
+
+  let fulfillmentSet = loc?.fulfillment_sets?.find(
+    (fs) => fs.name === FULFILLMENT_SET_NAME || fs.type === "shipping",
+  );
+  let fulfillmentSetId = fulfillmentSet?.id;
+
+  if (!fulfillmentSetId) {
+    await createLocationFulfillmentSetWorkflow(container).run({
+      input: {
+        location_id: stockLocationId,
+        fulfillment_set_data: {
+          name: FULFILLMENT_SET_NAME,
+          type: "shipping",
+        },
+      },
+    });
+    const refetch = await query.graph({
+      entity: "stock_location",
+      fields: ["id", "fulfillment_sets.id", "fulfillment_sets.name"],
+      filters: { id: stockLocationId },
+    });
+    const sets = (refetch.data[0] as { fulfillment_sets?: { id: string }[] })
+      ?.fulfillment_sets;
+    fulfillmentSetId = sets?.[sets.length - 1]?.id;
+    messages.push("Dodano fulfillment set „Wysyłka”.");
+  } else {
+    messages.push("Fulfillment set już istnieje.");
+  }
+
+  if (!fulfillmentSetId) {
+    return {
+      ok: false,
+      messages: [...messages, "Brak fulfillment_set_id."],
+    };
+  }
+
+  const { data: zones } = await query.graph({
+    entity: "service_zone",
+    fields: ["id", "name", "fulfillment_set_id"],
+    filters: { fulfillment_set_id: fulfillmentSetId },
+  });
+  let serviceZoneId = (zones as { id: string; name?: string }[]).find(
+    (z) => z.name === SERVICE_ZONE_NAME,
+  )?.id;
+
+  if (!serviceZoneId) {
+    const { result: sz } = await createServiceZonesWorkflow(container).run({
+      input: {
+        data: [
+          {
+            name: SERVICE_ZONE_NAME,
+            fulfillment_set_id: fulfillmentSetId,
+            geo_zones: [
+              {
+                type: "country",
+                country_code: "pl",
+              },
+            ],
+          },
+        ],
+      },
+    });
+    serviceZoneId = sz?.[0]?.id;
+    messages.push("Utworzono strefę „Polska” (PL).");
+  } else {
+    messages.push("Strefa „Polska” już istnieje.");
+  }
+
+  if (!serviceZoneId) {
+    return {
+      ok: false,
+      messages: [...messages, "Brak service_zone_id."],
+    };
+  }
+
+  const { data: profiles } = await query.graph({
+    entity: "shipping_profile",
+    fields: ["id", "name"],
+  });
+  let shippingProfileId = (profiles as { id: string; name?: string }[]).find(
+    (p) => p.name === SHIPPING_PROFILE_NAME,
+  )?.id;
+
+  if (!shippingProfileId) {
+    const { result: prof } = await createShippingProfilesWorkflow(container).run({
+      input: {
+        data: [
+          {
+            name: SHIPPING_PROFILE_NAME,
+            type: "default",
+          },
+        ],
+      },
+    });
+    shippingProfileId = prof?.[0]?.id;
+    messages.push("Utworzono shipping profile.");
+  }
+
+  if (!shippingProfileId) {
+    return {
+      ok: false,
+      messages: [...messages, "Brak shipping_profile_id."],
+    };
+  }
+
+  const existingOptions = await listShippingOptionsForZone(
+    container,
+    serviceZoneId,
+  );
+  const already = existingOptions.find((o) => o.name === OPTION_NAME);
+  if (already) {
+    messages.push(`Opcja „${OPTION_NAME}” już istnieje (${already.id}).`);
+    return {
+      ok: true,
+      skipped: true,
+      messages,
+      stock_location_id: stockLocationId,
+      fulfillment_set_id: fulfillmentSetId,
+      service_zone_id: serviceZoneId,
+      shipping_profile_id: shippingProfileId,
+      shipping_option_id: already.id,
+    };
+  }
+
+  const { result: options } = await createShippingOptionsWorkflow(container).run({
+    input: [
+      {
+        name: OPTION_NAME,
+        service_zone_id: serviceZoneId,
+        shipping_profile_id: shippingProfileId,
+        provider_id: dpdFp.id,
+        data: {
+          id: "dpd_courier",
+        },
+        type: {
+          label: "Kurier",
+          description: "DPD Polska",
+          code: "dpd",
+        },
+        price_type: "flat",
+        prices: [
+          {
+            amount: DPD_FLAT_AMOUNT,
+            currency_code: "pln",
+          },
+        ],
+      },
+    ],
+  });
+
+  const so = options?.[0];
+  messages.push(`Utworzono opcję dostawy: ${OPTION_NAME} (${so?.id ?? "?"})`);
+
+  return {
+    ok: true,
+    messages,
+    stock_location_id: stockLocationId,
+    fulfillment_set_id: fulfillmentSetId,
+    service_zone_id: serviceZoneId,
+    shipping_profile_id: shippingProfileId,
+    shipping_option_id: so?.id,
+  };
+}

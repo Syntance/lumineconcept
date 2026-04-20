@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Truck } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/hooks/useCart";
-import { getShippingOptions } from "@/lib/medusa/checkout";
+import {
+  ensureLumineShippingBootstrap,
+  getShippingOptions,
+} from "@/lib/medusa/checkout";
 
 interface ShippingOptionView {
   id: string;
@@ -26,36 +29,59 @@ export function ShippingSelector({
   const [options, setOptions] = useState<ShippingOptionView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const ensureAttempted = useRef(false);
 
   useEffect(() => {
+    ensureAttempted.current = false;
     if (!cartId) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    getShippingOptions(cartId)
-      .then((raw) => {
-        if (cancelled) return;
-        const list = (raw ?? []) as unknown as Array<Record<string, unknown>>;
-        const mapped: ShippingOptionView[] = list.map((o) => ({
+    function mapOptions(
+      raw: Array<Record<string, unknown>> | null | undefined,
+    ): ShippingOptionView[] {
+      const list = (raw ?? []) as Array<Record<string, unknown>>;
+      return list.map((o) => {
+        const calc = o.calculated_price as
+          | { calculated_amount?: number }
+          | undefined;
+        const amount =
+          Number(o.amount ?? o.price ?? calc?.calculated_amount ?? 0) || 0;
+        return {
           id: String(o.id),
           name: (o.name as string | undefined) ?? "Dostawa",
-          price: Number(o.amount ?? o.price ?? 0),
+          price: amount,
           description: (o.data as { description?: string } | undefined)?.description,
-        }));
+        };
+      });
+    }
+
+    (async () => {
+      try {
+        let raw = await getShippingOptions(cartId);
+        if (cancelled) return;
+        if (!raw?.length && !ensureAttempted.current) {
+          ensureAttempted.current = true;
+          await ensureLumineShippingBootstrap();
+          if (!cancelled) {
+            raw = await getShippingOptions(cartId);
+          }
+        }
+        if (cancelled) return;
+        const mapped = mapOptions(raw as unknown as Array<Record<string, unknown>>);
         setOptions(mapped);
         if (mapped.length === 1 && !selectedOptionId) {
           onSelect(mapped[0].id);
         }
-      })
-      .catch((e: unknown) => {
+      } catch (e: unknown) {
         if (cancelled) return;
         console.error("[shipping] fetch", e);
         setError("Nie udało się pobrać opcji dostawy.");
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;

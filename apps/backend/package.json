@@ -9,6 +9,7 @@
     "build": "medusa build",
     "seed": "medusa exec medusa-config -- medusa seed -f ./data/seed.json",
     "variants:on-demand": "medusa exec ./src/scripts/migrate-variants-on-demand.ts",
+    "setup-shipping": "medusa exec ./src/scripts/ensure-lumine-shipping.ts",
     "db:migrate": "medusa db:migrate",
     "admin:create-local": "medusa user -e admin@local.test -p admin",
     "type-check": "tsc --noEmit",
