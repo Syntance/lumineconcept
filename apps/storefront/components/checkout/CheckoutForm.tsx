@@ -1,10 +1,31 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
-import { trackFormStart, trackFormSubmit, trackCheckoutStepCompleted } from "@/lib/analytics/events";
+import {
+  trackFormStart,
+  trackFormSubmit,
+  trackCheckoutStepCompleted,
+  trackPurchase,
+} from "@/lib/analytics/events";
+import { useCart } from "@/hooks/useCart";
+import {
+  completeCart,
+  initPaymentSession,
+  selectShippingOption,
+  setCartEmail,
+  updateCartAddress,
+} from "@/lib/medusa/checkout";
+
+/**
+ * Testowy dostawca płatności (Medusa 2 instaluje go domyślnie jako manual).
+ * Docelowo: `przelewy24` / `paypo` — podmieni się po integracji bramek.
+ */
+const TEST_PAYMENT_PROVIDER_ID = "pp_system_default";
 
 type CheckoutStep = 1 | 2 | 3;
 
@@ -19,8 +40,12 @@ const INPUT_CLASS =
 const LABEL_CLASS = "block text-sm font-medium text-brand-700 mb-1";
 
 export function CheckoutForm() {
+  const router = useRouter();
+  const { id: cartId, items, total, refreshCart } = useCart();
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formStarted, setFormStarted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -73,7 +98,86 @@ export function CheckoutForm() {
   const canSubmit =
     formData.paymentProviderId !== "" &&
     formData.acceptTerms &&
-    formData.acceptRodo;
+    formData.acceptRodo &&
+    !!cartId &&
+    !submitting;
+
+  const handleSubmit = useCallback(async () => {
+    if (!cartId) return;
+    setSubmitError(null);
+    setSubmitting(true);
+    trackFormSubmit("checkout_payment");
+
+    const address: Address = {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      phone: formData.phone,
+      address_1: formData.address,
+      city: formData.city,
+      postal_code: formData.postalCode,
+      country_code: "pl",
+      ...(formData.wantInvoice && formData.companyName
+        ? { company: formData.companyName }
+        : {}),
+    };
+
+    try {
+      await setCartEmail(cartId, formData.email);
+      await updateCartAddress(cartId, address);
+      await selectShippingOption(cartId, formData.shippingOptionId);
+
+      /**
+       * Na razie wymuszamy providera testowego (`pp_system_default`),
+       * żeby Medusa utworzyła zamówienie bez integracji z prawdziwą bramką.
+       * UI wyboru (Przelewy24 / PayPo) zostaje — wrócimy do niego po konfiguracji.
+       */
+      await initPaymentSession(cartId, TEST_PAYMENT_PROVIDER_ID);
+
+      const result = (await completeCart(cartId)) as
+        | { type: "order"; order: { id: string; display_id?: number } }
+        | { type: "cart"; cart: Record<string, unknown>; error?: { message?: string } };
+
+      if (result.type !== "order") {
+        const msg =
+          (result as { error?: { message?: string } }).error?.message ??
+          "Nie udało się utworzyć zamówienia (cart nie przeszedł w order).";
+        throw new Error(msg);
+      }
+
+      trackCheckoutStepCompleted(3, "payment");
+      trackPurchase({
+        id: result.order.id,
+        total,
+        currency: "PLN",
+        items: items.map((i) => ({
+          id: i.variant_id,
+          title: i.title,
+          price: i.unit_price,
+          quantity: i.quantity,
+        })),
+      });
+
+      try {
+        localStorage.removeItem("lumine_cart_id");
+        localStorage.removeItem("lumine_express");
+      } catch {
+        /* prywatny tryb */
+      }
+      await refreshCart().catch(() => undefined);
+
+      const qs = new URLSearchParams({ order_id: result.order.id });
+      if (result.order.display_id) qs.set("display_id", String(result.order.display_id));
+      router.push(`/checkout/potwierdzenie?${qs.toString()}`);
+    } catch (e) {
+      console.error("[checkout] błąd składania zamówienia", e);
+      const message =
+        e instanceof Error
+          ? e.message
+          : "Nie udało się złożyć zamówienia. Spróbuj ponownie.";
+      setSubmitError(message);
+      setSubmitting(false);
+    }
+  }, [cartId, formData, items, total, refreshCart, router]);
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -372,16 +476,27 @@ export function CheckoutForm() {
               </label>
             </div>
 
+            {submitError && (
+              <div
+                role="alert"
+                className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                {submitError}
+              </div>
+            )}
+
             <button
               type="button"
-              onClick={() => {
-                trackFormSubmit("checkout_payment");
-              }}
+              onClick={handleSubmit}
               disabled={!canSubmit}
               className="w-full rounded-md bg-accent py-3 text-sm font-semibold text-white hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
-              Zamawiam i płacę
+              {submitting ? "Składanie zamówienia…" : "Zamawiam i płacę"}
             </button>
+            <p className="text-center text-[11px] text-brand-400">
+              Tryb testowy — zamówienie trafia do Medusy bez rzeczywistej
+              płatności (bramki skonfigurujemy na końcu).
+            </p>
           </section>
         )}
       </div>
