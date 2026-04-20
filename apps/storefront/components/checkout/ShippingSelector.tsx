@@ -36,9 +36,10 @@ export function ShippingSelector({
     getShippingOptions(cartId)
       .then((raw) => {
         if (cancelled) return;
-        const mapped: ShippingOptionView[] = (raw ?? []).map((o: Record<string, unknown>) => ({
-          id: o.id as string,
-          name: (o.name as string) ?? "Dostawa",
+        const list = (raw ?? []) as unknown as Array<Record<string, unknown>>;
+        const mapped: ShippingOptionView[] = list.map((o) => ({
+          id: String(o.id),
+          name: (o.name as string | undefined) ?? "Dostawa",
           price: Number(o.amount ?? o.price ?? 0),
           description: (o.data as { description?: string } | undefined)?.description,
         }));
