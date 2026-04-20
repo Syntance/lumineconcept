@@ -62,13 +62,28 @@ export default defineConfig({
         sandbox: process.env.INPOST_SANDBOX === "true",
       },
     },
+    /**
+     * Fulfillment: Manual (testy) + DPD (kurier — opcje w Admin → Shipping).
+     * Stary moduł `./src/modules/dpd` zastąpiony providerem zgodnym z Medusa v2.
+     */
     {
-      key: "dpd",
-      resolve: "./src/modules/dpd",
+      resolve: "@medusajs/medusa/fulfillment",
       options: {
-        login: process.env.DPD_LOGIN,
-        password: process.env.DPD_PASSWORD,
-        fid: process.env.DPD_FID,
+        providers: [
+          {
+            resolve: "@medusajs/fulfillment-manual",
+            id: "manual",
+          },
+          {
+            resolve: "./src/modules/dpd-fulfillment",
+            id: "dpd",
+            options: {
+              login: process.env.DPD_LOGIN,
+              password: process.env.DPD_PASSWORD,
+              fid: process.env.DPD_FID,
+            },
+          },
+        ],
       },
     },
     {
