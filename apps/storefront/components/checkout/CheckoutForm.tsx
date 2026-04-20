@@ -16,9 +16,8 @@ import { useCart } from "@/hooks/useCart";
 import {
   completeCart,
   initPaymentSession,
+  saveContactDetails,
   selectShippingOption,
-  setCartEmail,
-  updateCartAddress,
 } from "@/lib/medusa/checkout";
 
 /**
@@ -402,13 +401,16 @@ export function CheckoutForm() {
                   };
                   trackFormSubmit("checkout_contact");
                   trackCheckoutStepCompleted(1, "contact");
-                  await setCartEmail(cartId, formData.email);
-                  await updateCartAddress(cartId, address);
+                  await saveContactDetails(cartId, formData.email, address);
                   setStep(2);
                 } catch (e) {
                   console.error("[checkout] zapis przed dostawą", e);
+                  const detail =
+                    e instanceof Error && e.message
+                      ? ` (${e.message})`
+                      : "";
                   setContactSaveError(
-                    "Nie udało się zapisać danych. Sprawdź połączenie i spróbuj ponownie.",
+                    `Nie udało się zapisać danych. Sprawdź połączenie i spróbuj ponownie.${detail}`,
                   );
                 } finally {
                   setPreparingDelivery(false);

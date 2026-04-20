@@ -18,6 +18,25 @@ export async function setCartEmail(cartId: string, email: string) {
   return response.cart;
 }
 
+/**
+ * Jeden PUT /store/carts/:id z emailem + adresami.
+ * Medusa v2 blokuje cart na czas workflow — dwa osobne updaty sekwencyjnie
+ * potrafią się blokować i trwać 10-15s. Łączymy w jeden request.
+ */
+export async function saveContactDetails(
+  cartId: string,
+  email: string,
+  shippingAddress: Address,
+  billingAddress?: Address,
+) {
+  const response = await medusa.store.cart.update(cartId, {
+    email,
+    shipping_address: shippingAddress,
+    billing_address: billingAddress ?? shippingAddress,
+  });
+  return response.cart;
+}
+
 export async function getShippingOptions(cartId: string) {
   const response = await medusa.store.fulfillment.listCartOptions({ cart_id: cartId });
   return response.shipping_options;
