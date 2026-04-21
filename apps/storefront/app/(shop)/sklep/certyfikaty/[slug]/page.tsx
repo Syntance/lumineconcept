@@ -7,7 +7,7 @@ import { ProductPageClient } from "../../gotowe-wzory/[slug]/client";
 export const revalidate = 120;
 
 export async function generateStaticParams() {
-  const response = await getProducts({ limit: 50, offset: 0 }).catch(() => null);
+  const response = await getProducts({ limit: 200, offset: 0 }).catch(() => null);
   if (!response?.products) return [];
   return response.products
     .filter((p) => p.handle)

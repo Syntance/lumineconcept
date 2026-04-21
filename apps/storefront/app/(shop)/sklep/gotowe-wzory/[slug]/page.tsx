@@ -7,7 +7,12 @@ import { ProductPageClient } from "./client";
 export const revalidate = 120;
 
 export async function generateStaticParams() {
-  const response = await getProducts({ limit: 50, offset: 0 }).catch(() => null);
+  /**
+   * Prebuild wszystkich produktów (do 200) — bez tego produkty poza pierwszą
+   * stroną listy trafiały w SSR on-demand, który przy cold starcie Railway
+   * potrafił zwrócić 404.
+   */
+  const response = await getProducts({ limit: 200, offset: 0 }).catch(() => null);
   if (!response?.products) return [];
   return response.products
     .filter((p) => p.handle)

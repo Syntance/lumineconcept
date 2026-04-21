@@ -42,21 +42,44 @@ export const getProducts = unstable_cache(
   { revalidate: 60, tags: ["medusa-products"] },
 );
 
+/**
+ * WAŻNE: nie łapiemy tu błędu i nie zwracamy null przy rzucie.
+ * `unstable_cache` cache'uje wartości zwrotne (w tym null!) na `revalidate`
+ * sekund — jeśli złapiemy timeout Railway/cold start i zwrócimy null,
+ * produkt będzie dawać 404 przez 120s, dopóki cache nie wygaśnie. Rzucony
+ * błąd natomiast NIE jest cache'owany, więc następny request spróbuje
+ * ponownie. Brak produktu (response.products jest pusty) zwraca null i
+ * ten null jest poprawnie zacache'owany.
+ */
 async function _getProductByHandle(handle: string) {
-  try {
-    const regionId = await getPolishRegionId();
-    const response = await medusa.store.product.list({
-      handle,
-      region_id: regionId,
-      fields:
-        "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options",
-    });
+  const regionId = await getPolishRegionId();
 
-    return response.products[0] ?? null;
-  } catch (e) {
-    logMedusaFailure(`getProductByHandle(${handle})`, e);
-    return null;
+  /**
+   * Railway (Neon + Medusa v2) przy cold starcie potrafi timeoutować
+   * pierwszy request — dajemy jedną szybką retry zanim propagujemy błąd.
+   */
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 1200));
+    }
+    try {
+      const response = await medusa.store.product.list({
+        handle,
+        region_id: regionId,
+        fields:
+          "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options",
+      });
+      return response.products[0] ?? null;
+    } catch (e) {
+      lastErr = e;
+    }
   }
+
+  logMedusaFailure(`getProductByHandle(${handle})`, lastErr);
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error(`getProductByHandle(${handle}) failed`);
 }
 
 export const getProductByHandle = unstable_cache(
