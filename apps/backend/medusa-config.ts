@@ -113,7 +113,11 @@ export default defineConfig({
       options: {
         providers: [
           {
-            resolve: "@medusajs/payment/providers/system",
+            // Pakiet `@medusajs/payment` nie ma pola `exports` w package.json,
+            // więc w runtime musimy celować w skompilowany plik w `dist`.
+            // Alias bez `/dist` działa tylko w deweloperskim środowisku
+            // z ts-node + paths, na produkcji pada `Cannot find module`.
+            resolve: "@medusajs/payment/dist/providers/system",
             id: "default",
           },
         ],
