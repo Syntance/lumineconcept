@@ -13,6 +13,19 @@ export default async function orderPlacedHandler({
   event,
   container,
 }: SubscriberArgs<{ id: string }>) {
+  // Diagnostyka: jeśli ten log nie pojawia się na Railway po utworzeniu
+  // zamówienia, znaczy że event „order.placed" nie dociera do subscribera
+  // (np. build nie dołącza pliku, workerMode pomija subskrybery, event bus
+  // nie został podpięty).
+  try {
+    const logger = container.resolve("logger") as {
+      info: (msg: string) => void;
+    };
+    logger.info(`[order-placed] start id=${event.data.id}`);
+  } catch {
+    console.info(`[order-placed] start id=${event.data.id}`);
+  }
+
   const orderService: IOrderModuleService =
     container.resolve(Modules.ORDER);
 
