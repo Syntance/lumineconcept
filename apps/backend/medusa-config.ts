@@ -109,19 +109,13 @@ export default defineConfig({
      * osobnymi providerami po testach.
      */
     {
+      // Medusa v2.13 automatycznie rejestruje wbudowany `SystemPaymentProvider`
+      // jako `pp_system_default` (patrz `@medusajs/payment/dist/loaders/providers.js`).
+      // Próba ręcznej rejestracji via `resolve` wywołuje błąd
+      // "moduleProviderServices is not iterable", bo wbudowany provider nie jest
+      // opakowany w `ModuleProvider(...)`. Dodatkowe providery (np. Przelewy24)
+      // podłączamy warunkowo przez `providers: [...]`.
       resolve: "@medusajs/medusa/payment",
-      options: {
-        providers: [
-          {
-            // Pakiet `@medusajs/payment` nie ma pola `exports` w package.json,
-            // więc w runtime musimy celować w skompilowany plik w `dist`.
-            // Alias bez `/dist` działa tylko w deweloperskim środowisku
-            // z ts-node + paths, na produkcji pada `Cannot find module`.
-            resolve: "@medusajs/payment/dist/providers/system",
-            id: "default",
-          },
-        ],
-      },
     },
     /**
      * Fulfillment: Manual (testy) + DPD (kurier — opcje w Admin → Shipping).
