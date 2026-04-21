@@ -3,6 +3,11 @@ import type { IOrderModuleService } from "@medusajs/framework/types";
 import { Modules } from "@medusajs/framework/utils";
 import crypto from "node:crypto";
 import { captureError } from "../lib/sentry";
+import { renderOrderPlacedEmail } from "../lib/email-templates";
+import {
+  buildOrderEmailPayload,
+  sendTransactionalEmail,
+} from "../lib/send-email";
 
 export default async function orderPlacedHandler({
   event,
@@ -11,15 +16,53 @@ export default async function orderPlacedHandler({
   const orderService: IOrderModuleService =
     container.resolve(Modules.ORDER);
 
-  let order;
+  let order: Awaited<ReturnType<typeof orderService.retrieveOrder>>;
   try {
     order = await orderService.retrieveOrder(event.data.id, {
-      relations: ["items", "items.variant"],
+      relations: [
+        "items",
+        "items.variant",
+        "shipping_address",
+        "shipping_methods",
+      ],
     });
   } catch (e) {
     console.error("[order-placed] retrieveOrder failed", e);
-    captureError(e, { subscriber: "order-placed", step: "retrieveOrder", orderId: event.data.id });
+    captureError(e, {
+      subscriber: "order-placed",
+      step: "retrieveOrder",
+      orderId: event.data.id,
+    });
     return;
+  }
+
+  // Mail potwierdzający — najważniejsze dla klienta, puszczamy pierwsze.
+  if (order?.email) {
+    try {
+      const payload = buildOrderEmailPayload(
+        order as unknown as Record<string, unknown>,
+      );
+      const { subject, html, text } = renderOrderPlacedEmail(payload);
+      await sendTransactionalEmail(container, {
+        to: order.email,
+        subject,
+        html,
+        text,
+        context: "order-placed",
+        orderId: order.id,
+      });
+    } catch (e) {
+      console.error("[order-placed] email render/send failed", e);
+      captureError(e, {
+        subscriber: "order-placed",
+        step: "email",
+        orderId: order.id,
+      });
+    }
+  } else {
+    console.warn(
+      `[order-placed] order ${order?.id} nie ma emaila — pomijam wysyłkę potwierdzenia`,
+    );
   }
 
   // Każdy zewnętrzny sink izolujemy — błąd PostHog nie może zatrzymać Meta
