@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Pojedyncze commity mogą biec równolegle, ale stary workflow przerywamy,
+# kiedy na ten sam branch dociera nowszy push (oszczędza minuty runnerów).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: install · lint · type-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # Turbo telemetry + logi bez kolorów, żeby output w GH Actions był czytelny.
+      TURBO_TELEMETRY_DISABLED: "1"
+      DO_NOT_TRACK: "1"
+      # Placeholdery dla zmiennych używanych przez `next build` / `tsc`.
+      # Nie trzymamy tu prawdziwych sekretów, to ma tylko przechodzić build.
+      NEXT_PUBLIC_SANITY_PROJECT_ID: "ci-placeholder"
+      NEXT_PUBLIC_SANITY_DATASET: "production"
+      NEXT_PUBLIC_MEDUSA_BACKEND_URL: "http://localhost:9000"
+      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: "pk_ci_placeholder"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm type-check
+
+      - name: Unit tests (Vitest)
+        run: pnpm --filter @lumine/storefront test
+        env:
+          # Testy Vitest używają jsdom — żadne zewnętrzne usługi nie są
+          # potrzebne. Placeholdery wymaga tylko import @/lib/medusa/client.
+          NEXT_PUBLIC_MEDUSA_BACKEND_URL: "http://localhost:9000"
+          NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: "pk_ci_placeholder"
