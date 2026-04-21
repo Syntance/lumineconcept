@@ -9,6 +9,8 @@ import {
   sendTransactionalEmail,
 } from "../lib/send-email";
 
+console.info("[order-placed] module loaded (import-time)");
+
 export default async function orderPlacedHandler({
   event,
   container,
