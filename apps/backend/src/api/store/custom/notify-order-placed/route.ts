@@ -47,12 +47,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   let order: Record<string, unknown>;
   try {
     order = (await orderService.retrieveOrder(orderId, {
-      relations: [
-        "items",
-        "items.variant",
-        "shipping_address",
-        "shipping_methods",
-      ],
+      relations: ["items", "shipping_address", "shipping_methods"],
     })) as unknown as Record<string, unknown>;
   } catch (e) {
     return res.status(404).json({
