@@ -5,6 +5,7 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "scripts": {
+    "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist .turbo"
   },

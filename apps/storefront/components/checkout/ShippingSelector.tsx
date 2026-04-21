@@ -21,6 +21,25 @@ interface ShippingSelectorProps {
   onSelect: (optionId: string) => void;
 }
 
+function mapOptions(
+  raw: Array<Record<string, unknown>> | null | undefined,
+): ShippingOptionView[] {
+  const list = (raw ?? []) as Array<Record<string, unknown>>;
+  return list.map((o) => {
+    const calc = o.calculated_price as
+      | { calculated_amount?: number }
+      | undefined;
+    const amount =
+      Number(o.amount ?? o.price ?? calc?.calculated_amount ?? 0) || 0;
+    return {
+      id: String(o.id),
+      name: (o.name as string | undefined) ?? "Dostawa",
+      price: amount,
+      description: (o.data as { description?: string } | undefined)?.description,
+    };
+  });
+}
+
 export function ShippingSelector({
   selectedOptionId,
   onSelect,
@@ -31,31 +50,18 @@ export function ShippingSelector({
   const [error, setError] = useState<string | null>(null);
   const ensureAttempted = useRef(false);
 
+  /**
+   * Fetch opcji odpalamy TYLKO kiedy zmieni się koszyk — `selectedOptionId`
+   * jest stanem „lokalnym" formularza i nie powinien powodować ponownego
+   * listowania metod w Medusie. Osobny useEffect poniżej obsługuje
+   * auto-select po załadowaniu listy.
+   */
   useEffect(() => {
     ensureAttempted.current = false;
     if (!cartId) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-
-    function mapOptions(
-      raw: Array<Record<string, unknown>> | null | undefined,
-    ): ShippingOptionView[] {
-      const list = (raw ?? []) as Array<Record<string, unknown>>;
-      return list.map((o) => {
-        const calc = o.calculated_price as
-          | { calculated_amount?: number }
-          | undefined;
-        const amount =
-          Number(o.amount ?? o.price ?? calc?.calculated_amount ?? 0) || 0;
-        return {
-          id: String(o.id),
-          name: (o.name as string | undefined) ?? "Dostawa",
-          price: amount,
-          description: (o.data as { description?: string } | undefined)?.description,
-        };
-      });
-    }
 
     (async () => {
       try {
@@ -69,11 +75,9 @@ export function ShippingSelector({
           }
         }
         if (cancelled) return;
-        const mapped = mapOptions(raw as unknown as Array<Record<string, unknown>>);
-        setOptions(mapped);
-        if (mapped.length === 1 && !selectedOptionId) {
-          onSelect(mapped[0].id);
-        }
+        setOptions(
+          mapOptions(raw as unknown as Array<Record<string, unknown>>),
+        );
       } catch (e: unknown) {
         if (cancelled) return;
         console.error("[shipping] fetch", e);
@@ -86,7 +90,15 @@ export function ShippingSelector({
     return () => {
       cancelled = true;
     };
-  }, [cartId, onSelect, selectedOptionId]);
+  }, [cartId]);
+
+  // Auto-select pierwszej (i jedynej) opcji, jeśli nic nie zostało wybrane.
+  useEffect(() => {
+    const only = options.length === 1 ? options[0] : null;
+    if (only && !selectedOptionId) {
+      onSelect(only.id);
+    }
+  }, [options, selectedOptionId, onSelect]);
 
   if (loading) {
     return <p className="text-sm text-brand-500">Ładowanie opcji dostawy…</p>;

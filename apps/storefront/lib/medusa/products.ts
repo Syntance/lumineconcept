@@ -11,6 +11,12 @@ function logMedusaFailure(context: string, error: unknown) {
   }
 }
 
+/**
+ * Rzucamy błąd zamiast zwracać pustą listę — `unstable_cache` cache'uje również
+ * „sukcesy", więc pusty listing zapisany po 502 z Railway znikał dopiero po
+ * `revalidate`. Rzut NIE jest cache'owany, następne żądanie spróbuje
+ * ponownie, a Next.js `error.tsx` przejmie render.
+ */
 async function _getProducts(params?: {
   limit?: number;
   offset?: number;
@@ -32,7 +38,7 @@ async function _getProducts(params?: {
     });
   } catch (e) {
     logMedusaFailure("getProducts", e);
-    return { products: [], count: 0, offset, limit };
+    throw e instanceof Error ? e : new Error("getProducts failed");
   }
 }
 
@@ -68,7 +74,7 @@ async function _getProductByHandle(handle: string) {
         handle,
         region_id: regionId,
         fields:
-          "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options",
+          "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options,+tags",
       });
       return response.products[0] ?? null;
     } catch (e) {

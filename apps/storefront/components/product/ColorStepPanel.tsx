@@ -66,12 +66,12 @@ export function ColorStepPanel({
   const mirrorColors = option.values.filter((v) => isMirrorColor(v, mirrorSet));
   const matAllowed = isCustomSelected || isMatAllowed(selectedColor, matDisabledSet);
 
-  const displayName = isCustomSelected
+  const _displayName = isCustomSelected
     ? `Własny kolor${customColor ? ` (${customColor})` : ""}`
     : selectedColor || "—";
-  const displaySuffix = matFinish && matAllowed ? " - mat" : "";
+  const _displaySuffix = matFinish && matAllowed ? " - mat" : "";
 
-  const selectedHex = isCustomSelected
+  const _selectedHex = isCustomSelected
     ? customColor ?? "#ccc"
     : getColorHex(selectedColor, colorMap);
 

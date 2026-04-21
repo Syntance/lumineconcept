@@ -5,8 +5,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 
 export async function BestsellersSection() {
-  let products: Awaited<ReturnType<typeof getProductsByTag>> = [];
-
+  let products: Awaited<ReturnType<typeof getProductsByTag>>;
   try {
     products = await getProductsByTag("bestseller", 4);
   } catch (err) {

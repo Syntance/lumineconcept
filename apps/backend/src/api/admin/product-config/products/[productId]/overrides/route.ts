@@ -4,7 +4,8 @@ import { Modules } from "@medusajs/framework/utils"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const productService: IProductModuleService = req.scope.resolve(Modules.PRODUCT)
-  const product = await productService.retrieveProduct(req.params.productId)
+  const { productId } = req.params as { productId: string }
+  const product = await productService.retrieveProduct(productId)
   const meta = (product as any).metadata ?? {}
 
   let disabled: string[] = []
@@ -25,10 +26,11 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const body = req.body as { disabled_config_ids?: string[] }
   const disabled = Array.isArray(body.disabled_config_ids) ? body.disabled_config_ids : []
 
-  const product = await productService.retrieveProduct(req.params.productId)
+  const { productId } = req.params as { productId: string }
+  const product = await productService.retrieveProduct(productId)
   const existingMeta = ((product as any).metadata ?? {}) as Record<string, unknown>
 
-  await productService.updateProducts(req.params.productId, {
+  await productService.updateProducts(productId, {
     metadata: {
       ...existingMeta,
       disabled_config_ids: JSON.stringify(disabled),

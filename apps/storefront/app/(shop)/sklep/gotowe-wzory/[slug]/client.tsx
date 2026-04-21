@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   ProductConfigurator,
   type ColorCustomization,
@@ -25,7 +24,6 @@ import {
 } from "@/lib/products/global-config";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
-import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { trackProductViewed } from "@/lib/analytics/events";
 import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
 import { DeliveryTrustBadges } from "@/components/product/DeliveryTrustBadges";
@@ -71,7 +69,6 @@ export function ProductPageClient({
   globalColors = [],
   schemaImageUrl,
 }: ProductPageClientProps) {
-  const router = useRouter();
 
   const colorMap = useMemo(() => buildColorMap(globalColors), [globalColors]);
   const coloredSet = useMemo(() => buildColoredSet(globalColors), [globalColors]);
@@ -247,13 +244,18 @@ export function ProductPageClient({
     field: "customColor" | "matFinish",
     value: string | boolean | null,
   ) => {
-    setColorCustomizations((prev) => ({
-      ...prev,
-      [optionTitle]: {
-        ...prev[optionTitle],
-        [field]: value,
-      },
-    }));
+    setColorCustomizations((prev) => {
+      // Stan może jeszcze nie zawierać wpisu dla tej opcji (lazy-init, nowy kolor).
+      // Dobieramy domyślne wartości `ColorCustomization`, żeby spełnić umowę typu.
+      const current: ColorCustomization = prev[optionTitle] ?? {
+        customColor: null,
+        matFinish: false,
+      };
+      return {
+        ...prev,
+        [optionTitle]: { ...current, [field]: value },
+      };
+    });
   };
 
   const buildMetadata = useCallback(():
@@ -496,7 +498,12 @@ export function ProductPageClient({
                   const action = calloutAction;
                   setCalloutAction(null);
                   if (action === "checkout") {
-                    router.push("/checkout");
+                    // Twarda nawigacja — `router.push` potrafił w produkcji
+                    // (Opera) zostać na tej samej stronie przy przejściu
+                    // z PDP na checkout. Spójnie z AddToCartButton.
+                    if (typeof window !== "undefined") {
+                      window.location.assign("/checkout");
+                    }
                   } else if (action === "cart") {
                     window.dispatchEvent(new Event("callout-confirmed-cart"));
                   }

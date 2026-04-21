@@ -1,6 +1,7 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 import type { ICustomerModuleService } from "@medusajs/framework/types";
 import { Modules } from "@medusajs/framework/utils";
+import { captureError } from "../lib/sentry";
 
 export default async function customerCreatedHandler({
   event,
@@ -9,9 +10,21 @@ export default async function customerCreatedHandler({
   const customerService: ICustomerModuleService =
     container.resolve(Modules.CUSTOMER);
 
-  const customer = await customerService.retrieveCustomer(event.data.id);
+  let customer: { email: string; first_name: string | null; last_name: string | null };
+  try {
+    customer = await customerService.retrieveCustomer(event.data.id);
+  } catch (e) {
+    console.error("[customer-created] retrieveCustomer failed", e);
+    captureError(e, { subscriber: "customer-created", step: "retrieveCustomer", customerId: event.data.id });
+    return;
+  }
 
-  await syncToMailerLite(customer);
+  if (!customer?.email) return;
+
+  await syncToMailerLite(customer).catch((e) => {
+    console.error("[customer-created] syncToMailerLite", e);
+    captureError(e, { subscriber: "customer-created", step: "mailerLite" });
+  });
 }
 
 async function syncToMailerLite(customer: { email: string; first_name: string | null; last_name: string | null }) {

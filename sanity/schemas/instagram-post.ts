@@ -54,7 +54,7 @@ export const instagramPost = defineType({
     }: {
       title?: string;
       order?: number;
-      media?: unknown;
+      media?: any;
     }) {
       return {
         title: title ?? "Zdjęcie IG",

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { sanityClient } from "@/lib/sanity/client";
 import { BLOG_POSTS_QUERY } from "@/lib/sanity/queries";
 import type { BlogPost } from "@/lib/sanity/types";
@@ -42,12 +43,14 @@ export default async function BlogPage() {
           {posts.map((post) => (
             <article key={post._id} className="group">
               <Link href={`/blog/${post.slug}`}>
-                <div className="aspect-[16/10] overflow-hidden rounded-lg bg-brand-100 mb-4">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-brand-100 mb-4">
                   {post.coverImage?.asset?.url ? (
-                    <img
+                    <Image
                       src={post.coverImage.asset.url}
                       alt={post.coverImage.alt ?? post.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center text-brand-300">

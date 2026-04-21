@@ -5,7 +5,8 @@ import { Modules } from "@medusajs/framework/utils"
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const productService: IProductModuleService =
     req.scope.resolve(Modules.PRODUCT)
-  const product = await productService.retrieveProduct(req.params.id)
+  const { id } = req.params as { id: string }
+  const product = await productService.retrieveProduct(id)
   const meta = (product as any).metadata ?? {}
 
   res.json({
@@ -24,7 +25,8 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     uploads_label?: string
   }
 
-  const product = await productService.retrieveProduct(req.params.id)
+  const { id } = req.params as { id: string }
+  const product = await productService.retrieveProduct(id)
   const existingMeta = ((product as any).metadata ?? {}) as Record<
     string,
     unknown
@@ -40,7 +42,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       ? body.uploads_label.trim()
       : (typeof existingMeta.uploads_label === "string" ? existingMeta.uploads_label : "")
 
-  await productService.updateProducts(req.params.id, {
+  await productService.updateProducts(id, {
     metadata: {
       ...existingMeta,
       uploads_enabled: String(enabled),

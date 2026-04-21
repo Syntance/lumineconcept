@@ -1,53 +1,74 @@
-import posthog from "posthog-js";
+/**
+ * PostHog ładowany leniwie — `posthog-js` to ~60kB gzip i strzela w bundle
+ * nawet jeśli user nie zgodzi się na analitykę. Ładujemy go dopiero przy
+ * pierwszym wywołaniu `initPostHog` (po zgodzie lub pierwszym evencie).
+ *
+ * Autocapture jest wyłączony — zamieniał każdy klik na event, co zaśmiecało
+ * dashboardy i zwiększało rachunek. Używamy tylko jawnych `capture(...)`.
+ */
+import type { PostHog } from "posthog-js";
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
 /** Ingest EU Cloud — dashboard jest na eu.posthog.com, SDK musi wysyłać na eu.i.posthog.com */
 const POSTHOG_HOST =
   process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "https://eu.i.posthog.com";
 
-let initialized = false;
+let posthogInstance: PostHog | null = null;
+let initPromise: Promise<PostHog | null> | null = null;
 
-export function initPostHog() {
-  if (typeof window === "undefined" || initialized || !POSTHOG_KEY) return;
+async function ensurePostHog(): Promise<PostHog | null> {
+  if (typeof window === "undefined") return null;
+  if (!POSTHOG_KEY) return null;
+  if (posthogInstance) return posthogInstance;
+  if (initPromise) return initPromise;
 
-  posthog.init(POSTHOG_KEY, {
-    api_host: POSTHOG_HOST,
-    capture_pageview: false,
-    capture_pageleave: true,
-    persistence: "localStorage+cookie",
-    autocapture: true,
-    opt_out_capturing_by_default: true,
+  initPromise = import("posthog-js").then((mod) => {
+    const ph = mod.default;
+    ph.init(POSTHOG_KEY, {
+      api_host: POSTHOG_HOST,
+      capture_pageview: false,
+      capture_pageleave: true,
+      persistence: "localStorage+cookie",
+      autocapture: false,
+      opt_out_capturing_by_default: true,
+    });
+    posthogInstance = ph;
+    return ph;
   });
 
-  initialized = true;
+  return initPromise;
+}
+
+export function initPostHog() {
+  /**
+   * Nie czekamy na promise — wywołujący nie potrzebuje instancji,
+   * kolejne `capture(...)` same ją podniosą.
+   */
+  void ensurePostHog();
 }
 
 export function optInPostHog() {
-  if (typeof window === "undefined") return;
-  posthog.opt_in_capturing();
+  void ensurePostHog().then((ph) => ph?.opt_in_capturing());
 }
 
 export function optOutPostHog() {
-  if (typeof window === "undefined") return;
-  posthog.opt_out_capturing();
+  void ensurePostHog().then((ph) => ph?.opt_out_capturing());
 }
 
 export function capturePostHogEvent(
   eventName: string,
   properties?: Record<string, unknown>,
 ) {
-  if (typeof window === "undefined") return;
-  posthog.capture(eventName, properties);
+  void ensurePostHog().then((ph) => ph?.capture(eventName, properties));
 }
 
-export function identifyUser(distinctId: string, properties?: Record<string, unknown>) {
-  if (typeof window === "undefined") return;
-  posthog.identify(distinctId, properties);
+export function identifyUser(
+  distinctId: string,
+  properties?: Record<string, unknown>,
+) {
+  void ensurePostHog().then((ph) => ph?.identify(distinctId, properties));
 }
 
 export function resetPostHog() {
-  if (typeof window === "undefined") return;
-  posthog.reset();
+  void ensurePostHog().then((ph) => ph?.reset());
 }
-
-export { posthog };

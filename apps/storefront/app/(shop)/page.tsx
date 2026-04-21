@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { sanityClient } from "@/lib/sanity/client";
-import { SITE_SETTINGS_QUERY } from "@/lib/sanity/queries";
-import type { SiteSettings } from "@/lib/sanity/types";
+import { getSiteSettings } from "@/lib/sanity/client";
 import { buildMetadata } from "@/lib/sanity/metadata";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
@@ -14,9 +12,7 @@ import { BestsellersSection } from "@/components/home/BestsellersSection";
 
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await sanityClient
-    .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 60, tags: ["sanity"] } })
-    .catch(() => null);
+  const settings = await getSiteSettings();
 
   return buildMetadata({
     seo: settings?.seo ?? undefined,

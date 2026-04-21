@@ -1,6 +1,11 @@
 import { defineConfig, loadEnv } from "@medusajs/framework/utils";
+import { initSentry } from "./src/lib/sentry";
 
 loadEnv(process.env.NODE_ENV ?? "development", process.cwd());
+
+// Sentry musi się podnieść zanim podniesiemy moduły Medusy — w przeciwnym
+// razie nie złapie błędów ładowania providerów / workerów.
+initSentry();
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
@@ -13,6 +18,27 @@ const BACKEND_URL =
 const STOREFRONT_URL =
   process.env.STORE_CORS ??
   (IS_PRODUCTION ? "https://lumine.syntance.dev" : "http://localhost:3000");
+
+/**
+ * Fail-fast: żaden realny deploy nie ma prawa wystartować z domyślnym,
+ * publicznie znanym sekretem. W devie używamy placeholdera — tu go nie
+ * tykamy, ale w produkcji rzucamy czytelnym błędem na starcie, zanim
+ * Medusa zdąży podnieść cokolwiek.
+ */
+const PLACEHOLDER_SECRET = "supersecret-change-me";
+function resolveSecret(name: "JWT_SECRET" | "COOKIE_SECRET"): string {
+  const value = process.env[name];
+  if (!value || value === PLACEHOLDER_SECRET) {
+    if (IS_PRODUCTION) {
+      throw new Error(
+        `[medusa-config] ${name} jest niezdefiniowany lub zawiera domyślny placeholder. ` +
+          "Ustaw silny sekret w zmiennych środowiskowych przed deployem.",
+      );
+    }
+    return PLACEHOLDER_SECRET;
+  }
+  return value;
+}
 
 export default defineConfig({
   admin: {
@@ -29,8 +55,8 @@ export default defineConfig({
         process.env.ADMIN_CORS ?? `${BACKEND_URL},${STOREFRONT_URL}`,
       authCors:
         process.env.AUTH_CORS ?? `${BACKEND_URL},${STOREFRONT_URL}`,
-      jwtSecret: process.env.JWT_SECRET ?? "supersecret-change-me",
-      cookieSecret: process.env.COOKIE_SECRET ?? "supersecret-change-me",
+      jwtSecret: resolveSecret("JWT_SECRET"),
+      cookieSecret: resolveSecret("COOKIE_SECRET"),
     },
   },
   modules: [
@@ -60,6 +86,24 @@ export default defineConfig({
         apiKey: process.env.INPOST_API_KEY,
         organizationId: process.env.INPOST_ORGANIZATION_ID,
         sandbox: process.env.INPOST_SANDBOX === "true",
+      },
+    },
+    /**
+     * Payment: wbudowany system provider („manual"/testowy). Bez rejestracji
+     * tego modułu Medusa nie ma *żadnego* payment providera, przez co
+     * `initiatePaymentSession` / `cart.complete` wywala się generycznym
+     * „An unknown error occurred". Prawdziwe bramki (P24/PayPo) dopinamy
+     * osobnymi providerami po testach.
+     */
+    {
+      resolve: "@medusajs/medusa/payment",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/payment/providers/system",
+            id: "default",
+          },
+        ],
       },
     },
     /**

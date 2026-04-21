@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
 import {
+  trackBeginCheckout,
   trackFormStart,
   trackFormSubmit,
   trackCheckoutStepCompleted,
@@ -16,17 +16,45 @@ import { useCart } from "@/hooks/useCart";
 import {
   completeCart,
   describeMedusaError,
+  ensureLuminePaymentBootstrap,
   initPaymentSession,
   isCartAlreadyCompletedError,
+  listPaymentProviders,
   saveContactDetails,
   selectShippingOption,
 } from "@/lib/medusa/checkout";
+import { getPolishRegionId } from "@/lib/medusa/region";
 
 /**
- * Testowy dostawca płatności (Medusa 2 instaluje go domyślnie jako manual).
- * Docelowo: `przelewy24` / `paypo` — podmieni się po integracji bramek.
+ * ID manualnego providera (payment module + providers/system w konfigu Medusy).
+ * Używamy go jako preferowanego fallbacku — docelowo lista jest pobierana
+ * z `/store/payment-providers?region_id=…`.
  */
-const TEST_PAYMENT_PROVIDER_ID = "pp_system_default";
+const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
+
+/**
+ * Pobiera ID preferowanego providera (najpierw system/manual, potem pierwszy
+ * z listy). Gdy lista jest pusta, wywołuje publiczny bootstrap i ponawia —
+ * bez tego każdy pierwszy deploy wywalałby checkout.
+ */
+async function pickPaymentProviderId(regionId: string): Promise<string> {
+  const prefer = (list: Array<{ id: string }>) =>
+    list.find((p) => p.id === SYSTEM_PAYMENT_PROVIDER_ID)?.id ?? list[0]?.id;
+
+  let providers = await listPaymentProviders(regionId);
+  let chosen = prefer(providers);
+  if (chosen) return chosen;
+
+  await ensureLuminePaymentBootstrap();
+  providers = await listPaymentProviders(regionId);
+  chosen = prefer(providers);
+  if (!chosen) {
+    throw new Error(
+      "Brak skonfigurowanych metod płatności. Skontaktuj się z obsługą.",
+    );
+  }
+  return chosen;
+}
 
 type CheckoutStep = 1 | 2 | 3;
 
@@ -58,13 +86,51 @@ function resetStaleCartAndReload() {
 }
 
 export function CheckoutForm() {
-  const router = useRouter();
   const { id: cartId, items, total, refreshCart } = useCart();
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formStarted, setFormStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const staleResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const beginCheckoutFiredRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (staleResetTimerRef.current) {
+        clearTimeout(staleResetTimerRef.current);
+        staleResetTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  /**
+   * Meta Pixel / PostHog: odpalamy `begin_checkout` raz, zaraz po tym jak
+   * pojawią się itemy w koszyku. Wysyłamy to tu (a nie w `AddToCartButton`),
+   * bo ludzie wchodzą na /checkout również z poziomu mini-koszyka.
+   */
+  useEffect(() => {
+    if (beginCheckoutFiredRef.current) return;
+    if (!cartId || items.length === 0) return;
+    beginCheckoutFiredRef.current = true;
+    trackBeginCheckout({
+      total,
+      currency: "PLN",
+      items: items.map((i) => ({
+        id: i.variant_id,
+        title: i.title,
+        price: i.unit_price,
+        quantity: i.quantity,
+      })),
+    });
+  }, [cartId, items, total]);
+
+  const scheduleStaleReset = useCallback(() => {
+    if (staleResetTimerRef.current) {
+      clearTimeout(staleResetTimerRef.current);
+    }
+    staleResetTimerRef.current = setTimeout(resetStaleCartAndReload, 800);
+  }, []);
   const [preparingDelivery, setPreparingDelivery] = useState(false);
   const [contactSaveError, setContactSaveError] = useState<string | null>(null);
   const [preparingPayment, setPreparingPayment] = useState(false);
@@ -170,14 +236,19 @@ export function CheckoutForm() {
 
       const qs = new URLSearchParams({ order_id: result.order.id });
       if (result.order.display_id) qs.set("display_id", String(result.order.display_id));
-      router.push(`/checkout/potwierdzenie?${qs.toString()}`);
+      // Twarda nawigacja — spójnie z AddToCartButton; unika problemu „przycisk
+      // zostaje w stanie loading" jeśli App Router zatrzyma się na segmencie.
+      if (typeof window !== "undefined") {
+        window.location.assign(`/checkout/potwierdzenie?${qs.toString()}`);
+        return;
+      }
     } catch (e) {
       console.error("[checkout] błąd składania zamówienia", e);
       if (isCartAlreadyCompletedError(e)) {
         setSubmitError(
           "Koszyk został już sfinalizowany wcześniej. Zaraz zaczniesz od nowa…",
         );
-        setTimeout(resetStaleCartAndReload, 800);
+        scheduleStaleReset();
         return;
       }
       const message = describeMedusaError(
@@ -185,10 +256,13 @@ export function CheckoutForm() {
         "Nie udało się złożyć zamówienia. Spróbuj ponownie.",
       );
       setSubmitError(message);
+    } finally {
+      // Bez tego, gdy nawigacja hard się nie udała (rzadko), przycisk
+      // zostaje zablokowany na zawsze.
       setSubmitting(false);
       submittingRef.current = false;
     }
-  }, [cartId, items, total, refreshCart, router]);
+  }, [cartId, items, total, refreshCart]);
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
@@ -439,7 +513,7 @@ export function CheckoutForm() {
                     setContactSaveError(
                       "Ten koszyk został już sfinalizowany. Za chwilę zaczniesz od nowa…",
                     );
-                    setTimeout(resetStaleCartAndReload, 800);
+                    scheduleStaleReset();
                     return;
                   }
                   const message = describeMedusaError(
@@ -484,7 +558,10 @@ export function CheckoutForm() {
                   trackFormSubmit("checkout_shipping");
                   trackCheckoutStepCompleted(2, "shipping");
                   await selectShippingOption(cartId, formData.shippingOptionId);
-                  await initPaymentSession(cartId, TEST_PAYMENT_PROVIDER_ID);
+                  const regionId = await getPolishRegionId();
+                  const providerId = await pickPaymentProviderId(regionId);
+                  await initPaymentSession(cartId, providerId);
+                  updateField("paymentProviderId", providerId);
                   setStep(3);
                 } catch (e) {
                   console.error("[checkout] zapis dostawy/płatności", e);
@@ -492,7 +569,7 @@ export function CheckoutForm() {
                     setShippingSaveError(
                       "Ten koszyk został już sfinalizowany. Za chwilę zaczniesz od nowa…",
                     );
-                    setTimeout(resetStaleCartAndReload, 800);
+                    scheduleStaleReset();
                     return;
                   }
                   const message = describeMedusaError(

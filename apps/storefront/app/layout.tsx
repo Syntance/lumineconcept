@@ -2,14 +2,17 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Providers } from "@/providers/Providers";
 import { CookieConsent } from "@/components/common/CookieConsent";
-import { sanityClient } from "@/lib/sanity/client";
-import { SITE_SETTINGS_QUERY } from "@/lib/sanity/queries";
-import type { SiteSettings } from "@/lib/sanity/types";
+import { getSiteSettings } from "@/lib/sanity/client";
 import "@/styles/globals.css";
 
+/**
+ * Ograniczamy liczbę ładowanych wag — każdy plik to osobne ~200kB.
+ * Gilroy (body) zostaje jako `swap` (critical path), bez wagi 300 (nieużywana).
+ * Chronicle (display) i Binerka (dekoracja) dostają `optional`: jeśli nie
+ * załadują się w ~100ms, przeglądarka zostaje na fallbacku — brak FOIT/CLS.
+ */
 const gilroy = localFont({
   src: [
-    { path: "../public/fonts/Gilroy-Light.ttf", weight: "300", style: "normal" },
     { path: "../public/fonts/Gilroy-Regular.ttf", weight: "400", style: "normal" },
     { path: "../public/fonts/Gilroy-Medium.ttf", weight: "500", style: "normal" },
     { path: "../public/fonts/Gilroy-SemiBold.ttf", weight: "600", style: "normal" },
@@ -21,32 +24,22 @@ const gilroy = localFont({
 
 const chronicle = localFont({
   src: [
-    { path: "../public/fonts/ChronicleDisp-Light.otf", weight: "300", style: "normal" },
     { path: "../public/fonts/ChronicleDisp-Roman.otf", weight: "400", style: "normal" },
-    { path: "../public/fonts/ChronicleDisp-Semibold.otf", weight: "600", style: "normal" },
     { path: "../public/fonts/ChronicleDisp-Bold.otf", weight: "700", style: "normal" },
   ],
   variable: "--font-chronicle",
-  display: "swap",
+  display: "optional",
 });
 
 const binerka = localFont({
   src: "../public/fonts/Binerka.otf",
   weight: "400",
   variable: "--font-binerka",
-  display: "swap",
+  display: "optional",
 });
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumine.syntance.dev";
-
-async function getSiteSettings(): Promise<SiteSettings | null> {
-  try {
-    return await sanityClient.fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } });
-  } catch {
-    return null;
-  }
-}
 
 export const viewport: Viewport = {
   width: "device-width",

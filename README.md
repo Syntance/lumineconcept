@@ -2,13 +2,13 @@
 
 Produkcyjny sklep e-commerce dla **Lumine Concept** — produkty z plexi i branding dla salonów beauty.
 
-**Stack:** Next.js 15 + MedusaJS v2 + Sanity.io | Monorepo (Turborepo + pnpm)
+**Stack:** Next.js 16 + MedusaJS v2 + Sanity.io | Monorepo (Turborepo + pnpm)
 
 ## Architektura
 
 ```
-apps/storefront   → Next.js 15 (App Router, SSR/ISR, Server Components)
-apps/backend      → MedusaJS v2 (API-first e-commerce)
+apps/storefront   → Next.js 16 (App Router, SSR/ISR, Server Components, Sentry)
+apps/backend      → MedusaJS v2 (API-first e-commerce, Sentry)
 sanity/           → Sanity Studio (CMS: blog, landing pages, FAQ)
 packages/types    → Współdzielone typy TypeScript
 packages/ui       → Współdzielone utilities UI
@@ -53,6 +53,22 @@ Uruchamia PostgreSQL (5432), Redis (6379) i Meilisearch (7700).
 cd apps/backend
 pnpm db:migrate
 ```
+
+> W produkcji (Railway) migracje odpala `preDeployCommand` z `railway.json`,
+> a nie `CMD` kontenera — dzięki temu nie ma wyścigu przy wielu replikach.
+
+### 4a. Bootstrap dostawy i płatności
+
+Jednorazowo po migracji (idempotentne, można wołać przy każdym deployu):
+
+```bash
+pnpm --filter @lumine/backend setup-shipping   # DPD + manual, strefa PL
+pnpm --filter @lumine/backend setup-payment    # pp_system_default w regionach
+```
+
+Na produkcji są też endpointy publiczne: `POST /store/custom/ensure-shipping`
+i `POST /store/custom/ensure-payment` — storefront wywołuje je leniwie,
+gdy widzi pustą listę.
 
 ### 4b. Konto admina na testy (lokalnie)
 
@@ -112,11 +128,43 @@ pnpm dev
 ```bash
 pnpm dev          # Uruchom wszystko w trybie dev
 pnpm build        # Build produkcyjny
-pnpm lint         # Lintowanie
-pnpm type-check   # Sprawdzanie typów
+pnpm lint         # ESLint flat config — storefront, backend, packages
+pnpm type-check   # tsc --noEmit w każdej paczce
+pnpm test         # Vitest (jednostkowe) w storefront
+pnpm test:e2e     # Playwright — wymaga działającego storefrontu + Medusy
 pnpm docker:up    # Uruchom Docker (DB, Redis, Meilisearch)
 pnpm docker:down  # Zatrzymaj Docker
 ```
+
+## Testy
+
+- **Jednostkowe (Vitest):** `pnpm test` lub per-paczka `pnpm --filter @lumine/storefront test`.
+  Pokrywają `lib/medusa/checkout.ts` (retry, error mapping) i `CartProvider`
+  (tworzenie koszyka, usuwanie pozycji, `lumine_express`).
+- **End-to-end (Playwright):** `pnpm test:e2e`. Pierwsze uruchomienie wymaga
+  `pnpm --filter @lumine/storefront test:e2e:install` (pobiera Chromium).
+  Testy startują własny dev-server lub można skierować je na deployed
+  preview przez `PLAYWRIGHT_BASE_URL=https://... pnpm test:e2e`.
+
+## Observability — Sentry
+
+Zarówno storefront (browser + edge + Node) jak i backend Medusy mają
+opcjonalną integrację z Sentry. Brak `SENTRY_DSN` = kod jest no-op, nic
+nie wysyłamy. Szczegóły w `.env.example`.
+
+Wszystkie eventy przechodzą przez `scrub.ts` — czyścimy PII (`email`,
+`phone`, `address`, `postal_code`, `ip_address`, ciasteczka, nagłówki
+autoryzacji) zanim cokolwiek opuści serwer.
+
+## CI / CD
+
+- **CI (GitHub Actions):** `.github/workflows/ci.yml` odpala na każdy PR
+  do `main` — install, lint, type-check, Vitest.
+- **Backend:** Railway z `preDeployCommand: pnpm medusa db:migrate` — migracje
+  przed deployem nowej rewizji, nie w kontenerze.
+- **Storefront:** Vercel. Cache Next.js rewaliduje się webhookiem
+  `POST /api/revalidate/medusa` (wołany z subscribera `product-revalidate`
+  po `product.created|updated|deleted`).
 
 ## Licencja
 

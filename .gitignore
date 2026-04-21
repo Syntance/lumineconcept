@@ -10,6 +10,8 @@ dist/
 *.tsbuildinfo
 .DS_Store
 coverage/
+playwright-report/
+test-results/
 .medusa/
 apps/backend/medusa-config.js
 apps/backend/medusa-config.js.map

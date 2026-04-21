@@ -10,8 +10,10 @@
     "seed": "medusa exec medusa-config -- medusa seed -f ./data/seed.json",
     "variants:on-demand": "medusa exec ./src/scripts/migrate-variants-on-demand.ts",
     "setup-shipping": "medusa exec ./src/scripts/ensure-lumine-shipping.ts",
+    "setup-payment": "medusa exec ./src/scripts/ensure-lumine-payment.ts",
     "db:migrate": "medusa db:migrate",
     "admin:create-local": "medusa user -e admin@local.test -p admin",
+    "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist .turbo .medusa"
   },
@@ -23,6 +25,7 @@
     "@medusajs/icons": "^2.13.5",
     "@medusajs/medusa": "^2.13.4",
     "@medusajs/ui": "^4.1.5",
+    "@sentry/node": "^10.49.0",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "cloudinary": "^2.9.0",

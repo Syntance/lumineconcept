@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ProductSearchResult } from "@lumine/types";
 import { formatPrice } from "@/lib/utils";
 
@@ -27,12 +28,14 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
               onClick={onSelect}
               className="flex items-center gap-4 rounded-lg p-3 hover:bg-brand-50 transition-colors"
             >
-              <div className="h-14 w-14 flex-shrink-0 rounded-md bg-brand-100 overflow-hidden">
+              <div className="relative h-14 w-14 flex-shrink-0 rounded-md bg-brand-100 overflow-hidden">
                 {product.thumbnail ? (
-                  <img
+                  <Image
                     src={product.thumbnail}
                     alt={product.title}
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="56px"
+                    className="object-cover"
                   />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center text-brand-300 text-xs">

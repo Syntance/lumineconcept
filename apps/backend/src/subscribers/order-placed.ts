@@ -2,6 +2,7 @@ import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 import type { IOrderModuleService } from "@medusajs/framework/types";
 import { Modules } from "@medusajs/framework/utils";
 import crypto from "node:crypto";
+import { captureError } from "../lib/sentry";
 
 export default async function orderPlacedHandler({
   event,
@@ -10,12 +11,27 @@ export default async function orderPlacedHandler({
   const orderService: IOrderModuleService =
     container.resolve(Modules.ORDER);
 
-  const order = await orderService.retrieveOrder(event.data.id, {
-    relations: ["items", "items.variant"],
-  });
+  let order;
+  try {
+    order = await orderService.retrieveOrder(event.data.id, {
+      relations: ["items", "items.variant"],
+    });
+  } catch (e) {
+    console.error("[order-placed] retrieveOrder failed", e);
+    captureError(e, { subscriber: "order-placed", step: "retrieveOrder", orderId: event.data.id });
+    return;
+  }
 
-  await sendMetaCAPIEvent(order as any);
-  await sendPostHogEvent(order as any);
+  // Każdy zewnętrzny sink izolujemy — błąd PostHog nie może zatrzymać Meta
+  // CAPI ani zablokować kolejki workera.
+  await sendMetaCAPIEvent(order as any).catch((e) => {
+    console.error("[order-placed] sendMetaCAPIEvent", e);
+    captureError(e, { subscriber: "order-placed", step: "metaCAPI", orderId: order?.id });
+  });
+  await sendPostHogEvent(order as any).catch((e) => {
+    console.error("[order-placed] sendPostHogEvent", e);
+    captureError(e, { subscriber: "order-placed", step: "posthog", orderId: order?.id });
+  });
 }
 
 async function sendMetaCAPIEvent(order: any) {
@@ -24,9 +40,13 @@ async function sendMetaCAPIEvent(order: any) {
 
   if (!pixelId || !accessToken) return;
 
+  // Zamówienie gościnne może nie mieć emaila — bez guarda hash crashuje.
+  const email: string | undefined = order?.email;
+  if (!email) return;
+
   const hashedEmail = crypto
     .createHash("sha256")
-    .update(order.email.toLowerCase().trim())
+    .update(email.toLowerCase().trim())
     .digest("hex");
 
   const eventData = {
@@ -73,6 +93,8 @@ async function sendPostHogEvent(order: any) {
   const posthogKey = process.env.POSTHOG_API_KEY;
   if (!posthogKey) return;
 
+  const distinctId: string = order?.email ?? order?.id ?? "anonymous";
+
   try {
     await fetch("https://eu.posthog.com/capture/", {
       method: "POST",
@@ -80,7 +102,7 @@ async function sendPostHogEvent(order: any) {
       body: JSON.stringify({
         api_key: posthogKey,
         event: "purchase",
-        distinct_id: order.email,
+        distinct_id: distinctId,
         properties: {
           order_id: order.id,
           total: order.total / 100,

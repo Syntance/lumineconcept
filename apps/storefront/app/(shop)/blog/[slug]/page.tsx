@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { PortableText } from "next-sanity";
 import { sanityClient, cachedSanityFetch } from "@/lib/sanity/client";
 import { BLOG_POST_BY_SLUG_QUERY, BLOG_SLUGS_QUERY } from "@/lib/sanity/queries";
@@ -100,11 +101,14 @@ export default async function BlogPostPage({
         </header>
 
         {post.coverImage?.asset?.url && (
-          <div className="max-w-4xl mx-auto mb-12 aspect-[16/9] overflow-hidden rounded-xl">
-            <img
+          <div className="relative max-w-4xl mx-auto mb-12 aspect-[16/9] overflow-hidden rounded-xl">
+            <Image
               src={post.coverImage.asset.url}
               alt={post.coverImage.alt ?? post.title}
-              className="h-full w-full object-cover"
+              fill
+              priority
+              sizes="(min-width: 1024px) 896px, 100vw"
+              className="object-cover"
             />
           </div>
         )}

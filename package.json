@@ -13,6 +13,8 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
+    "test": "turbo test",
+    "test:e2e": "pnpm --filter @lumine/storefront test:e2e",
     "clean": "turbo clean",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "admin:create-local": "pnpm --filter @lumine/backend admin:create-local",
@@ -27,9 +29,16 @@
     "studio:deploy": "pnpm --filter @lumine/sanity deploy"
   },
   "devDependencies": {
-    "tsx": "^4.19.4",
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.2.4",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.5.0",
     "prettier": "^3.8.1",
+    "tsx": "^4.19.4",
     "turbo": "^2.8.20",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.59.0"
   }
 }
