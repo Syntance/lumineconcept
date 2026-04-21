@@ -9,6 +9,18 @@ initSentry();
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
+/**
+ * Fail-fast ma sens tylko gdy faktycznie startujemy serwer w produkcji.
+ * Podczas `medusa build` w obrazie Dockera Railway przekazuje `NODE_ENV=production`
+ * ale nie podaje sekretów (bo build nie potrzebuje Postgres/Redis — dostaje
+ * placeholdery). Bez tego guardu build się wywala z fail-fast na JWT/COOKIE
+ * i cały deploy pada. Poznajemy build po: (a) argv zawiera „build", lub
+ * (b) DATABASE_URL to znany placeholder.
+ */
+const IS_BUILD_PHASE =
+  process.argv.some((arg) => arg === "build") ||
+  /placeholder/i.test(process.env.DATABASE_URL ?? "");
+
 const BACKEND_URL =
   process.env.MEDUSA_BACKEND_URL ??
   (IS_PRODUCTION
@@ -29,7 +41,8 @@ const PLACEHOLDER_SECRET = "supersecret-change-me";
 function resolveSecret(name: "JWT_SECRET" | "COOKIE_SECRET"): string {
   const value = process.env[name];
   if (!value || value === PLACEHOLDER_SECRET) {
-    if (IS_PRODUCTION) {
+    // W fazie buildu placeholder jest OK — build'owi i tak nie robi różnicy.
+    if (IS_PRODUCTION && !IS_BUILD_PHASE) {
       throw new Error(
         `[medusa-config] ${name} jest niezdefiniowany lub zawiera domyślny placeholder. ` +
           "Ustaw silny sekret w zmiennych środowiskowych przed deployem.",
@@ -159,5 +172,38 @@ export default defineConfig({
         ],
       },
     },
+    /**
+     * Notification: Medusa nie wysyła maili bez zarejestrowanego modułu
+     * `notification` + providera. Używamy Resend (prosty DX, 3000 maili/mies
+     * za darmo). Jeśli brakuje RESEND_API_KEY — moduł nie jest ładowany
+     * (w dev nie wymuszamy, żeby nie blokować startu).
+     */
+    ...(process.env.RESEND_API_KEY
+      ? [
+          {
+            resolve: "@medusajs/medusa/notification",
+            options: {
+              providers: [
+                {
+                  resolve: "./src/modules/notification-resend",
+                  id: "resend",
+                  options: {
+                    // Kanały, do których ten provider może wysyłać. Medusa v2
+                    // w `notification module` kieruje maile po `channel`
+                    // — musimy zadeklarować `email`, żeby `send({ channel: "email" })`
+                    // trafiło do Resenda.
+                    channels: ["email"],
+                    apiKey: process.env.RESEND_API_KEY,
+                    from:
+                      process.env.RESEND_FROM ??
+                      "Lumine Concept <onboarding@resend.dev>",
+                    replyTo: process.env.RESEND_REPLY_TO,
+                  },
+                },
+              ],
+            },
+          },
+        ]
+      : []),
   ],
 });
