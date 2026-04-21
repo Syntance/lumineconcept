@@ -20,6 +20,7 @@ import {
   initPaymentSession,
   isCartAlreadyCompletedError,
   listPaymentProviders,
+  notifyOrderPlaced,
   saveContactDetails,
   selectShippingOption,
 } from "@/lib/medusa/checkout";
@@ -225,6 +226,11 @@ export function CheckoutForm() {
           quantity: i.quantity,
         })),
       });
+
+      // Niezawodny kanał wysyłki maila potwierdzającego — niezależny od
+      // subscribera `order.placed`. Fire-and-forget: błąd nie może zablokować
+      // nawigacji użytkownika. Backend dba o idempotencję.
+      void notifyOrderPlaced(result.order.id);
 
       try {
         localStorage.removeItem("lumine_cart_id");
