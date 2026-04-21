@@ -121,6 +121,49 @@ export async function ensureLuminePaymentBootstrap(): Promise<{ ok: boolean }> {
   return { ok: data.ok !== false };
 }
 
+/**
+ * Wyzwala po stronie Medusy mail „potwierdzenie zamówienia" dla podanego
+ * `order_id`. Używamy jako niezawodnego kanału obok subscribera `order.placed`
+ * (local event bus pod Railway bywa zawodny — zob. backend/route
+ * `/store/custom/notify-order-placed`). Backend ma `idempotency_key` więc
+ * wielokrotne wywołanie nie wyśle duplikatów.
+ *
+ * Fire-and-forget w CheckoutForm — NIGDY nie rzuca, żeby błąd providera
+ * maila nie zablokował nawigacji na stronę potwierdzenia.
+ */
+export async function notifyOrderPlaced(orderId: string): Promise<void> {
+  if (!orderId) return;
+  const base =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/medusa`
+      : (process.env.MEDUSA_BACKEND_URL?.trim() ||
+        process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
+        "http://localhost:9000");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+      : {}),
+  };
+
+  try {
+    const res = await fetch(`${base}/store/custom/notify-order-placed`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ order_id: orderId }),
+      keepalive: true,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      console.warn("[mail] notify-order-placed failed", res.status, body);
+    }
+  } catch (e) {
+    console.warn("[mail] notify-order-placed error", e);
+  }
+}
+
 export async function selectShippingOption(cartId: string, optionId: string) {
   const response = await medusa.store.cart.addShippingMethod(cartId, {
     option_id: optionId,
