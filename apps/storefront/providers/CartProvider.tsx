@@ -186,16 +186,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [updateCartState]);
 
   useEffect(() => {
+    /**
+     * Autorytetem jest Medusa (`metadata.express_delivery` w koszyku).
+     * `localStorage` to tylko fallback dla anonima, który kliknął „ekspres"
+     * zanim jego koszyk powstał. Po stworzeniu koszyka:
+     *   - jeśli Medusa zna wartość → synchronizujemy ją do localStorage,
+     *   - jeśli Medusa nic nie ma, a localStorage ma „true" → leniwie
+     *     wysyłamy metadata do Medusy (fire-and-forget, bez blokady UI).
+     */
     getOrCreateCart().then(() => {
-      try {
-        const saved = localStorage.getItem("lumine_express");
-        if (saved === "true") {
-          setCart((c) => {
-            if (c.metadata.express_delivery === "true") return c;
-            return { ...c, metadata: { ...c.metadata, express_delivery: "true" } };
-          });
+      setCart((c) => {
+        const fromServer = c.metadata.express_delivery;
+        if (fromServer !== undefined) {
+          try {
+            localStorage.setItem("lumine_express", fromServer);
+          } catch { /* SSR / prywatny tryb */ }
+          return c;
         }
-      } catch { /* SSR / prywatny tryb */ }
+
+        let fromLocal: string | null = null;
+        try {
+          fromLocal = localStorage.getItem("lumine_express");
+        } catch { /* SSR / prywatny tryb */ }
+
+        if (c.id && (fromLocal === "true" || fromLocal === "false")) {
+          void cartApi
+            .updateCartMetadata(c.id, { express_delivery: fromLocal })
+            .catch(() => undefined);
+          return {
+            ...c,
+            metadata: { ...c.metadata, express_delivery: fromLocal },
+          };
+        }
+        return c;
+      });
     });
   }, [getOrCreateCart]);
 
@@ -214,6 +238,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (openDrawer) {
           setIsOpen(true);
         }
+      } catch (e) {
+        console.error("[cart] addItem", e);
+        throw e;
       } finally {
         setIsLoading(false);
       }
@@ -232,6 +259,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           quantity,
         );
         updateCartState(updated as unknown as Record<string, unknown>);
+      } catch (e) {
+        console.error("[cart] updateItem", e);
+        throw e;
       } finally {
         setIsLoading(false);
       }
@@ -239,18 +269,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [cart.id, updateCartState],
   );
 
+  /**
+   * Bezpieczne usunięcie linii. Wcześniej po `removeLineItem` wołaliśmy
+   * `getOrCreateCart()`, który przy timeoutzie Medusy tworzył NOWY koszyk
+   * i klient tracił całą zawartość. Teraz: próbujemy odświeżyć koszyk
+   * przez `getCart()` (bez tworzenia nowego); w razie błędu logujemy
+   * i zachowujemy ostatni znany stan — użytkownik może spróbować
+   * ponownie lub przeładować stronę.
+   */
   const removeItem = useCallback(
     async (lineItemId: string) => {
       if (!cart.id) return;
       setIsLoading(true);
       try {
         await cartApi.removeLineItem(cart.id, lineItemId);
-        await getOrCreateCart();
+        try {
+          const refreshed = await cartApi.getCart(cart.id);
+          updateCartState(refreshed as unknown as Record<string, unknown>);
+        } catch (refreshErr) {
+          console.warn("[cart] removeItem: refresh nie powiódł się", refreshErr);
+          setCart((c) => {
+            const items = c.items.filter((i) => i.id !== lineItemId);
+            const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+            return { ...c, items, itemCount };
+          });
+        }
+      } catch (e) {
+        console.error("[cart] removeItem", e);
+        throw e;
       } finally {
         setIsLoading(false);
       }
     },
-    [cart.id, getOrCreateCart],
+    [cart.id, updateCartState],
   );
 
   const refreshCart = useCallback(async () => {
@@ -279,8 +330,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const setExpressDelivery = useCallback(
     async (enabled: boolean) => {
-      if (!cart.id) return;
-
       const seq = ++expressSaveSeq.current;
       const value = enabled ? "true" : "false";
 
@@ -292,6 +341,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.setItem("lumine_express", value);
       } catch { /* SSR / prywatny tryb */ }
+
+      if (!cart.id) return;
 
       const updated = await cartApi.updateCartMetadata(cart.id, {
         express_delivery: value,

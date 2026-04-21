@@ -1,11 +1,14 @@
 "use client";
 
-import { CreditCard, Clock } from "lucide-react";
+import { CreditCard, Clock, ReceiptText } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/utils";
 
 const PAYPO_MIN_AMOUNT = 4000;
 const PAYPO_MAX_AMOUNT = 300000;
+
+/** ID providera `@medusajs/payment/providers/system` (manual). */
+const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
 
 interface PaymentOption {
   id: string;
@@ -13,21 +16,33 @@ interface PaymentOption {
   description: string;
   icon: typeof CreditCard;
   methods?: string[];
+  /** `true` → opcja jest w pełni obsługiwana w bieżącej iteracji. */
+  enabled: boolean;
 }
 
 const PAYMENT_OPTIONS: PaymentOption[] = [
   {
+    id: SYSTEM_PAYMENT_PROVIDER_ID,
+    name: "Przelew tradycyjny (tryb testowy)",
+    description:
+      "Zamówienie trafia do Admina Medusy bez rzeczywistego pobrania środków.",
+    icon: ReceiptText,
+    enabled: true,
+  },
+  {
     id: "przelewy24",
     name: "Przelewy24",
-    description: "BLIK, przelew bankowy, karta płatnicza",
+    description: "BLIK, przelew bankowy, karta płatnicza (wkrótce)",
     icon: CreditCard,
     methods: ["BLIK", "Przelew", "Karta"],
+    enabled: false,
   },
   {
     id: "paypo",
     name: "PayPo — Kup teraz, zapłać za 30 dni",
-    description: "Płatność odroczona bez dodatkowych kosztów",
+    description: "Płatność odroczona bez dodatkowych kosztów (wkrótce)",
     icon: Clock,
+    enabled: false,
   },
 ];
 
@@ -49,7 +64,8 @@ export function PaymentSelector({
       {PAYMENT_OPTIONS.map((option) => {
         const Icon = option.icon;
         const isSelected = selectedProviderId === option.id;
-        const isDisabled = option.id === "paypo" && !isPayPoEligible;
+        const isDisabled =
+          !option.enabled || (option.id === "paypo" && !isPayPoEligible);
 
         return (
           <button

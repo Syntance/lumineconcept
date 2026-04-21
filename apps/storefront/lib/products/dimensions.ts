@@ -65,10 +65,13 @@ export function parseWidthHeightFromDimensionsLabel(
     /([0-9]+(?:[\s,\.][0-9]+)?)\s*[xX]\s*([0-9]+(?:[\s,\.][0-9]+)?)\s*(cm|mm)?/i,
   );
   if (!m) return { width: null, height: null };
-  const unit = (m[3] ?? "cm").trim();
+  // Capture groups 1 i 2 są wymagane w patternie, więc są pewne po `m !== null`.
+  // Grupa 3 (jednostka) jest opcjonalna — domyślnie „cm".
+  const [, w, h, unit] = m;
+  const resolvedUnit = (unit ?? "cm").trim();
   return {
-    width: `${m[1].replace(/\s/g, "")} ${unit}`,
-    height: `${m[2].replace(/\s/g, "")} ${unit}`,
+    width: `${w!.replace(/\s/g, "")} ${resolvedUnit}`,
+    height: `${h!.replace(/\s/g, "")} ${resolvedUnit}`,
   };
 }
 
@@ -94,9 +97,9 @@ export function formatDimensionsWxH(
     const re = /^([\d\s,\.]+)\s*(cm|mm|m)\s*$/i;
     const mw = w.match(re);
     const mh = h.match(re);
-    if (mw && mh && mw[2].toLowerCase() === mh[2].toLowerCase()) {
-      const nw = mw[1].replace(/\s/g, "").replace(",", ".");
-      const nh = mh[1].replace(/\s/g, "").replace(",", ".");
+    if (mw && mh && mw[2]!.toLowerCase() === mh[2]!.toLowerCase()) {
+      const nw = mw[1]!.replace(/\s/g, "").replace(",", ".");
+      const nh = mh[1]!.replace(/\s/g, "").replace(",", ".");
       return `${nw} × ${nh} ${mw[2]}`;
     }
     return `${w} × ${h}`;
@@ -168,15 +171,15 @@ function extractPlexiThicknessFromSpecyfikacja(spec: string): string | null {
   for (const line of trimmed.split(/\r?\n/)) {
     const t = line.trim();
     const plexi = t.match(/^Grubość\s+plexi\s*[:\-–—]\s*(.+)$/i);
-    if (plexi) return plexi[1].trim();
+    if (plexi) return plexi[1]!.trim();
     const plain = t.match(/^Grubość\s*[:\-–—]\s*(.+)$/i);
-    if (plain) return plain[1].trim();
+    if (plain) return plain[1]!.trim();
   }
 
   const inlinePlexi = trimmed.match(/Grubość\s+plexi\s*[:\-–—]\s*([^\n]+?)(?:\n|$)/i);
-  if (inlinePlexi) return inlinePlexi[1].trim();
+  if (inlinePlexi) return inlinePlexi[1]!.trim();
   const inline = trimmed.match(/Grubość\s*[:\-–—]\s*([^\n]+?)(?:\n|$)/i);
-  if (inline) return inline[1].trim();
+  if (inline) return inline[1]!.trim();
 
   return null;
 }
@@ -268,11 +271,11 @@ function extractFromSpecyfikacja(spec: string): string | null {
   for (const line of trimmed.split(/\r?\n/)) {
     const t = line.trim();
     const m = t.match(/^Wymiary\s*[:\-–—]\s*(.+)$/i);
-    if (m) return m[1].trim();
+    if (m) return m[1]!.trim();
   }
 
   const inline = trimmed.match(/Wymiary\s*[:\-–—]\s*([^\n]+?)(?:\n|$)/i);
-  if (inline) return inline[1].trim();
+  if (inline) return inline[1]!.trim();
 
   return null;
 }

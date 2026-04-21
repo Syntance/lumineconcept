@@ -18,7 +18,7 @@ export const instagramGallery = defineType({
           title: "Zdjęcie",
           type: "image",
           options: { hotspot: true },
-          validation: (rule: { required: () => unknown }) => rule.required(),
+          validation: (rule: any) => rule.required(),
           fields: [
             {
               name: "alt",

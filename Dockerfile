@@ -30,4 +30,7 @@ ENV NODE_OPTIONS="--max-old-space-size=512"
 WORKDIR /app/apps/backend
 EXPOSE 8080
 
-CMD ["sh", "-c", "pnpm medusa db:migrate && exec pnpm medusa start -H 0.0.0.0 -p 8080"]
+# Migracje uruchamiamy przez `preDeployCommand` w railway.json (osobny job),
+# żeby awaria migracji nie restartowała bez końca kontenera produkcyjnego
+# i żeby wiele replik nie uderzało jednocześnie w `db:migrate`.
+CMD ["sh", "-c", "exec pnpm medusa start -H 0.0.0.0 -p 8080"]

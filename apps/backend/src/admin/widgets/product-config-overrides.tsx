@@ -5,8 +5,6 @@ import {
   Heading,
   Text,
   Button,
-  Checkbox,
-  Label,
   clx,
 } from "@medusajs/ui"
 import { useCallback, useEffect, useState } from "react"

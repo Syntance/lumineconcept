@@ -5,7 +5,8 @@ import { Modules } from "@medusajs/framework/utils"
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const productService: IProductModuleService =
     req.scope.resolve(Modules.PRODUCT)
-  const product = await productService.retrieveProduct(req.params.id)
+  const { id } = req.params as { id: string }
+  const product = await productService.retrieveProduct(id)
   const raw = (product as any).metadata?.text_fields
 
   let textFields: unknown[] = []
@@ -23,11 +24,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     req.scope.resolve(Modules.PRODUCT)
   const body = req.body as { text_fields?: unknown[] }
   const textFields = Array.isArray(body.text_fields) ? body.text_fields : []
+  const { id } = req.params as { id: string }
 
-  const product = await productService.retrieveProduct(req.params.id)
+  const product = await productService.retrieveProduct(id)
   const existingMeta = ((product as any).metadata ?? {}) as Record<string, unknown>
 
-  await productService.updateProducts(req.params.id, {
+  await productService.updateProducts(id, {
     metadata: {
       ...existingMeta,
       text_fields: JSON.stringify(textFields),

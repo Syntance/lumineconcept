@@ -202,8 +202,9 @@ export function ProductConfigurator({
                     }
                     nextButtonShowArrow={hasNextColorSection}
                     onNext={() => {
-                      if (hasNextColorSection) {
-                        const nextId = colorOptions[colorIndex + 1].id;
+                      const nextOption = colorOptions[colorIndex + 1];
+                      if (hasNextColorSection && nextOption) {
+                        const nextId = nextOption.id;
                         setOpenColors(() => {
                           const next: Record<string, boolean> = {};
                           for (const o of colorOptions) {

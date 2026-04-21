@@ -62,7 +62,7 @@ export const shopCategory = defineType({
       icon: "icon",
       media: "heroImage",
     },
-    prepare({ title, icon, media }: { title?: string; icon?: string; media?: unknown }) {
+    prepare({ title, icon, media }: { title?: string; icon?: string; media?: any }) {
       return {
         title: `${icon ?? ""} ${title ?? "Kategoria"}`.trim(),
         media,

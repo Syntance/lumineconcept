@@ -22,7 +22,18 @@ const HOP_BY_HOP = new Set([
   "transfer-encoding",
   "upgrade",
   "host",
+  "content-length",
 ]);
+
+/**
+ * Whitelist pierwszego segmentu ścieżki. Bez tego proxy jest otwartą bramą
+ * do Medusy (w tym `/admin`), a w razie wycieku URL-a w HTML każdy request
+ * wychodzi poza host. `custom` = nasze `/store/custom/*` endpointy.
+ */
+const ALLOWED_FIRST_SEGMENT = new Set(["store", "auth", "custom"]);
+
+/** Pojedynczy request do Medusy nie może „wisieć" dłużej niż 25 s. */
+const UPSTREAM_TIMEOUT_MS = 25_000;
 
 function filterRequestHeaders(req: NextRequest): Headers {
   const h = new Headers();
@@ -45,6 +56,14 @@ function ensureStorePublishableKey(headers: Headers, path: string) {
 }
 
 async function proxy(req: NextRequest, pathSegments: string[]) {
+  const firstSegment = pathSegments[0] ?? "";
+  if (!ALLOWED_FIRST_SEGMENT.has(firstSegment)) {
+    return NextResponse.json(
+      { message: "Segment nieobsługiwany przez proxy." },
+      { status: 404 },
+    );
+  }
+
   const path = pathSegments.join("/");
   const base = BACKEND.replace(/\/$/, "");
   const url = `${base}/${path}${req.nextUrl.search}`;
@@ -55,6 +74,7 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
   const init: RequestInit = {
     method: req.method,
     headers,
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   };
 
   if (req.method !== "GET" && req.method !== "HEAD") {
@@ -64,7 +84,26 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
     }
   }
 
-  const res = await fetch(url, init);
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch (e) {
+    const isAbort =
+      (e as { name?: string }).name === "TimeoutError" ||
+      (e as { name?: string }).name === "AbortError";
+    console.error(
+      `[proxy] ${req.method} /${path} — upstream ${isAbort ? "timeout" : "error"}`,
+      e,
+    );
+    return NextResponse.json(
+      {
+        message: isAbort
+          ? "Medusa nie odpowiedziała w wymaganym czasie (25s). Spróbuj ponownie."
+          : "Nie udało się połączyć z Medusą.",
+      },
+      { status: 504 },
+    );
+  }
 
   return new NextResponse(res.body, {
     status: res.status,

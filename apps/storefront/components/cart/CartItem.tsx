@@ -51,7 +51,7 @@ function renderPerElementColors(meta: Record<string, string>) {
   const elements = new Set<string>();
   for (const k of [...colorKeys, ...matKeys]) {
     const match = k.match(/^color_(.+?)_(custom|mat)$/);
-    if (match) elements.add(match[1]);
+    if (match && match[1]) elements.add(match[1]);
   }
 
   if (elements.size === 0) return null;

@@ -2,12 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getProductsByTag } from "@/lib/medusa/products";
-import { sanityClient } from "@/lib/sanity/client";
-import {
-  TESTIMONIALS_QUERY,
-  SITE_SETTINGS_QUERY,
-} from "@/lib/sanity/queries";
-import type { Testimonial, SiteSettings } from "@/lib/sanity/types";
+import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
+import { TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
+import type { Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
@@ -67,9 +64,7 @@ const CATEGORIES = [
 export default async function ShopHubPage() {
   const [bestsellers, settings, testimonials] = await Promise.all([
     getProductsByTag("bestseller", 4).catch(() => []),
-    sanityClient
-      .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
-      .catch(() => null),
+    getSiteSettings(),
     sanityClient
       .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
       .catch(() => []),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { useSearch } from "@/hooks/useSearch";
 import { SearchResults } from "./SearchResults";
 
@@ -15,14 +15,16 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const { query, results, isSearching, search, clearSearch } = useSearch();
 
   useEffect(() => {
+    let focusTimer: ReturnType<typeof setTimeout> | null = null;
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      setTimeout(() => inputRef.current?.focus(), 100);
+      focusTimer = setTimeout(() => inputRef.current?.focus(), 100);
     } else {
       document.body.style.overflow = "";
       clearSearch();
     }
     return () => {
+      if (focusTimer) clearTimeout(focusTimer);
       document.body.style.overflow = "";
     };
   }, [isOpen, clearSearch]);

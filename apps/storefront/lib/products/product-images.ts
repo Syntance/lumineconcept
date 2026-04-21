@@ -59,8 +59,8 @@ export function extractSchemaImage(product: {
     img.alt ? SCHEMA_ALT_RE.test(img.alt) : false,
   );
 
-  if (schemaIdx !== -1) {
-    const schema = allImages[schemaIdx];
+  const schema = schemaIdx !== -1 ? allImages[schemaIdx] : undefined;
+  if (schema) {
     const gallery = allImages.filter((_, i) => i !== schemaIdx);
     const finalGallery =
       gallery.length > 0

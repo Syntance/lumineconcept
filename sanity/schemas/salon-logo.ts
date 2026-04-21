@@ -39,7 +39,7 @@ export const salonLogo = defineType({
       order: "order",
       media: "logo",
     },
-    prepare({ title, order, media }: { title?: string; order?: number; media?: unknown }) {
+    prepare({ title, order, media }: { title?: string; order?: number; media?: any }) {
       return {
         title: title ?? "Salon",
         subtitle: `Kolejność: ${order ?? "—"}`,

@@ -75,6 +75,52 @@ export async function ensureLumineShippingBootstrap(): Promise<{ ok: boolean }> 
   return { ok: data.ok !== false };
 }
 
+/**
+ * Pobiera listę payment-providerów aktywnych dla regionu. W trybie testowym
+ * oczekujemy przynajmniej `pp_system_default` (rejestrowany przez moduł
+ * `@medusajs/medusa/payment`). Gdy lista jest pusta — wywołujący powinien
+ * zabootstrapować providera przez `ensureLuminePaymentBootstrap()`.
+ */
+export async function listPaymentProviders(regionId: string) {
+  const { payment_providers } = (await medusa.store.payment.listPaymentProviders(
+    { region_id: regionId },
+  )) as { payment_providers: Array<{ id: string; is_enabled?: boolean }> };
+  return payment_providers.filter((p) => p.is_enabled !== false);
+}
+
+/**
+ * Idempotentnie dokleja `pp_system_default` do regionów, gdy nie jest podpięty
+ * (pierwszy deploy po dodaniu modułu payment do configu Medusy).
+ */
+export async function ensureLuminePaymentBootstrap(): Promise<{ ok: boolean }> {
+  const base =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/medusa`
+      : (process.env.MEDUSA_BACKEND_URL?.trim() ||
+        process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
+        "http://localhost:9000");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+      : {}),
+  };
+
+  const res = await fetch(`${base}/store/custom/ensure-payment`, {
+    method: "POST",
+    headers,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    console.warn("[payment] ensure bootstrap", res.status, body);
+    return { ok: false };
+  }
+  const data = (await res.json()) as { ok?: boolean };
+  return { ok: data.ok !== false };
+}
+
 export async function selectShippingOption(cartId: string, optionId: string) {
   const response = await medusa.store.cart.addShippingMethod(cartId, {
     option_id: optionId,

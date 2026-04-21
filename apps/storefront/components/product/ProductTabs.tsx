@@ -24,7 +24,7 @@ function splitDescriptionLeadAndDimensions(raw: string): {
     return { lead: raw, dimensionsLine: null };
   }
   const lead = plain.slice(0, m.index).trim();
-  const dimensionsLine = m[1].trim();
+  const dimensionsLine = m[1]!.trim();
   if (!lead) return { lead: raw, dimensionsLine: null };
   return { lead, dimensionsLine };
 }

@@ -58,7 +58,7 @@ function Chip({
 export function FilterDrawer({
   isOpen,
   onClose,
-  categories,
+  categories: _categories,
   activeFilters,
   filterConfig,
   resultCount,

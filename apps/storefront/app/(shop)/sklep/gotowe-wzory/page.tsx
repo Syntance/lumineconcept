@@ -3,13 +3,13 @@ import { Fragment, Suspense } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Sparkles } from "lucide-react";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
-import { sanityClient } from "@/lib/sanity/client";
-import { SITE_SETTINGS_QUERY, TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
+import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
+import { TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
 import type { SiteSettings, Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { SITE_URL } from "@/lib/utils";
 import { medusaProductToSimple } from "@/lib/products/simple-product";
-import { getGlobalProductConfig } from "@/lib/products/global-config";
+import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/global-config";
 import { ShopGridClient } from "./client";
 
 const INITIAL_PAGE_SIZE = 24;
@@ -44,20 +44,14 @@ export default async function GotoweWzoryPage({
   let testimonials: Testimonial[];
   let productsResponse: Awaited<ReturnType<typeof getProducts>> | null;
 
-  const globalConfigPromise = getGlobalProductConfig().catch(() => ({
-    colors: [] as any[],
-    sizes: [],
-    materials: [],
-    led: [],
-    finishes: [],
-  }));
+  const globalConfigPromise = getGlobalProductConfig().catch(
+    () => EMPTY_GLOBAL_CONFIG,
+  );
 
   if (params.kat) {
     [allCategories, settings, testimonials] = await Promise.all([
       getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
-      sanityClient
-        .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
-        .catch(() => null),
+      getSiteSettings(),
       sanityClient
         .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
         .catch(() => []),
@@ -76,9 +70,7 @@ export default async function GotoweWzoryPage({
   } else {
     const results = await Promise.all([
       getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
-      sanityClient
-        .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
-        .catch(() => null),
+      getSiteSettings(),
       sanityClient
         .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
         .catch(() => []),

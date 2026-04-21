@@ -1,9 +1,9 @@
 import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getProductByHandle, getProducts } from "@/lib/medusa/products";
-import { sanityClient } from "@/lib/sanity/client";
-import { PRODUCT_FAQ_QUERY, SITE_SETTINGS_QUERY } from "@/lib/sanity/queries";
-import type { ProductFaq, SiteSettings, CheckoutCallout } from "@/lib/sanity/types";
+import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
+import { PRODUCT_FAQ_QUERY } from "@/lib/sanity/queries";
+import type { ProductFaq, CheckoutCallout } from "@/lib/sanity/types";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
@@ -41,6 +41,12 @@ interface ProductPageLayoutProps {
   basePath: string;
   categoryLabel: string;
   categoryHref: string;
+  /**
+   * Etykieta (tag Medusy) wymagana na produkcie, żeby ta ścieżka była
+   * aktywna. Zapobiega crossrenderowaniu produktów pod złymi slugami
+   * (np. logo-3d pod gotowe-wzory). Brak tagu → notFound().
+   */
+  requiredTag?: string;
   ProductPageClient: React.ComponentType<{
     product: {
       id: string;
@@ -69,13 +75,18 @@ export async function ProductPageLayout({
   basePath,
   categoryLabel,
   categoryHref,
+  requiredTag,
   ProductPageClient,
 }: ProductPageLayoutProps) {
+  /**
+   * Nie łapiemy tu błędów z Medusy — niech propagują do `error.tsx`.
+   * W przeciwnym razie timeout Railway → `catch(() => null)` → `notFound()`
+   * wyglądało jak stały 404 przez cały czas życia cache'a.
+   * Sanity i globalny config są opcjonalne → fallback OK.
+   */
   const [product, siteSettings, productConfig] = await Promise.all([
-    getProductData(slug).catch(() => null),
-    sanityClient
-      .fetch<SiteSettings>(SITE_SETTINGS_QUERY, {}, { next: { revalidate: 300 } })
-      .catch(() => null),
+    getProductData(slug),
+    getSiteSettings(),
     getGlobalProductConfig().catch(() => ({
       colors: [] as GlobalConfigOption[],
       sizes: [],
@@ -85,6 +96,15 @@ export async function ProductPageLayout({
     })),
   ]);
   if (!product) notFound();
+
+  if (requiredTag) {
+    const normalised = requiredTag.toLowerCase();
+    const hasTag =
+      (product.tags as Array<{ value?: string }> | undefined)?.some(
+        (t) => t.value?.toLowerCase() === normalised,
+      ) ?? false;
+    if (!hasTag) notFound();
+  }
 
   const { galleryImages: images, schemaImageUrl } = extractSchemaImage({
     title: product.title,

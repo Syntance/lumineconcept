@@ -73,7 +73,7 @@ export async function ensureLumineShipping(
   }
   messages.push(`Sales channel: ${defaultSc.name ?? defaultSc.id}`);
 
-  let { data: stockLocations } = await query.graph({
+  const { data: stockLocations } = await query.graph({
     entity: "stock_location",
     fields: ["id", "name"],
   });
@@ -108,11 +108,6 @@ export async function ensureLumineShipping(
     }
     stockLocationId = loc.id;
     messages.push(`Utworzono lokalizację: ${LOCATION_NAME}`);
-    const again = await query.graph({
-      entity: "stock_location",
-      fields: ["id", "name"],
-    });
-    stockLocations = again.data;
   }
 
   await linkSalesChannelsToStockLocationWorkflow(container).run({
@@ -197,7 +192,7 @@ export async function ensureLumineShipping(
       }
     | undefined;
 
-  let fulfillmentSet = loc?.fulfillment_sets?.find(
+  const fulfillmentSet = loc?.fulfillment_sets?.find(
     (fs) => fs.name === FULFILLMENT_SET_NAME || fs.type === "shipping",
   );
   let fulfillmentSetId = fulfillmentSet?.id;

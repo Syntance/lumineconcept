@@ -39,10 +39,13 @@ export function AddToCartButton({
   /** Po potwierdzeniu calloutu: tylko koszyk albo koszyk + `/checkout`. */
   const pendingRedirectRef = useRef<string | null>(null);
 
+  const [addError, setAddError] = useState<string | null>(null);
+
   const doAdd = useCallback(
     async (redirectTo: string | null) => {
       if (!variantId) return;
       setIsAdding(true);
+      setAddError(null);
       try {
         await addItemWithTracking(variantId, productData, quantity, metadata, {
           openDrawer: !redirectTo,
@@ -56,6 +59,11 @@ export function AddToCartButton({
           window.location.assign(redirectTo);
           return;
         }
+      } catch (e) {
+        console.error("[AddToCartButton] addItem", e);
+        setAddError(
+          "Nie udało się dodać produktu do koszyka. Spróbuj jeszcze raz.",
+        );
       } finally {
         setIsAdding(false);
       }
@@ -173,6 +181,12 @@ export function AddToCartButton({
           dodaj do koszyka
         </button>
       </div>
+
+      {addError && (
+        <p className="text-xs text-red-600 sm:col-span-3" role="alert">
+          {addError}
+        </p>
+      )}
     </div>
   );
 }

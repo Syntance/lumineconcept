@@ -1,63 +1,13 @@
-import type { Metadata } from "next";
-import { ProductPageLayout, getProductData } from "@/components/product/ProductPageLayout";
-import { getProducts } from "@/lib/medusa/products";
-import { SITE_URL } from "@/lib/utils";
-import { ProductPageClient } from "./client";
+import { createProductPage } from "@/lib/products/create-product-page";
 
 export const revalidate = 120;
 
-export async function generateStaticParams() {
-  /**
-   * Prebuild wszystkich produktów (do 200) — bez tego produkty poza pierwszą
-   * stroną listy trafiały w SSR on-demand, który przy cold starcie Railway
-   * potrafił zwrócić 404.
-   */
-  const response = await getProducts({ limit: 200, offset: 0 }).catch(() => null);
-  if (!response?.products) return [];
-  return response.products
-    .filter((p) => p.handle)
-    .map((p) => ({ slug: p.handle! }));
-}
+const { Page, generateMetadata, generateStaticParams } = createProductPage({
+  basePath: "/sklep/gotowe-wzory",
+  categoryLabel: "Gotowe wzory",
+  categoryHref: "/sklep/gotowe-wzory",
+  // requiredTag: "gotowe-wzory",
+});
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const product = await getProductData(slug).catch(() => null);
-  if (!product) return { title: "Produkt nie znaleziony" };
-
-  const productUrl = `${SITE_URL}/sklep/gotowe-wzory/${slug}`;
-  return {
-    title: product.title,
-    description: product.description,
-    alternates: { canonical: productUrl },
-    openGraph: {
-      title: product.title,
-      description: product.description ?? "",
-      images: product.thumbnail
-        ? [{ url: product.thumbnail, width: 1200, height: 630 }]
-        : [{ url: `${SITE_URL}/images/logo.png`, width: 1200, height: 630 }],
-      type: "website",
-      url: productUrl,
-    },
-  };
-}
-
-export default async function GotoweWzoryProductPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  return (
-    <ProductPageLayout
-      slug={slug}
-      basePath="/sklep/gotowe-wzory"
-      categoryLabel="Gotowe wzory"
-      categoryHref="/sklep/gotowe-wzory"
-      ProductPageClient={ProductPageClient}
-    />
-  );
-}
+export { generateMetadata, generateStaticParams };
+export default Page;

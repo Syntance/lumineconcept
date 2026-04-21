@@ -111,7 +111,7 @@ const ProductManagementPage = () => {
     }
     const dir = sortDir === "asc" ? 1 : -1
     list.sort((a, b) => {
-      let cmp = 0
+      let cmp: number
       switch (sortKey) {
         case "title":
           cmp = a.title.localeCompare(b.title, "pl", { sensitivity: "base" })

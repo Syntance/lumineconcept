@@ -47,7 +47,8 @@ function parseStored(meta: Record<string, unknown>): ProductReviewDTO[] {
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const productService: IProductModuleService =
     req.scope.resolve(Modules.PRODUCT)
-  const product = await productService.retrieveProduct(req.params.id)
+  const { id } = req.params as { id: string }
+  const product = await productService.retrieveProduct(id)
   const meta = ((product as any).metadata ?? {}) as Record<string, unknown>
 
   res.json({ reviews: parseStored(meta) })
@@ -57,8 +58,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const productService: IProductModuleService =
     req.scope.resolve(Modules.PRODUCT)
   const body = req.body as { reviews?: unknown }
+  const { id } = req.params as { id: string }
 
-  const product = await productService.retrieveProduct(req.params.id)
+  const product = await productService.retrieveProduct(id)
   const existingMeta = ((product as any).metadata ?? {}) as Record<
     string,
     unknown
@@ -66,7 +68,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
   const reviews = normalizeReviews(body.reviews)
 
-  await productService.updateProducts(req.params.id, {
+  await productService.updateProducts(id, {
     metadata: {
       ...existingMeta,
       [META_KEY]: reviews.length > 0 ? JSON.stringify(reviews) : "",

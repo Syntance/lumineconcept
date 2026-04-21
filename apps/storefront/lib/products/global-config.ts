@@ -19,6 +19,19 @@ export interface GlobalProductConfig {
   finishes: GlobalConfigOption[]
 }
 
+/**
+ * Fallback kiedy endpoint globalnej konfiguracji zawiedzie. Strony sklepu
+ * używały lokalnych literałów z `as any[]` — trzymamy jeden, typowany
+ * literal w tym samym module, co domeny.
+ */
+export const EMPTY_GLOBAL_CONFIG: GlobalProductConfig = {
+  colors: [],
+  sizes: [],
+  materials: [],
+  led: [],
+  finishes: [],
+}
+
 const BACKEND_URL =
   process.env.MEDUSA_BACKEND_URL?.trim() ||
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
@@ -84,6 +97,12 @@ async function fetchStoreProductConfig(search: string): Promise<Response> {
   })
 }
 
+/**
+ * Rzucamy błąd zamiast zwracać pusty config — `unstable_cache` cache'uje
+ * wynik (w tym puste listy) na `revalidate` sekund. Gdy Medusa zwróci 502,
+ * następne 60s konfigurator miał pusty kolor/rozmiary i psuł PDP. Rzut
+ * propaguje się do `error.tsx` i jest retryowany przy następnym request.
+ */
 async function _fetchGlobalConfig(): Promise<GlobalProductConfig> {
   const res = await fetchStoreProductConfig("")
 
@@ -92,12 +111,10 @@ async function _fetchGlobalConfig(): Promise<GlobalProductConfig> {
       console.warn(
         "[global-config] Brak publishable API key: ustaw MEDUSA_PUBLISHABLE_KEY lub NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY w apps/storefront/.env.local (Medusa Admin → Settings → Publishable API keys).",
       )
-    } else if (process.env.NODE_ENV === "development") {
-      console.warn(
-        `[global-config] /store/product-config → HTTP ${res.status} (Medusa wyłączona lub 502). Konfigurator: puste opcje globalne.`,
-      )
     }
-    return { colors: [], sizes: [], materials: [], led: [], finishes: [] }
+    throw new Error(
+      `[global-config] /store/product-config → HTTP ${res.status}`,
+    )
   }
 
   const data = (await res.json()) as { config_options: GlobalConfigOption[] }
@@ -115,34 +132,6 @@ async function _fetchGlobalConfig(): Promise<GlobalProductConfig> {
 export const getGlobalProductConfig = unstable_cache(
   _fetchGlobalConfig,
   ["global-product-config"],
-  { revalidate: 60, tags: ["global-product-config"] },
-)
-
-async function _fetchProductConfig(
-  productId: string,
-): Promise<GlobalProductConfig> {
-  const search = `?product_id=${encodeURIComponent(productId)}`
-  const res = await fetchStoreProductConfig(search)
-
-  if (!res.ok) {
-    return _fetchGlobalConfig()
-  }
-
-  const data = (await res.json()) as { config_options: GlobalConfigOption[] }
-  const all = data.config_options ?? []
-
-  return {
-    colors: all.filter((o) => o.type === "color"),
-    sizes: all.filter((o) => o.type === "size"),
-    materials: all.filter((o) => o.type === "material"),
-    led: all.filter((o) => o.type === "led"),
-    finishes: all.filter((o) => o.type === "finish"),
-  }
-}
-
-export const getProductConfig = unstable_cache(
-  _fetchProductConfig,
-  ["product-config"],
   { revalidate: 60, tags: ["global-product-config"] },
 )
 

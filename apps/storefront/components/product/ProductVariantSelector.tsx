@@ -1,7 +1,5 @@
 "use client";
 
-import type { GlobalConfigOption } from "@/lib/products/global-config";
-
 export interface ProductOption {
   id: string;
   title: string;

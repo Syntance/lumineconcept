@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getProductDimensionsLabel } from "@/lib/products/dimensions";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
@@ -49,14 +50,14 @@ export function ProductCard({
   imageAreaClassName = "bg-brand-50",
   href,
   badge,
-  hasVariantPrices = false,
-  variantId,
-  productId,
-  productOptions,
-  linksCount,
+  hasVariantPrices: _hasVariantPrices = false,
+  variantId: _variantId,
+  productId: _productId,
+  productOptions: _productOptions,
+  linksCount: _linksCount,
   productMetadata,
   variantMetadata,
-  globalColors,
+  globalColors: _globalColors,
 }: ProductCardProps) {
   const productHref = href ?? `/sklep/gotowe-wzory/${handle}`;
   const dimensionsLabel = getProductDimensionsLabel(productMetadata, variantMetadata);
@@ -102,10 +103,13 @@ export function ProductCard({
               height={imageHeight}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
-            <img
+            <Image
               src="/images/watermark.png"
               alt=""
               aria-hidden="true"
+              width={24}
+              height={24}
+              unoptimized
               className="pointer-events-none absolute right-2 top-2 z-10 h-5 w-auto select-none opacity-30"
               style={{ filter: "brightness(0) invert(1)" }}
               draggable={false}

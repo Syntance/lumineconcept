@@ -1,42 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { cloudinaryLoader } from "@/lib/cloudinary/utils";
 import { CloudinaryImage } from "../common/CloudinaryImage";
 
-const ASPECT_W = 10;
-const ASPECT_H = 11;
-const RESERVED_HEIGHT_PX = 200;
+/**
+ * Zamiast JSowego `useGalleryMaxWidth` (listener resize + 2 reflowy),
+ * używamy `clamp()` i CSS custom propertów. Kwadrat tła + maxWidth są
+ * liczone przez przeglądarkę natywnie, bez re-renderu Reacta.
+ *
+ * 10/11 to proporcja slidera; `1.1` odpowiada poprzedniej heurystyce
+ * „10% większy niż czysta kalkulacja wysokość-viewport × 10/11".
+ */
+const GALLERY_MAX_WIDTH_DESKTOP =
+  "calc((100dvh - 200px) * (10 / 11) * 1.1)";
 
-function useGalleryMaxWidth() {
-  const [maxW, setMaxW] = useState<number | null>(null);
-
-  useEffect(() => {
-    function calc() {
-      if (window.innerWidth < 1024) {
-        setMaxW(null);
-        return;
-      }
-      const available = window.innerHeight - RESERVED_HEIGHT_PX;
-      if (available <= 0) {
-        setMaxW(null);
-        return;
-      }
-      const maxWidth = available * (ASPECT_W / ASPECT_H);
-      /** ~10% większy podgląd przy tej samej logice proporcji (aspect, object-cover, miniatury bez zmian). */
-      setMaxW(maxWidth * 1.1);
-    }
-
-    calc();
-    window.addEventListener("resize", calc);
-    return () => window.removeEventListener("resize", calc);
-  }, []);
-
-  return maxW;
-}
-
-function GalleryMainImage({ url, alt }: { url: string; alt: string }) {
+function GalleryMainImage({
+  url,
+  alt,
+  priority,
+}: {
+  url: string;
+  alt: string;
+  priority: boolean;
+}) {
   const isExternal = url.startsWith("http");
   const isLocal = isExternal && new URL(url).hostname === "localhost";
 
@@ -46,7 +34,8 @@ function GalleryMainImage({ url, alt }: { url: string; alt: string }) {
         src={url}
         alt={alt}
         fill
-        priority
+        priority={priority}
+        loading={priority ? undefined : "lazy"}
         className="object-cover object-center"
         sizes="(max-width: 1024px) 100vw, (max-width: 1920px) 50vw, 1120px"
         unoptimized={isLocal}
@@ -60,7 +49,8 @@ function GalleryMainImage({ url, alt }: { url: string; alt: string }) {
       src={url}
       alt={alt}
       fill
-      priority
+      priority={priority}
+      loading={priority ? undefined : "lazy"}
       className="object-cover object-center"
       sizes="(max-width: 1024px) 100vw, (max-width: 1920px) 50vw, 1120px"
     />
@@ -82,7 +72,6 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
   const [panOrigin, setPanOrigin] = useState({ x: 50, y: 50 });
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const mainRef = useRef<HTMLDivElement>(null);
-  const galleryMaxW = useGalleryMaxWidth();
 
   const goTo = useCallback(
     (index: number) => {
@@ -116,6 +105,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
+    if (!touch) return;
     touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
   };
 
@@ -123,6 +113,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
     const start = touchStartRef.current;
     if (!start) return;
     const touch = e.changedTouches[0];
+    if (!touch) return;
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
     const dt = Date.now() - start.time;
@@ -142,17 +133,18 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
     );
   }
 
-  const selectedImage = images[selectedIndex];
-
-  const constrainStyle: React.CSSProperties | undefined =
-    galleryMaxW != null ? { maxWidth: galleryMaxW } : undefined;
+  const selectedImage = images[selectedIndex] ?? images[0]!;
 
   return (
     <div className="relative isolate w-full overflow-visible">
       {/* Desktop: miniatury + zdjęcie + kwadrat tła — maxWidth ogranicza, ml-auto przykleja do prawej */}
       <div
-        className="relative ml-auto flex flex-col gap-3 lg:flex-row-reverse lg:items-start lg:gap-4"
-        style={constrainStyle}
+        className="relative ml-auto flex flex-col gap-3 lg:flex-row-reverse lg:items-start lg:gap-4 lg:[max-width:var(--gallery-max-w)]"
+        style={
+          {
+            ["--gallery-max-w" as string]: GALLERY_MAX_WIDTH_DESKTOP,
+          } as React.CSSProperties
+        }
       >
         {/* Główne zdjęcie + kwadrat tła */}
         <div className="relative min-w-0 flex-1">
@@ -190,12 +182,16 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 <GalleryMainImage
                   url={selectedImage.url}
                   alt={selectedImage.alt || productTitle}
+                  priority={selectedIndex === 0}
                 />
               </div>
-              <img
+              <Image
                 src="/images/watermark.png"
                 alt=""
                 aria-hidden="true"
+                width={128}
+                height={128}
+                unoptimized
                 className="pointer-events-none absolute right-4 -top-0.5 h-32 w-auto select-none opacity-100"
                 style={{ filter: "brightness(0) invert(1)" }}
                 draggable={false}
