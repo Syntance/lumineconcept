@@ -1,6 +1,7 @@
 import type { Address } from "@lumine/types";
 import type { HttpTypes } from "@medusajs/types";
 import { medusa } from "./client";
+import { resolveMedusaFetchBase } from "./resolve-fetch-base";
 
 export async function updateCartAddress(
   cartId: string,
@@ -48,12 +49,7 @@ export async function getShippingOptions(cartId: string) {
  * Wywoływane z checkoutu tylko gdy lista opcji jest pusta — idempotentne.
  */
 export async function ensureLumineShippingBootstrap(): Promise<{ ok: boolean }> {
-  const base =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/api/medusa`
-      : (process.env.MEDUSA_BACKEND_URL?.trim() ||
-        process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
-        "http://localhost:9000");
+  const base = resolveMedusaFetchBase();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -94,12 +90,7 @@ export async function listPaymentProviders(regionId: string) {
  * (pierwszy deploy po dodaniu modułu payment do configu Medusy).
  */
 export async function ensureLuminePaymentBootstrap(): Promise<{ ok: boolean }> {
-  const base =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/api/medusa`
-      : (process.env.MEDUSA_BACKEND_URL?.trim() ||
-        process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
-        "http://localhost:9000");
+  const base = resolveMedusaFetchBase();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -142,12 +133,7 @@ export async function ensureLuminePaymentBootstrap(): Promise<{ ok: boolean }> {
  */
 export async function notifyOrderPlaced(orderId: string): Promise<void> {
   if (!orderId) return;
-  const base =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/api/medusa`
-      : (process.env.MEDUSA_BACKEND_URL?.trim() ||
-        process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
-        "http://localhost:9000");
+  const base = resolveMedusaFetchBase();
 
   const url = `${base}/store/custom/notify-order-placed`;
   const payload = JSON.stringify({ order_id: orderId });
