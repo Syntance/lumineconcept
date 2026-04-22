@@ -45,6 +45,105 @@ export async function getShippingOptions(cartId: string) {
 }
 
 /**
+ * Moduł-level cache promise'a z opcjami dostawy per cartId.
+ *
+ * Evidence (debug 8a1bb3): lista opcji ładuje się ~3,4 s. Użytkownik skarżył
+ * się że „wchodzi w krok dostawy a opcje dopiero wtedy się ładują". Wołamy
+ * tę funkcję od razu jak mamy `cartId` (Step 1), a `ShippingSelector` w
+ * Step 2 korzysta z tego samego cached promise'a — jeśli prefetch już się
+ * skończył, dane są natychmiast. Cache per cartId trzyma do zmiany koszyka.
+ *
+ * Celowo nie dajemy TTL — promise jest idempotentny (w najgorszym wypadku
+ * pokaże dane sprzed kilku sekund, a `selectShippingOption` i tak walidowane
+ * jest serwerowo po wyborze).
+ */
+const shippingOptionsCache = new Map<
+  string,
+  Promise<Awaited<ReturnType<typeof getShippingOptions>>>
+>();
+
+export function prefetchShippingOptions(cartId: string) {
+  if (!cartId) return Promise.resolve([]);
+  const cached = shippingOptionsCache.get(cartId);
+  if (cached) return cached;
+  const promise = (async () => {
+    let raw = await getShippingOptions(cartId);
+    if (!raw?.length) {
+      await ensureLumineShippingBootstrap();
+      raw = await getShippingOptions(cartId);
+    }
+    return raw;
+  })().catch((e) => {
+    shippingOptionsCache.delete(cartId);
+    throw e;
+  });
+  shippingOptionsCache.set(cartId, promise);
+  return promise;
+}
+
+export function invalidateShippingOptionsCache(cartId?: string) {
+  if (cartId) shippingOptionsCache.delete(cartId);
+  else shippingOptionsCache.clear();
+}
+
+/**
+ * Moduł-level cache promise'a z „gotowością płatności" — regionem PL i listą
+ * providerów. Tak samo jak przy shipping: wołamy w Step 1, a Step 2→3
+ * korzysta z gotowego rezultatu zamiast robić 2 dodatkowe round-tripy
+ * (`GET /store/regions` + `GET /store/payment-providers`), które w sumie
+ * dodawały ~1,5 s do przejścia na krok płatności.
+ *
+ * Cache'ujemy do końca sesji — region i lista providerów zmieniają się
+ * wyjątkowo rzadko (nowy deploy backendu). Jeśli w kroku 3 brakuje
+ * providera dla wybranego cart.regionu, storefront fallbackuje na
+ * `ensureLuminePaymentBootstrap()` — ta ścieżka i tak jest idempotentna.
+ */
+type PaymentReadiness = {
+  regionId: string;
+  providerId: string;
+};
+
+let paymentReadinessPromise: Promise<PaymentReadiness> | null = null;
+
+const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
+
+function pickPreferredProvider(list: Array<{ id: string }>): string | undefined {
+  return (
+    list.find((p) => p.id === SYSTEM_PAYMENT_PROVIDER_ID)?.id ?? list[0]?.id
+  );
+}
+
+export function prefetchPaymentReadiness(
+  getRegionId: () => Promise<string>,
+): Promise<PaymentReadiness> {
+  if (paymentReadinessPromise) return paymentReadinessPromise;
+  paymentReadinessPromise = (async () => {
+    const regionId = await getRegionId();
+    let providers = await listPaymentProviders(regionId);
+    let providerId = pickPreferredProvider(providers);
+    if (!providerId) {
+      await ensureLuminePaymentBootstrap();
+      providers = await listPaymentProviders(regionId);
+      providerId = pickPreferredProvider(providers);
+    }
+    if (!providerId) {
+      throw new Error(
+        "Brak skonfigurowanych metod płatności. Skontaktuj się z obsługą.",
+      );
+    }
+    return { regionId, providerId };
+  })().catch((e) => {
+    paymentReadinessPromise = null;
+    throw e;
+  });
+  return paymentReadinessPromise;
+}
+
+export function invalidatePaymentReadinessCache() {
+  paymentReadinessPromise = null;
+}
+
+/**
  * Jednorazowy bootstrap opcji DPD w Medusie (gdy w Adminie jest 0 opcji w strefie).
  * Wywoływane z checkoutu tylko gdy lista opcji jest pusta — idempotentne.
  */
@@ -307,15 +406,15 @@ export async function completeCart(
         /idempotency/i.test(msg) ||
         /conflict/i.test(msg);
       /**
-       * 500 „An unknown error occurred" po ~30 s = zakleszczony lock
-       * (`acquire-lock-step` w `complete-cart`). Po stronie backendu
-       * przenieśliśmy się na Redis-lock, ale trzymamy też retry po
-       * stronie klienta — poprzedni workflow i tak się w międzyczasie
-       * domknie, więc druga próba najczęściej przechodzi.
+       * Evidence (debug session 8a1bb3): trzy kolejne próby na 500 „unknown
+       * error" padły dokładnie po 34 251 / 34 257 / 34 227 ms — to serwerowy
+       * timeout locka (~30 s) po stronie Medusa/Railway. Każdy retry wali
+       * w ten sam zakleszczony lock, bo workflow poprzedniej próby ciągle
+       * nie zszedł. Retry tylko wydłuża UX z kilku sekund do 2+ minut i
+       * nic nie naprawia. Retriujemy TYLKO na 409 (prawdziwy conflict
+       * z Idempotency-Key) — tam kolejne wołanie zwraca cached state.
        */
-      const isServerLockStall =
-        status === 500 && /unknown error/i.test(msg);
-      const shouldRetry = (isConflict || isServerLockStall) && !isCartAlreadyCompletedError(e);
+      const shouldRetry = isConflict && !isCartAlreadyCompletedError(e);
       if (shouldRetry && i < retries) {
         const wait =
           fixedDelay ??
