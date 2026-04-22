@@ -1,37 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// #region agent log
-import { appendFile } from "node:fs/promises";
-const DEBUG_LOG_PATH = "/Users/kamilpodobinski/lumineconcept.pl/.cursor/debug-8a1bb3.log";
-function dbg(payload: Record<string, unknown>) {
-  const line =
-    JSON.stringify({ sessionId: "8a1bb3", timestamp: Date.now(), ...payload }) +
-    "\n";
-  appendFile(DEBUG_LOG_PATH, line).catch(() => {});
-}
-// #endregion
-
 /**
  * Proxy Store API → Medusa (ten sam origin w przeglądarce, bez CORS).
- * Rewrite w next.config do zewnętrznego hosta w dev (Turbopack) potrafi zwracać 500 przy POST — jawny fetch jest stabilniejszy.
+ * Rewrite w next.config do zewnętrznego hosta w dev (Turbopack) potrafi
+ * zwracać 500 przy POST — jawny fetch jest stabilniejszy.
  */
 
-/** Vercel: dłuższy cold start Railway / Medusa — unikaj przedwczesnego 504 „Application failed to respond”. */
-export const maxDuration = 60;
+/** Vercel: dłuższy cold start Railway / Medusa — unikaj przedwczesnego 504. */
+export const maxDuration = 30;
 /**
  * Node runtime — Edge nie obsługuje części nagłówków + 4.5MB body limit,
- * a mamy POST-y z dużymi payloadami (np. completeCart z line items).
+ * a mamy POST-y z większymi payloadami (completeCart z line items).
  */
 export const runtime = "nodejs";
 /**
  * Railway backend siedzi w EU. Vercel domyślnie rozstawia funkcje globalnie,
- * co dawało +150–400ms na każdym hopie US ↔ EU. Przypinamy funkcję do
+ * co dawało +150–400 ms na każdym hopie US ↔ EU. Przypinamy funkcję do
  * Frankfurt — proxy leci EU → EU. Przy 5–8 requestach checkoutu to realnie
  * 1–2 s oszczędności end-to-end.
  */
 export const preferredRegion = ["fra1"];
 /** Proxy nie może być cache'owany ani prerenderowany — zawsze świeży request. */
 export const dynamic = "force-dynamic";
+
 const BACKEND =
   process.env.MEDUSA_BACKEND_URL?.trim() ||
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
@@ -58,12 +49,12 @@ const HOP_BY_HOP = new Set([
 const ALLOWED_FIRST_SEGMENT = new Set(["store", "auth", "custom"]);
 
 /**
- * Pojedynczy request do Medusy nie może „wisieć" dłużej niż 55 s. Medusa v2
- * pod Railway przy zimnym starcie potrafi zwalniać do 30–40 s na
- * `completeCart` (workflow + event bus + tax calc + fulfillment).
- * Trzymamy się pod limitem Vercela (60 s), żeby proxy zdążyło odpowiedzieć.
+ * Timeout upstream Medusy. Po wdrożeniu workflow-engine-redis + event-bus-redis
+ * `completeCart` wraca w <2 s, nawet przy cold starcie Railway. 25 s to
+ * margines bezpieczeństwa (pod limitem Vercela 30 s) — jeśli kiedykolwiek
+ * przekroczymy, to znaczy że coś realnie się zepsuło, nie że czekamy.
  */
-const UPSTREAM_TIMEOUT_MS = 55_000;
+const UPSTREAM_TIMEOUT_MS = 25_000;
 
 function filterRequestHeaders(req: NextRequest): Headers {
   const h = new Headers();
@@ -76,12 +67,12 @@ function filterRequestHeaders(req: NextRequest): Headers {
 }
 
 function ensureStorePublishableKey(headers: Headers, path: string) {
-  if (!path.startsWith("store/")) return
+  if (!path.startsWith("store/")) return;
   const key =
     process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ??
-    process.env.MEDUSA_PUBLISHABLE_KEY
+    process.env.MEDUSA_PUBLISHABLE_KEY;
   if (key && !headers.has("x-publishable-api-key")) {
-    headers.set("x-publishable-api-key", key)
+    headers.set("x-publishable-api-key", key);
   }
 }
 
@@ -98,8 +89,8 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
   const base = BACKEND.replace(/\/$/, "");
   const url = `${base}/${path}${req.nextUrl.search}`;
 
-  const headers = filterRequestHeaders(req)
-  ensureStorePublishableKey(headers, path)
+  const headers = filterRequestHeaders(req);
+  ensureStorePublishableKey(headers, path);
 
   const init: RequestInit = {
     method: req.method,
@@ -114,16 +105,6 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
     }
   }
 
-  // #region agent log
-  const __t = Date.now();
-  dbg({
-    location: "proxy.route.ts",
-    message: "→ upstream request",
-    data: { method: req.method, path, search: req.nextUrl.search || "" },
-    hypothesisId: "H1",
-  });
-  // #endregion
-
   let res: Response;
   try {
     res = await fetch(url, init);
@@ -131,20 +112,6 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
     const isAbort =
       (e as { name?: string }).name === "TimeoutError" ||
       (e as { name?: string }).name === "AbortError";
-    // #region agent log
-    dbg({
-      location: "proxy.route.ts",
-      message: "✗ upstream error",
-      data: {
-        method: req.method,
-        path,
-        ms: Date.now() - __t,
-        isAbort,
-        err: ((e as { message?: string })?.message ?? "").slice(0, 200),
-      },
-      hypothesisId: "H1",
-    });
-    // #endregion
     console.error(
       `[proxy] ${req.method} /${path} — upstream ${isAbort ? "timeout" : "error"}`,
       e,
@@ -158,15 +125,6 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
       { status: 504 },
     );
   }
-
-  // #region agent log
-  dbg({
-    location: "proxy.route.ts",
-    message: "← upstream response",
-    data: { method: req.method, path, ms: Date.now() - __t, status: res.status },
-    hypothesisId: "H1",
-  });
-  // #endregion
 
   return new NextResponse(res.body, {
     status: res.status,
