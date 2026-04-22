@@ -298,7 +298,7 @@ export function CheckoutForm() {
               {i > 0 && (
                 <div
                   className={`mx-2 h-px w-8 sm:w-12 transition-colors ${
-                    step >= s.number ? "bg-accent" : "bg-brand-200"
+                    step >= s.number ? "bg-brand-900" : "bg-brand-200"
                   }`}
                 />
               )}
@@ -310,13 +310,21 @@ export function CheckoutForm() {
                 disabled={s.number > step}
                 className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   step === s.number
-                    ? "bg-accent text-white"
+                    ? "bg-brand-900 text-white shadow-sm"
                     : step > s.number
-                      ? "bg-accent/10 text-accent-dark cursor-pointer"
+                      ? "bg-accent/20 text-brand-800 cursor-pointer hover:bg-accent/30"
                       : "bg-brand-100 text-brand-400"
                 }`}
               >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[11px]">
+                <span
+                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${
+                    step === s.number
+                      ? "bg-white/20 text-white"
+                      : step > s.number
+                        ? "bg-brand-900 text-white"
+                        : "bg-white text-brand-500"
+                  }`}
+                >
                   {step > s.number ? "✓" : s.number}
                 </span>
                 <span className="hidden sm:inline">{s.label}</span>
@@ -550,7 +558,7 @@ export function CheckoutForm() {
                 }
               }}
               disabled={!canGoToStep2 || !cartId || preparingDelivery}
-              className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-brand-200 disabled:text-brand-500 transition-colors"
             >
               {preparingDelivery ? "Zapisywanie…" : "Przejdź do dostawy"}
             </button>
@@ -610,7 +618,7 @@ export function CheckoutForm() {
                 }
               }}
               disabled={!canGoToStep3 || !cartId || preparingPayment}
-              className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-brand-200 disabled:text-brand-500 transition-colors"
             >
               {preparingPayment ? "Przygotowuję płatność…" : "Przejdź do płatności"}
             </button>
@@ -676,7 +684,7 @@ export function CheckoutForm() {
               type="button"
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="w-full rounded-md bg-accent py-3 text-sm font-semibold text-white hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              className="w-full rounded-md bg-brand-900 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-brand-200 disabled:text-brand-500 transition-colors"
             >
               {submitting ? "Składanie zamówienia…" : "Zamawiam i płacę"}
             </button>
