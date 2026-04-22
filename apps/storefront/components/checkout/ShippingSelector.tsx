@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Truck } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/hooks/useCart";
-import {
-  ensureLumineShippingBootstrap,
-  getShippingOptions,
-} from "@/lib/medusa/checkout";
+import { prefetchShippingOptions } from "@/lib/medusa/checkout";
 
 interface ShippingOptionView {
   id: string;
@@ -48,44 +45,35 @@ export function ShippingSelector({
   const [options, setOptions] = useState<ShippingOptionView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const ensureAttempted = useRef(false);
 
   /**
-   * Fetch opcji odpalamy TYLKO kiedy zmieni się koszyk — `selectedOptionId`
-   * jest stanem „lokalnym" formularza i nie powinien powodować ponownego
-   * listowania metod w Medusie. Osobny useEffect poniżej obsługuje
-   * auto-select po załadowaniu listy.
+   * Korzystamy z `prefetchShippingOptions` — cached promise per cartId.
+   * `CheckoutForm` odpala go już w Step 1, więc do czasu gdy użytkownik
+   * wejdzie w Step 2 opcje zwykle są już gotowe i `await` kończy się
+   * natychmiast. Bootstrap pustej listy (ensureLumineShippingBootstrap)
+   * siedzi wewnątrz prefetcha.
    */
   useEffect(() => {
-    ensureAttempted.current = false;
     if (!cartId) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    (async () => {
-      try {
-        let raw = await getShippingOptions(cartId);
-        if (cancelled) return;
-        if (!raw?.length && !ensureAttempted.current) {
-          ensureAttempted.current = true;
-          await ensureLumineShippingBootstrap();
-          if (!cancelled) {
-            raw = await getShippingOptions(cartId);
-          }
-        }
+    prefetchShippingOptions(cartId)
+      .then((raw) => {
         if (cancelled) return;
         setOptions(
           mapOptions(raw as unknown as Array<Record<string, unknown>>),
         );
-      } catch (e: unknown) {
+      })
+      .catch((e: unknown) => {
         if (cancelled) return;
         console.error("[shipping] fetch", e);
         setError("Nie udało się pobrać opcji dostawy.");
-      } finally {
+      })
+      .finally(() => {
         if (!cancelled) setLoading(false);
-      }
-    })();
+      });
 
     return () => {
       cancelled = true;

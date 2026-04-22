@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// #region agent log
+import { appendFile } from "node:fs/promises";
+const DEBUG_LOG_PATH = "/Users/kamilpodobinski/lumineconcept.pl/.cursor/debug-8a1bb3.log";
+function dbg(payload: Record<string, unknown>) {
+  const line =
+    JSON.stringify({ sessionId: "8a1bb3", timestamp: Date.now(), ...payload }) +
+    "\n";
+  appendFile(DEBUG_LOG_PATH, line).catch(() => {});
+}
+// #endregion
+
 /**
  * Proxy Store API → Medusa (ten sam origin w przeglądarce, bez CORS).
  * Rewrite w next.config do zewnętrznego hosta w dev (Turbopack) potrafi zwracać 500 przy POST — jawny fetch jest stabilniejszy.
@@ -103,6 +114,16 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
     }
   }
 
+  // #region agent log
+  const __t = Date.now();
+  dbg({
+    location: "proxy.route.ts",
+    message: "→ upstream request",
+    data: { method: req.method, path, search: req.nextUrl.search || "" },
+    hypothesisId: "H1",
+  });
+  // #endregion
+
   let res: Response;
   try {
     res = await fetch(url, init);
@@ -110,6 +131,20 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
     const isAbort =
       (e as { name?: string }).name === "TimeoutError" ||
       (e as { name?: string }).name === "AbortError";
+    // #region agent log
+    dbg({
+      location: "proxy.route.ts",
+      message: "✗ upstream error",
+      data: {
+        method: req.method,
+        path,
+        ms: Date.now() - __t,
+        isAbort,
+        err: ((e as { message?: string })?.message ?? "").slice(0, 200),
+      },
+      hypothesisId: "H1",
+    });
+    // #endregion
     console.error(
       `[proxy] ${req.method} /${path} — upstream ${isAbort ? "timeout" : "error"}`,
       e,
@@ -123,6 +158,15 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
       { status: 504 },
     );
   }
+
+  // #region agent log
+  dbg({
+    location: "proxy.route.ts",
+    message: "← upstream response",
+    data: { method: req.method, path, ms: Date.now() - __t, status: res.status },
+    hypothesisId: "H1",
+  });
+  // #endregion
 
   return new NextResponse(res.body, {
     status: res.status,
