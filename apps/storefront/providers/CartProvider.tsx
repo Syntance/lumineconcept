@@ -78,6 +78,12 @@ function numberFromUnknown(v: unknown): number | undefined {
     const n = Number(v);
     if (Number.isFinite(n)) return n;
   }
+  /* Medusa bywa zwraca BigNumberValue jako `{ value: "179.9", precision: 20 }` —
+     szczególnie po niektórych ścieżkach API / proxy. Bez tego `(x as number)`
+     daje `[object Object]` i psuje subtotal / express / porównanie z Adminem. */
+  if (typeof v === "object" && v !== null && "value" in v) {
+    return numberFromUnknown((v as { value: unknown }).value);
+  }
   return undefined;
 }
 
@@ -140,10 +146,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setCart({
         id: rawCart.id as string,
         items,
-        subtotal: (rawCart.subtotal as number) ?? 0,
-        shipping_total: (rawCart.shipping_total as number) ?? 0,
-        tax_total: (rawCart.tax_total as number) ?? 0,
-        total: (rawCart.total as number) ?? 0,
+        subtotal: numberFromUnknown(rawCart.subtotal) ?? 0,
+        shipping_total: numberFromUnknown(rawCart.shipping_total) ?? 0,
+        tax_total: numberFromUnknown(rawCart.tax_total) ?? 0,
+        total: numberFromUnknown(rawCart.total) ?? 0,
         itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
         metadata: normalizeCartMetadata(rawCart.metadata),
       });

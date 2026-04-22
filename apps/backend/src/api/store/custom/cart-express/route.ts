@@ -48,12 +48,18 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   }
 
   const subRaw = (cartSnapshot as { subtotal?: unknown }).subtotal;
-  const subtotalNum =
-    typeof subRaw === "number"
-      ? subRaw
-      : typeof subRaw === "string"
-        ? Number(subRaw)
-        : 0;
+  function subtotalToNumber(v: unknown): number {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (typeof v === "string" && v.trim() !== "") {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+    if (v && typeof v === "object" && "value" in v) {
+      return subtotalToNumber((v as { value: unknown }).value);
+    }
+    return 0;
+  }
+  const subtotalNum = subtotalToNumber(subRaw);
   // Medusa v2 — kwoty dziesiętne w PLN. 50% subtotalu zaokrąglamy do groszy
   // (nie do pełnych złotych, jak było w konwencji grosze/integer).
   const expressFee = body.express_delivery
