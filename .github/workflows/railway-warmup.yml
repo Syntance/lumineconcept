@@ -1,0 +1,35 @@
+name: Railway warm-up
+
+# Tani odpowiednik planu "Always On" na Railway. GH Actions co 5 minut pingują
+# /health backendu Medusy, żeby kontener nie zasypiał. Typowy cold start Railway
+# po bezczynności to 3–8 s — najbardziej boleśnie czuć to na pierwszym kliku w
+# checkoucie. Ten workflow praktycznie to niweluje.
+#
+# Uwaga: GitHub czasem rozrzedza schedule na darmowych repo (dopuszcza opóźnienia
+# do ~15 min). Nawet z tym rozrzedzeniem trafiamy w okno aktywności kontenera,
+# więc efekt jest solidny.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: railway-warmup
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping /health
+        run: |
+          URL="https://medusa-backend-lumineconceptpl.up.railway.app/health"
+          # -m 20: 20 s na zimny start to z zapasem
+          # -f: non-zero exit przy 5xx (żeby było widać w Actions)
+          # --retry: jedna próba z backoffem wystarczy
+          curl -fsS -m 20 --retry 2 --retry-delay 5 -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" "$URL"

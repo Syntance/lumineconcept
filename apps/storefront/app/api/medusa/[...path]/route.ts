@@ -7,6 +7,20 @@ import { NextRequest, NextResponse } from "next/server";
 
 /** Vercel: dłuższy cold start Railway / Medusa — unikaj przedwczesnego 504 „Application failed to respond”. */
 export const maxDuration = 60;
+/**
+ * Node runtime — Edge nie obsługuje części nagłówków + 4.5MB body limit,
+ * a mamy POST-y z dużymi payloadami (np. completeCart z line items).
+ */
+export const runtime = "nodejs";
+/**
+ * Railway backend siedzi w EU. Vercel domyślnie rozstawia funkcje globalnie,
+ * co dawało +150–400ms na każdym hopie US ↔ EU. Przypinamy funkcję do
+ * Frankfurt — proxy leci EU → EU. Przy 5–8 requestach checkoutu to realnie
+ * 1–2 s oszczędności end-to-end.
+ */
+export const preferredRegion = ["fra1"];
+/** Proxy nie może być cache'owany ani prerenderowany — zawsze świeży request. */
+export const dynamic = "force-dynamic";
 const BACKEND =
   process.env.MEDUSA_BACKEND_URL?.trim() ||
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
