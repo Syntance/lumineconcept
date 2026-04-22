@@ -53,15 +53,36 @@ function resolveSecret(name: "JWT_SECRET" | "COOKIE_SECRET"): string {
   return value;
 }
 
+/**
+ * Produkcyjny worker mode — wg oficjalnych docs Medusy v2 deployujemy
+ * dwie instancje tej samej aplikacji:
+ *   - `server` — obsługuje API i panel admin,
+ *   - `worker` — konsumuje kolejkę event-bus-redis i workflow-engine-redis
+ *     (subscribery, scheduled jobs, retry workflow'ów).
+ * Bez splitu HTTP requesty i background jobs walczą o ten sam event loop
+ * (= źródło 30 s zawisu `completeCart`). `shared` zostaje tylko w devie.
+ */
+const WORKER_MODE = (process.env.MEDUSA_WORKER_MODE ??
+  "shared") as "shared" | "server" | "worker";
+
+/**
+ * Admin budujemy i serwujemy tylko na instancji `server`. Na workerze jest
+ * bezsensowny balast (wolniejszy boot, bundle ~70 MB). `DISABLE_MEDUSA_ADMIN`
+ * jest standardowym envem zalecanym przez docs.
+ */
+const ADMIN_DISABLED =
+  process.env.DISABLE_MEDUSA_ADMIN === "true" || WORKER_MODE === "worker";
+
 export default defineConfig({
   admin: {
-    disable: false,
+    disable: ADMIN_DISABLED,
     backendUrl: BACKEND_URL,
     maxUploadFileSize: 10 * 1024 * 1024,
   },
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL!,
     redisUrl: process.env.REDIS_URL,
+    workerMode: WORKER_MODE,
     http: {
       storeCors: STOREFRONT_URL,
       adminCors:
@@ -74,15 +95,19 @@ export default defineConfig({
   },
   modules: [
     /**
-     * Locking: domyślnie Medusa używa `InMemoryLockingProvider`, który przy
-     * długich workflow'ach (np. `complete-cart` podczas cold startu Railway)
-     * trzyma klucz `cart_<id>` i każda równoległa operacja na tym samym
-     * koszyku czeka 30 s, a potem wywala 500 („Failed to acquire lock for
-     * key…"). User widzi wtedy generyczne „An unknown error occurred".
+     * ============================================================
+     * PRODUKCYJNA INFRASTRUKTURA REDIS — wg oficjalnego guide'a
+     * https://docs.medusajs.com/learn/deployment/general
+     * ============================================================
      *
-     * Redis lock ma krótszy TTL, waiter-side timeout i natychmiast zwalnia
-     * klucz gdy proces kończy workflow — eliminuje ten scenariusz.
-     * REDIS_URL i tak jest w Railway (używamy ioredis w innych miejscach).
+     * 4 moduły Redis (wszystkie required w produkcji wg Medusy):
+     *   1. locking-redis     — krótki TTL, waiter timeout (zamiast 30 s default)
+     *   2. event-bus-redis   — pub/sub eventów przez BullMQ (async subscribery)
+     *   3. workflow-engine-redis — state workflow w Redis (crash-safe, retryable)
+     *   4. cache-redis       — query cache dla produktów / opcji dostawy
+     *
+     * Bez tego `completeCart` trzyma state workflow w pamięci procesu —
+     * każdy wolny step blokuje cały event loop.
      */
     ...(process.env.REDIS_URL
       ? [
@@ -102,18 +127,6 @@ export default defineConfig({
               ],
             },
           },
-          /**
-           * Event Bus Redis zamiast wbudowanego Local Event Busa. Kluczowa
-           * zmiana dla wydajności `completeCart`: Local Bus emituje
-           * subscriberów synchronicznie w tym samym event-loopie co workflow,
-           * więc każda wolna wysyłka maila / webhooka w subscriberze
-           * blokowała workflow (objaw: 500 po 30 s — lock-waiter timeout).
-           *
-           * Redis Event Bus odkłada eventy na kolejkę (BullMQ) — emit wraca
-           * natychmiast, workflow się kończy, subscribery odpalają się
-           * potem w kolejce. Oddzielnego worker procesu nie potrzebujemy,
-           * bo w `shared` workerMode ten sam proces konsumuje kolejkę.
-           */
           {
             // Medusa v2 oczekuje klucza `eventBus` (Modules.EVENT_BUS),
             // inaczej wywala "Module ... doesn't have a serviceName".
@@ -121,6 +134,37 @@ export default defineConfig({
             resolve: "@medusajs/event-bus-redis",
             options: {
               redisUrl: process.env.REDIS_URL,
+              // Retencja jobów w BullMQ — zalecane przez docs, żeby kolejka
+              // nie rosła w nieskończoność (1h / 1000 wpisów bufor).
+              jobOptions: {
+                removeOnComplete: { age: 3600, count: 1000 },
+                removeOnFail: { age: 3600, count: 1000 },
+              },
+            },
+          },
+          {
+            // Workflow engine trzyma stan kroków `completeCart`, `placeOrder`
+            // itp. Domyślny `workflow-engine-inmemory` = stan w RAM procesu.
+            // Wersja Redis zapisuje stan w kolejce BullMQ i jest crash-safe:
+            // jeśli proces zginie w połowie workflow, inny (worker) dokończy.
+            key: "workflows",
+            resolve: "@medusajs/workflow-engine-redis",
+            options: {
+              redis: {
+                url: process.env.REDIS_URL,
+              },
+            },
+          },
+          {
+            // Query cache dla cart / product / shipping. Bez tego każdy
+            // `retrieveCart` robi pełny JOIN z Postgres — ~40–120 ms.
+            // Z Redis cache ~3 ms hit.
+            key: "cache",
+            resolve: "@medusajs/cache-redis",
+            options: {
+              redisUrl: process.env.REDIS_URL,
+              namespace: "lumine_cache:",
+              ttl: 30, // sekund — bezpieczny domyślny TTL
             },
           },
         ]

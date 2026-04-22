@@ -47,10 +47,10 @@ export async function getShippingOptions(cartId: string) {
 /**
  * Moduł-level cache promise'a z opcjami dostawy per cartId.
  *
- * Evidence (debug 8a1bb3): lista opcji ładuje się ~3,4 s. Użytkownik skarżył
- * się że „wchodzi w krok dostawy a opcje dopiero wtedy się ładują". Wołamy
- * tę funkcję od razu jak mamy `cartId` (Step 1), a `ShippingSelector` w
- * Step 2 korzysta z tego samego cached promise'a — jeśli prefetch już się
+ * Przed prefetchem Step 2 wchodził a opcje ładowały się dopiero ~3,4 s po
+ * kliknięciu. Wołamy tę funkcję od razu jak mamy `cartId` (Step 1), a
+ * `ShippingSelector` w Step 2 korzysta z tego samego cached promise'a — jeśli
+ * prefetch już się
  * skończył, dane są natychmiast. Cache per cartId trzyma do zmiany koszyka.
  *
  * Celowo nie dajemy TTL — promise jest idempotentny (w najgorszym wypadku
@@ -406,13 +406,11 @@ export async function completeCart(
         /idempotency/i.test(msg) ||
         /conflict/i.test(msg);
       /**
-       * Evidence (debug session 8a1bb3): trzy kolejne próby na 500 „unknown
-       * error" padły dokładnie po 34 251 / 34 257 / 34 227 ms — to serwerowy
-       * timeout locka (~30 s) po stronie Medusa/Railway. Każdy retry wali
-       * w ten sam zakleszczony lock, bo workflow poprzedniej próby ciągle
-       * nie zszedł. Retry tylko wydłuża UX z kilku sekund do 2+ minut i
-       * nic nie naprawia. Retriujemy TYLKO na 409 (prawdziwy conflict
-       * z Idempotency-Key) — tam kolejne wołanie zwraca cached state.
+       * Retriujemy TYLKO na 409 (prawdziwy conflict z Idempotency-Key) —
+       * tam kolejne wołanie zwraca cached state. 500 oznacza że serwerowy
+       * workflow utknął; retry wali w ten sam zakleszczony stan, tylko
+       * wydłuża UX i nic nie naprawia (objaw sprzed wdrożenia
+       * workflow-engine-redis, teraz nie powinien wystąpić).
        */
       const shouldRetry = isConflict && !isCartAlreadyCompletedError(e);
       if (shouldRetry && i < retries) {

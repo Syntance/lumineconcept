@@ -10,39 +10,20 @@ import {
 } from "../lib/send-email";
 
 /**
- * Subscriber „order.placed" — defensywny, drugorzędny kanał wysyłki maila
- * potwierdzającego. Główny kanał to endpoint `/store/custom/notify-order-placed`
- * wołany ze storefrontu tuż po `completeCart` (local event bus pod Railway
- * potrafi zgubić event — stąd oba tory).
+ * Subscriber „order.placed" — pierwszorzędny kanał wysyłki maila potwierdzającego.
  *
- * Idempotency (`order-placed:<order_id>` w `sendTransactionalEmail`) gwarantuje,
- * że nawet jeśli oba tory zadziałają, klient dostanie tylko JEDEN mail.
+ * Od kiedy backend jedzie na event-bus-redis + workflow-engine-redis, `emit()`
+ * odkłada event do kolejki BullMQ i wraca natychmiast — ten subscriber leci
+ * ASYNCHRONICZNIE (na instancji worker). Dzięki temu `completeCart` nie jest
+ * zablokowany czekaniem na wysyłkę maila.
  *
- * Side-channels (Meta CAPI, PostHog) też są idempotentne na poziomie
- * zewnętrznych API (dedup po order_id) więc ich dublowanie jest OK.
+ * Idempotency (`order-placed:<order_id>` w `sendTransactionalEmail`) gwarantuje
+ * jeden mail per zamówienie nawet gdy storefront dodatkowo zawoła
+ * `/store/custom/notify-order-placed` (defensywny duplicate).
  *
- * WAŻNE (Event Bus LOCAL na Railway):
- * `LocalEventBusService.emit()` robi `await Promise.all(subscribers)` w tym
- * samym event-loopie co workflow `completeCart`. Każde nieograniczone w
- * czasie `await fetch(...)` w tym subscriberze blokuje workflow → Redis lock
- * TTL mija (30s) → HTTP 500 "An unknown error occurred" u klienta.
- * Stąd: Meta/PostHog są fire-and-forget z twardym timeoutem, a email ma
- * 6s timeout (duplicate z `/store/custom/notify-order-placed` go dośle,
- * jeśli tu nie zdąży).
+ * Meta CAPI / PostHog — fire-and-forget z 3s timeoutem, bo Graph API potrafi
+ * nie oddać socketa i bez tego zawiesiłoby worker.
  */
-
-// #region agent log
-const DBG = "[dbg-8a1bb3]";
-const dbg = (msg: string, data?: Record<string, unknown>) => {
-  try {
-    console.info(
-      `${DBG} order-placed ${msg}${data ? " " + JSON.stringify(data) : ""}`,
-    );
-  } catch {
-    /* logger nie może wysadzić subscribera */
-  }
-};
-// #endregion
 
 /**
  * Twardy timeout niezależny od tego, czy fetch w danym runtime honoruje
@@ -78,10 +59,6 @@ export default async function orderPlacedHandler({
     }
   })();
   logger.info(`[order-placed] start id=${event.data.id}`);
-  // #region agent log
-  const t0 = Date.now();
-  dbg("start", { orderId: event.data.id });
-  // #endregion
 
   const orderService: IOrderModuleService =
     container.resolve(Modules.ORDER);
@@ -94,9 +71,6 @@ export default async function orderPlacedHandler({
     order = await orderService.retrieveOrder(event.data.id, {
       relations: ["items", "shipping_address", "shipping_methods"],
     });
-    // #region agent log
-    dbg("retrieveOrder-done", { ms: Date.now() - t0 });
-    // #endregion
   } catch (e) {
     console.error("[order-placed] retrieveOrder failed", e);
     captureError(e, {
@@ -112,10 +86,6 @@ export default async function orderPlacedHandler({
   // (/store/custom/notify-order-placed) dośle w razie timeoutu — a jeśli
   // zdąży tu, idempotency w `sendTransactionalEmail` zablokuje duplikat.
   if (order?.email) {
-    // #region agent log
-    const t = Date.now();
-    dbg("email-start");
-    // #endregion
     try {
       const payload = buildOrderEmailPayload(
         order as unknown as Record<string, unknown>,
@@ -131,17 +101,8 @@ export default async function orderPlacedHandler({
           orderId: order.id,
         });
       });
-      // #region agent log
-      dbg("email-done", { ms: Date.now() - t });
-      // #endregion
     } catch (e) {
       console.error("[order-placed] email render/send failed", e);
-      // #region agent log
-      dbg("email-error", {
-        ms: Date.now() - t,
-        err: (e as { message?: string })?.message?.slice(0, 120),
-      });
-      // #endregion
       captureError(e, {
         subscriber: "order-placed",
         step: "email",
@@ -154,53 +115,33 @@ export default async function orderPlacedHandler({
     );
   }
 
-  // Meta CAPI + PostHog — FIRE-AND-FORGET. Żadne z tych wywołań nie
-  // powinno blokować workflow `completeCart`. Oba mają własny twardy
-  // 3s timeout i własny catch (błąd jednego nie wpływa na drugi).
-  // #region agent log
-  dbg("sinks-dispatch");
-  // #endregion
-  void sendMetaCAPIEvent(order as any)
-    .then((ms) => dbg("meta-done", { ms }))
-    .catch((e) => {
-      console.error("[order-placed] sendMetaCAPIEvent", e);
-      // #region agent log
-      dbg("meta-error", { err: (e as { message?: string })?.message?.slice(0, 120) });
-      // #endregion
-      captureError(e, {
-        subscriber: "order-placed",
-        step: "metaCAPI",
-        orderId: order?.id,
-      });
+  void sendMetaCAPIEvent(order as any).catch((e) => {
+    console.error("[order-placed] sendMetaCAPIEvent", e);
+    captureError(e, {
+      subscriber: "order-placed",
+      step: "metaCAPI",
+      orderId: order?.id,
     });
-  void sendPostHogEvent(order as any)
-    .then((ms) => dbg("posthog-done", { ms }))
-    .catch((e) => {
-      console.error("[order-placed] sendPostHogEvent", e);
-      // #region agent log
-      dbg("posthog-error", { err: (e as { message?: string })?.message?.slice(0, 120) });
-      // #endregion
-      captureError(e, {
-        subscriber: "order-placed",
-        step: "posthog",
-        orderId: order?.id,
-      });
+  });
+  void sendPostHogEvent(order as any).catch((e) => {
+    console.error("[order-placed] sendPostHogEvent", e);
+    captureError(e, {
+      subscriber: "order-placed",
+      step: "posthog",
+      orderId: order?.id,
     });
-
-  // #region agent log
-  dbg("handler-return", { totalMs: Date.now() - t0 });
-  // #endregion
+  });
 }
 
-async function sendMetaCAPIEvent(order: any): Promise<number> {
+async function sendMetaCAPIEvent(order: any): Promise<void> {
   const pixelId = process.env.META_PIXEL_ID;
   const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
 
-  if (!pixelId || !accessToken) return 0;
+  if (!pixelId || !accessToken) return;
 
   // Zamówienie gościnne może nie mieć emaila — bez guarda hash crashuje.
   const email: string | undefined = order?.email;
-  if (!email) return 0;
+  if (!email) return;
 
   const hashedEmail = crypto
     .createHash("sha256")
@@ -241,7 +182,6 @@ async function sendMetaCAPIEvent(order: any): Promise<number> {
     ],
   };
 
-  const t = Date.now();
   await withTimeout("metaCAPI", 3000, (signal) =>
     fetch(
       `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${accessToken}`,
@@ -253,16 +193,14 @@ async function sendMetaCAPIEvent(order: any): Promise<number> {
       },
     ),
   );
-  return Date.now() - t;
 }
 
-async function sendPostHogEvent(order: any): Promise<number> {
+async function sendPostHogEvent(order: any): Promise<void> {
   const posthogKey = process.env.POSTHOG_API_KEY;
-  if (!posthogKey) return 0;
+  if (!posthogKey) return;
 
   const distinctId: string = order?.email ?? order?.id ?? "anonymous";
 
-  const t = Date.now();
   await withTimeout("posthog", 3000, (signal) =>
     fetch("https://eu.posthog.com/capture/", {
       method: "POST",
@@ -286,7 +224,6 @@ async function sendPostHogEvent(order: any): Promise<number> {
       signal,
     }),
   );
-  return Date.now() - t;
 }
 
 export const config: SubscriberConfig = {
