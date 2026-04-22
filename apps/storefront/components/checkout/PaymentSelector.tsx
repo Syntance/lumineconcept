@@ -4,8 +4,12 @@ import { CreditCard, Clock, ReceiptText } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/utils";
 
-const PAYPO_MIN_AMOUNT = 4000;
-const PAYPO_MAX_AMOUNT = 300000;
+/**
+ * Medusa v2: kwoty w PLN (dziesiętne). PayPo działa w zakresie 40–3000 zł
+ * (limity z dokumentacji). Wcześniej trzymaliśmy grosze, stąd × 100.
+ */
+const PAYPO_MIN_AMOUNT = 40;
+const PAYPO_MAX_AMOUNT = 3000;
 
 /** ID providera `@medusajs/payment/providers/system` (manual). */
 const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";

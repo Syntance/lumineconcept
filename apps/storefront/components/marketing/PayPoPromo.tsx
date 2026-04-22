@@ -1,12 +1,16 @@
 import { Clock } from "lucide-react";
 
 interface PayPoPromoProps {
-  /** Kwota w groszach (Medusa). */
+  /** Kwota w PLN (dziesiętne, Medusa v2). */
   price: number;
 }
 
-export const PAYPO_MIN_CENTS = 4000;
-export const PAYPO_MAX_CENTS = 300000;
+/**
+ * PayPo obsługuje zakres 40–3000 zł (wg limitu providera). Nazwy
+ * `_CENTS` zostały z konwencji grosze — wartości operują teraz na PLN.
+ */
+export const PAYPO_MIN_CENTS = 40;
+export const PAYPO_MAX_CENTS = 3000;
 
 export function isPayPoPriceEligible(price: number): boolean {
   return price >= PAYPO_MIN_CENTS && price <= PAYPO_MAX_CENTS;

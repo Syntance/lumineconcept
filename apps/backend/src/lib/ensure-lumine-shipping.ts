@@ -15,8 +15,11 @@ const FULFILLMENT_SET_NAME = "Wysyłka";
 const SERVICE_ZONE_NAME = "Polska";
 const SHIPPING_PROFILE_NAME = "Lumine — standard";
 const OPTION_NAME = "Kurier DPD";
-/** Kwota w najmniejszej jednostce waluty (grosze) */
-const DPD_FLAT_AMOUNT = 2500;
+/**
+ * Medusa v2 trzyma ceny jako dziesiętne w walucie głównej (PLN), nie w groszach.
+ * 24.99 = 24 zł 99 gr. W adminie wyświetla się jako „24,99 zł".
+ */
+const DPD_FLAT_AMOUNT = 24.99;
 
 export interface EnsureLumineShippingResult {
   ok: boolean;

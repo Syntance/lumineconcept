@@ -21,10 +21,14 @@ export interface ProductRowUI {
   categories: Array<{ id: string; name: string }>
   variantCount: number
   metadata: Record<string, unknown>
-  display_price_grosz: number | null
+  /**
+   * Cena do wyświetlenia w PLN (dziesiętne, Medusa v2). Pierwszeństwo ma
+   * najmniejsza cena wariantu, w razie braku — `metadata.base_price`.
+   */
+  display_price: number | null
 }
 
-function minPriceGrosz(
+function minVariantPrice(
   variants: ProductRowRaw["variants"],
 ): number {
   if (!variants?.length) return 0
@@ -48,11 +52,11 @@ function minPriceGrosz(
 export function mapProductRows(raw: ProductRowRaw[]): ProductRowUI[] {
   return raw.map((p) => {
     const meta = (p.metadata ?? {}) as Record<string, unknown>
-    const minV = minPriceGrosz(p.variants)
+    const minV = minVariantPrice(p.variants)
     const baseNum = Number(meta.base_price)
     const basePrice =
       Number.isFinite(baseNum) && baseNum > 0 ? baseNum : null
-    const displayGrosz = minV > 0 ? minV : basePrice ?? 0
+    const display = minV > 0 ? minV : basePrice ?? 0
 
     const sortedImages = [...(p.images ?? [])].sort(
       (a, b) => (a.rank ?? 0) - (b.rank ?? 0),
@@ -71,9 +75,9 @@ export function mapProductRows(raw: ProductRowRaw[]): ProductRowUI[] {
         p.categories?.map((c) => ({ id: c.id, name: c.name })) ?? [],
       variantCount: p.variants?.length ?? 0,
       metadata: meta,
-      display_price_grosz:
-        displayGrosz > 0 && Number.isFinite(displayGrosz)
-          ? Math.round(displayGrosz)
+      display_price:
+        display > 0 && Number.isFinite(display)
+          ? Math.round(display * 100) / 100
           : null,
     }
   })

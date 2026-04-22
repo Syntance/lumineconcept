@@ -19,6 +19,12 @@ export function trackMetaPageViewOnly() {
   trackMetaEvent("PageView");
 }
 
+/**
+ * Medusa v2: ceny są dziesiętne w walucie głównej (np. 179.9 = 179,90 zł).
+ * Meta Pixel / PostHog oczekują `value` w głównej jednostce — przekazujemy
+ * bez dzielenia przez 100. W Medusa v1 trzymaliśmy grosze i dzieliliśmy
+ * przy wysyłce — teraz usunięte.
+ */
 export function trackProductViewed(product: {
   id: string;
   title: string;
@@ -31,7 +37,7 @@ export function trackProductViewed(product: {
     content_ids: [product.id],
     content_type: "product",
     content_name: product.title,
-    value: product.price / 100,
+    value: product.price,
     currency: product.currency,
   });
 }
@@ -48,7 +54,7 @@ export function trackAddToCart(item: {
     content_ids: [item.id],
     content_type: "product",
     content_name: item.title,
-    value: (item.price * item.quantity) / 100,
+    value: item.price * item.quantity,
     currency: item.currency,
   });
 }
@@ -62,7 +68,7 @@ export function trackBeginCheckout(cart: {
   trackMetaEvent("InitiateCheckout", {
     content_ids: cart.items.map((i) => i.id),
     content_type: "product",
-    value: cart.total / 100,
+    value: cart.total,
     currency: cart.currency,
     num_items: cart.items.length,
   });
@@ -78,7 +84,7 @@ export function trackPurchase(order: {
   trackMetaEvent("Purchase", {
     content_ids: order.items.map((i) => i.id),
     content_type: "product",
-    value: order.total / 100,
+    value: order.total,
     currency: order.currency,
     num_items: order.items.length,
   });

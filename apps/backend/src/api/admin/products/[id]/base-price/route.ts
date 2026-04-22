@@ -32,10 +32,14 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     unknown
   >
 
-  const price =
-    typeof body.base_price === "number" && Number.isFinite(body.base_price) && body.base_price > 0
+  // Medusa v2: przechowujemy kwotę jako dziesiętne w PLN (spójnie z pricing
+  // module i storefrontem po migracji cen). Zaokrąglamy do groszy (2 m.p.)
+  // żeby nie wpuścić floating-point artifactu do bazy.
+  const raw =
+    typeof body.base_price === "number" && Number.isFinite(body.base_price)
       ? body.base_price
       : null
+  const price = raw !== null && raw > 0 ? Math.round(raw * 100) / 100 : null
 
   await productService.updateProducts(id, {
     metadata: {

@@ -147,9 +147,12 @@ export async function ProductPageLayout({
     url: productUrl,
     offers: variants.map((v) => ({
       "@type": "Offer",
-      price: ((v.calculated_price?.calculated_amount ?? 0) > 0
-        ? (v.calculated_price?.calculated_amount ?? 0)
-        : (extractBasePrice(metadata) ?? 0)) / 100,
+      // Medusa v2: `calculated_amount` i `metadata.base_price` to już
+      // dziesiętne w PLN — JSON-LD oczekuje tego samego formatu.
+      price:
+        (v.calculated_price?.calculated_amount ?? 0) > 0
+          ? (v.calculated_price?.calculated_amount ?? 0)
+          : (extractBasePrice(metadata) ?? 0),
       priceCurrency: "PLN",
       availability:
         v.manage_inventory === false || v.inventory_quantity > 0

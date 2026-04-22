@@ -5,7 +5,7 @@ import { isPayPoPriceEligible } from "@/components/marketing/PayPoPromo";
 import { cn } from "@/lib/utils";
 
 interface DeliveryTrustBadgesProps {
-  /** Kwota w groszach (Medusa). */
+  /** Kwota w PLN (dziesiętne, Medusa v2). */
   price: number;
 }
 

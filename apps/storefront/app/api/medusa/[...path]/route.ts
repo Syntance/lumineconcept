@@ -32,8 +32,13 @@ const HOP_BY_HOP = new Set([
  */
 const ALLOWED_FIRST_SEGMENT = new Set(["store", "auth", "custom"]);
 
-/** Pojedynczy request do Medusy nie może „wisieć" dłużej niż 25 s. */
-const UPSTREAM_TIMEOUT_MS = 25_000;
+/**
+ * Pojedynczy request do Medusy nie może „wisieć" dłużej niż 55 s. Medusa v2
+ * pod Railway przy zimnym starcie potrafi zwalniać do 30–40 s na
+ * `completeCart` (workflow + event bus + tax calc + fulfillment).
+ * Trzymamy się pod limitem Vercela (60 s), żeby proxy zdążyło odpowiedzieć.
+ */
+const UPSTREAM_TIMEOUT_MS = 55_000;
 
 function filterRequestHeaders(req: NextRequest): Headers {
   const h = new Headers();
@@ -98,7 +103,7 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
     return NextResponse.json(
       {
         message: isAbort
-          ? "Medusa nie odpowiedziała w wymaganym czasie (25s). Spróbuj ponownie."
+          ? "Medusa nie odpowiedziała w wymaganym czasie. Spróbuj ponownie."
           : "Nie udało się połączyć z Medusą.",
       },
       { status: 504 },

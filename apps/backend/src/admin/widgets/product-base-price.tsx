@@ -11,21 +11,25 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react"
 import { sdk } from "../lib/sdk"
 
-function formatGroszToZl(grosz: number): string {
-  return (grosz / 100).toFixed(2).replace(".", ",")
+/**
+ * Medusa v2 przechowuje kwoty jako dziesiętne w walucie głównej (PLN).
+ * „Cena bazowa" w metadata traktowana jest tak samo — np. 179.9 zł.
+ */
+function formatPlnInput(value: number): string {
+  return value.toFixed(2).replace(".", ",")
 }
 
-function parseZlToGrosz(input: string): number | null {
+function parsePlnInput(input: string): number | null {
   const cleaned = input.replace(/\s/g, "").replace(",", ".")
   const n = parseFloat(cleaned)
   if (!Number.isFinite(n) || n <= 0) return null
-  return Math.round(n * 100)
+  return Math.round(n * 100) / 100
 }
 
 const ProductBasePriceWidget = ({
   data: product,
 }: DetailWidgetProps<AdminProduct>) => {
-  const [priceGrosz, setPriceGrosz] = useState<number | null>(null)
+  const [priceValue, setPriceValue] = useState<number | null>(null)
   const [inputValue, setInputValue] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -46,8 +50,8 @@ const ProductBasePriceWidget = ({
           { method: "GET" },
         )
         if (res.base_price) {
-          setPriceGrosz(res.base_price)
-          setInputValue(formatGroszToZl(res.base_price))
+          setPriceValue(res.base_price)
+          setInputValue(formatPlnInput(res.base_price))
         } else {
           const fields = encodeURIComponent("*variants,*variants.prices")
           const prodRes = await sdk.client.fetch<{
@@ -64,8 +68,8 @@ const ProductBasePriceWidget = ({
             .flatMap((v) => (v.prices ?? []).map((p) => Number(p.amount ?? 0)))
             .filter((n) => Number.isFinite(n) && n > 0)
           const minPrice = amounts.length > 0 ? Math.min(...amounts) : null
-          setPriceGrosz(minPrice)
-          setInputValue(minPrice ? formatGroszToZl(minPrice) : "")
+          setPriceValue(minPrice)
+          setInputValue(minPrice ? formatPlnInput(minPrice) : "")
         }
       } catch {
         /* ignore */
@@ -87,8 +91,8 @@ const ProductBasePriceWidget = ({
             body: { base_price: value },
           },
         )
-        setPriceGrosz(res.base_price)
-        setInputValue(res.base_price ? formatGroszToZl(res.base_price) : "")
+        setPriceValue(res.base_price)
+        setInputValue(res.base_price ? formatPlnInput(res.base_price) : "")
         showToast("Zapisano!")
       } catch {
         showToast("Błąd zapisu", 3000)
@@ -102,16 +106,16 @@ const ProductBasePriceWidget = ({
   const handleBlur = () => {
     const trimmed = inputValue.trim()
     if (!trimmed) {
-      if (priceGrosz !== null) save(null)
+      if (priceValue !== null) save(null)
       return
     }
-    const parsed = parseZlToGrosz(trimmed)
+    const parsed = parsePlnInput(trimmed)
     if (parsed === null) {
-      setInputValue(priceGrosz ? formatGroszToZl(priceGrosz) : "")
+      setInputValue(priceValue ? formatPlnInput(priceValue) : "")
       showToast("Nieprawidłowa kwota", 3000)
       return
     }
-    if (parsed !== priceGrosz) {
+    if (parsed !== priceValue) {
       save(parsed)
     }
   }
@@ -181,7 +185,7 @@ const ProductBasePriceWidget = ({
             </Text>
           </div>
           <Text size="xsmall" className="text-ui-fg-muted mt-1">
-            Puste pole = cena z wariantu. Wartość zapisywana w groszach.
+            Puste pole = cena z wariantu. Wartość zapisywana w PLN (dziesiętne).
           </Text>
         </div>
       </div>
