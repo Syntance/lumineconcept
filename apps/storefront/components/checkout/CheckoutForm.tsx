@@ -228,9 +228,12 @@ export function CheckoutForm() {
       });
 
       // Niezawodny kanał wysyłki maila potwierdzającego — niezależny od
-      // subscribera `order.placed`. Fire-and-forget: błąd nie może zablokować
-      // nawigacji użytkownika. Backend dba o idempotencję.
-      void notifyOrderPlaced(result.order.id);
+      // subscribera `order.placed`. `notifyOrderPlaced` nigdy nie rzuca i ma
+      // wewnętrzny timeout 7 s + `sendBeacon` jako kanał awaryjny, więc
+      // blokujące `await` nie zatrzyma nawigacji, a daje czas, żeby zdążył
+      // wylecieć mail zanim użytkownik wyląduje na stronie potwierdzenia.
+      // Backend dba o idempotencję.
+      await notifyOrderPlaced(result.order.id);
 
       try {
         localStorage.removeItem("lumine_cart_id");

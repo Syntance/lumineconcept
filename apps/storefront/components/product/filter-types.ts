@@ -83,9 +83,13 @@ export function isPriceSort(sort: string): boolean {
   return sort === "price_asc" || sort === "price_desc";
 }
 
-export const PRICE_STEP = 1000;
+/**
+ * Medusa v2: kwoty w PLN decimal (nie groszach). Slider operuje na pełnych
+ * złotówkach — wygodny krok 10 zł, zakres 0–1000 zł pokrywa cały asortyment.
+ */
+export const PRICE_STEP = 10;
 export const PRICE_SLIDER_MIN = 0;
-export const PRICE_SLIDER_MAX = 100000;
+export const PRICE_SLIDER_MAX = 1000;
 
 export function clearFilters(sort: string, pill?: string): ActiveFilters {
   return {
@@ -107,8 +111,12 @@ export function resultCountLabel(count: number): string {
   return `${count} produktów`;
 }
 
-export function formatPricePLN(amountInCents: number): string {
-  return `${Math.round(amountInCents / 100)} PLN`;
+/**
+ * Medusa v2: parametr to już dziesiętne PLN (nie grosze). Nazwę funkcji
+ * zachowujemy dla zgodności wywołań.
+ */
+export function formatPricePLN(amount: number): string {
+  return `${Math.round(amount)} PLN`;
 }
 
 export function hasAnyActiveFilter(f: ActiveFilters): boolean {

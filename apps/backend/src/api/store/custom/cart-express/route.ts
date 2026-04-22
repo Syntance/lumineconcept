@@ -54,7 +54,11 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       : typeof subRaw === "string"
         ? Number(subRaw)
         : 0;
-  const expressFeeMinor = body.express_delivery ? Math.round(subtotalNum * 0.5) : 0;
+  // Medusa v2 — kwoty dziesiętne w PLN. 50% subtotalu zaokrąglamy do groszy
+  // (nie do pełnych złotych, jak było w konwencji grosze/integer).
+  const expressFee = body.express_delivery
+    ? Math.round(subtotalNum * 0.5 * 100) / 100
+    : 0;
 
   const prev =
     existing.metadata && typeof existing.metadata === "object"
@@ -63,7 +67,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const metadata = {
     ...prev,
     express_delivery: body.express_delivery ? "true" : "false",
-    express_fee_minor: String(expressFeeMinor),
+    // Nazwa pola zachowana dla kompatybilności wstecznej — wartość to teraz
+    // PLN decimal, nie grosze.
+    express_fee_minor: String(expressFee),
   };
 
   await cartModule.updateCarts([{ id: cartId, metadata }]);

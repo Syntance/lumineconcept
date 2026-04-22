@@ -10,15 +10,19 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { sdk } from "../lib/sdk"
 import { mapProductRows, type ProductRowRaw, type ProductRowUI } from "../lib/product-management-utils"
 
-function formatGrToZl(grosz: number): string {
-  return (grosz / 100).toFixed(2).replace(".", ",")
+/**
+ * Medusa v2: kwoty trzymamy jako dziesiętne w PLN (bez mnożenia przez 100).
+ * Format do wyświetlania w tabeli i edycji inline.
+ */
+function formatPln(value: number): string {
+  return value.toFixed(2).replace(".", ",")
 }
 
-function parseZlToGr(input: string): number | null {
+function parsePln(input: string): number | null {
   const cleaned = input.replace(/\s/g, "").replace(",", ".")
   const n = parseFloat(cleaned)
   if (!Number.isFinite(n) || n <= 0) return null
-  return Math.round(n * 100)
+  return Math.round(n * 100) / 100
 }
 
 const FIELDS = "+metadata,+thumbnail,*categories,*variants,*variants.prices,*images"
@@ -72,17 +76,17 @@ const ProductListManagement = () => {
   }
 
   const startEdit = (product: ProductRowUI) => {
-    const g = product.display_price_grosz
-    setEditValue(g && g > 0 ? formatGrToZl(g) : "")
+    const v = product.display_price
+    setEditValue(v && v > 0 ? formatPln(v) : "")
     setEditingId(product.id)
   }
 
   const savePrice = async (productId: string) => {
-    const grosz = parseZlToGr(editValue.trim())
+    const value = parsePln(editValue.trim())
     try {
       await sdk.client.fetch(
         `/admin/products/${productId}/base-price`,
-        { method: "POST", body: { base_price: grosz } },
+        { method: "POST", body: { base_price: value } },
       )
       await fetchProducts()
     } catch {
@@ -105,7 +109,7 @@ const ProductListManagement = () => {
     (p) => p.status === "published",
   ).length
   const pricedCount = products.filter(
-    (p) => typeof p.display_price_grosz === "number" && p.display_price_grosz > 0,
+    (p) => typeof p.display_price === "number" && p.display_price > 0,
   ).length
 
   if (loading) return null
@@ -167,9 +171,9 @@ const ProductListManagement = () => {
               <tbody className="divide-y divide-ui-border-base">
                 {filtered.map((product) => {
                   const isPublished = product.status === "published"
-                  const priceGr = product.display_price_grosz
+                  const priceValue = product.display_price
                   const hasPrice =
-                    typeof priceGr === "number" && priceGr > 0
+                    typeof priceValue === "number" && priceValue > 0
                   const isEditing = editingId === product.id
 
                   return (
@@ -232,8 +236,8 @@ const ProductListManagement = () => {
                             onClick={() => startEdit(product)}
                             title="Kliknij aby edytować cenę"
                           >
-                            {hasPrice && priceGr != null
-                              ? formatGrToZl(priceGr) + " zł"
+                            {hasPrice && priceValue != null
+                              ? formatPln(priceValue) + " zł"
                               : "Ustaw cenę"}
                           </button>
                         )}

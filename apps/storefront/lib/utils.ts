@@ -5,17 +5,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Formatuje kwotę do polskiego locale ("179,90 zł"). Medusa v2 zwraca ceny
+ * jako dziesiętne w walucie głównej (PLN), więc przyjmujemy je 1:1 —
+ * bez dzielenia przez 100, które było relliktem Medusy v1 (integer grosze).
+ */
 export function formatPrice(
   amount: number,
   currency = "PLN",
   locale = "pl-PL",
 ): string {
-  const cents = typeof amount === "number" && Number.isFinite(amount) ? amount : 0;
+  const value = typeof amount === "number" && Number.isFinite(amount) ? amount : 0;
   const raw = new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
-  }).format(cents / 100);
+  }).format(value);
 
   // Większy odstęp między przecinkiem a groszami (pl-PL: „12,34 zł” → „12, 34 zł”)
   return raw.replace(/,(\d)/g, ",\u2009$1");

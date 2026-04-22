@@ -60,7 +60,7 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
               <p className="truncate text-xs font-medium text-brand-800">{p.title}</p>
               {p.price > 0 && (
                 <p className="text-[11px] text-brand-500">
-                  {(p.price / 100).toFixed(2)} PLN
+                  {p.price.toFixed(2).replace(".", ",")} PLN
                 </p>
               )}
             </div>

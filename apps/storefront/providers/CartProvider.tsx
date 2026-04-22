@@ -53,7 +53,10 @@ interface CartContextType extends CartState {
   /** true, gdy w metadata jest express_delivery = true / "true" */
   expressDelivery: boolean;
   setExpressDelivery: (enabled: boolean) => Promise<void>;
-  /** Dopłata ekspress: 50% sumy produktów (subtotal), w groszach */
+  /**
+   * Dopłata ekspress: 50% sumy produktów (subtotal). Medusa v2 — kwota
+   * w walucie głównej (PLN, dziesiętne).
+   */
   expressSurcharge: number;
   /** total z Medusy + expressSurcharge (gdy ekspress włączony) */
   grandTotal: number;
@@ -63,8 +66,12 @@ const CART_ID_KEY = "lumine_cart_id";
 
 const CartContext = createContext<CartContextType | null>(null);
 
-/** Kwota w groszach z odpowiedzi Medusy (czasem brak `total` na pozycji). */
-function minorFromUnknown(v: unknown): number | undefined {
+/**
+ * Wyciąga liczbę (Medusa v2: dziesiętne PLN) z odpowiedzi — czasem przychodzi
+ * jako string w BigNumberValue. Używane dla `total` / `subtotal` / `unit_price`
+ * na pozycji koszyka.
+ */
+function numberFromUnknown(v: unknown): number | undefined {
   if (v === null || v === undefined) return undefined;
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string" && v.trim() !== "") {
@@ -74,15 +81,16 @@ function minorFromUnknown(v: unknown): number | undefined {
   return undefined;
 }
 
-function lineItemTotalMinor(item: Record<string, unknown>): number {
+function lineItemTotal(item: Record<string, unknown>): number {
   for (const key of ["total", "subtotal"]) {
-    const m = minorFromUnknown(item[key]);
+    const m = numberFromUnknown(item[key]);
     if (m !== undefined && m >= 0) return m;
   }
-  const unit = minorFromUnknown(item.unit_price);
-  const qty = minorFromUnknown(item.quantity) ?? 1;
+  const unit = numberFromUnknown(item.unit_price);
+  const qty = numberFromUnknown(item.quantity) ?? 1;
   if (unit !== undefined && unit >= 0 && qty > 0) {
-    return Math.round(unit * qty);
+    // Zaokrąglamy do groszy (dwa miejsca), nie do pełnych złotych.
+    return Math.round(unit * qty * 100) / 100;
   }
   return 0;
 }
@@ -93,9 +101,9 @@ function mapCartItems(items: Array<Record<string, unknown>>): CartItem[] {
     variant_id: item.variant_id as string,
     title: item.title as string,
     thumbnail: item.thumbnail as string | undefined,
-    quantity: Math.max(1, Math.round(minorFromUnknown(item.quantity) ?? 1)),
-    unit_price: minorFromUnknown(item.unit_price) ?? 0,
-    total: lineItemTotalMinor(item),
+    quantity: Math.max(1, Math.round(numberFromUnknown(item.quantity) ?? 1)),
+    unit_price: numberFromUnknown(item.unit_price) ?? 0,
+    total: lineItemTotal(item),
     metadata: item.metadata as Record<string, string> | undefined,
   }));
 }
@@ -358,10 +366,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => {
     const ed = cart.metadata.express_delivery;
     const expressDelivery = ed === "true" || ed === "1";
+    // Dopłata ekspress to 50% subtotalu — zaokrąglamy do groszy (2 miejsc po
+    // przecinku), nie do pełnych złotych.
     const expressSurcharge = expressDelivery
-      ? Math.round(cart.subtotal * 0.5)
+      ? Math.round(cart.subtotal * 0.5 * 100) / 100
       : 0;
-    const grandTotal = cart.total + expressSurcharge;
+    const grandTotal = Math.round((cart.total + expressSurcharge) * 100) / 100;
     return {
       ...cart,
       isLoading,

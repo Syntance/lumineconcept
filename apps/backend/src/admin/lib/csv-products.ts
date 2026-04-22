@@ -78,10 +78,15 @@ export function columnIndex(
   return -1
 }
 
-export function parsePlnToGrosz(raw: string): number | null {
+/**
+ * Parsuje zapis PLN ze stringa (np. „179,90", „179.9", „1 234,56") do
+ * dziesiętnej wartości PLN. Medusa v2 oczekuje kwot jako decimal w walucie
+ * głównej — nie mnożymy już przez 100.
+ */
+export function parsePlnDecimal(raw: string): number | null {
   const cleaned = raw.replace(/\s/g, "").replace(",", ".")
   if (!cleaned) return null
   const n = parseFloat(cleaned)
   if (!Number.isFinite(n) || n < 0) return null
-  return Math.round(n * 100)
+  return Math.round(n * 100) / 100
 }

@@ -128,8 +128,16 @@ export async function ensureLuminePaymentBootstrap(): Promise<{ ok: boolean }> {
  * `/store/custom/notify-order-placed`). Backend ma `idempotency_key` więc
  * wielokrotne wywołanie nie wyśle duplikatów.
  *
- * Fire-and-forget w CheckoutForm — NIGDY nie rzuca, żeby błąd providera
- * maila nie zablokował nawigacji na stronę potwierdzenia.
+ * Historycznie było fire-and-forget — ale przy twardej nawigacji
+ * (`window.location.assign`) przeglądarka potrafi anulować request jeszcze
+ * zanim Railway się rozgrzeje, mimo `keepalive: true`. Dlatego:
+ *  1) najpierw próbujemy krótki await (7 s) — normalnie backend odpowie
+ *     w < 1 s, a my daje mailem szansę wylecieć zanim użytkownik wyląduje
+ *     na stronie potwierdzenia,
+ *  2) równolegle wysyłamy `sendBeacon` jako kanał awaryjny — przeglądarki
+ *     gwarantują jego dostarczenie nawet po unload/navigacji.
+ *
+ * NIGDY nie rzuca — błąd providera maila nie może zablokować checkoutu.
  */
 export async function notifyOrderPlaced(orderId: string): Promise<void> {
   if (!orderId) return;
@@ -140,6 +148,9 @@ export async function notifyOrderPlaced(orderId: string): Promise<void> {
         process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
         "http://localhost:9000");
 
+  const url = `${base}/store/custom/notify-order-placed`;
+  const payload = JSON.stringify({ order_id: orderId });
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -148,19 +159,40 @@ export async function notifyOrderPlaced(orderId: string): Promise<void> {
       : {}),
   };
 
+  if (typeof navigator !== "undefined" && "sendBeacon" in navigator) {
+    try {
+      const blob = new Blob([payload], { type: "application/json" });
+      navigator.sendBeacon(url, blob);
+    } catch {
+      /* sendBeacon nie obsługuje publishable-key w headers, ale backend
+         akceptuje request bez niego dla tego konkretnego endpointu
+         (jest to `store/custom/*`, nie `store/*`). Fallback niżej. */
+    }
+  }
+
+  const controller = new AbortController();
+  const killer = setTimeout(() => controller.abort(), 7_000);
   try {
-    const res = await fetch(`${base}/store/custom/notify-order-placed`, {
+    const res = await fetch(url, {
       method: "POST",
       headers,
-      body: JSON.stringify({ order_id: orderId }),
+      body: payload,
       keepalive: true,
+      signal: controller.signal,
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       console.warn("[mail] notify-order-placed failed", res.status, body);
     }
   } catch (e) {
-    console.warn("[mail] notify-order-placed error", e);
+    const name = (e as { name?: string }).name;
+    if (name === "AbortError") {
+      console.info("[mail] notify-order-placed: await timeout, beacon w tle");
+    } else {
+      console.warn("[mail] notify-order-placed error", e);
+    }
+  } finally {
+    clearTimeout(killer);
   }
 }
 

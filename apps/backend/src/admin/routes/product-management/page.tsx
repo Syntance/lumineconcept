@@ -17,18 +17,23 @@ import {
   productsToCsv,
   downloadCsv,
   columnIndex,
-  parsePlnToGrosz,
+  parsePlnDecimal,
 } from "../../lib/csv-products"
 
-function formatGrToZl(grosz: number): string {
-  return (grosz / 100).toFixed(2).replace(".", ",")
+/**
+ * Medusa v2: kwoty są dziesiętne w PLN, nie w groszach. Te helpery
+ * przygotowują tekst do edycji inline („179,90") i parsują wpisany tekst
+ * z powrotem do liczby.
+ */
+function formatPln(value: number): string {
+  return value.toFixed(2).replace(".", ",")
 }
 
-function parseZlToGr(input: string): number | null {
+function parsePln(input: string): number | null {
   const cleaned = input.replace(/\s/g, "").replace(",", ".")
   const n = parseFloat(cleaned)
   if (!Number.isFinite(n) || n <= 0) return null
-  return Math.round(n * 100)
+  return Math.round(n * 100) / 100
 }
 
 const FIELDS = "+metadata,+thumbnail,*categories,*variants,*variants.prices,*images"
@@ -87,13 +92,13 @@ const ProductManagementPage = () => {
     }
     if (filterPrice === "with") {
       list = list.filter(
-        (p) => typeof p.display_price_grosz === "number" && p.display_price_grosz > 0,
+        (p) => typeof p.display_price === "number" && p.display_price > 0,
       )
     }
     if (filterPrice === "without") {
       list = list.filter(
         (p) =>
-          p.display_price_grosz == null || p.display_price_grosz <= 0,
+          p.display_price == null || p.display_price <= 0,
       )
     }
     if (filterCategory) {
@@ -117,8 +122,8 @@ const ProductManagementPage = () => {
           cmp = a.title.localeCompare(b.title, "pl", { sensitivity: "base" })
           break
         case "price": {
-          const pa = a.display_price_grosz ?? 0
-          const pb = b.display_price_grosz ?? 0
+          const pa = a.display_price ?? 0
+          const pb = b.display_price ?? 0
           cmp = pa - pb
           break
         }
@@ -165,17 +170,17 @@ const ProductManagementPage = () => {
   }
 
   const startEdit = (product: ProductRowUI) => {
-    const g = product.display_price_grosz
-    setEditValue(g && g > 0 ? formatGrToZl(g) : "")
+    const v = product.display_price
+    setEditValue(v && v > 0 ? formatPln(v) : "")
     setEditingId(product.id)
   }
 
   const savePrice = async (productId: string) => {
-    const grosz = parseZlToGr(editValue.trim())
+    const value = parsePln(editValue.trim())
     try {
       await sdk.client.fetch(
         `/admin/products/${productId}/base-price`,
-        { method: "POST", body: { base_price: grosz } },
+        { method: "POST", body: { base_price: value } },
       )
       await fetchProducts()
     } catch {
@@ -191,8 +196,8 @@ const ProductManagementPage = () => {
       status: p.status,
       kategorie: p.categories.map((c) => c.name).join("; "),
       cena_pln:
-        p.display_price_grosz && p.display_price_grosz > 0
-          ? (p.display_price_grosz / 100).toFixed(2).replace(".", ",")
+        p.display_price && p.display_price > 0
+          ? p.display_price.toFixed(2).replace(".", ",")
           : "",
       warianty: String(p.variantCount),
       widocznosc: p.status === "published" ? "tak" : "nie",
@@ -257,11 +262,11 @@ const ProductManagementPage = () => {
             }
           }
           if (priceCol >= 0) {
-            const grosz = parsePlnToGrosz(row[priceCol] ?? "")
-            if (grosz !== null && grosz > 0) {
+            const value = parsePlnDecimal(row[priceCol] ?? "")
+            if (value !== null && value > 0) {
               await sdk.client.fetch(`/admin/products/${id}/base-price`, {
                 method: "POST",
-                body: { base_price: grosz },
+                body: { base_price: value },
               })
             } else if ((row[priceCol] ?? "").trim() === "") {
               /* puste — pomijamy */
@@ -286,7 +291,7 @@ const ProductManagementPage = () => {
     (p) => p.status === "published",
   ).length
   const pricedCount = products.filter(
-    (p) => typeof p.display_price_grosz === "number" && p.display_price_grosz > 0,
+    (p) => typeof p.display_price === "number" && p.display_price > 0,
   ).length
 
   if (loading) {
@@ -489,8 +494,8 @@ const ProductManagementPage = () => {
           <tbody className="divide-y divide-ui-border-base">
             {displayed.map((product) => {
               const isPublished = product.status === "published"
-              const priceGr = product.display_price_grosz
-              const hasPrice = typeof priceGr === "number" && priceGr > 0
+              const priceValue = product.display_price
+              const hasPrice = typeof priceValue === "number" && priceValue > 0
               const isEditing = editingId === product.id
 
               return (
@@ -553,8 +558,8 @@ const ProductManagementPage = () => {
                         onClick={() => startEdit(product)}
                         title="Kliknij aby edytować cenę"
                       >
-                        {hasPrice && priceGr != null
-                          ? formatGrToZl(priceGr) + " zł"
+                        {hasPrice && priceValue != null
+                          ? formatPln(priceValue) + " zł"
                           : "Ustaw cenę"}
                       </button>
                     )}
