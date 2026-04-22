@@ -1,4 +1,5 @@
 import type { Address } from "@lumine/types";
+import type { HttpTypes } from "@medusajs/types";
 import { medusa } from "./client";
 
 export async function updateCartAddress(
@@ -203,8 +204,20 @@ export async function selectShippingOption(cartId: string, optionId: string) {
   return response.cart;
 }
 
-export async function initPaymentSession(cartId: string, providerId: string) {
-  const { cart } = await medusa.store.cart.retrieve(cartId);
+/**
+ * Medusa SDK v2 wymaga świeżego obiektu cart (nie ID), żeby policzyć tax/total
+ * dla sesji płatności. Wcześniej robiliśmy `cart.retrieve` wewnątrz — w
+ * checkoutcie to był zbędny round-trip, bo `selectShippingOption` tuż przed
+ * tym zwraca już świeży cart (po doliczeniu dostawy). Pozwalamy przekazać
+ * go przez trzeci argument; fallback `retrieve` zostaje dla wywołań bez
+ * świeżego kontekstu (np. z zewnątrz / testów).
+ */
+export async function initPaymentSession(
+  cartId: string,
+  providerId: string,
+  freshCart?: HttpTypes.StoreCart,
+) {
+  const cart = freshCart ?? (await medusa.store.cart.retrieve(cartId)).cart;
   const response = await medusa.store.payment.initiatePaymentSession(
     cart,
     { provider_id: providerId },
@@ -251,17 +264,28 @@ export function describeMedusaError(e: unknown, fallback: string): string {
 }
 
 /**
+ * Harmonogram ponowień przy 409/conflict. Exponential backoff zamiast stałego
+ * 2500 ms × 4 = 10 s spinner w najgorszym razie. Teraz pierwszy retry już po
+ * 500 ms (typowy czas domknięcia poprzedniego workflow `completeCart`), a
+ * worst case to 500 + 1000 + 2000 + 4000 = 7,5 s z 4 próbami.
+ */
+const COMPLETE_CART_BACKOFF_MS = [500, 1000, 2000, 4000];
+
+/**
  * `cart.complete` potrafi zwrócić 409 „conflicted with another request…"
  * gdy poprzednia próba wciąż się wykonuje (np. długi cold start Railway).
- * Ponawiamy kilka razy z krótkim odstępem — każde kolejne wywołanie z tym samym
- * Idempotency-Key zwraca stan z poprzedniej próby, więc to bezpieczne.
+ * Ponawiamy kilka razy z rosnącym odstępem — każde kolejne wywołanie z tym
+ * samym Idempotency-Key zwraca stan z poprzedniej próby, więc to bezpieczne.
+ *
+ * `opts.delayMs` zostaje dla wstecznej kompatybilności z testami — gdy jest
+ * podane, używamy stałego odstępu (ułatwia asercje w unit testach).
  */
 export async function completeCart(
   cartId: string,
   opts: { retries?: number; delayMs?: number } = {},
 ): Promise<CompleteCartResponse> {
-  const retries = opts.retries ?? 4;
-  const delayMs = opts.delayMs ?? 2500;
+  const retries = opts.retries ?? COMPLETE_CART_BACKOFF_MS.length;
+  const fixedDelay = opts.delayMs;
   let lastErr: unknown = null;
   for (let i = 0; i <= retries; i++) {
     try {
@@ -283,7 +307,10 @@ export async function completeCart(
         /conflict/i.test(msg);
       const alreadyCompleted = isCartAlreadyCompletedError(e);
       if (isConflict && !alreadyCompleted && i < retries) {
-        await new Promise((r) => setTimeout(r, delayMs));
+        const wait =
+          fixedDelay ??
+          COMPLETE_CART_BACKOFF_MS[Math.min(i, COMPLETE_CART_BACKOFF_MS.length - 1)];
+        await new Promise((r) => setTimeout(r, wait));
         continue;
       }
       throw e;

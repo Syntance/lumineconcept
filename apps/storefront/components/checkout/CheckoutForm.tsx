@@ -93,6 +93,14 @@ export function CheckoutForm() {
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  /**
+   * Po ~3s od kliknięcia „Zamawiam i płacę" pokazujemy dodatkowy komunikat
+   * „Przetwarzamy zamówienie…". Typowy `completeCart` kończy się w <1s, ale
+   * cold start Railway potrafi wydłużyć to do 5–8s i bez tego user widzi
+   * goły spinner, co pogarsza konwersję.
+   */
+  const [submitSlow, setSubmitSlow] = useState(false);
+  const submitSlowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const staleResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const beginCheckoutFiredRef = useRef(false);
 
@@ -198,6 +206,8 @@ export function CheckoutForm() {
     submittingRef.current = true;
     setSubmitError(null);
     setSubmitting(true);
+    setSubmitSlow(false);
+    submitSlowTimerRef.current = setTimeout(() => setSubmitSlow(true), 3000);
     trackFormSubmit("checkout_payment");
 
     try {
@@ -269,6 +279,11 @@ export function CheckoutForm() {
       // Bez tego, gdy nawigacja hard się nie udała (rzadko), przycisk
       // zostaje zablokowany na zawsze.
       setSubmitting(false);
+      setSubmitSlow(false);
+      if (submitSlowTimerRef.current) {
+        clearTimeout(submitSlowTimerRef.current);
+        submitSlowTimerRef.current = null;
+      }
       submittingRef.current = false;
     }
   }, [cartId, items, total, refreshCart]);
@@ -566,10 +581,14 @@ export function CheckoutForm() {
                 try {
                   trackFormSubmit("checkout_shipping");
                   trackCheckoutStepCompleted(2, "shipping");
-                  await selectShippingOption(cartId, formData.shippingOptionId);
+                  const freshCart = await selectShippingOption(
+                    cartId,
+                    formData.shippingOptionId,
+                  );
                   const regionId = await getPolishRegionId();
                   const providerId = await pickPaymentProviderId(regionId);
-                  await initPaymentSession(cartId, providerId);
+                  // Przekazujemy świeży cart, żeby initPaymentSession nie robił drugiego retrieve.
+                  await initPaymentSession(cartId, providerId, freshCart);
                   updateField("paymentProviderId", providerId);
                   setStep(3);
                 } catch (e) {
@@ -661,6 +680,15 @@ export function CheckoutForm() {
             >
               {submitting ? "Składanie zamówienia…" : "Zamawiam i płacę"}
             </button>
+            {submitSlow && submitting && (
+              <p
+                className="text-center text-xs text-brand-600"
+                role="status"
+                aria-live="polite"
+              >
+                Przetwarzamy zamówienie, nie zamykaj tego okna…
+              </p>
+            )}
             <p className="text-center text-[11px] text-brand-400">
               Tryb testowy — zamówienie trafia do Medusy bez rzeczywistej
               płatności (bramki skonfigurujemy na końcu).
