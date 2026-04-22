@@ -1,9 +1,19 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
 import type { IProductModuleService } from "@medusajs/framework/types";
-import { Modules } from "@medusajs/framework/utils";
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
 import type MeilisearchService from "../modules/meilisearch/service";
 import { captureError } from "../lib/sentry";
 
+/**
+ * Meili dostaje tu uproszczony widok produktu: tytuł, opis, kategorie, tagi
+ * i płaska lista kwot wariantów (do filtrów po cenie). Nie próbujemy pobierać
+ * cen razem z produktem przez relację `variants.prices` — w Medusa v2
+ * Pricing to osobny moduł, a `retrieveProduct` z taką relacją wywala
+ * `TypeError: Cannot read properties of undefined (reading 'strategy')`
+ * (MikroORM nie wie jak zjoinować cross-module). Zamiast tego pobieramy
+ * price_set-y wariantów osobno przez `IPricingModuleService` — a jeśli to
+ * padnie, lecimy z pustą listą cen (indeks Meili nadal ma sensowny rekord).
+ */
 export default async function productUpsertedHandler({
   event,
   container,
@@ -14,12 +24,46 @@ export default async function productUpsertedHandler({
   let product: any;
   try {
     product = await productService.retrieveProduct(event.data.id, {
-      relations: ["variants", "variants.prices", "categories", "tags"],
+      relations: ["variants", "categories", "tags"],
     });
   } catch (e) {
     console.error("[product-upserted] retrieveProduct failed", e);
-    captureError(e, { subscriber: "product-upserted", step: "retrieveProduct", productId: event.data.id });
+    captureError(e, {
+      subscriber: "product-upserted",
+      step: "retrieveProduct",
+      productId: event.data.id,
+    });
     return;
+  }
+
+  /**
+   * Ceny (best-effort) — używamy Query API, które samo rozwiązuje
+   * cross-module link variant → price_set → prices (nie da się go pobrać
+   * `retrieveProduct` bo to inny moduł). Każdy fail kończymy pustą listą,
+   * bo subscriber nigdy nie może wywrócić checkoutu ani innych workflow'ów.
+   */
+  let variantAmounts: number[] = [];
+  try {
+    const variantIds: string[] =
+      product.variants?.map((v: any) => v.id).filter(Boolean) ?? [];
+    if (variantIds.length > 0) {
+      const query = container.resolve(ContainerRegistrationKeys.QUERY) as {
+        graph: (args: unknown) => Promise<{ data: unknown[] }>;
+      };
+      const { data } = await query.graph({
+        entity: "variant",
+        fields: ["id", "prices.amount", "prices.currency_code"],
+        filters: { id: variantIds },
+      });
+      variantAmounts = (data as Array<{ prices?: Array<{ amount?: unknown }> }>)
+        .flatMap((v) => v.prices?.map((p) => Number(p.amount)) ?? [])
+        .filter((n): n is number => Number.isFinite(n));
+    }
+  } catch (e) {
+    console.warn(
+      "[product-upserted] pobranie cen wariantów nieudane — indeksuję bez cen",
+      e,
+    );
   }
 
   try {
@@ -32,15 +76,17 @@ export default async function productUpsertedHandler({
       thumbnail: product.thumbnail,
       categories: product.categories?.map((c: any) => c.name) ?? [],
       tags: product.tags?.map((t: any) => t.value) ?? [],
-      variant_prices: product.variants?.flatMap((v: any) =>
-        v.prices?.map((p: any) => p.amount) ?? [],
-      ) ?? [],
+      variant_prices: variantAmounts,
       created_at: product.created_at,
       updated_at: product.updated_at,
     });
   } catch (e) {
     console.error("[product-upserted] meilisearch.upsertProduct", e);
-    captureError(e, { subscriber: "product-upserted", step: "meilisearch", productId: product?.id });
+    captureError(e, {
+      subscriber: "product-upserted",
+      step: "meilisearch",
+      productId: product?.id,
+    });
   }
 }
 

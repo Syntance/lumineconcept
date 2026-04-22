@@ -247,10 +247,56 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (!cart.id) return;
       setIsLoading(true);
       try {
-        const updated = await cartApi.addLineItem(cart.id, variantId, quantity, metadata);
-        updateCartState(updated as unknown as Record<string, unknown>);
-        if (openDrawer) {
-          setIsOpen(true);
+        try {
+          const updated = await cartApi.addLineItem(
+            cart.id,
+            variantId,
+            quantity,
+            metadata,
+          );
+          updateCartState(updated as unknown as Record<string, unknown>);
+          if (openDrawer) setIsOpen(true);
+          return;
+        } catch (e) {
+          /**
+           * Jeśli aktualny koszyk jest już sfinalizowany (Medusa zwraca 400
+           * „Cart is already completed"), albo nie istnieje (404), tworzymy
+           * świeży i powtarzamy add-to-cart. Bez tego user po nieudanej
+           * finalizacji nie mógł dodać niczego nowego („Nie udało się dodać
+           * produktu do koszyka") i utykał.
+           */
+          const msg = (e as { message?: string })?.message ?? "";
+          const status =
+            (e as { status?: number })?.status ??
+            (e as { response?: { status?: number } })?.response?.status ??
+            0;
+          const isCompleted = /already\s+completed/i.test(msg);
+          const isMissing = status === 404 || /not\s+found/i.test(msg);
+          if (!isCompleted && !isMissing) throw e;
+
+          try {
+            localStorage.removeItem(CART_ID_KEY);
+          } catch {
+            /* prywatny tryb */
+          }
+          const fresh = (await cartApi.createCart()) as unknown as Record<
+            string,
+            unknown
+          >;
+          const freshId = fresh.id as string;
+          try {
+            localStorage.setItem(CART_ID_KEY, freshId);
+          } catch {
+            /* prywatny tryb */
+          }
+          const updated = await cartApi.addLineItem(
+            freshId,
+            variantId,
+            quantity,
+            metadata,
+          );
+          updateCartState(updated as unknown as Record<string, unknown>);
+          if (openDrawer) setIsOpen(true);
         }
       } catch (e) {
         console.error("[cart] addItem", e);

@@ -73,6 +73,37 @@ export default defineConfig({
     },
   },
   modules: [
+    /**
+     * Locking: domyślnie Medusa używa `InMemoryLockingProvider`, który przy
+     * długich workflow'ach (np. `complete-cart` podczas cold startu Railway)
+     * trzyma klucz `cart_<id>` i każda równoległa operacja na tym samym
+     * koszyku czeka 30 s, a potem wywala 500 („Failed to acquire lock for
+     * key…"). User widzi wtedy generyczne „An unknown error occurred".
+     *
+     * Redis lock ma krótszy TTL, waiter-side timeout i natychmiast zwalnia
+     * klucz gdy proces kończy workflow — eliminuje ten scenariusz.
+     * REDIS_URL i tak jest w Railway (używamy ioredis w innych miejscach).
+     */
+    ...(process.env.REDIS_URL
+      ? [
+          {
+            resolve: "@medusajs/medusa/locking",
+            options: {
+              providers: [
+                {
+                  resolve: "@medusajs/locking-redis",
+                  id: "locking-redis",
+                  is_default: true,
+                  options: {
+                    redisUrl: process.env.REDIS_URL,
+                    namespace: "lumine_lock:",
+                  },
+                },
+              ],
+            },
+          },
+        ]
+      : []),
     {
       key: "przelewy24",
       resolve: "./src/modules/przelewy24",
