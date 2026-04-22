@@ -255,8 +255,23 @@ export function describeMedusaError(e: unknown, fallback: string): string {
     "";
   const type = (raw.type as string | undefined) ?? "";
   const code = (raw.code as string | undefined) ?? "";
+  const status =
+    (raw.status as number | undefined) ??
+    ((raw.response as { status?: number } | undefined)?.status) ??
+    0;
   if (isCartAlreadyCompletedError(e)) {
     return "Koszyk został już sfinalizowany. Zacznij od nowa.";
+  }
+  /**
+   * „An unknown error occurred" to generyczny tekst z Medusa SDK gdy upstream
+   * zwrócił 500 bez szczegółów (np. zakleszczenie locka w `acquire-lock-step`
+   * po cold starcie Railway). Pokazujemy userowi realny komunikat po polsku
+   * z prośbą o ponowienie.
+   */
+  const looksGeneric =
+    !message || /^an unknown error occurred\.?$/i.test(message.trim());
+  if (looksGeneric && (status >= 500 || status === 0)) {
+    return "Chwilowy problem z serwerem. Poczekaj 10 sekund i spróbuj jeszcze raz — Twoje dane zostały zachowane.";
   }
   if (message) return message;
   if (type || code) return `${type || "error"}${code ? ` (${code})` : ""}`;
@@ -305,8 +320,17 @@ export async function completeCart(
         status === 409 ||
         /idempotency/i.test(msg) ||
         /conflict/i.test(msg);
-      const alreadyCompleted = isCartAlreadyCompletedError(e);
-      if (isConflict && !alreadyCompleted && i < retries) {
+      /**
+       * 500 „An unknown error occurred" po ~30 s = zakleszczony lock
+       * (`acquire-lock-step` w `complete-cart`). Po stronie backendu
+       * przenieśliśmy się na Redis-lock, ale trzymamy też retry po
+       * stronie klienta — poprzedni workflow i tak się w międzyczasie
+       * domknie, więc druga próba najczęściej przechodzi.
+       */
+      const isServerLockStall =
+        status === 500 && /unknown error/i.test(msg);
+      const shouldRetry = (isConflict || isServerLockStall) && !isCartAlreadyCompletedError(e);
+      if (shouldRetry && i < retries) {
         const wait =
           fixedDelay ??
           COMPLETE_CART_BACKOFF_MS[Math.min(i, COMPLETE_CART_BACKOFF_MS.length - 1)];
