@@ -79,7 +79,7 @@ export function PaymentSelector({
             disabled={isDisabled}
             className={`w-full flex items-start gap-4 rounded-lg border-2 p-4 text-left transition-colors ${
               isSelected
-                ? "border-brand-900 bg-accent/15 shadow-sm"
+                ? "border-brand-800 bg-accent/15 shadow-sm"
                 : isDisabled
                   ? "border-brand-100 bg-brand-50 opacity-60 cursor-not-allowed"
                   : "border-brand-200 hover:border-brand-400 hover:bg-brand-50"
@@ -87,11 +87,11 @@ export function PaymentSelector({
           >
             <div
               className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                isSelected ? "border-brand-900" : "border-brand-300"
+                isSelected ? "border-brand-800" : "border-brand-300"
               }`}
             >
               {isSelected && (
-                <div className="h-2.5 w-2.5 rounded-full bg-brand-900" />
+                <div className="h-2.5 w-2.5 rounded-full bg-brand-800" />
               )}
             </div>
             <Icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-brand-600" />
