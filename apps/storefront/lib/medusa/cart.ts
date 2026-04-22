@@ -1,4 +1,5 @@
 import { medusa } from "./client";
+import { resolveMedusaFetchBase } from "./resolve-fetch-base";
 import { getPolishRegionId } from "./region";
 
 /**
@@ -84,12 +85,7 @@ export async function updateCartMetadata(
   cartId: string,
   metadataPatch: Record<string, string>,
 ): Promise<unknown | null> {
-  const base =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/api/medusa`
-      : (process.env.MEDUSA_BACKEND_URL?.trim() ||
-        process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
-        "http://localhost:9000");
+  const base = resolveMedusaFetchBase();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
