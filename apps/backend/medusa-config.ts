@@ -115,6 +115,9 @@ export default defineConfig({
            * bo w `shared` workerMode ten sam proces konsumuje kolejkę.
            */
           {
+            // Medusa v2 oczekuje klucza `eventBus` (Modules.EVENT_BUS),
+            // inaczej wywala "Module ... doesn't have a serviceName".
+            key: "eventBus",
             resolve: "@medusajs/event-bus-redis",
             options: {
               redisUrl: process.env.REDIS_URL,
