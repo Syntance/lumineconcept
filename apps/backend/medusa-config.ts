@@ -150,8 +150,10 @@ export default defineConfig({
             key: "workflows",
             resolve: "@medusajs/workflow-engine-redis",
             options: {
+              // Od Medusa v2.12.2 oficjalna nazwa to `redisUrl` (spójność
+              // z innymi modułami). Stare `redis.url` generuje deprecation warn.
               redis: {
-                url: process.env.REDIS_URL,
+                redisUrl: process.env.REDIS_URL,
               },
             },
           },
