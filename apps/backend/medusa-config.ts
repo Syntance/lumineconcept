@@ -102,6 +102,24 @@ export default defineConfig({
               ],
             },
           },
+          /**
+           * Event Bus Redis zamiast wbudowanego Local Event Busa. Kluczowa
+           * zmiana dla wydajności `completeCart`: Local Bus emituje
+           * subscriberów synchronicznie w tym samym event-loopie co workflow,
+           * więc każda wolna wysyłka maila / webhooka w subscriberze
+           * blokowała workflow (objaw: 500 po 30 s — lock-waiter timeout).
+           *
+           * Redis Event Bus odkłada eventy na kolejkę (BullMQ) — emit wraca
+           * natychmiast, workflow się kończy, subscribery odpalają się
+           * potem w kolejce. Oddzielnego worker procesu nie potrzebujemy,
+           * bo w `shared` workerMode ten sam proces konsumuje kolejkę.
+           */
+          {
+            resolve: "@medusajs/event-bus-redis",
+            options: {
+              redisUrl: process.env.REDIS_URL,
+            },
+          },
         ]
       : []),
     {
