@@ -260,7 +260,7 @@ export default defineConfig({
      * `DpdFulfillmentProviderService` jest bezpieczny bez konfiguracji —
      * `validateFulfillmentData` / `validateOption` / `getFulfillmentOptions`
      * to pure functions, a `createFulfillment` zwraca pusty payload
-     * (generowanie prawdziwej etykiety dopinamy, gdy envy DPD_LOGIN/*/FID
+     * (generowanie prawdziwej etykiety dopinamy, gdy envy DPD_LOGIN / DPD_PASSWORD / DPD_FID
      * zostaną dostarczone przez klienta).
      */
     {
