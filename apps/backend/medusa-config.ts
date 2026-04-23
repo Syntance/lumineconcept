@@ -130,18 +130,31 @@ export default defineConfig({
   modules: [
     /**
      * ============================================================
-     * PRODUKCYJNA INFRASTRUKTURA REDIS — wg oficjalnego guide'a
-     * https://docs.medusajs.com/learn/deployment/general
+     * INFRASTRUKTURA REDIS — dostosowana do trybu `shared` vs split
      * ============================================================
      *
-     * 4 moduły Redis (wszystkie required w produkcji wg Medusy):
-     *   1. locking-redis     — krótki TTL, waiter timeout (zamiast 30 s default)
-     *   2. event-bus-redis   — pub/sub eventów przez BullMQ (async subscribery)
-     *   3. workflow-engine-redis — state workflow w Redis (crash-safe, retryable)
-     *   4. cache-redis       — query cache dla produktów / opcji dostawy
+     * Pomiar `/store/custom/perf-probe` na Railway (2026-04-23) pokazał że
+     * każda operacja Redis przez internal .railway.internal network zajmuje
+     * ~140 ms (Redis PING, cache GET/SET, każda). To 50× wolniej niż lokalny
+     * Redis (1-3 ms). Przy add-to-cart, który w Medusie robi ~30 operacji
+     * (locking + pricing + cache + event emit + workflow state), daje to
+     * 4-5 s narzutu sieciowego. Zgadza się z obserwacją.
      *
-     * Bez tego `completeCart` trzyma state workflow w pamięci procesu —
-     * każdy wolny step blokuje cały event loop.
+     * Decyzja dla `shared` mode (single-instance):
+     *   ✅ locking-redis — POTRZEBNE: chroni `completeCart` przed
+     *       double-submit z dwóch zakładek / restartu. 1 acquire/release
+     *       per workflow = znośne (~280 ms dodatku).
+     *   ❌ event-bus-redis — defaultujemy do in-memory. W single-instance
+     *       BullMQ pub/sub = komunikacja sam ze sobą przez network proxy.
+     *       Warning „Local Event Bus" w takim wypadku jest OK.
+     *   ❌ cache-redis — defaultujemy do in-memory. Cache ma sens gdy
+     *       hit jest szybszy niż miss; tutaj cache hit = 140 ms, a miss
+     *       (DB select) też ~140 ms. Redis cache to negatywna wartość.
+     *   ❌ workflow-engine-redis — in-memory, jak wyżej.
+     *
+     * Gdy pojawi się realny worker-split (server + worker = 2 instancje)
+     * lub infra przeniesie się tam gdzie Redis jest w tym samym rack'u
+     * (Upstash/Neon edge), wrócimy do pełnej produkcyjnej stacka.
      */
     ...(process.env.REDIS_URL
       ? [
@@ -161,36 +174,20 @@ export default defineConfig({
               ],
             },
           },
-          {
-            // Medusa v2 oczekuje klucza `eventBus` (Modules.EVENT_BUS),
-            // inaczej wywala "Module ... doesn't have a serviceName".
-            key: "eventBus",
-            resolve: "@medusajs/event-bus-redis",
-            options: {
-              redisUrl: process.env.REDIS_URL,
-              // Retencja jobów w BullMQ — zalecane przez docs, żeby kolejka
-              // nie rosła w nieskończoność (1h / 1000 wpisów bufor).
-              jobOptions: {
-                removeOnComplete: { age: 3600, count: 1000 },
-                removeOnFail: { age: 3600, count: 1000 },
-              },
-            },
-          },
-          /**
-           * Workflow engine: Redis TYLKO gdy realnie mamy worker-split
-           * (server + worker = 2 instancje). Przy `shared` (single instance)
-           * Redis-backed engine to czysty narzut — każdy step workflow
-           * robi roundtrip BullMQ (push → poll → pop → execute → push result),
-           * co dodaje 100–300 ms × N stepów. Cart workflow Medusy ma kilkanaście
-           * stepów, więc to realne 2–5 s narzutu na add-to-cart.
-           *
-           * Dla `shared` zostawiamy domyślny `workflow-engine-inmemory`
-           * (nie rejestrujemy tu nic — Medusa załaduje go sama). Crash-safety
-           * przy single instance i tak nie ma sensu (crash = i tak stop).
-           */
           ...(WORKER_MODE === "shared"
             ? []
             : [
+                {
+                  key: "eventBus",
+                  resolve: "@medusajs/event-bus-redis",
+                  options: {
+                    redisUrl: process.env.REDIS_URL,
+                    jobOptions: {
+                      removeOnComplete: { age: 3600, count: 1000 },
+                      removeOnFail: { age: 3600, count: 1000 },
+                    },
+                  },
+                },
                 {
                   key: "workflows",
                   resolve: "@medusajs/workflow-engine-redis",
@@ -198,19 +195,16 @@ export default defineConfig({
                     redis: { redisUrl: process.env.REDIS_URL },
                   },
                 },
+                {
+                  key: "cache",
+                  resolve: "@medusajs/cache-redis",
+                  options: {
+                    redisUrl: process.env.REDIS_URL,
+                    namespace: "lumine_cache:",
+                    ttl: 30,
+                  },
+                },
               ]),
-          {
-            // Query cache dla cart / product / shipping. Bez tego każdy
-            // `retrieveCart` robi pełny JOIN z Postgres — ~40–120 ms.
-            // Z Redis cache ~3 ms hit.
-            key: "cache",
-            resolve: "@medusajs/cache-redis",
-            options: {
-              redisUrl: process.env.REDIS_URL,
-              namespace: "lumine_cache:",
-              ttl: 30, // sekund — bezpieczny domyślny TTL
-            },
-          },
         ]
       : []),
     /**
