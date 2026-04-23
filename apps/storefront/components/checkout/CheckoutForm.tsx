@@ -16,13 +16,12 @@ import { useCart } from "@/hooks/useCart";
 import {
   completeCart,
   describeMedusaError,
-  initPaymentSession,
   isCartAlreadyCompletedError,
   notifyOrderPlaced,
   prefetchPaymentReadiness,
   prefetchShippingOptions,
+  prepareCheckout,
   saveContactDetails,
-  selectShippingOption,
 } from "@/lib/medusa/checkout";
 import { getPolishRegionId } from "@/lib/medusa/region";
 
@@ -226,13 +225,10 @@ export function CheckoutForm() {
         })),
       });
 
-      // Niezawodny kanał wysyłki maila potwierdzającego — niezależny od
-      // subscribera `order.placed`. `notifyOrderPlaced` nigdy nie rzuca i ma
-      // wewnętrzny timeout 7 s + `sendBeacon` jako kanał awaryjny, więc
-      // blokujące `await` nie zatrzyma nawigacji, a daje czas, żeby zdążył
-      // wylecieć mail zanim użytkownik wyląduje na stronie potwierdzenia.
-      // Backend dba o idempotencję.
-      await notifyOrderPlaced(result.order.id);
+      // Niezawodny kanał wysyłki maila potwierdzającego — fire-and-forget
+      // (sendBeacon + keepalive fetch). Nie blokuje nawigacji do strony
+      // potwierdzenia. Backend dba o idempotencję.
+      notifyOrderPlaced(result.order.id);
 
       try {
         localStorage.removeItem("lumine_cart_id");
@@ -578,11 +574,18 @@ export function CheckoutForm() {
                 try {
                   trackFormSubmit("checkout_shipping");
                   trackCheckoutStepCompleted(2, "shipping");
-                  const [freshCart, { providerId }] = await Promise.all([
-                    selectShippingOption(cartId, formData.shippingOptionId),
-                    prefetchPaymentReadiness(getPolishRegionId),
-                  ]);
-                  await initPaymentSession(cartId, providerId, freshCart);
+                  // Najpierw czekamy na providerId (prefetched, zwykle < 50 ms),
+                  // żeby w 1 request dolecieć shipping + payment-session.
+                  // Wcześniej były to 2 sekwencyjne round-tripy (600 + 200 ms)
+                  // — teraz jeden ~600-800 ms w jednym HTTP do `/store/custom/prepare-checkout`.
+                  const { providerId } = await prefetchPaymentReadiness(
+                    getPolishRegionId,
+                  );
+                  await prepareCheckout(
+                    cartId,
+                    formData.shippingOptionId,
+                    providerId,
+                  );
                   updateField("paymentProviderId", providerId);
                   setStep(3);
                 } catch (e) {

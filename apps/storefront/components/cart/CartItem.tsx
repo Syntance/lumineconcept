@@ -14,6 +14,13 @@ interface CartItemData {
   unit_price: number;
   total: number;
   metadata?: Record<string, string>;
+  /**
+   * Wstawione przez CartProvider dla pozycji dodanych optymistycznie
+   * (przed potwierdzeniem z backendu). Blokujemy wtedy przyciski ilość/usuń,
+   * bo `id` ma prefix "optimistic:" i backend go nie zna — próba update'u
+   * poleciałaby jako 404.
+   */
+  optimistic?: boolean;
 }
 
 const COLOR_ELEMENT_LABELS: Record<string, string> = {
@@ -95,9 +102,11 @@ function ColorMetaLine({ label, hex }: { label: string; hex: string }) {
 export function CartItem({ item }: { item: CartItemData }) {
   const { updateItem, removeItem } = useCart();
   const [isUpdating, setIsUpdating] = useState(false);
+  const isOptimistic = item.optimistic === true;
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity < 1) return;
+    if (isOptimistic) return;
     setIsUpdating(true);
     try {
       await updateItem(item.id, newQuantity);
@@ -107,6 +116,7 @@ export function CartItem({ item }: { item: CartItemData }) {
   };
 
   const handleRemove = async () => {
+    if (isOptimistic) return;
     setIsUpdating(true);
     trackRemoveFromCart({ id: item.id, title: item.title, price: item.total });
     try {
@@ -116,10 +126,12 @@ export function CartItem({ item }: { item: CartItemData }) {
     }
   };
 
+  const busy = isUpdating || isOptimistic;
+
   return (
     <div className="relative overflow-hidden">
       <div
-        className={`relative flex gap-4 bg-white py-4 transition-all ${isUpdating ? "opacity-50" : ""}`}
+        className={`relative flex gap-4 bg-white py-4 transition-all ${busy ? "opacity-60" : ""}`}
       >
         {/* Thumbnail */}
         <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-lg bg-brand-50">
@@ -181,11 +193,11 @@ export function CartItem({ item }: { item: CartItemData }) {
             <button
               type="button"
               onClick={handleRemove}
-              disabled={isUpdating}
-              className="shrink-0 rounded-full p-1 text-brand-300 transition-colors hover:bg-brand-50 hover:text-red-500"
+              disabled={busy}
+              className="shrink-0 rounded-full p-1 text-brand-300 transition-colors hover:bg-brand-50 hover:text-red-500 disabled:cursor-not-allowed"
               aria-label={`Usuń ${item.title}`}
             >
-              {isUpdating ? (
+              {busy ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Trash2 className="h-3.5 w-3.5" />
@@ -199,7 +211,7 @@ export function CartItem({ item }: { item: CartItemData }) {
               <button
                 type="button"
                 onClick={() => handleQuantityChange(item.quantity - 1)}
-                disabled={isUpdating || item.quantity <= 1}
+                disabled={busy || item.quantity <= 1}
                 className="flex h-7 w-7 items-center justify-center text-brand-500 transition-colors hover:text-brand-800 disabled:opacity-30"
                 aria-label="Zmniejsz ilość"
               >
@@ -211,8 +223,8 @@ export function CartItem({ item }: { item: CartItemData }) {
               <button
                 type="button"
                 onClick={() => handleQuantityChange(item.quantity + 1)}
-                disabled={isUpdating}
-                className="flex h-7 w-7 items-center justify-center text-brand-500 transition-colors hover:text-brand-800"
+                disabled={busy}
+                className="flex h-7 w-7 items-center justify-center text-brand-500 transition-colors hover:text-brand-800 disabled:opacity-30"
                 aria-label="Zwiększ ilość"
               >
                 <Plus className="h-3 w-3" />
