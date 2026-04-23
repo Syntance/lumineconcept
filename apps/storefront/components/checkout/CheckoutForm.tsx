@@ -578,16 +578,10 @@ export function CheckoutForm() {
                 try {
                   trackFormSubmit("checkout_shipping");
                   trackCheckoutStepCompleted(2, "shipping");
-                  // Region + provider już prefetchowane w Step 1 — tu tylko
-                  // czekamy na wynik cache'a (bez round-tripu, jeśli gotowe).
-                  // Shipping method MUSI zadziałać przed initPaymentSession,
-                  // bo to on ustala finalny total w koszyku.
                   const [freshCart, { providerId }] = await Promise.all([
                     selectShippingOption(cartId, formData.shippingOptionId),
                     prefetchPaymentReadiness(getPolishRegionId),
                   ]);
-                  // Przekazujemy świeży cart, żeby initPaymentSession nie
-                  // robił drugiego retrieve (oszczędza ~1 s).
                   await initPaymentSession(cartId, providerId, freshCart);
                   updateField("paymentProviderId", providerId);
                   setStep(3);

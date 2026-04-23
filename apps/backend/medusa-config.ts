@@ -81,6 +81,16 @@ export default defineConfig({
   },
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL!,
+    /**
+     * Connection pool — bez tego Medusa używa domyślnego 10 połączeń z
+     * infinite idle timeout. W połączeniu z Railway wychodzi tak, że każdy
+     * request czeka ~30s na zwolnienie connection pool, bo poprzednie
+     * transakcje siedzą idle. Oficjalna rekomendacja Medusy z issue #5693.
+     */
+    databaseExtra: {
+      idle_in_transaction_session_timeout: 20_000,
+      max: 20,
+    },
     redisUrl: process.env.REDIS_URL,
     workerMode: WORKER_MODE,
     http: {
@@ -171,34 +181,46 @@ export default defineConfig({
           },
         ]
       : []),
-    {
-      key: "przelewy24",
-      resolve: "./src/modules/przelewy24",
-      options: {
-        merchantId: process.env.PRZELEWY24_MERCHANT_ID,
-        posId: process.env.PRZELEWY24_POS_ID,
-        apiKey: process.env.PRZELEWY24_API_KEY,
-        crc: process.env.PRZELEWY24_CRC,
-        sandbox: process.env.PRZELEWY24_SANDBOX === "true",
-      },
-    },
-    {
-      key: "paypo",
-      resolve: "./src/modules/paypo",
-      options: {
-        apiKey: process.env.PAYPO_API_KEY,
-        sandbox: process.env.PAYPO_SANDBOX === "true",
-      },
-    },
-    {
-      key: "inpost",
-      resolve: "./src/modules/inpost",
-      options: {
-        apiKey: process.env.INPOST_API_KEY,
-        organizationId: process.env.INPOST_ORGANIZATION_ID,
-        sandbox: process.env.INPOST_SANDBOX === "true",
-      },
-    },
+    /**
+     * Dodatkowe moduły (Przelewy24, PayPo, InPost) ładowane warunkowo —
+     * dopiero gdy envy są uzupełnione. Wcześniej ładowaliśmy je zawsze,
+     * co przy pustym kluczu tworzyło niepotrzebny overhead na starcie
+     * (~2 s × 3 modules) i logi zaśmiecone błędami konfiguracji.
+     */
+    ...(process.env.PRZELEWY24_MERCHANT_ID && process.env.PRZELEWY24_API_KEY
+      ? [{
+          key: "przelewy24",
+          resolve: "./src/modules/przelewy24",
+          options: {
+            merchantId: process.env.PRZELEWY24_MERCHANT_ID,
+            posId: process.env.PRZELEWY24_POS_ID,
+            apiKey: process.env.PRZELEWY24_API_KEY,
+            crc: process.env.PRZELEWY24_CRC,
+            sandbox: process.env.PRZELEWY24_SANDBOX === "true",
+          },
+        }]
+      : []),
+    ...(process.env.PAYPO_API_KEY
+      ? [{
+          key: "paypo",
+          resolve: "./src/modules/paypo",
+          options: {
+            apiKey: process.env.PAYPO_API_KEY,
+            sandbox: process.env.PAYPO_SANDBOX === "true",
+          },
+        }]
+      : []),
+    ...(process.env.INPOST_API_KEY
+      ? [{
+          key: "inpost",
+          resolve: "./src/modules/inpost",
+          options: {
+            apiKey: process.env.INPOST_API_KEY,
+            organizationId: process.env.INPOST_ORGANIZATION_ID,
+            sandbox: process.env.INPOST_SANDBOX === "true",
+          },
+        }]
+      : []),
     /**
      * Payment: wbudowany system provider („manual"/testowy). Bez rejestracji
      * tego modułu Medusa nie ma *żadnego* payment providera, przez co
@@ -216,8 +238,9 @@ export default defineConfig({
       resolve: "@medusajs/medusa/payment",
     },
     /**
-     * Fulfillment: Manual (testy) + DPD (kurier — opcje w Admin → Shipping).
-     * Stary moduł `./src/modules/dpd` zastąpiony providerem zgodnym z Medusa v2.
+     * Fulfillment: Manual + DPD (warunkowo gdy envy są uzupełnione).
+     * DPD bez envów loguje ostrzeżenia na każdym liście opcji dostawy
+     * — zostawiamy tylko `manual`, dopóki nie zostanie skonfigurowany.
      */
     {
       resolve: "@medusajs/medusa/fulfillment",
@@ -227,26 +250,36 @@ export default defineConfig({
             resolve: "@medusajs/fulfillment-manual",
             id: "manual",
           },
-          {
-            resolve: "./src/modules/dpd-fulfillment",
-            id: "dpd",
-            options: {
-              login: process.env.DPD_LOGIN,
-              password: process.env.DPD_PASSWORD,
-              fid: process.env.DPD_FID,
-            },
-          },
+          ...(process.env.DPD_LOGIN && process.env.DPD_PASSWORD && process.env.DPD_FID
+            ? [{
+                resolve: "./src/modules/dpd-fulfillment",
+                id: "dpd",
+                options: {
+                  login: process.env.DPD_LOGIN,
+                  password: process.env.DPD_PASSWORD,
+                  fid: process.env.DPD_FID,
+                },
+              }]
+            : []),
         ],
       },
     },
-    {
-      key: "meilisearch",
-      resolve: "./src/modules/meilisearch",
-      options: {
-        host: process.env.MEILISEARCH_HOST ?? "http://localhost:7700",
-        adminKey: process.env.MEILISEARCH_ADMIN_KEY,
-      },
-    },
+    /**
+     * Meilisearch ładujemy tylko gdy mamy hosta — wcześniej domyślny
+     * `http://localhost:7700` powodował że w Railway moduł cyklicznie
+     * próbował łączyć się z nieistniejącym hostem (TCP SYN timeout ~1s
+     * per request).
+     */
+    ...(process.env.MEILISEARCH_HOST && process.env.MEILISEARCH_ADMIN_KEY
+      ? [{
+          key: "meilisearch",
+          resolve: "./src/modules/meilisearch",
+          options: {
+            host: process.env.MEILISEARCH_HOST,
+            adminKey: process.env.MEILISEARCH_ADMIN_KEY,
+          },
+        }]
+      : []),
     {
       key: "product_config",
       resolve: "./src/modules/product-config",
