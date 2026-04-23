@@ -67,6 +67,8 @@ interface ProductPageLayoutProps {
     checkoutCallout?: CheckoutCallout | null;
     globalColors?: GlobalConfigOption[];
     schemaImageUrl?: string | null;
+    /** PDP certyfikatów — opcja dopłaty za podstawkę w kolorze certyfikatu */
+    certificateStandAvailable?: boolean;
   }>;
 }
 
@@ -229,6 +231,11 @@ export async function ProductPageLayout({
             )}
 
             <PriceDisplay amount={price} variant="badge" />
+            {basePath === "/sklep/certyfikaty" && (
+              <p className="text-sm text-brand-700">
+                Opcjonalna podstawka w kolorze certyfikatu: +10 zł / szt. (zaznacz przy zamówieniu).
+              </p>
+            )}
 
             <div className="flex items-center gap-4 pt-2 pb-4">
               <span className="h-px flex-1 bg-brand-300" />
@@ -265,6 +272,7 @@ export async function ProductPageLayout({
               checkoutCallout={siteSettings?.checkoutCallout ?? null}
               globalColors={productConfig.colors}
               schemaImageUrl={schemaImageUrl}
+              certificateStandAvailable={basePath === "/sklep/certyfikaty"}
             />
           </div>
         </div>

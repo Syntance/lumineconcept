@@ -28,6 +28,9 @@ import { trackProductViewed } from "@/lib/analytics/events";
 import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
 import { DeliveryTrustBadges } from "@/components/product/DeliveryTrustBadges";
 
+/** Synchronizuj z backendem `certificate-line-item` (CERTIFICATE_STAND_SURCHARGE_PLN). */
+const CERTIFICATE_STAND_PRICE_PLN = 10;
+
 interface CheckoutCallout {
   enabled?: boolean;
   title?: string;
@@ -55,6 +58,7 @@ interface ProductPageClientProps {
   checkoutCallout?: CheckoutCallout | null;
   globalColors?: GlobalConfigOption[];
   schemaImageUrl?: string | null;
+  certificateStandAvailable?: boolean;
 }
 
 function extractMetaKey(optionTitle: string): string {
@@ -68,6 +72,7 @@ export function ProductPageClient({
   checkoutCallout,
   globalColors = [],
   schemaImageUrl,
+  certificateStandAvailable = false,
 }: ProductPageClientProps) {
 
   const colorMap = useMemo(() => buildColorMap(globalColors), [globalColors]);
@@ -115,6 +120,8 @@ export function ProductPageClient({
   }, [product.metadata]);
 
   const [textFieldValues, setTextFieldValues] = useState<Record<string, string>>({});
+
+  const [includeCertificateStand, setIncludeCertificateStand] = useState(false);
 
   useEffect(() => {
     setTextFieldValues((prev) => {
@@ -206,7 +213,10 @@ export function ProductPageClient({
   }, [product.metadata]);
 
   const variantHasPrice = selectedVariant?.price != null && selectedVariant.price > 0;
-  const displayPrice = variantHasPrice ? selectedVariant.price : (basePrice ?? 0);
+  const baseDisplayPrice = variantHasPrice ? selectedVariant.price : (basePrice ?? 0);
+  const standAddon =
+    certificateStandAvailable && includeCertificateStand ? CERTIFICATE_STAND_PRICE_PLN : 0;
+  const displayPrice = Math.round((baseDisplayPrice + standAddon) * 100) / 100;
 
   useEffect(() => {
     trackProductViewed({
@@ -292,8 +302,23 @@ export function ProductPageClient({
       if (f?.url) meta[`file_${i + 1}`] = f.url;
     });
 
+    if (certificateStandAvailable && includeCertificateStand) {
+      meta.certificate_stand = "true";
+    }
+
     return Object.keys(meta).length > 0 ? meta : undefined;
-  }, [textFields, textFieldValues, colorCustomizations, colorOptionTitles, selectedOptions, links, linksCount, uploadedFiles]);
+  }, [
+    textFields,
+    textFieldValues,
+    colorCustomizations,
+    colorOptionTitles,
+    selectedOptions,
+    links,
+    linksCount,
+    uploadedFiles,
+    certificateStandAvailable,
+    includeCertificateStand,
+  ]);
 
   const calloutEnabled =
     checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
@@ -397,6 +422,24 @@ export function ProductPageClient({
         )}
 
         <div ref={ctaRef} className="space-y-4">
+          {certificateStandAvailable && (
+            <label className="flex cursor-pointer items-start gap-3 rounded-md border border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 shadow-sm transition-colors hover:border-brand-300">
+              <input
+                type="checkbox"
+                checked={includeCertificateStand}
+                onChange={(e) => setIncludeCertificateStand(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-brand-300 text-brand-800 focus:ring-brand-500"
+              />
+              <span>
+                <span className="font-semibold">
+                  Podstawka w kolorze certyfikatu (+{CERTIFICATE_STAND_PRICE_PLN.toFixed(2).replace(".", ",")} zł)
+                </span>
+                <span className="mt-1 block text-brand-700 leading-snug">
+                  Ten sam odcień co wybrany certyfikat — dopłata za sztukę.
+                </span>
+              </span>
+            </label>
+          )}
           <ExpressToggle />
           <AddToCartButton
             variantId={selectedVariant?.id ?? null}
