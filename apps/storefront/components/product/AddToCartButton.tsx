@@ -11,6 +11,7 @@ interface AddToCartButtonProps {
     title: string;
     price: number;
     currency: string;
+    thumbnail?: string;
   };
   disabled?: boolean;
   compact?: boolean;

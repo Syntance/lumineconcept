@@ -21,6 +21,12 @@ interface CartItem {
   unit_price: number;
   total: number;
   metadata?: Record<string, string>;
+  /**
+   * Oznaczenie optymistycznie dodanej pozycji — widoczne w UI natychmiast po
+   * kliknięciu „Dodaj do koszyka", zanim backend potwierdzi. Po sukcesie
+   * podmieniamy ją na realny item z Medusy (po variant_id).
+   */
+  optimistic?: boolean;
 }
 
 interface CartState {
@@ -45,6 +51,12 @@ interface CartContextType extends CartState {
     quantity?: number,
     metadata?: Record<string, string>,
     openDrawer?: boolean,
+    /**
+     * Dane do optymistycznego wyrenderowania pozycji w drawerze, zanim
+     * backend odpowie. Jeśli przekazane — UI pokaże item natychmiast, bez
+     * spinnera. Bez tego fallbackujemy do starego zachowania (await backend).
+     */
+    preview?: { title: string; thumbnail?: string; unit_price: number },
   ) => Promise<void>;
   updateItem: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
@@ -243,8 +255,78 @@ export function CartProvider({ children }: { children: ReactNode }) {
       quantity = 1,
       metadata?: Record<string, string>,
       openDrawer = true,
+      preview?: { title: string; thumbnail?: string; unit_price: number },
     ) => {
       if (!cart.id) return;
+
+      /**
+       * Optymistyczny render: gdy mamy `preview`, natychmiast pokazujemy
+       * pozycję w drawerze (0 ms percepcji), a request do backendu leci
+       * w tle. Jeśli ten sam variant_id już jest w koszyku — tylko
+       * podbijamy ilość w tymczasowym stanie. `optimistic: true` pozwala
+       * UI pokazać lekki wskaźnik „zapisywanie…" dla świeżej linii.
+       *
+       * Po sukcesie backendu: `updateCartState` z prawdziwego response
+       * nadpisuje całą listę i flagi znikają (nowa linia ma stałe `id`
+       * z Medusy). Po błędzie: cofamy zmianę i rzucamy do wywołującego.
+       */
+      const optimisticId = `optimistic:${variantId}:${Date.now()}`;
+      let didOptimisticRender = false;
+
+      if (preview) {
+        didOptimisticRender = true;
+        setCart((c) => {
+          const existing = c.items.find((i) => i.variant_id === variantId);
+          let items: CartItem[];
+          if (existing) {
+            items = c.items.map((i) =>
+              i.variant_id === variantId
+                ? {
+                    ...i,
+                    quantity: i.quantity + quantity,
+                    total:
+                      Math.round(
+                        (i.unit_price * (i.quantity + quantity)) * 100,
+                      ) / 100,
+                    optimistic: true,
+                  }
+                : i,
+            );
+          } else {
+            items = [
+              ...c.items,
+              {
+                id: optimisticId,
+                variant_id: variantId,
+                title: preview.title,
+                thumbnail: preview.thumbnail,
+                quantity,
+                unit_price: preview.unit_price,
+                total:
+                  Math.round(preview.unit_price * quantity * 100) / 100,
+                metadata,
+                optimistic: true,
+              },
+            ];
+          }
+          const newSubtotal =
+            Math.round(
+              (c.subtotal + preview.unit_price * quantity) * 100,
+            ) / 100;
+          return {
+            ...c,
+            items,
+            subtotal: newSubtotal,
+            total:
+              Math.round(
+                (c.total + preview.unit_price * quantity) * 100,
+              ) / 100,
+            itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
+          };
+        });
+        if (openDrawer) setIsOpen(true);
+      }
+
       setIsLoading(true);
       try {
         try {
@@ -255,7 +337,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             metadata,
           );
           updateCartState(updated as unknown as Record<string, unknown>);
-          if (openDrawer) setIsOpen(true);
+          if (openDrawer && !didOptimisticRender) setIsOpen(true);
           return;
         } catch (e) {
           /**
@@ -296,10 +378,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
             metadata,
           );
           updateCartState(updated as unknown as Record<string, unknown>);
-          if (openDrawer) setIsOpen(true);
+          if (openDrawer && !didOptimisticRender) setIsOpen(true);
         }
       } catch (e) {
         console.error("[cart] addItem", e);
+        /**
+         * Cofamy optymistyczną zmianę — skoro backend odrzucił, UI musi
+         * wrócić do stanu sprzed kliknięcia, inaczej user zobaczy
+         * „zombie" pozycję, której nie może usunąć (bo Medusa jej nie zna).
+         */
+        if (didOptimisticRender) {
+          setCart((c) => {
+            const items = c.items.filter(
+              (i) => i.id !== optimisticId && !(i.variant_id === variantId && i.optimistic),
+            );
+            const subtotal = items.reduce((s, i) => s + i.total, 0);
+            return {
+              ...c,
+              items,
+              subtotal,
+              total: subtotal,
+              itemCount: items.reduce((s, i) => s + i.quantity, 0),
+            };
+          });
+        }
         throw e;
       } finally {
         setIsLoading(false);

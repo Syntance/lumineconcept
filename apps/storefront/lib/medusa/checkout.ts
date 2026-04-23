@@ -219,18 +219,19 @@ export async function ensureLuminePaymentBootstrap(): Promise<{ ok: boolean }> {
  * `/store/custom/notify-order-placed`). Backend ma `idempotency_key` więc
  * wielokrotne wywołanie nie wyśle duplikatów.
  *
- * Historycznie było fire-and-forget — ale przy twardej nawigacji
- * (`window.location.assign`) przeglądarka potrafi anulować request jeszcze
- * zanim Railway się rozgrzeje, mimo `keepalive: true`. Dlatego:
- *  1) najpierw próbujemy krótki await (7 s) — normalnie backend odpowie
- *     w < 1 s, a my daje mailem szansę wylecieć zanim użytkownik wyląduje
- *     na stronie potwierdzenia,
- *  2) równolegle wysyłamy `sendBeacon` jako kanał awaryjny — przeglądarki
- *     gwarantują jego dostarczenie nawet po unload/navigacji.
+ * Strategia „fire-and-forget" (po migracji do jednego regionu backend jest
+ * szybki < 1 s, więc długi await był szkodliwy — opóźniał nawigację do
+ * strony potwierdzenia o 500-700 ms bez żadnej korzyści).
+ *
+ *  1) `sendBeacon` — gwarantowana dostawa nawet po `window.location.assign`.
+ *     To jest nasz główny kanał.
+ *  2) `fetch(..., keepalive: true)` — kanał zapasowy, gdyby beacon był
+ *     zablokowany przez ad-blocker / stare przeglądarki. Odpalamy bez
+ *     awaita; `keepalive` dba o dokończenie mimo nawigacji.
  *
  * NIGDY nie rzuca — błąd providera maila nie może zablokować checkoutu.
  */
-export async function notifyOrderPlaced(orderId: string): Promise<void> {
+export function notifyOrderPlaced(orderId: string): void {
   if (!orderId) return;
   const base = resolveMedusaFetchBase();
 
@@ -245,40 +246,25 @@ export async function notifyOrderPlaced(orderId: string): Promise<void> {
       : {}),
   };
 
+  let beaconDelivered = false;
   if (typeof navigator !== "undefined" && "sendBeacon" in navigator) {
     try {
       const blob = new Blob([payload], { type: "application/json" });
-      navigator.sendBeacon(url, blob);
+      beaconDelivered = navigator.sendBeacon(url, blob);
     } catch {
-      /* sendBeacon nie obsługuje publishable-key w headers, ale backend
-         akceptuje request bez niego dla tego konkretnego endpointu
-         (jest to `store/custom/*`, nie `store/*`). Fallback niżej. */
+      beaconDelivered = false;
     }
   }
 
-  const controller = new AbortController();
-  const killer = setTimeout(() => controller.abort(), 7_000);
-  try {
-    const res = await fetch(url, {
+  if (!beaconDelivered) {
+    void fetch(url, {
       method: "POST",
       headers,
       body: payload,
       keepalive: true,
-      signal: controller.signal,
+    }).catch((e) => {
+      console.warn("[mail] notify-order-placed fire-and-forget error", e);
     });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      console.warn("[mail] notify-order-placed failed", res.status, body);
-    }
-  } catch (e) {
-    const name = (e as { name?: string }).name;
-    if (name === "AbortError") {
-      console.info("[mail] notify-order-placed: await timeout, beacon w tle");
-    } else {
-      console.warn("[mail] notify-order-placed error", e);
-    }
-  } finally {
-    clearTimeout(killer);
   }
 }
 
@@ -287,6 +273,60 @@ export async function selectShippingOption(cartId: string, optionId: string) {
     option_id: optionId,
   });
   return response.cart;
+}
+
+/**
+ * Ekspresowe przygotowanie checkoutu w 1 HTTP round-tripie:
+ *   addShippingMethod + createPaymentCollection (jeśli brak) +
+ *   createPaymentSession (jeśli brak dla providera).
+ *
+ * Oszczędza ~300-500 ms (dwa round-tripy zamiast jednego) w kroku 2 → 3.
+ * Backend endpoint jest idempotentny — bezpieczne retry.
+ *
+ * Zwraca świeży `cart` w tym samym kontrakcie co `GET /store/carts/:id`,
+ * więc możemy bezpośrednio podać go do `initPaymentSession` / stan UI.
+ */
+export async function prepareCheckout(
+  cartId: string,
+  optionId: string,
+  providerId: string,
+): Promise<HttpTypes.StoreCart> {
+  const base = resolveMedusaFetchBase();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+      : {}),
+  };
+
+  const res = await fetch(`${base}/store/custom/prepare-checkout`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      cart_id: cartId,
+      option_id: optionId,
+      provider_id: providerId,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as {
+      message?: string;
+      type?: string;
+    };
+    const err = new Error(
+      body.message ?? `prepare-checkout ${res.status}`,
+    ) as Error & { status?: number; type?: string };
+    err.status = res.status;
+    err.type = body.type;
+    throw err;
+  }
+  const data = (await res.json()) as {
+    cart: HttpTypes.StoreCart;
+    payment_collection_id?: string;
+  };
+  return data.cart;
 }
 
 /**

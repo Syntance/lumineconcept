@@ -405,6 +405,7 @@ export function ProductPageClient({
               title: product.title,
               price: displayPrice,
               currency: "PLN",
+              thumbnail: product.images?.[0]?.url,
             }}
             disabled={!selectedVariant || !availableToOrder}
             maxQuantity={maxOrderQty}

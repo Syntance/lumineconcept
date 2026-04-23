@@ -15,6 +15,7 @@ export function useCart() {
         title: string;
         price: number;
         currency: string;
+        thumbnail?: string;
       },
       quantity = 1,
       metadata?: Record<string, string>,
@@ -22,7 +23,18 @@ export function useCart() {
         openDrawer?: boolean;
       },
     ) => {
-      await cart.addItem(variantId, quantity, metadata, options?.openDrawer ?? true);
+      /**
+       * Optymistyczny preview — dzięki temu drawer koszyka pokazuje nową
+       * pozycję natychmiast po kliknięciu, a backend Medusy (nawet po
+       * zmianach infry dalej 400-600 ms na add-line-item) ściga się z UI
+       * w tle. Trackowanie analytics strzelamy też natychmiast — to OK,
+       * bo jeśli backend odrzuci, my i tak rollbackujemy koszyk.
+       */
+      await cart.addItem(variantId, quantity, metadata, options?.openDrawer ?? true, {
+        title: productData.title,
+        thumbnail: productData.thumbnail,
+        unit_price: productData.price,
+      });
       trackAddToCart({
         id: productData.id,
         title: productData.title,
