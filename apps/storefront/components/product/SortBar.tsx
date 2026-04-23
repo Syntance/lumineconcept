@@ -141,7 +141,7 @@ export function SortBarMobile({
           </svg>
           Filtry
           {activeCount > 0 && (
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
+            <span className="flex min-h-4.5 min-w-4.5 items-center justify-center rounded-full bg-brand-800 px-0.5 text-[10px] font-bold tabular-nums leading-none text-white ring-2 ring-white">
               {activeCount}
             </span>
           )}
