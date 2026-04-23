@@ -91,14 +91,17 @@ export default defineConfig({
      * `pool` (Knex/MikroORM).
      */
     databaseDriverOptions: {
-      connection: {
-        statement_timeout: 30_000,
-        idle_in_transaction_session_timeout: 20_000,
-      },
       pool: {
         min: 2,
         max: 20,
       },
+      // Medusa typings zawężają `connection` tylko do `{ ssl }`, ale
+      // Knex/pg akceptują tu więcej opcji — rzutujemy, żeby móc ustawić
+      // timeout'y transakcji (ochrona przed zakleszczeniami poola).
+      connection: {
+        statement_timeout: 30_000,
+        idle_in_transaction_session_timeout: 20_000,
+      } as unknown as { ssl?: boolean },
     },
     redisUrl: process.env.REDIS_URL,
     workerMode: WORKER_MODE,
