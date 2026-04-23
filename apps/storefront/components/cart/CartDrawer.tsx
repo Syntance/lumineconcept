@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { X, ShoppingBag, ArrowRight, Gift } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCart } from "@/hooks/useCart";
@@ -26,6 +27,11 @@ export function CartDrawer() {
   >("idle");
   const [referralMessage, setReferralMessage] = useState("");
   const prevOpenRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -67,10 +73,17 @@ export function CartDrawer() {
     }
   }, [referralCode, applyDiscount]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
+  /**
+   * Portal na `document.body`: header ma `backdrop-blur` / `sticky`, co tworzy
+   * kontekst pozycjonowania — wtedy `fixed` wewnątrz drzewka headera obejmuje
+   * tylko pasek nawigacji zamiast całego viewportu (drawer „pływał” na PDP).
+   */
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Koszyk">
+    <>
+      {createPortal(
+        <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Koszyk">
       {/* Overlay */}
       <div
         className="fixed inset-0 bg-brand-900/40"
@@ -81,7 +94,7 @@ export function CartDrawer() {
 
       {/* Panel */}
       <div
-        className="fixed inset-y-0 right-0 flex w-full max-w-[420px] flex-col bg-white shadow-2xl"
+        className="fixed inset-y-0 right-0 flex h-full min-h-0 w-full max-w-[420px] flex-col bg-white shadow-2xl"
         style={{ animation: "cartSlideIn 300ms ease-out" }}
       >
 
@@ -109,20 +122,20 @@ export function CartDrawer() {
 
         {items.length === 0 ? (
           /* ── Empty state ── */
-          <div className="relative flex flex-1 flex-col items-center justify-center px-8">
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 py-10">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-50">
               <ShoppingBag className="h-8 w-8 text-brand-300" strokeWidth={1.5} />
             </div>
             <p className="mt-6 font-sans text-base tracking-wide text-brand-700">
               Koszyk jest pusty
             </p>
-            <p className="mt-2 text-center text-sm text-brand-400">
+            <p className="mt-2 max-w-xs text-center text-sm text-brand-400">
               Przeglądaj nasze produkty i znajdź coś idealnego dla siebie
             </p>
             <Link
               href="/sklep/gotowe-wzory"
               onClick={closeCart}
-              className="absolute bottom-[20%] inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-brand-600 transition-colors hover:text-brand-900"
+              className="mt-10 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-brand-600 transition-colors hover:text-brand-900"
             >
               Przeglądaj sklep
               <ArrowRight className="h-3.5 w-3.5" />
@@ -225,6 +238,9 @@ export function CartDrawer() {
           </>
         )}
       </div>
-    </div>
+    </div>,
+        document.body,
+      )}
+    </>
   );
 }

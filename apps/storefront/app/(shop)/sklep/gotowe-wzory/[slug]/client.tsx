@@ -423,7 +423,7 @@ export function ProductPageClient({
 
         <div ref={ctaRef} className="space-y-4">
           {certificateStandAvailable && (
-            <label className="flex cursor-pointer items-start gap-3 rounded-md border border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 shadow-sm transition-colors hover:border-brand-300">
+            <label className="flex cursor-pointer items-start gap-3 rounded-none border border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 shadow-sm transition-colors hover:border-brand-300">
               <input
                 type="checkbox"
                 checked={includeCertificateStand}

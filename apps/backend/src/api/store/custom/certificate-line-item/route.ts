@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import type { IProductModuleService } from "@medusajs/framework/types";
 import {
   ContainerRegistrationKeys,
   MedusaError,
@@ -6,11 +7,16 @@ import {
   remoteQueryObjectFromString,
 } from "@medusajs/framework/utils";
 import { addToCartWorkflow } from "@medusajs/medusa/core-flows";
+import {
+  buildCategoryGraphFieldsWithPrefix,
+  productCategoriesMatchCertificate,
+  productCategoriesMatchCertificateByParentIdWalk,
+  productCollectionMatchesCertificate,
+  productTagsMatchCertificate,
+} from "../../../../lib/certificate-product-eligibility";
 
 /** Synchronizuj z PDP (`ProductPageClient`) — dopłata za podstawkę w kolorze certyfikatu. */
 const CERTIFICATE_STAND_SURCHARGE_PLN = 10;
-
-const CERT_TAG = "certyfikaty";
 
 /** Snapshot koszyka bez joina `region.*` (remoteQuery potrafi go odrzucić). */
 const CART_SNAPSHOT_FIELDS = [
@@ -45,8 +51,18 @@ type VariantGraphRow = {
   id?: string;
   prices?: Array<{ amount?: unknown; currency_code?: string }>;
   product?: {
+    id?: string;
     metadata?: Record<string, unknown> | null;
     tags?: Array<{ value?: string | null } | null> | null;
+    categories?: Array<{
+      handle?: string | null;
+      name?: string | null;
+      parent_category?: {
+        handle?: string | null;
+        name?: string | null;
+        parent_category?: unknown;
+      } | null;
+    } | null> | null;
   };
 };
 
@@ -74,9 +90,9 @@ function baseUnitFromVariant(row: VariantGraphRow, currencyCode: string): number
 }
 
 function isCertificateProduct(row: VariantGraphRow): boolean {
-  const tags = row.product?.tags ?? [];
-  return tags.some(
-    (t) => (t?.value || "").toLowerCase().trim() === CERT_TAG,
+  if (productTagsMatchCertificate(row.product?.tags)) return true;
+  return productCategoriesMatchCertificate(
+    row.product?.categories as Parameters<typeof productCategoriesMatchCertificate>[0],
   );
 }
 
@@ -150,10 +166,13 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     entity: "variant",
     fields: [
       "id",
+      "product_id",
       "prices.amount",
       "prices.currency_code",
+      "product.id",
       "product.metadata",
       "product.tags.value",
+      ...buildCategoryGraphFieldsWithPrefix("product.categories", 8),
     ],
     filters: { id: variantId },
   });
@@ -163,10 +182,63 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, `Variant ${variantId} not found`);
   }
 
-  if (!isCertificateProduct(row)) {
+  /**
+   * 1) Graph na wariancie (z łańcuchem parent_category) — szybka ścieżka.
+   * 2) Osobny graph na produkcie — gdy relacje pod wariantem są obcięte.
+   * 3) retrieveProduct + relacje — ostatnia deska (jak w `product-upserted`).
+   */
+  let certificateEligible = isCertificateProduct(row);
+  const productIdFromGraph =
+    ((row as { product_id?: string }).product_id?.trim() ||
+      row.product?.id?.trim() ||
+      "") ||
+    "";
+
+  if (!certificateEligible && productIdFromGraph) {
+    const { data: productRows } = await query.graph({
+      entity: "product",
+      fields: ["id", "tags.value", ...buildCategoryGraphFieldsWithPrefix("categories", 8)],
+      filters: { id: productIdFromGraph },
+    });
+    const p = productRows[0] as VariantGraphRow["product"] | undefined;
+    if (p) {
+      certificateEligible =
+        productTagsMatchCertificate(p.tags) ||
+        productCategoriesMatchCertificate(
+          p.categories as Parameters<typeof productCategoriesMatchCertificate>[0],
+        );
+    }
+  }
+
+  if (!certificateEligible) {
+    const productService = scope.resolve(Modules.PRODUCT) as IProductModuleService;
+    const variantEntity = await productService.retrieveProductVariant(variantId);
+    const productId = (variantEntity?.product_id?.trim() || productIdFromGraph) || "";
+    if (productId) {
+      const product = await productService.retrieveProduct(productId, {
+        relations: ["tags", "categories", "collection"],
+      });
+      const cats = product.categories as Parameters<
+        typeof productCategoriesMatchCertificateByParentIdWalk
+      >[1];
+      certificateEligible =
+        productTagsMatchCertificate(
+          product.tags as Array<{ value?: string | null } | null> | undefined,
+        ) ||
+        productCategoriesMatchCertificate(
+          product.categories as Parameters<typeof productCategoriesMatchCertificate>[0],
+        ) ||
+        productCollectionMatchesCertificate(
+          product.collection as { handle?: string; title?: string } | null,
+        ) ||
+        (await productCategoriesMatchCertificateByParentIdWalk(productService, cats));
+    }
+  }
+
+  if (!certificateEligible) {
     return res.status(400).json({
       message:
-        "Podstawka jest dostępna tylko dla certyfikatów — produkt musi mieć tag „certyfikaty” w Medusie.",
+        "Podstawka jest dostępna tylko dla certyfikatów — przypisz produkt do kategorii „certyfikaty” lub dodaj ten tag w Medusie.",
     });
   }
 
