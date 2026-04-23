@@ -92,8 +92,8 @@ export function FilterSidebar({
                   }
                   className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                     isActive
-                      ? "bg-accent/10 text-accent-dark font-medium"
-                      : "text-accent hover:bg-accent/10"
+                      ? "bg-brand-500/10 text-brand-800 font-medium"
+                      : "text-brand-500 hover:bg-brand-500/10"
                   }`}
                 >
                   {pill.label}
@@ -109,7 +109,7 @@ export function FilterSidebar({
             Cena
           </summary>
           <div className="space-y-3 pt-1">
-            <div className="flex items-center justify-between text-sm font-medium tabular-nums text-accent">
+            <div className="flex items-center justify-between text-sm font-medium tabular-nums text-brand-500">
               <span>{formatPricePLN(localMin)}</span>
               <span>{formatPricePLN(localMax)}</span>
             </div>
@@ -126,7 +126,7 @@ export function FilterSidebar({
                 }}
                 onMouseUp={commitPrice}
                 onTouchEnd={commitPrice}
-                className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-accent"
+                className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand-500 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-brand-500"
                 aria-label="Cena minimalna"
               />
               <input
@@ -141,13 +141,13 @@ export function FilterSidebar({
                 }}
                 onMouseUp={commitPrice}
                 onTouchEnd={commitPrice}
-                className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-accent"
+                className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand-500 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-brand-500"
                 aria-label="Cena maksymalna"
               />
               {/* Track bg */}
-              <div className="absolute inset-x-0 h-1.5 rounded-full bg-accent/25" />
+              <div className="absolute inset-x-0 h-1.5 rounded-full bg-brand-500/25" />
               <div
-                className="absolute h-1.5 rounded-full bg-accent"
+                className="absolute h-1.5 rounded-full bg-brand-500"
                 style={{
                   left: `${((localMin - sliderMin) / (sliderMax - sliderMin)) * 100}%`,
                   right: `${100 - ((localMax - sliderMin) / (sliderMax - sliderMin)) * 100}%`,
@@ -173,8 +173,8 @@ export function FilterSidebar({
                     onClick={() => update({ materials: toggle(activeFilters.materials, mat) })}
                     className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                       isActive
-                        ? "bg-accent/10 text-accent-dark font-medium"
-                        : "text-accent hover:bg-accent/10"
+                        ? "bg-brand-500/10 text-brand-800 font-medium"
+                        : "text-brand-500 hover:bg-brand-500/10"
                     }`}
                   >
                     {mat}
@@ -201,8 +201,8 @@ export function FilterSidebar({
                     onClick={() => update({ finishes: toggle(activeFilters.finishes, fin) })}
                     className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                       isActive
-                        ? "bg-accent/10 text-accent-dark font-medium"
-                        : "text-accent hover:bg-accent/10"
+                        ? "bg-brand-500/10 text-brand-800 font-medium"
+                        : "text-brand-500 hover:bg-brand-500/10"
                     }`}
                   >
                     {fin}
@@ -225,8 +225,8 @@ export function FilterSidebar({
                 onClick={() => update({ led: activeFilters.led === true ? undefined : true })}
                 className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                   activeFilters.led === true
-                    ? "bg-accent/10 text-accent-dark font-medium"
-                    : "text-accent hover:bg-accent/10"
+                    ? "bg-brand-500/10 text-brand-800 font-medium"
+                    : "text-brand-500 hover:bg-brand-500/10"
                 }`}
               >
                 Z LED
@@ -236,8 +236,8 @@ export function FilterSidebar({
                 onClick={() => update({ led: activeFilters.led === false ? undefined : false })}
                 className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                   activeFilters.led === false
-                    ? "bg-accent/10 text-accent-dark font-medium"
-                    : "text-accent hover:bg-accent/10"
+                    ? "bg-brand-500/10 text-brand-800 font-medium"
+                    : "text-brand-500 hover:bg-brand-500/10"
                 }`}
               >
                 Bez LED
@@ -262,8 +262,8 @@ export function FilterSidebar({
                     onClick={() => update({ sizes: toggle(activeFilters.sizes, size) })}
                     className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                       isActive
-                        ? "bg-accent/10 text-accent-dark font-medium"
-                        : "text-accent hover:bg-accent/10"
+                        ? "bg-brand-500/10 text-brand-800 font-medium"
+                        : "text-brand-500 hover:bg-brand-500/10"
                     }`}
                   >
                     {size}

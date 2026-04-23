@@ -183,6 +183,9 @@
   }
 }
 
+/* shadcn mapuje --color-accent → :root --accent (jasne tło UI). NIE używaj
+   `text-accent` / `bg-accent` dla miedzi brandbook — to będzie prawie białe.
+   Miedź #AF7C61 = klasy `brand-500` / `text-brand-500` / `bg-brand-500`. */
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
