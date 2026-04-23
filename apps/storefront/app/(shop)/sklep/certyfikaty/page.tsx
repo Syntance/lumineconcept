@@ -97,6 +97,7 @@ export default async function CertyfikatyPage({
               initialProducts={initialProducts}
               totalCount={totalCount}
               initialFilter={initialCategoryId}
+              defaultListingCategoryId={defaultCertyfikatyId ?? ""}
               initialSort={params.sort ?? "-created_at"}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/certyfikaty"

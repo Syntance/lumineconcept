@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { medusa } from "./client";
 import { getPolishRegionId } from "./region";
+import { isTransientMedusaError, sleep } from "./transient-error";
 
 function logMedusaFailure(context: string, error: unknown) {
   const msg = `[medusa] ${context} — backend niedostępny lub błąd HTTP (np. 502). Uruchom Medusę (apps/backend) i sprawdź MEDUSA_BACKEND_URL / NEXT_PUBLIC_MEDUSA_REGION_ID.`;
@@ -61,13 +62,16 @@ async function _getProductByHandle(handle: string) {
   const regionId = await getPolishRegionId();
 
   /**
-   * Railway (Neon + Medusa v2) przy cold starcie potrafi timeoutować
-   * pierwszy request — dajemy jedną szybką retry zanim propagujemy błąd.
+   * Railway / cold start: 502/503/504 (często JSON „Application failed to respond”)
+   * — powtarzamy z odschodzącymi pauzami, żeby pierwsze żądanie po wybudzeniu
+   * usługi zdążyło się wykonać.
    */
+  const delays = [0, 1200, 2500, 4000];
   let lastErr: unknown = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 1200));
+  for (let attempt = 0; attempt < delays.length; attempt++) {
+    const pause = delays[attempt] ?? 0;
+    if (pause > 0) {
+      await sleep(pause);
     }
     try {
       const response = await medusa.store.product.list({
@@ -79,6 +83,10 @@ async function _getProductByHandle(handle: string) {
       return response.products[0] ?? null;
     } catch (e) {
       lastErr = e;
+      if (attempt < delays.length - 1 && isTransientMedusaError(e)) {
+        continue;
+      }
+      break;
     }
   }
 

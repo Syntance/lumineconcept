@@ -36,6 +36,12 @@ interface ShopGridClientProps {
   initialProducts: SimpleProduct[];
   totalCount: number;
   initialFilter?: string;
+  /**
+   * ID root kategorii Medusy dla tej listy (ten sam, co bez `?kat=`).
+   * Używane przy pigułkach: jedna logiczna „kategoria” — reset `?kat=` i
+   * brak zdublowanego chipa z nazwą sekcji.
+   */
+  defaultListingCategoryId: string;
   initialSort: string;
   categories: Array<{ id: string; name: string }>;
   productBasePath: string;
@@ -52,6 +58,7 @@ export function ShopGridClient({
   initialProducts,
   totalCount,
   initialFilter,
+  defaultListingCategoryId,
   initialSort,
   categories,
   productBasePath,
@@ -197,6 +204,7 @@ export function ShopGridClient({
   return (
     <div className="lg:flex lg:items-start lg:gap-8">
       <FilterSidebar
+        defaultListingCategoryId={defaultListingCategoryId}
         activeFilters={filters}
         filterConfig={filterConfig}
         onFiltersChange={handleFiltersChange}
@@ -204,7 +212,7 @@ export function ShopGridClient({
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <SortBarMobile
-          categories={categories}
+          defaultListingCategoryId={defaultListingCategoryId}
           activeFilters={filters}
           onFiltersChange={handleFiltersChange}
           onOpenDrawer={() => setDrawerOpen(true)}
@@ -231,7 +239,6 @@ export function ShopGridClient({
           <div className="mt-3 h-px bg-brand-100" aria-hidden />
           <div className="mt-5 space-y-3">
             <SortBarDesktopChips
-              categories={categories}
               activeFilters={filters}
               onFiltersChange={handleFiltersChange}
             />
@@ -241,6 +248,7 @@ export function ShopGridClient({
         <FilterDrawer
           isOpen={drawerOpen}
           onClose={() => setDrawerOpen(false)}
+          defaultListingCategoryId={defaultListingCategoryId}
           categories={categories}
           activeFilters={filters}
           filterConfig={filterConfig}

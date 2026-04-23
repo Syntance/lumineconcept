@@ -2,15 +2,14 @@
 
 import { useCallback } from "react";
 import type { ActiveFilters } from "./filter-types";
-import {
-  SORT_OPTIONS,
-  PRODUCT_PILLS,
-  clearFilters,
-  formatPricePLN,
-} from "./filter-types";
+import { SORT_OPTIONS, clearFilters, formatPricePLN } from "./filter-types";
 
 interface SortBarProps {
-  categories: Array<{ id: string; name: string }>;
+  /**
+   * Opcjonalnie: root listy (bez `?kat=`) — tylko do licznika plakietki
+   * „Filtry” na mobile, gdy aktywna jest węższa podkategoria.
+   */
+  defaultListingCategoryId?: string;
   activeFilters: ActiveFilters;
   onFiltersChange: (filters: ActiveFilters) => void;
   onOpenDrawer: () => void;
@@ -24,30 +23,15 @@ interface ActiveChip {
   onRemove: () => void;
 }
 
+/**
+ * Aktywne filtry (chip z ×) — bez kategorii / pigułek; wybór kategorii widać
+ * w bocznym filtrze, nie w tagach pod sortowaniem.
+ */
 function buildActiveChips(
   activeFilters: ActiveFilters,
-  categories: Array<{ id: string; name: string }>,
   update: (patch: Partial<ActiveFilters>) => void,
 ): ActiveChip[] {
   const chips: ActiveChip[] = [];
-
-  if (activeFilters.pill && activeFilters.pill !== "all") {
-    const pillOpt = PRODUCT_PILLS.find((p) => p.value === activeFilters.pill);
-    chips.push({
-      key: `pill-${activeFilters.pill}`,
-      label: pillOpt?.label ?? activeFilters.pill,
-      onRemove: () => update({ pill: undefined }),
-    });
-  }
-
-  if (activeFilters.category) {
-    const cat = categories.find((c) => c.id === activeFilters.category);
-    chips.push({
-      key: `cat-${activeFilters.category}`,
-      label: cat?.name ?? activeFilters.category,
-      onRemove: () => update({ category: undefined }),
-    });
-  }
 
   for (const size of activeFilters.sizes) {
     chips.push({
@@ -99,7 +83,7 @@ function buildActiveChips(
 
 /** Pasek sortowania + Filtry — tylko mobile (lg:hidden). */
 export function SortBarMobile({
-  categories,
+  defaultListingCategoryId,
   activeFilters,
   onFiltersChange,
   onOpenDrawer,
@@ -111,8 +95,14 @@ export function SortBarMobile({
     [activeFilters, onFiltersChange],
   );
 
-  const chips = buildActiveChips(activeFilters, categories, update);
-  const activeCount = chips.length;
+  const chips = buildActiveChips(activeFilters, update);
+  const pillOn = !!activeFilters.pill && activeFilters.pill !== "all";
+  const subcatOn = Boolean(
+    defaultListingCategoryId &&
+      activeFilters.category &&
+      activeFilters.category !== defaultListingCategoryId,
+  );
+  const activeCount = chips.length + (pillOn ? 1 : 0) + (subcatOn ? 1 : 0);
 
   return (
     <div className="sticky top-16 z-30 -mx-4 border-b border-brand-100 bg-white/95 px-4 py-2.5 backdrop-blur-sm lg:hidden">
@@ -153,7 +143,6 @@ export function SortBarMobile({
 
 /** Aktywne chipy filtrów — tylko desktop (hidden lg:flex). */
 export function SortBarDesktopChips({
-  categories,
   activeFilters,
   onFiltersChange,
 }: SortBarDesktopChipsProps) {
@@ -164,7 +153,7 @@ export function SortBarDesktopChips({
     [activeFilters, onFiltersChange],
   );
 
-  const chips = buildActiveChips(activeFilters, categories, update);
+  const chips = buildActiveChips(activeFilters, update);
 
   if (chips.length === 0) return null;
 

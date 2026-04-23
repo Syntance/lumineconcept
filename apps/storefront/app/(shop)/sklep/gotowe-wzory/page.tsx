@@ -151,6 +151,7 @@ export default async function GotoweWzoryPage({
               initialProducts={initialProducts}
               totalCount={totalCount}
               initialFilter={initialCategoryId}
+              defaultListingCategoryId={defaultGotoweWzoryId ?? ""}
               initialSort={params.sort ?? "-created_at"}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/gotowe-wzory"

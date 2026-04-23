@@ -115,6 +115,7 @@ export default async function Logo3dListingPage({
               initialProducts={initialProducts}
               totalCount={totalCount}
               initialFilter={initialCategoryId}
+              defaultListingCategoryId={defaultLogo3dId ?? ""}
               initialSort={params.sort ?? "-created_at"}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/logo-3d"
