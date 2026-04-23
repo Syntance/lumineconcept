@@ -105,7 +105,12 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
     }
   }
 
+  // #region agent log
+  const __dbgT0 = Date.now();
+  fetch('http://127.0.0.1:7563/ingest/03da0fba-45c0-409f-a1e1-c2130a31ed12',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8a1bb3'},body:JSON.stringify({sessionId:'8a1bb3',location:'proxy/route.ts:110',message:'proxy:entry',data:{method:req.method,path,hasBody:!!init.body},timestamp:__dbgT0,hypothesisId:'H1-H2-H3-H4'})}).catch(()=>{});
+  // #endregion
   let res: Response;
+  const __dbgUpStart = Date.now();
   try {
     res = await fetch(url, init);
   } catch (e) {
@@ -126,6 +131,11 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
     );
   }
 
+  // #region agent log
+  const __dbgUpMs = Date.now() - __dbgUpStart;
+  const __dbgTotalMs = Date.now() - __dbgT0;
+  fetch('http://127.0.0.1:7563/ingest/03da0fba-45c0-409f-a1e1-c2130a31ed12',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8a1bb3'},body:JSON.stringify({sessionId:'8a1bb3',location:'proxy/route.ts:130',message:'proxy:exit',data:{method:req.method,path,status:res.status,upstreamMs:__dbgUpMs,totalMs:__dbgTotalMs,overheadMs:__dbgTotalMs-__dbgUpMs},timestamp:Date.now(),hypothesisId:'H1-H2-H3-H4'})}).catch(()=>{});
+  // #endregion
   return new NextResponse(res.body, {
     status: res.status,
     statusText: res.statusText,
