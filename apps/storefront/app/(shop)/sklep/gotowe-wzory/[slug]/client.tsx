@@ -440,12 +440,12 @@ export function ProductPageClient({
             >
               Jeszcze chwila — dokończ konfigurację
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-brand-600">
+            <p className="mt-2 text-sm leading-relaxed text-brand-800">
               {incompleteModalFromCheckout
                 ? "Żeby przejść dalej, uzupełnij poniższe elementy:"
                 : "Żeby dodać produkt do koszyka, uzupełnij poniższe elementy:"}
             </p>
-            <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-brand-700">
+            <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-brand-800">
               {!allColorChoicesComplete && colorOptionTitles.length > 0 && (
                 <li>Wybierz kolor dla każdego etapu konfiguracji</li>
               )}
@@ -488,7 +488,7 @@ export function ProductPageClient({
               </h2>
             )}
             {checkoutCallout?.message && (
-              <p className="mt-3 text-sm leading-relaxed text-brand-600 whitespace-pre-line">
+              <p className="mt-3 text-sm leading-relaxed text-brand-800 whitespace-pre-line">
                 {checkoutCallout.message}
               </p>
             )}
@@ -519,7 +519,7 @@ export function ProductPageClient({
                   setCalloutAction(null);
                   window.dispatchEvent(new Event("callout-cancelled"));
                 }}
-                className="w-full rounded-md border border-brand-200 px-6 py-2.5 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-50"
+                className="w-full rounded-md border border-brand-200 px-6 py-2.5 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50"
               >
                 Anuluj
               </button>

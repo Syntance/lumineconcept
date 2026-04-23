@@ -212,13 +212,13 @@ export function ShopGridClient({
 
         <div className="hidden lg:flex lg:flex-col">
           <div className="flex min-h-9 w-full items-center justify-between gap-4">
-            <p className="min-w-0 flex-1 text-base leading-snug text-brand-600" aria-live="polite">
+            <p className="min-w-0 flex-1 text-base leading-snug text-brand-800" aria-live="polite">
               {countBlock}
             </p>
             <select
               value={filters.sort}
               onChange={(e) => handleFiltersChange({ ...filters, sort: e.target.value })}
-              className="h-9 shrink-0 rounded-md border border-brand-200 bg-white px-3 py-1.5 text-sm text-brand-700"
+              className="h-9 shrink-0 rounded-md border border-brand-200 bg-white px-3 py-1.5 text-sm text-brand-800"
               aria-label="Sortowanie"
             >
               {SORT_OPTIONS.map((opt) => (
@@ -249,7 +249,7 @@ export function ShopGridClient({
           onFiltersChange={handleFiltersChange}
         />
 
-        <p className="mt-4 text-base text-brand-600 lg:hidden" aria-live="polite">
+        <p className="mt-4 text-base text-brand-800 lg:hidden" aria-live="polite">
           {countBlock}
         </p>
 

@@ -44,7 +44,7 @@ export function MobileNav({ isOpen, onClose, links }: MobileNavProps) {
           <button
             type="button"
             onClick={onClose}
-            className="p-2 -mr-2 text-brand-700"
+            className="p-2 -mr-2 text-brand-800"
             aria-label="Zamknij menu"
           >
             <X className="h-5 w-5" />
@@ -57,7 +57,7 @@ export function MobileNav({ isOpen, onClose, links }: MobileNavProps) {
                 <Link
                   href={link.href}
                   onClick={onClose}
-                  className="block rounded-lg px-4 py-3 text-base font-medium text-brand-700 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                  className="block rounded-lg px-4 py-3 text-base font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
                 >
                   {link.label}
                 </Link>

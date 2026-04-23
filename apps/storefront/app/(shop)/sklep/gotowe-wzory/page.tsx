@@ -120,12 +120,12 @@ export default async function GotoweWzoryPage({
           <h1 className="font-display text-4xl tracking-[0.06em] text-brand-800 lg:text-5xl">
             Gotowe wzory z plexi
           </h1>
-          <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-600 leading-relaxed">
+          <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-800 leading-relaxed">
             Cenniki, tabliczki, oznaczenia, logo — spersonalizuj na własne potrzeby.
           </p>
           <nav
             aria-label="Etapy zakupu"
-            className="mt-8 flex flex-wrap items-center justify-center gap-x-1 gap-y-3 text-sm font-medium leading-snug text-brand-700 sm:text-base"
+            className="mt-8 flex flex-wrap items-center justify-center gap-x-1 gap-y-3 text-sm font-medium leading-snug text-brand-800 sm:text-base"
           >
             {PURCHASE_STEPS.map((step, i) => {
               const StepIcon = step.Icon;
@@ -173,7 +173,7 @@ export default async function GotoweWzoryPage({
       {/* Trust bar */}
       <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
         <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-600">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-800">
             <span>📷 {trustBar?.followers ?? "25 000+"} obserwujących</span>
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
@@ -185,7 +185,7 @@ export default async function GotoweWzoryPage({
             <div className="mt-10 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
               {displayTestimonials.map((t) => (
                 <blockquote key={t._id} className="rounded-xl bg-white p-6 text-left shadow-sm">
-                  <p className="text-base italic text-brand-700 leading-relaxed">
+                  <p className="text-base italic text-brand-800 leading-relaxed">
                     &ldquo;{t.quote}&rdquo;
                   </p>
                   <footer className="mt-3 text-sm text-brand-500">
