@@ -24,9 +24,7 @@
   --color-brand-800: #725750;
   --color-brand-900: #4A3530;
 
-  /* Accent = brandbook miedź #AF7C61 */
-  --color-accent: #AF7C61;
-  --color-accent-light: #D5BFAB;
+  /* Ciemniejszy brąz (hover CTA itd.) — NIE mylić z Tailwind `accent` (shadcn). */
   --color-accent-dark: #725750;
 
   /* Typography — from brandbook */
@@ -110,7 +108,7 @@
     width: auto;
     height: auto;
     padding: 1rem 2rem;
-    background: var(--color-accent);
+    background: var(--color-brand-500);
     color: #fff;
     z-index: 9999;
     font-size: 1rem;
@@ -183,9 +181,17 @@
   }
 }
 
-/* shadcn mapuje --color-accent → :root --accent (jasne tło UI). NIE używaj
-   `text-accent` / `bg-accent` dla miedzi brandbook — to będzie prawie białe.
-   Miedź #AF7C61 = klasy `brand-500` / `text-brand-500` / `bg-brand-500`. */
+/*
+  Shadcn + Tailwind v4: w tym bloku `--color-accent` = `var(--accent)` z :root
+  (jasne tło podświetleń, ~oklch 0.97). To NIE jest miedź z brandbooka.
+
+  • Miedź #AF7C61 → zawsze `brand-500` / `text-brand-500` / `bg-brand-500`.
+  • `text-accent` / `bg-accent` = szare podświetlenia shadcn (Button variant itd.).
+  • `accent-dark` / `*-accent-dark` (nasze) = #725750, zdefiniowane wyżej w @theme.
+
+  Hydration „stary HTML vs nowy JS”: pełny rebuild + twardy refresh; na Vercel
+  czasem stary RSC payload — nowy deploy lub wyczyszczenie cache podglądu.
+*/
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
