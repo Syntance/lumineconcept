@@ -137,14 +137,14 @@ export function ProductCard({
             {title}
           </h3>
           {dimensionsLabel && (
-            <p className="text-sm text-brand-500 line-clamp-2">
-              <span className="text-brand-400">Wymiary:</span> {dimensionsLabel}
+            <p className="text-sm font-normal leading-snug text-brand-800 line-clamp-2">
+              <span className="font-medium">Wymiary:</span> {dimensionsLabel}
             </p>
           )}
           <div className="pointer-events-auto">
             <Link
               href={productHref}
-              className="relative flex min-h-11 w-full items-center justify-center rounded-md border border-brand-100 bg-white py-2.5 px-4 transition-all duration-200 group-hover:bg-brand-100"
+              className="relative flex min-h-9 w-full items-center justify-center rounded-md border border-brand-100 bg-white py-1.5 px-3 transition-all duration-200 group-hover:bg-brand-100"
               aria-label={`Skonfiguruj: ${title}`}
             >
               <span className="transition-opacity duration-200 group-hover:opacity-0">
@@ -152,11 +152,11 @@ export function ProductCard({
                   amount={price}
                   compareAtAmount={compareAtPrice}
                   currency={currency}
-                  size="lg"
+                  size="sm"
                   listing
                 />
               </span>
-              <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-base font-semibold uppercase tracking-[0.15em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-xs font-semibold uppercase tracking-[0.12em] text-brand-800 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                 Skonfiguruj
               </span>
             </Link>
