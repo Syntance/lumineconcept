@@ -283,7 +283,7 @@ export default async function ShopHubPage() {
           </p>
           <Link
             href="/logo-3d/#formularz"
-            className="mt-6 inline-flex items-center justify-center rounded border border-brand-300 px-8 py-3 text-sm font-medium uppercase tracking-[0.2em] text-brand-700 transition-colors hover:bg-brand-50 hover:text-brand-900"
+            className="mt-6 inline-flex items-center justify-center rounded border border-brand-300 px-8 py-3 text-sm font-medium uppercase tracking-[0.2em] text-brand-800 transition-colors hover:bg-brand-50 hover:text-brand-900"
           >
             Zamów wycenę &rarr;
           </Link>
@@ -305,7 +305,7 @@ export default async function ShopHubPage() {
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
               {displayTestimonials.map((t) => (
                 <blockquote key={t._id} className="text-center">
-                  <p className="text-base italic leading-relaxed text-brand-600">
+                  <p className="text-base italic leading-relaxed text-brand-800">
                     &ldquo;{t.quote}&rdquo;
                   </p>
                   <footer className="mt-2 text-sm text-brand-400">

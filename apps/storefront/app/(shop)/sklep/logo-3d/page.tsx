@@ -64,7 +64,7 @@ export default async function Logo3dListingPage({
           <h1 className="font-display text-4xl tracking-[0.06em] text-brand-800 lg:text-5xl">
             Logo 3D z plexi — gotowe wzory do Twojego salonu
           </h1>
-          <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-600 leading-relaxed">
+          <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-800 leading-relaxed">
             Gotowe wzory logo 3D i LED. Wybierz model, zamów online — szybka realizacja.
           </p>
         </div>
@@ -78,7 +78,7 @@ export default async function Logo3dListingPage({
               <p className="font-display text-lg tracking-wide text-brand-800">
                 Masz własne logo?
               </p>
-              <p className="mt-1 text-base text-brand-600">
+              <p className="mt-1 text-base text-brand-800">
                 Zamów indywidualny projekt — logo 3D z Twoim designem, wycena w 24h.
               </p>
             </div>
@@ -112,7 +112,7 @@ export default async function Logo3dListingPage({
       {/* Trust bar */}
       <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
         <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-600">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-800">
             <span>📷 {trustBar?.followers ?? "25 000+"} obserwujących</span>
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>

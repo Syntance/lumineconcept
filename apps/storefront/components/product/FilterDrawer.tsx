@@ -47,7 +47,7 @@ function Chip({
       className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
         active
           ? "border border-accent bg-accent/10 text-accent-dark"
-          : "border border-brand-200 text-brand-600"
+          : "border border-brand-200 text-brand-800"
       }`}
     >
       {children}

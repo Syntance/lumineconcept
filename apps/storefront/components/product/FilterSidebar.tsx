@@ -63,7 +63,7 @@ export function FilterSidebar({
             <button
               type="button"
               onClick={() => onFiltersChange(clearFilters(activeFilters.sort, activeFilters.pill))}
-              className="text-[13px] text-brand-400 underline underline-offset-2 hover:text-brand-600 transition-colors"
+              className="text-[13px] text-brand-400 underline underline-offset-2 hover:text-brand-800 transition-colors"
             >
               Wyczyść
             </button>
@@ -93,7 +93,7 @@ export function FilterSidebar({
                   className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                     isActive
                       ? "bg-accent/10 text-accent-dark font-medium"
-                      : "text-brand-600 hover:bg-brand-50"
+                      : "text-brand-800 hover:bg-brand-50"
                   }`}
                 >
                   {pill.label}
@@ -174,7 +174,7 @@ export function FilterSidebar({
                     className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                       isActive
                         ? "bg-accent/10 text-accent-dark font-medium"
-                        : "text-brand-600 hover:bg-brand-50"
+                        : "text-brand-800 hover:bg-brand-50"
                     }`}
                   >
                     {mat}
@@ -202,7 +202,7 @@ export function FilterSidebar({
                     className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                       isActive
                         ? "bg-accent/10 text-accent-dark font-medium"
-                        : "text-brand-600 hover:bg-brand-50"
+                        : "text-brand-800 hover:bg-brand-50"
                     }`}
                   >
                     {fin}
@@ -226,7 +226,7 @@ export function FilterSidebar({
                 className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                   activeFilters.led === true
                     ? "bg-accent/10 text-accent-dark font-medium"
-                    : "text-brand-600 hover:bg-brand-50"
+                    : "text-brand-800 hover:bg-brand-50"
                 }`}
               >
                 Z LED
@@ -237,7 +237,7 @@ export function FilterSidebar({
                 className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                   activeFilters.led === false
                     ? "bg-accent/10 text-accent-dark font-medium"
-                    : "text-brand-600 hover:bg-brand-50"
+                    : "text-brand-800 hover:bg-brand-50"
                 }`}
               >
                 Bez LED
@@ -263,7 +263,7 @@ export function FilterSidebar({
                     className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                       isActive
                         ? "bg-accent/10 text-accent-dark font-medium"
-                        : "text-brand-600 hover:bg-brand-50"
+                        : "text-brand-800 hover:bg-brand-50"
                     }`}
                   >
                     {size}
