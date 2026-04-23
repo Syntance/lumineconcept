@@ -35,7 +35,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     const tCacheGetStart = now();
     await cache.get(cacheKey);
     timings.cache_get = Math.round(now() - tCacheGetStart);
-  } catch (e) {
+  } catch {
     timings.cache_error = 1;
   }
 
