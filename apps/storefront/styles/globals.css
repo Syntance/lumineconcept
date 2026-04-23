@@ -182,12 +182,13 @@
 }
 
 /*
-  Shadcn + Tailwind v4: w tym bloku `--color-accent` = `var(--accent)` z :root
-  (jasne tło podświetleń, ~oklch 0.97). To NIE jest miedź z brandbooka.
+  Shadcn + Tailwind v4: w :root nadpisujemy `--accent` na MIEDŹ brandu (#AF7C61),
+  bo cały storefront historycznie używa `bg-accent` / `text-accent` dla CTA,
+  linków, ikon — a domyślny shadcn stone (~oklch 0.97) rozjeżdżał brand.
 
-  • Miedź #AF7C61 → zawsze `brand-500` / `text-brand-500` / `bg-brand-500`.
-  • `text-accent` / `bg-accent` = szare podświetlenia shadcn (Button variant itd.).
+  • Miedź #AF7C61 — `brand-500` ORAZ `accent` (ten sam kolor, dwie klasy).
   • `accent-dark` / `*-accent-dark` (nasze) = #725750, zdefiniowane wyżej w @theme.
+  • `--accent-foreground` = white — czytelne napisy na miedzi (CTA primary).
 
   Hydration „stary HTML vs nowy JS”: pełny rebuild + twardy refresh; na Vercel
   czasem stary RSC payload — nowy deploy lub wyczyszczenie cache podglądu.
@@ -253,8 +254,10 @@
   --muted: oklch(0.97 0.001 106.424);
   /* Drugorzędny tekst — ten sam róg barwy, trochę jaśniejszy niż #725750 */
   --muted-foreground: #8f7a74;
-  --accent: oklch(0.97 0.001 106.424);
-  --accent-foreground: #725750;
+  /* Miedź brandu — CTA, ikony, linki. Wszystkie `bg-accent`/`text-accent`
+     w storefroncie renderują ten kolor (#AF7C61). */
+  --accent: #AF7C61;
+  --accent-foreground: #ffffff;
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.923 0.003 48.717);
   --input: oklch(0.923 0.003 48.717);
