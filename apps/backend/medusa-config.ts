@@ -250,9 +250,18 @@ export default defineConfig({
       resolve: "@medusajs/medusa/payment",
     },
     /**
-     * Fulfillment: Manual + DPD (warunkowo gdy envy są uzupełnione).
-     * DPD bez envów loguje ostrzeżenia na każdym liście opcji dostawy
-     * — zostawiamy tylko `manual`, dopóki nie zostanie skonfigurowany.
+     * Fulfillment: Manual + DPD.
+     *
+     * DPD rejestrujemy ZAWSZE, nawet bez envów — shipping option w bazie
+     * (Kurier DPD) odwołuje się do `provider_id: dpd_dpd`, więc brak
+     * tego providera w rejestrze wywala `POST /store/carts/:id/shipping-methods`
+     * z 500 „An unknown error occurred" (Medusa nie umie rozwiązać providera).
+     *
+     * `DpdFulfillmentProviderService` jest bezpieczny bez konfiguracji —
+     * `validateFulfillmentData` / `validateOption` / `getFulfillmentOptions`
+     * to pure functions, a `createFulfillment` zwraca pusty payload
+     * (generowanie prawdziwej etykiety dopinamy, gdy envy DPD_LOGIN/*/FID
+     * zostaną dostarczone przez klienta).
      */
     {
       resolve: "@medusajs/medusa/fulfillment",
@@ -262,17 +271,15 @@ export default defineConfig({
             resolve: "@medusajs/fulfillment-manual",
             id: "manual",
           },
-          ...(process.env.DPD_LOGIN && process.env.DPD_PASSWORD && process.env.DPD_FID
-            ? [{
-                resolve: "./src/modules/dpd-fulfillment",
-                id: "dpd",
-                options: {
-                  login: process.env.DPD_LOGIN,
-                  password: process.env.DPD_PASSWORD,
-                  fid: process.env.DPD_FID,
-                },
-              }]
-            : []),
+          {
+            resolve: "./src/modules/dpd-fulfillment",
+            id: "dpd",
+            options: {
+              login: process.env.DPD_LOGIN,
+              password: process.env.DPD_PASSWORD,
+              fid: process.env.DPD_FID,
+            },
+          },
         ],
       },
     },
