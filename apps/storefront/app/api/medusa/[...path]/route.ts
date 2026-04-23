@@ -6,8 +6,13 @@ import { NextRequest, NextResponse } from "next/server";
  * zwracać 500 przy POST — jawny fetch jest stabilniejszy.
  */
 
-/** Vercel: dłuższy cold start Railway / Medusa — unikaj przedwczesnego 504. */
-export const maxDuration = 30;
+/**
+ * Vercel: dłuższy cold start Railway / Medusa — unikaj przedwczesnego 504.
+ * 60 s zostawia nam wystarczający margines nawet dla najgorszego przypadku
+ * cold-startu Railway (workflow-engine-redis + pricing module + workerów),
+ * a warm-path mieści się w <2 s, więc realnie nigdy nie dobijamy limitu.
+ */
+export const maxDuration = 60;
 /**
  * Node runtime — Edge nie obsługuje części nagłówków + 4.5MB body limit,
  * a mamy POST-y z większymi payloadami (completeCart z line items).
@@ -49,12 +54,13 @@ const HOP_BY_HOP = new Set([
 const ALLOWED_FIRST_SEGMENT = new Set(["store", "auth", "custom"]);
 
 /**
- * Timeout upstream Medusy. Po wdrożeniu workflow-engine-redis + event-bus-redis
- * `completeCart` wraca w <2 s, nawet przy cold starcie Railway. 25 s to
- * margines bezpieczeństwa (pod limitem Vercela 30 s) — jeśli kiedykolwiek
- * przekroczymy, to znaczy że coś realnie się zepsuło, nie że czekamy.
+ * Timeout upstream Medusy. Warm-path wraca w <2 s dzięki workflow-engine-redis
+ * i locking-redis, ale pierwszy request po dłuższej ciszy potrafi cold-startować
+ * lazy workflow engine i iść ~30–40 s (obserwowane na Railway). Ustawiamy 55 s
+ * (pod limitem maxDuration=60 s) żeby nie przerywać realnych requestów, które
+ * i tak są obronione przez warmup job.
  */
-const UPSTREAM_TIMEOUT_MS = 25_000;
+const UPSTREAM_TIMEOUT_MS = 55_000;
 
 function filterRequestHeaders(req: NextRequest): Headers {
   const h = new Headers();
