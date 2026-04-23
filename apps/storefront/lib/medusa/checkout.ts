@@ -395,7 +395,11 @@ export function describeMedusaError(e: unknown, fallback: string): string {
    */
   const looksGeneric =
     !message || /^an unknown error occurred\.?$/i.test(message.trim());
-  if (looksGeneric && (status >= 500 || status === 0)) {
+  if (
+    looksGeneric &&
+    (status >= 500 || status === 0) &&
+    !(type || code)
+  ) {
     return "Chwilowy problem z serwerem. Poczekaj 10 sekund i spróbuj jeszcze raz — Twoje dane zostały zachowane.";
   }
   if (message) return message;

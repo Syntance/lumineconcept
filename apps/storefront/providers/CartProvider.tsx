@@ -353,8 +353,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
             (e as { response?: { status?: number } })?.response?.status ??
             0;
           const isCompleted = /already\s+completed/i.test(msg);
-          const isMissing = status === 404 || /not\s+found/i.test(msg);
-          if (!isCompleted && !isMissing) throw e;
+          /** Tylko brak koszyka — nie „Variant not found” itp. */
+          const isCartMissing =
+            status === 404 ||
+            (/\bcart\b/i.test(msg) && /not\s+found/i.test(msg));
+          if (!isCompleted && !isCartMissing) throw e;
 
           try {
             localStorage.removeItem(CART_ID_KEY);

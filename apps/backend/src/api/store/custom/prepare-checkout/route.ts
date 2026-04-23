@@ -72,7 +72,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
         "payment_collection.payment_sessions.status",
       ],
     });
-    let [cartSnapshot] = await remoteQuery(pcObject);
+    const [cartSnapshot] = await remoteQuery(pcObject);
     if (!cartSnapshot) {
       return res.status(404).json({ message: `Cart ${cartId} not found` });
     }
