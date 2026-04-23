@@ -8,7 +8,6 @@ import {
   createPaymentCollectionForCartWorkflow,
   createPaymentSessionsWorkflow,
 } from "@medusajs/medusa/core-flows";
-import { defaultStoreCartFields } from "@medusajs/medusa/api/store/carts/query-config";
 
 type Body = {
   cart_id?: string;
@@ -114,21 +113,15 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
       });
     }
 
-    // Ostateczny snapshot z polami jakich potrzebuje storefront (taki sam
-    // kontrakt jak /store/carts/:id — żeby CheckoutForm mógł pominąć
-    // dodatkowy `cart.retrieve`).
-    const cartObject = remoteQueryObjectFromString({
-      entryPoint: "cart",
-      variables: { filters: { id: cartId } },
-      fields: defaultStoreCartFields,
-    });
-    const [cart] = await remoteQuery(cartObject);
-    if (!cart) {
-      return res.status(404).json({ message: `Cart ${cartId} not found after prepare` });
-    }
-
+    /**
+     * Nie zwracamy tu pełnego snapshotu koszyka — storefront i tak robi
+     * `getCart(cartId)` przez oficjalne `/store/carts/:id`, a drugi
+     * remoteQuery z `defaultStoreCartFields` wywalał się na „Entity 'Cart'
+     * does not have property 'region'” w naszym buildzie Medusy (join
+     * `region.*` nie jest tu rozpoznawany). Zwrot jest teraz lekki i szybki.
+     */
     return res.status(200).json({
-      cart,
+      ok: true,
       payment_collection_id: paymentCollectionId,
     });
   } catch (e) {
