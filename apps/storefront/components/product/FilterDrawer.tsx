@@ -17,6 +17,7 @@ import {
 interface FilterDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultListingCategoryId: string;
   categories: Array<{ id: string; name: string }>;
   activeFilters: ActiveFilters;
   filterConfig: FilterConfig;
@@ -58,6 +59,7 @@ function Chip({
 export function FilterDrawer({
   isOpen,
   onClose,
+  defaultListingCategoryId,
   categories: _categories,
   activeFilters,
   filterConfig,
@@ -145,12 +147,16 @@ export function FilterDrawer({
                   <Chip
                     key={pill.value}
                     active={isActive}
-                    onClick={() =>
+                    onClick={() => {
+                      const nextPill = pill.value === "all" ? undefined : pill.value;
                       onFiltersChange({
                         ...activeFilters,
-                        pill: pill.value === "all" ? undefined : pill.value,
-                      })
-                    }
+                        pill: nextPill,
+                        ...(defaultListingCategoryId
+                          ? { category: defaultListingCategoryId }
+                          : {}),
+                      });
+                    }}
                   >
                     {pill.label}
                   </Chip>

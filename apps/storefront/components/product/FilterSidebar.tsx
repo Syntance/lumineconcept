@@ -13,6 +13,11 @@ import {
 } from "./filter-types";
 
 interface FilterSidebarProps {
+  /**
+   * Root kategorii tej listy; przy zmianie pigułki zastępujemy węższe `?kat=`
+   * i trzymamy jeden aktywny wybór (Medusa: zawsze ten sam scope + filtr pigułki).
+   */
+  defaultListingCategoryId: string;
   activeFilters: ActiveFilters;
   filterConfig: FilterConfig;
   onFiltersChange: (filters: ActiveFilters) => void;
@@ -23,6 +28,7 @@ function toggle(arr: string[], val: string): string[] {
 }
 
 export function FilterSidebar({
+  defaultListingCategoryId,
   activeFilters,
   filterConfig,
   onFiltersChange,
@@ -85,11 +91,15 @@ export function FilterSidebar({
                 <button
                   key={pill.value}
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const nextPill = pill.value === "all" ? undefined : pill.value;
                     update({
-                      pill: pill.value === "all" ? undefined : pill.value,
-                    })
-                  }
+                      pill: nextPill,
+                      ...(defaultListingCategoryId
+                        ? { category: defaultListingCategoryId }
+                        : {}),
+                    });
+                  }}
                   className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                     isActive
                       ? "bg-brand-500/10 text-brand-800 font-medium"
