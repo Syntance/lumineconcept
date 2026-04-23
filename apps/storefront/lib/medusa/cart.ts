@@ -30,6 +30,33 @@ export async function addLineItem(
   quantity: number,
   metadata?: Record<string, string>,
 ) {
+  if (metadata?.certificate_stand === "true") {
+    const base = resolveMedusaFetchBase();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+        ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+        : {}),
+    };
+    const res = await fetch(`${base}/store/custom/certificate-line-item`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        cart_id: cartId,
+        variant_id: variantId,
+        quantity,
+        metadata,
+      }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      throw new Error(body.message ?? `certificate-line-item ${res.status}`);
+    }
+    const data = (await res.json()) as { cart: unknown };
+    return data.cart;
+  }
+
   const response = await medusa.store.cart.createLineItem(
     cartId,
     {
