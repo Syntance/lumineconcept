@@ -82,14 +82,23 @@ export default defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL!,
     /**
-     * Connection pool — bez tego Medusa używa domyślnego 10 połączeń z
-     * infinite idle timeout. W połączeniu z Railway wychodzi tak, że każdy
-     * request czeka ~30s na zwolnienie connection pool, bo poprzednie
-     * transakcje siedzą idle. Oficjalna rekomendacja Medusy z issue #5693.
+     * Connection pool + idle transaction timeout — bez tego Medusa używa
+     * 10 połączeń z infinite idle timeout (wąskie gardło na Railway przy
+     * concurrent cart operations). Oficjalna rekomendacja Medusy
+     * (issue #5693, komentarz zespołu Medusa).
+     *
+     * `idle_in_transaction_session_timeout` (Postgres) + pool size w
+     * `pool` (Knex/MikroORM).
      */
-    databaseExtra: {
-      idle_in_transaction_session_timeout: 20_000,
-      max: 20,
+    databaseDriverOptions: {
+      connection: {
+        statement_timeout: 30_000,
+        idle_in_transaction_session_timeout: 20_000,
+      },
+      pool: {
+        min: 2,
+        max: 20,
+      },
     },
     redisUrl: process.env.REDIS_URL,
     workerMode: WORKER_MODE,
