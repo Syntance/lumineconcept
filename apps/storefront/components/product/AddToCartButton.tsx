@@ -127,7 +127,7 @@ export function AddToCartButton({
   const ctaDisabled = disabled || !variantId || isAdding;
 
   const ctaBtn =
-    "flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-none border border-brand-300 px-3 font-display text-[13px] italic tracking-wide transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-[15px]";
+    "flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-none border border-brand-300 px-3 font-display text-[13px] italic tracking-wide transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-[18px]";
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-3 sm:grid sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] sm:items-stretch sm:gap-3">

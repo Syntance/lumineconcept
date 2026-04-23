@@ -60,7 +60,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
           onChange={(e) => toggle(e.target.checked)}
           className="h-5 w-5 shrink-0 rounded-none border border-white/50 bg-brand-800 accent-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         />
-        <span className="font-sans text-white">
+        <span className="font-sans text-base text-white">
           Chcę ekspres · +50% wartości zamówienia
         </span>
       </label>

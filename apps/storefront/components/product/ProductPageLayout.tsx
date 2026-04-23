@@ -20,6 +20,17 @@ import {
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
+/** Zgodnie z `/store/custom/certificate-line-item` — dopłata za podstawkę tylko przy tagu „certyfikaty”. */
+function productHasCertyfikatyTag(
+  product: NonNullable<Awaited<ReturnType<typeof getProductByHandle>>>,
+): boolean {
+  return (
+    (product.tags as Array<{ value?: string }> | undefined)?.some(
+      (t) => t.value?.toLowerCase() === "certyfikaty",
+    ) ?? false
+  );
+}
+
 function extractBasePrice(metadata: Record<string, unknown> | undefined | null): number | null {
   const raw = metadata?.base_price;
   if (raw === undefined || raw === null || raw === "") return null;
@@ -107,6 +118,8 @@ export async function ProductPageLayout({
       ) ?? false;
     if (!hasTag) notFound();
   }
+
+  const certificateStandAvailable = productHasCertyfikatyTag(product);
 
   const { galleryImages: images, schemaImageUrl } = extractSchemaImage({
     title: product.title,
@@ -231,7 +244,7 @@ export async function ProductPageLayout({
             )}
 
             <PriceDisplay amount={price} variant="badge" />
-            {basePath === "/sklep/certyfikaty" && (
+            {certificateStandAvailable && (
               <p className="text-sm text-brand-700">
                 Opcjonalna podstawka w kolorze certyfikatu: +10 zł / szt. (zaznacz przy zamówieniu).
               </p>
@@ -272,7 +285,7 @@ export async function ProductPageLayout({
               checkoutCallout={siteSettings?.checkoutCallout ?? null}
               globalColors={productConfig.colors}
               schemaImageUrl={schemaImageUrl}
-              certificateStandAvailable={basePath === "/sklep/certyfikaty"}
+              certificateStandAvailable={certificateStandAvailable}
             />
           </div>
         </div>
