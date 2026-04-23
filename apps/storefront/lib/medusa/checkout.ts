@@ -283,14 +283,15 @@ export async function selectShippingOption(cartId: string, optionId: string) {
  * Oszczędza ~300-500 ms (dwa round-tripy zamiast jednego) w kroku 2 → 3.
  * Backend endpoint jest idempotentny — bezpieczne retry.
  *
- * Zwraca świeży `cart` w tym samym kontrakcie co `GET /store/carts/:id`,
- * więc możemy bezpośrednio podać go do `initPaymentSession` / stan UI.
+ * Nie zwraca pełnego `cart` — storefront i tak odświeża go przez
+ * `getCart(cartId)`; dzięki temu backend unika kapryśnego joina `region.*`
+ * w remoteQuery, a odpowiedź jest szybka (pole `paymentCollectionId`).
  */
 export async function prepareCheckout(
   cartId: string,
   optionId: string,
   providerId: string,
-): Promise<HttpTypes.StoreCart> {
+): Promise<{ paymentCollectionId?: string }> {
   const base = resolveMedusaFetchBase();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -323,10 +324,10 @@ export async function prepareCheckout(
     throw err;
   }
   const data = (await res.json()) as {
-    cart: HttpTypes.StoreCart;
+    ok?: boolean;
     payment_collection_id?: string;
   };
-  return data.cart;
+  return { paymentCollectionId: data.payment_collection_id };
 }
 
 /**
