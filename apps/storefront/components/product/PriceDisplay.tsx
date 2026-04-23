@@ -57,7 +57,7 @@ export function PriceDisplay({
   if (variant === "badge") {
     return (
       <div className="flex items-center gap-3">
-        <span className="inline-block bg-brand-800 px-5 py-1.5 font-display text-[1.125rem] italic text-white">
+        <span className="inline-block bg-brand-800 px-5 py-1.5 font-display text-[1.25rem] italic text-white">
           {formatPrice(amount, currency)}
         </span>
         {hasDiscount && (
