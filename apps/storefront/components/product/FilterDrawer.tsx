@@ -46,8 +46,8 @@ function Chip({
       onClick={onClick}
       className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
         active
-          ? "border border-accent bg-accent/10 text-accent-dark"
-          : "border border-accent/35 text-accent hover:border-accent/55 hover:bg-accent/5"
+          ? "border border-brand-500 bg-brand-500/10 text-brand-800"
+          : "border border-brand-500/35 text-brand-500 hover:border-brand-500/55 hover:bg-brand-500/5"
       }`}
     >
       {children}
@@ -163,7 +163,7 @@ export function FilterDrawer({
           <section>
             <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Cena</p>
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm font-medium tabular-nums text-accent">
+              <div className="flex items-center justify-between text-sm font-medium tabular-nums text-brand-500">
                 <span>{formatPricePLN(localMin)}</span>
                 <span>{formatPricePLN(localMax)}</span>
               </div>
@@ -180,7 +180,7 @@ export function FilterDrawer({
                   }}
                   onMouseUp={commitPrice}
                   onTouchEnd={commitPrice}
-                  className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-accent"
+                  className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand-500 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-brand-500"
                   aria-label="Cena minimalna"
                 />
                 <input
@@ -195,12 +195,12 @@ export function FilterDrawer({
                   }}
                   onMouseUp={commitPrice}
                   onTouchEnd={commitPrice}
-                  className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-accent"
+                  className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand-500 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-brand-500"
                   aria-label="Cena maksymalna"
                 />
-                <div className="absolute inset-x-0 h-1.5 rounded-full bg-accent/25" />
+                <div className="absolute inset-x-0 h-1.5 rounded-full bg-brand-500/25" />
                 <div
-                  className="absolute h-1.5 rounded-full bg-accent"
+                  className="absolute h-1.5 rounded-full bg-brand-500"
                   style={{
                     left: `${((localMin - sliderMin) / (sliderMax - sliderMin)) * 100}%`,
                     right: `${100 - ((localMax - sliderMin) / (sliderMax - sliderMin)) * 100}%`,
