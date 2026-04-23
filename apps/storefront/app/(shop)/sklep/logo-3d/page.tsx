@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
+import {
+  categoryIdByHandle,
+  categoryIdFromKatParam,
+  LISTING_CATEGORY_HANDLE,
+  type CategoryTreeNode,
+} from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
 import { getSiteSettings } from "@/lib/sanity/client";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
@@ -27,16 +33,25 @@ export default async function Logo3dListingPage({
 }) {
   const params = await searchParams;
 
-  const [productsResponse, categories, settings, globalConfig] = await Promise.all([
-    getProducts({
-      limit: INITIAL_PAGE_SIZE,
-      offset: 0,
-      order: params.sort ?? "-created_at",
-    }).catch(() => null),
+  const [categories, settings, globalConfig] = await Promise.all([
     getProductCategories().catch(() => []),
     getSiteSettings(),
     getGlobalProductConfig().catch(() => EMPTY_GLOBAL_CONFIG),
   ]);
+
+  const tree = categories as unknown as CategoryTreeNode[];
+  const defaultLogo3dId = categoryIdByHandle(tree, LISTING_CATEGORY_HANDLE.logo3d);
+  const resolvedKatId = params.kat ? categoryIdFromKatParam(tree, params.kat) : undefined;
+  const listCategoryId = params.kat ? resolvedKatId : defaultLogo3dId;
+
+  const productsResponse = await getProducts({
+    limit: INITIAL_PAGE_SIZE,
+    offset: 0,
+    order: params.sort ?? "-created_at",
+    category_id: listCategoryId ? [listCategoryId] : undefined,
+  }).catch(() => null);
+
+  const initialCategoryId = params.kat ? resolvedKatId : defaultLogo3dId;
 
   const products = productsResponse?.products ?? [];
   const totalCount = productsResponse?.count ?? 0;
@@ -99,7 +114,7 @@ export default async function Logo3dListingPage({
             <ShopGridClient
               initialProducts={initialProducts}
               totalCount={totalCount}
-              initialFilter={params.kat}
+              initialFilter={initialCategoryId}
               initialSort={params.sort ?? "-created_at"}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/logo-3d"
