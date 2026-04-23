@@ -97,10 +97,22 @@ export default defineConfig({
       },
       // Medusa typings zawężają `connection` tylko do `{ ssl }`, ale
       // Knex/pg akceptują tu więcej opcji — rzutujemy, żeby móc ustawić
-      // timeout'y transakcji (ochrona przed zakleszczeniami poola).
+      // timeout'y transakcji (ochrona przed zakleszczeniami poola) i
+      // rodzinę adresów DNS dla Railway IPv6-only internal network.
       connection: {
         statement_timeout: 30_000,
         idle_in_transaction_session_timeout: 20_000,
+        /**
+         * KLUCZOWE na Railway. Internal hostnames (`*.railway.internal`)
+         * rezolwują się TYLKO po IPv6. node-postgres (pg) bez tego leci
+         * domyślnie `family: 4` — DNS lookup timeout ~1–2 s, potem fallback
+         * IPv6. Przy add-to-cart (≈10 query) narzut 10–20 s. To dokładnie
+         * ten sam bug co `?family=0` w REDIS_URL, tylko po stronie Postgres.
+         *
+         * `family: 0` = „spróbuj IPv4 i IPv6, zwróć pierwszy który się
+         * uda" (Node.js `dns.lookup` semantics).
+         */
+        family: 0,
       } as unknown as { ssl?: boolean },
     },
     redisUrl: process.env.REDIS_URL,
@@ -164,21 +176,29 @@ export default defineConfig({
               },
             },
           },
-          {
-            // Workflow engine trzyma stan kroków `completeCart`, `placeOrder`
-            // itp. Domyślny `workflow-engine-inmemory` = stan w RAM procesu.
-            // Wersja Redis zapisuje stan w kolejce BullMQ i jest crash-safe:
-            // jeśli proces zginie w połowie workflow, inny (worker) dokończy.
-            key: "workflows",
-            resolve: "@medusajs/workflow-engine-redis",
-            options: {
-              // Od Medusa v2.12.2 oficjalna nazwa to `redisUrl` (spójność
-              // z innymi modułami). Stare `redis.url` generuje deprecation warn.
-              redis: {
-                redisUrl: process.env.REDIS_URL,
-              },
-            },
-          },
+          /**
+           * Workflow engine: Redis TYLKO gdy realnie mamy worker-split
+           * (server + worker = 2 instancje). Przy `shared` (single instance)
+           * Redis-backed engine to czysty narzut — każdy step workflow
+           * robi roundtrip BullMQ (push → poll → pop → execute → push result),
+           * co dodaje 100–300 ms × N stepów. Cart workflow Medusy ma kilkanaście
+           * stepów, więc to realne 2–5 s narzutu na add-to-cart.
+           *
+           * Dla `shared` zostawiamy domyślny `workflow-engine-inmemory`
+           * (nie rejestrujemy tu nic — Medusa załaduje go sama). Crash-safety
+           * przy single instance i tak nie ma sensu (crash = i tak stop).
+           */
+          ...(WORKER_MODE === "shared"
+            ? []
+            : [
+                {
+                  key: "workflows",
+                  resolve: "@medusajs/workflow-engine-redis",
+                  options: {
+                    redis: { redisUrl: process.env.REDIS_URL },
+                  },
+                },
+              ]),
           {
             // Query cache dla cart / product / shipping. Bez tego każdy
             // `retrieveCart` robi pełny JOIN z Postgres — ~40–120 ms.
