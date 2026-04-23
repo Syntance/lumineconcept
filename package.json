@@ -18,6 +18,8 @@
     "clean": "turbo clean",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "admin:create-local": "pnpm --filter @lumine/backend admin:create-local",
+    "sync-medusa-categories": "pnpm --filter @lumine/backend sync-storefront-categories",
+    "sync-medusa-categories:link": "pnpm --filter @lumine/backend sync-storefront-categories:link",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "sync-medusa-product": "tsx scripts/sync-medusa-product-from-source.ts",

@@ -56,12 +56,12 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
             <>
               <p>{split.lead}</p>
               <p className="mt-1">
-                <span className="text-brand-500">Wymiary:</span>{" "}
+                <span className="font-bold text-brand-800">Wymiary:</span>{" "}
                 {split.dimensionsLine.replace(/^Wymiary\s*[:\-–—]\s*/i, "").trim()}
               </p>
               {materialDescriptionLine && (
                 <p className="mt-1">
-                  <span className="text-brand-500">Materiał:</span>{" "}
+                  <span className="font-bold text-brand-800">Materiał:</span>{" "}
                   {materialDescriptionLine}
                 </p>
               )}
@@ -70,12 +70,12 @@ export function ProductTabs({ description, metadata }: ProductTabsProps) {
             <>
               {dimensionsInOpis && (
                 <p className="mb-3 font-sans text-base leading-relaxed text-brand-700">
-                  <span className="text-brand-500">Wymiary:</span> {dimensionsInOpis}
+                  <span className="font-bold text-brand-800">Wymiary:</span> {dimensionsInOpis}
                 </p>
               )}
               {materialDescriptionLine && (
                 <p className="mb-3 font-sans text-base leading-relaxed text-brand-700">
-                  <span className="text-brand-500">Materiał:</span>{" "}
+                  <span className="font-bold text-brand-800">Materiał:</span>{" "}
                   {materialDescriptionLine}
                 </p>
               )}

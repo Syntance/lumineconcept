@@ -9,6 +9,8 @@
     "build": "medusa build",
     "seed": "medusa exec medusa-config -- medusa seed -f ./data/seed.json",
     "variants:on-demand": "medusa exec ./src/scripts/migrate-variants-on-demand.ts",
+    "sync-storefront-categories": "medusa exec ./src/scripts/sync-storefront-product-categories.ts",
+    "sync-storefront-categories:link": "medusa exec ./src/scripts/sync-storefront-product-categories.ts -- --link-products",
     "setup-shipping": "medusa exec ./src/scripts/ensure-lumine-shipping.ts",
     "setup-payment": "medusa exec ./src/scripts/ensure-lumine-payment.ts",
     "db:migrate": "medusa db:migrate",

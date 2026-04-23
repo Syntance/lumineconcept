@@ -2,10 +2,16 @@ import type { Metadata } from "next";
 import { Fragment, Suspense } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Sparkles } from "lucide-react";
+import {
+  categoryIdByHandle,
+  categoryIdFromKatParam,
+  LISTING_CATEGORY_HANDLE,
+  type CategoryTreeNode,
+} from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
 import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
 import { TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
-import type { SiteSettings, Testimonial } from "@/lib/sanity/types";
+import type { Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { SITE_URL } from "@/lib/utils";
 import { medusaProductToSimple } from "@/lib/products/simple-product";
@@ -39,56 +45,40 @@ export default async function GotoweWzoryPage({
   const params = await searchParams;
   const order = params.sort ?? "-created_at";
 
-  let allCategories: Awaited<ReturnType<typeof getProductCategories>>;
-  let settings: SiteSettings | null;
-  let testimonials: Testimonial[];
-  let productsResponse: Awaited<ReturnType<typeof getProducts>> | null;
-
   const globalConfigPromise = getGlobalProductConfig().catch(
     () => EMPTY_GLOBAL_CONFIG,
   );
 
-  if (params.kat) {
-    [allCategories, settings, testimonials] = await Promise.all([
-      getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
-      getSiteSettings(),
-      sanityClient
-        .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
-        .catch(() => []),
-    ]);
+  const [allCategories, settings, testimonials] = await Promise.all([
+    getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
+    getSiteSettings(),
+    sanityClient
+      .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
+      .catch(() => []),
+  ]);
 
-    const initialCategoryId = allCategories.find(
-      (c) => c.handle === params.kat || c.id === params.kat,
-    )?.id;
+  const categoryTree = allCategories as unknown as CategoryTreeNode[];
+  const defaultGotoweWzoryId = categoryIdByHandle(
+    categoryTree,
+    LISTING_CATEGORY_HANDLE.gotoweWzory,
+  );
+  const resolvedKatId = params.kat
+    ? categoryIdFromKatParam(categoryTree, params.kat)
+    : undefined;
 
-    productsResponse = await getProducts({
-      limit: INITIAL_PAGE_SIZE,
-      offset: 0,
-      category_id: initialCategoryId ? [initialCategoryId] : undefined,
-      order,
-    }).catch(() => null);
-  } else {
-    const results = await Promise.all([
-      getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
-      getSiteSettings(),
-      sanityClient
-        .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
-        .catch(() => []),
-      getProducts({ limit: INITIAL_PAGE_SIZE, offset: 0, order }).catch(() => null),
-    ]);
-    allCategories = results[0];
-    settings = results[1];
-    testimonials = results[2];
-    productsResponse = results[3];
-  }
+  const listCategoryId = params.kat ? resolvedKatId : defaultGotoweWzoryId;
+
+  const productsResponse = await getProducts({
+    limit: INITIAL_PAGE_SIZE,
+    offset: 0,
+    order,
+    category_id: listCategoryId ? [listCategoryId] : undefined,
+  }).catch(() => null);
 
   const globalConfig = await globalConfigPromise;
 
-  const initialCategoryId = params.kat
-    ? allCategories.find(
-        (c) => c.handle === params.kat || c.id === params.kat,
-      )?.id
-    : undefined;
+  /** ID kategorii Medusy dla `/api/products?category=` — domyślnie root „gotowe-wzory”. */
+  const initialCategoryId = params.kat ? resolvedKatId : defaultGotoweWzoryId;
 
   const categories = allCategories;
 
