@@ -62,8 +62,15 @@ export function AddToCartButton({
         }
       } catch (e) {
         console.error("[AddToCartButton] addItem", e);
+        const fromApi =
+          e instanceof Error && e.message.trim()
+            ? e.message.trim()
+            : typeof (e as { message?: string })?.message === "string"
+              ? (e as { message: string }).message.trim()
+              : "";
         setAddError(
-          "Nie udało się dodać produktu do koszyka. Spróbuj jeszcze raz.",
+          fromApi ||
+            "Nie udało się dodać produktu do koszyka. Spróbuj jeszcze raz.",
         );
       } finally {
         setIsAdding(false);

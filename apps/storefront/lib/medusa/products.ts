@@ -3,6 +3,17 @@ import { medusa } from "./client";
 import { getPolishRegionId } from "./region";
 import { isTransientMedusaError, sleep } from "./transient-error";
 
+/** Łańcuch `parent_category` jak w backendzie `certificate-line-item` (max głębokość). */
+function medusaCategoryAncestorFields(depth: number): string {
+  let s = "";
+  let path = "categories";
+  for (let i = 0; i < depth; i++) {
+    path += ".parent_category";
+    s += `,+${path}.handle,+${path}.name`;
+  }
+  return s;
+}
+
 function logMedusaFailure(context: string, error: unknown) {
   const msg = `[medusa] ${context} — backend niedostępny lub błąd HTTP (np. 502). Uruchom Medusę (apps/backend) i sprawdź MEDUSA_BACKEND_URL / NEXT_PUBLIC_MEDUSA_REGION_ID.`;
   if (process.env.NODE_ENV === "development") {
@@ -78,7 +89,8 @@ async function _getProductByHandle(handle: string) {
         handle,
         region_id: regionId,
         fields:
-          "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options,+tags",
+          "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options,+tags,+collection.handle,+collection.title,+categories.handle,+categories.name" +
+          medusaCategoryAncestorFields(8),
       });
       return response.products[0] ?? null;
     } catch (e) {

@@ -20,15 +20,59 @@ import {
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
-/** Zgodnie z `/store/custom/certificate-line-item` — dopłata za podstawkę tylko przy tagu „certyfikaty”. */
-function productHasCertyfikatyTag(
+type CertCategoryNode = {
+  handle?: string;
+  name?: string;
+  parent_category?: CertCategoryNode | null;
+} | null;
+
+function categoryNodeOrAncestorsMatchCertyfikaty(node: CertCategoryNode): boolean {
+  let cur: CertCategoryNode = node;
+  while (cur) {
+    const h = (cur.handle ?? "").toLowerCase().trim();
+    const n = (cur.name ?? "").toLowerCase().trim();
+    if (h === "certyfikaty" || h.includes("certyfikat") || n.includes("certyfikat")) {
+      return true;
+    }
+    cur = cur.parent_category ?? null;
+  }
+  return false;
+}
+
+/**
+ * Zgodnie z `/store/custom/certificate-line-item` — dopłata za podstawkę
+ * dla certyfikatów. Uznajemy produkt za certyfikat gdy:
+ * - ma tag `certyfikaty`, albo
+ * - ma kategorię (lub przodka kategorii) z handle/nazwą jak wyżej.
+ */
+function productIsCertyfikaty(
   product: NonNullable<Awaited<ReturnType<typeof getProductByHandle>>>,
 ): boolean {
-  return (
+  const hasTag =
     (product.tags as Array<{ value?: string }> | undefined)?.some(
-      (t) => t.value?.toLowerCase() === "certyfikaty",
-    ) ?? false
-  );
+      (t) => t.value?.toLowerCase().trim() === "certyfikaty",
+    ) ?? false;
+  if (hasTag) return true;
+
+  const collection = (
+    product as { collection?: { handle?: string; title?: string } | null }
+  ).collection;
+  if (collection) {
+    const ch = (collection.handle ?? "").toLowerCase().trim();
+    const ct = (collection.title ?? "").toLowerCase().trim();
+    if (
+      ch === "certyfikaty" ||
+      ch.includes("certyfikat") ||
+      ct.includes("certyfikat")
+    ) {
+      return true;
+    }
+  }
+
+  const categories = (
+    product as { categories?: CertCategoryNode[] | undefined }
+  ).categories;
+  return categories?.some((c) => categoryNodeOrAncestorsMatchCertyfikaty(c ?? null)) ?? false;
 }
 
 function extractBasePrice(metadata: Record<string, unknown> | undefined | null): number | null {
@@ -119,7 +163,7 @@ export async function ProductPageLayout({
     if (!hasTag) notFound();
   }
 
-  const certificateStandAvailable = productHasCertyfikatyTag(product);
+  const certificateStandAvailable = productIsCertyfikaty(product);
 
   const { galleryImages: images, schemaImageUrl } = extractSchemaImage({
     title: product.title,
