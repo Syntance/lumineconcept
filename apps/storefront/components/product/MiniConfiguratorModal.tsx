@@ -340,6 +340,8 @@ export function MiniConfiguratorModal({
       const key = optKey.toLowerCase().replace(/^kolor\s*/, "").replace(/\s+/g, "_") || "kolor";
       if (cs.selected && cs.selected !== CUSTOM_COLOR_VALUE) {
         meta[`color_${key}`] = cs.selected;
+        const hex = colorMap[cs.selected.toLowerCase()];
+        if (hex) meta[`color_${key}_hex`] = hex;
       }
       if (cs.selected === CUSTOM_COLOR_VALUE && cs.customHex) {
         meta[`color_${key}_custom`] = cs.customHex;
@@ -357,7 +359,7 @@ export function MiniConfiguratorModal({
       if (url) meta[`link_${i + 1}`] = url;
     }
     return meta;
-  }, [colorStates, textFields, textFieldValues, links, linksCount]);
+  }, [colorStates, textFields, textFieldValues, links, linksCount, colorMap]);
 
   const handleAdd = async () => {
     setIsAdding(true);

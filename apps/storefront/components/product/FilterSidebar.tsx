@@ -7,9 +7,9 @@ import {
   PRICE_SLIDER_MIN,
   PRICE_SLIDER_MAX,
   PRICE_STEP,
-  clearFilters,
+  clearNonCategoryFilters,
   formatPricePLN,
-  hasAnyActiveFilter,
+  hasClearableNonCategoryFilters,
 } from "./filter-types";
 
 interface FilterSidebarProps {
@@ -33,6 +33,10 @@ export function FilterSidebar({
   filterConfig,
   onFiltersChange,
 }: FilterSidebarProps) {
+  /** Po hydratacji — unikamy mismatchu gdy warunek „Wyczyść” różni się między SSR a 1. klientem. */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const update = useCallback(
     (patch: Partial<ActiveFilters>) => {
       onFiltersChange({ ...activeFilters, ...patch });
@@ -60,20 +64,22 @@ export function FilterSidebar({
   return (
     <aside className="hidden w-60 shrink-0 self-start lg:z-10 lg:block lg:sticky lg:top-24">
       <div className="max-h-[calc(100vh-6rem)] overflow-y-auto pr-4 pb-8">
-        {/* Header — min-h-9 jak wiersz sortowania (select h-9), żeby kreski były w jednej linii */}
-        <div className="flex min-h-9 items-center justify-between">
-          <h2 className="font-display text-base font-semibold tracking-wide text-brand-800">
+        {/* Header — min-h-10 + mt-3 jak kolumna z licznikiem (ShopGridClient), żeby kreski były w jednej linii. */}
+        <div className="flex min-h-10 items-center justify-between gap-2">
+          <h2 className="font-display text-xl font-semibold tracking-wide text-brand-800">
             Filtry
           </h2>
-          {hasAnyActiveFilter(activeFilters) && (
-            <button
-              type="button"
-              onClick={() => onFiltersChange(clearFilters(activeFilters.sort, activeFilters.pill))}
-              className="text-[13px] text-brand-400 underline underline-offset-2 hover:text-brand-800 transition-colors"
-            >
-              Wyczyść
-            </button>
-          )}
+          <div className="flex min-h-10 min-w-[3.25rem] shrink-0 items-center justify-end">
+            {mounted && hasClearableNonCategoryFilters(activeFilters) ? (
+              <button
+                type="button"
+                onClick={() => onFiltersChange(clearNonCategoryFilters(activeFilters))}
+                className="text-[13px] text-brand-400 underline underline-offset-2 hover:text-brand-800 transition-colors"
+              >
+                Wyczyść
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="mt-3 h-px bg-brand-100" />

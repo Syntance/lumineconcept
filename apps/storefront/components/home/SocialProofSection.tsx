@@ -14,13 +14,13 @@ const UVP_ITEMS = [
   },
   {
     icon: Scissors,
-    title: "Dowolny kształt",
-    desc: "Babeczka, liść, nożyczki — wycinamy wszystko",
+    title: "Wycinamy CNC",
+    desc: "Nie ogranicza nas żaden kształt",
   },
   {
     icon: Zap,
     title: "Express 72h",
-    desc: "Otwierasz salon w piątek? Logo będzie gotowe",
+    desc: "Realizacja w 3 dni za dopłatą 50% wartości zamówienia",
   },
 ] as const;
 

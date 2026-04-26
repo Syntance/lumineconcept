@@ -1,7 +1,10 @@
 /**
  * Taksonomia zgodna ze storefrontem:
- * - Hub /sklep: Gotowe wzory, Logo 3D, Certyfikaty
- * - Pod /sklep/gotowe-wzory: „pigułki” (PRODUCT_PILLS bez „all” i bez „certyfikaty” — certyfikaty mają osobny root)
+ * - Hub /sklep: Gotowe wzory, Logo 3D
+ * - Pod /sklep/gotowe-wzory: „pigułki” — cenniki, tabliczki, menu, QR, wizytowniki, certyfikaty
+ * - /sklep/certyfikaty dalej renderuje się jako osobny listing (root = handle „certyfikaty”),
+ *   mimo że w drzewie Medusy jest pod „gotowe-wzory”. Dzięki temu produkty z certyfikatów
+ *   pojawiają się także pod „Gotowe wzory → Wszystkie” oraz pod filtrem „Certyfikaty”.
  *
  * Handlery muszą być stabilne — URL `?kat=<handle>` na liście gotowe-wzory je dopasowuje.
  */
@@ -10,27 +13,23 @@ export const STOREFRONT_ROOT_CATEGORIES = [
   {
     handle: "gotowe-wzory",
     name: "Gotowe wzory",
-    description: "Cenniki, tabliczki, menu, kody QR, wizytowniki — realizacja ok. 10 dni roboczych.",
+    description: "Cenniki, tabliczki, menu, kody QR, wizytowniki, certyfikaty — realizacja ok. 10 dni roboczych.",
   },
   {
     handle: "logo-3d",
     name: "Logo 3D",
     description: "Logo 3D z plexi — LED, matowe wykończenia.",
   },
-  {
-    handle: "certyfikaty",
-    name: "Certyfikaty",
-    description: "Dyplomy, podziękowania, vouchery z plexi.",
-  },
 ] as const;
 
-/** Dzieci kategorii „gotowe-wzory” — zgodne z PRODUCT_PILLS (bez certyfikatów). */
+/** Dzieci kategorii „gotowe-wzory” — zgodne z PRODUCT_PILLS (łącznie z certyfikatami). */
 export const STOREFRONT_GOTOWE_WZORY_CHILDREN = [
   { handle: "cenniki", name: "Cenniki" },
   { handle: "tabliczki", name: "Tabliczki" },
   { handle: "menu", name: "Menu" },
   { handle: "qr", name: "Kody QR" },
   { handle: "wizytowniki", name: "Wizytowniki" },
+  { handle: "certyfikaty", name: "Certyfikaty" },
 ] as const;
 
 /** Logika jak `matchesPill` na storefront (`filter-types.ts`) — bez importu z apps/storefront. */

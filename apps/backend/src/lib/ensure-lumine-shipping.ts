@@ -15,6 +15,7 @@ const FULFILLMENT_SET_NAME = "Wysyłka";
 const SERVICE_ZONE_NAME = "Polska";
 const SHIPPING_PROFILE_NAME = "Lumine — standard";
 const OPTION_NAME = "Kurier DPD";
+const PICKUP_OPTION_NAME = "Odbiór osobisty";
 /**
  * Medusa v2 trzyma ceny jako dziesiętne w walucie głównej (PLN), nie w groszach.
  * 24.99 = 24 zł 99 gr. W adminie wyświetla się jako „24,99 zł".
@@ -303,57 +304,102 @@ export async function ensureLumineShipping(
     container,
     serviceZoneId,
   );
-  const already = existingOptions.find((o) => o.name === OPTION_NAME);
-  if (already) {
-    messages.push(`Opcja „${OPTION_NAME}” już istnieje (${already.id}).`);
-    return {
-      ok: true,
-      skipped: true,
-      messages,
-      stock_location_id: stockLocationId,
-      fulfillment_set_id: fulfillmentSetId,
+  const dpdExisting = existingOptions.find((o) => o.name === OPTION_NAME);
+  const pickupExisting = existingOptions.find(
+    (o) => o.name === PICKUP_OPTION_NAME,
+  );
+
+  type CreateShippingOptionInput = {
+    name: string;
+    service_zone_id: string;
+    shipping_profile_id: string;
+    provider_id: string;
+    data: Record<string, unknown>;
+    type: { label: string; description: string; code: string };
+    price_type: "flat";
+    prices: { amount: number; currency_code: string }[];
+  };
+
+  const toCreate: CreateShippingOptionInput[] = [];
+
+  if (dpdExisting) {
+    messages.push(`Opcja „${OPTION_NAME}” już istnieje (${dpdExisting.id}).`);
+  } else {
+    toCreate.push({
+      name: OPTION_NAME,
       service_zone_id: serviceZoneId,
       shipping_profile_id: shippingProfileId,
-      shipping_option_id: already.id,
-    };
+      provider_id: String(dpdFp.id),
+      data: {
+        id: "dpd_courier",
+      },
+      type: {
+        label: "Kurier",
+        description: "DPD Polska",
+        code: "dpd",
+      },
+      price_type: "flat",
+      prices: [
+        {
+          amount: DPD_FLAT_AMOUNT,
+          currency_code: "pln",
+        },
+      ],
+    });
   }
 
-  const { result: options } = await createShippingOptionsWorkflow(container).run({
-    input: [
-      {
-        name: OPTION_NAME,
-        service_zone_id: serviceZoneId,
-        shipping_profile_id: shippingProfileId,
-        provider_id: String(dpdFp.id),
-        data: {
-          id: "dpd_courier",
-        },
-        type: {
-          label: "Kurier",
-          description: "DPD Polska",
-          code: "dpd",
-        },
-        price_type: "flat",
-        prices: [
-          {
-            amount: DPD_FLAT_AMOUNT,
-            currency_code: "pln",
-          },
-        ],
+  if (pickupExisting) {
+    messages.push(
+      `Opcja „${PICKUP_OPTION_NAME}” już istnieje (${pickupExisting.id}).`,
+    );
+  } else if (!manualFp?.id) {
+    messages.push(
+      "Brak fulfillment providera „manual” — pomijam odbiór osobisty (dodaj @medusajs/fulfillment-manual).",
+    );
+  } else {
+    toCreate.push({
+      name: PICKUP_OPTION_NAME,
+      service_zone_id: serviceZoneId,
+      shipping_profile_id: shippingProfileId,
+      provider_id: String(manualFp.id),
+      data: {},
+      type: {
+        label: "Odbiór osobisty",
+        description: "Odbiór w siedzibie — Ryczów (po umówieniu)",
+        code: "pickup",
       },
-    ],
-  });
+      price_type: "flat",
+      prices: [
+        {
+          amount: 0,
+          currency_code: "pln",
+        },
+      ],
+    });
+  }
 
-  const so = options?.[0];
-  messages.push(`Utworzono opcję dostawy: ${OPTION_NAME} (${so?.id ?? "?"})`);
+  if (toCreate.length > 0) {
+    const { result: created } = await createShippingOptionsWorkflow(
+      container,
+    ).run({
+      input: toCreate,
+    });
+    for (const row of created ?? []) {
+      const r = row as { name?: string; id?: string };
+      messages.push(`Utworzono opcję dostawy: ${r.name ?? "?"} (${r.id ?? "?"})`);
+    }
+  }
+
+  const skipped = !!dpdExisting && !!pickupExisting && toCreate.length === 0;
 
   return {
     ok: true,
+    skipped,
     messages,
     stock_location_id: stockLocationId,
     fulfillment_set_id: fulfillmentSetId,
     service_zone_id: serviceZoneId,
     shipping_profile_id: shippingProfileId,
-    shipping_option_id: so?.id,
+    shipping_option_id: dpdExisting?.id ?? pickupExisting?.id,
   };
 }

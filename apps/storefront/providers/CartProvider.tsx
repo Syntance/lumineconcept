@@ -11,6 +11,13 @@ import {
   type ReactNode,
 } from "react";
 import * as cartApi from "@/lib/medusa/cart";
+import { cartLineConfigFingerprint } from "@/lib/cart/line-config-fingerprint";
+import {
+  invalidateShippingOptionsCache,
+  normalizeShippingOptionsForDisplay,
+  pickLowestPaidShippingOptionPrice,
+  prefetchShippingOptions,
+} from "@/lib/medusa/checkout";
 
 interface CartItem {
   id: string;
@@ -34,6 +41,12 @@ interface CartState {
   items: CartItem[];
   subtotal: number;
   shipping_total: number;
+  /**
+   * true gdy w koszyku jest już wybrana metoda dostawy (kurier lub odbiór).
+   * Wymagane przy odbiorze osobistym: `shipping_total === 0`, ale nie doliczamy
+   * szacunku kuriera do `grandTotal`.
+   */
+  hasShippingMethodSelection: boolean;
   tax_total: number;
   total: number;
   itemCount: number;
@@ -70,8 +83,18 @@ interface CartContextType extends CartState {
    * w walucie głównej (PLN, dziesiętne).
    */
   expressSurcharge: number;
-  /** total z Medusy + expressSurcharge (gdy ekspress włączony) */
+  /**
+   * Suma `item.total` — do wiersza „Produkty” i ekspressu; pewniejsza niż
+   * `cart.subtotal` z API (czasem zawiera dostawę po wyborze metody).
+   */
+  productsSubtotal: number;
+  /** total z Medusy + expressSurcharge (gdy ekspress włączony) + szacunek dostawy, jeśli brak shipping_total */
   grandTotal: number;
+  /**
+   * Gdy `shipping_total` z Medusy jest 0 — najniższa kwota z `listCartOptions`
+   * (spójnie z checkoutem). Po wyborze metody dostawy = null (używamy wyłącznie `shipping_total`).
+   */
+  shippingEstimate: number | null;
 }
 
 const CART_ID_KEY = "lumine_cart_id";
@@ -129,11 +152,13 @@ function mapCartItems(items: Array<Record<string, unknown>>): CartItem[] {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [shippingEstimate, setShippingEstimate] = useState<number | null>(null);
   const [cart, setCart] = useState<CartState>({
     id: null,
     items: [],
     subtotal: 0,
     shipping_total: 0,
+    hasShippingMethodSelection: false,
     tax_total: 0,
     total: 0,
     itemCount: 0,
@@ -155,11 +180,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const items = mapCartItems(
         (rawCart.items as Array<Record<string, unknown>>) ?? [],
       );
+      const shippingMethods = rawCart.shipping_methods;
+      const shippingT = numberFromUnknown(rawCart.shipping_total) ?? 0;
+      const hasShippingMethodSelection =
+        (Array.isArray(shippingMethods) && shippingMethods.length > 0) ||
+        shippingT > 0;
       setCart({
         id: rawCart.id as string,
         items,
         subtotal: numberFromUnknown(rawCart.subtotal) ?? 0,
-        shipping_total: numberFromUnknown(rawCart.shipping_total) ?? 0,
+        shipping_total: shippingT,
+        hasShippingMethodSelection,
         tax_total: numberFromUnknown(rawCart.tax_total) ?? 0,
         total: numberFromUnknown(rawCart.total) ?? 0,
         itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
@@ -210,6 +241,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
     }
   }, [updateCartState]);
+
+  const itemsSignature = useMemo(
+    () => cart.items.map((i) => `${i.variant_id}:${i.quantity}`).join(","),
+    [cart.items],
+  );
+
+  useEffect(() => {
+    if (!cart.id || cart.items.length === 0) {
+      setShippingEstimate(null);
+      return;
+    }
+    if (cart.hasShippingMethodSelection) {
+      setShippingEstimate(null);
+      return;
+    }
+
+    let cancelled = false;
+    invalidateShippingOptionsCache(cart.id);
+    void prefetchShippingOptions(cart.id)
+      .then((raw) => {
+        if (cancelled) return;
+        const opts = normalizeShippingOptionsForDisplay(
+          raw as unknown as Array<Record<string, unknown>>,
+        );
+        setShippingEstimate(pickLowestPaidShippingOptionPrice(opts));
+      })
+      .catch(() => {
+        if (!cancelled) setShippingEstimate(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cart.id, cart.hasShippingMethodSelection, itemsSignature]);
 
   useEffect(() => {
     /**
@@ -276,11 +341,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (preview) {
         didOptimisticRender = true;
         setCart((c) => {
-          const existing = c.items.find((i) => i.variant_id === variantId);
+          const fp = cartLineConfigFingerprint(metadata);
+          const existing = c.items.find(
+            (i) =>
+              i.variant_id === variantId &&
+              cartLineConfigFingerprint(i.metadata) === fp,
+          );
           let items: CartItem[];
           if (existing) {
             items = c.items.map((i) =>
-              i.variant_id === variantId
+              i.variant_id === variantId &&
+              cartLineConfigFingerprint(i.metadata) === fp
                 ? {
                     ...i,
                     quantity: i.quantity + quantity,
@@ -392,9 +463,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
          */
         if (didOptimisticRender) {
           setCart((c) => {
-            const items = c.items.filter(
-              (i) => i.id !== optimisticId && !(i.variant_id === variantId && i.optimistic),
-            );
+            const items = c.items.filter((i) => i.id !== optimisticId);
             const subtotal = items.reduce((s, i) => s + i.total, 0);
             return {
               ...c,
@@ -523,12 +592,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => {
     const ed = cart.metadata.express_delivery;
     const expressDelivery = ed === "true" || ed === "1";
-    // Dopłata ekspress to 50% subtotalu — zaokrąglamy do groszy (2 miejsc po
+    const productsSubtotal =
+      Math.round(
+        cart.items.reduce((s, i) => s + i.total, 0) * 100,
+      ) / 100;
+    // Dopłata ekspress to 50% sumy pozycji — zaokrąglamy do groszy (2 miejsc po
     // przecinku), nie do pełnych złotych.
     const expressSurcharge = expressDelivery
-      ? Math.round(cart.subtotal * 0.5 * 100) / 100
+      ? Math.round(productsSubtotal * 0.5 * 100) / 100
       : 0;
-    const grandTotal = Math.round((cart.total + expressSurcharge) * 100) / 100;
+    const shippingAddon = cart.hasShippingMethodSelection
+      ? 0
+      : (shippingEstimate ?? 0);
+    const grandTotal = Math.round(
+      (cart.total + expressSurcharge + shippingAddon) * 100,
+    ) / 100;
     return {
       ...cart,
       isLoading,
@@ -543,7 +621,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       expressDelivery,
       setExpressDelivery,
       expressSurcharge,
+      productsSubtotal,
       grandTotal,
+      shippingEstimate,
     };
   }, [
     cart,
@@ -557,6 +637,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     refreshCart,
     applyDiscount,
     setExpressDelivery,
+    shippingEstimate,
   ]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

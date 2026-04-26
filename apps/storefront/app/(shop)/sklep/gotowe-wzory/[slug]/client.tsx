@@ -283,6 +283,8 @@ export function ProductPageClient({
       const sel = selectedOptions[title];
       if (sel && sel !== CUSTOM_COLOR_VALUE) {
         meta[`color_${key}`] = sel;
+        const hex = colorMap[sel.toLowerCase()];
+        if (hex) meta[`color_${key}_hex`] = hex;
       }
       const cust = colorCustomizations[title];
       if (cust?.customColor) {
@@ -318,6 +320,7 @@ export function ProductPageClient({
     uploadedFiles,
     certificateStandAvailable,
     includeCertificateStand,
+    colorMap,
   ]);
 
   const calloutEnabled =

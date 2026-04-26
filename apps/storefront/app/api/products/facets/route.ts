@@ -8,9 +8,19 @@ import {
 
 const MEDUSA_BATCH = 50;
 
+function parseCategoryIds(sp: URLSearchParams): string[] | undefined {
+  const raw = sp.get("category");
+  if (!raw?.trim()) return undefined;
+  const ids = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return ids.length ? ids : undefined;
+}
+
 /** Agregacja opcji filtrów (serwer, cache) — bez wysyłania pełnej listy produktów do klienta. */
 export async function GET(request: NextRequest) {
-  const category = request.nextUrl.searchParams.get("category") ?? undefined;
+  const categoryIds = parseCategoryIds(request.nextUrl.searchParams);
 
   try {
     const all: SimpleProduct[] = [];
@@ -21,7 +31,7 @@ export async function GET(request: NextRequest) {
       const response = await getProducts({
         limit: MEDUSA_BATCH,
         offset: medusaOffset,
-        category_id: category ? [category] : undefined,
+        category_id: categoryIds,
         order: "-created_at",
       });
       totalMedusa = response.count;
