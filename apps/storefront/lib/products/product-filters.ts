@@ -1,3 +1,4 @@
+import type { FilterConfig } from "@/components/product/filter-types";
 import { matchesPill } from "@/components/product/filter-types";
 import type { SimpleProduct } from "./simple-product";
 
@@ -9,6 +10,33 @@ export interface ProductFilterParams {
   priceMin?: number;
   priceMax?: number;
   pill?: string;
+}
+
+/**
+ * Gdy użytkownik zaznaczy wszystkie wartości z listy facetów (np. wszystkie
+ * materiały), semantycznie to jest to samo co „brak filtru”. Bez tego
+ * `productPassesFilters` odrzuca produkty **bez** danej opcji (pusta tablica
+ * wariantów), bo `some()` po pustej liście zwraca false — stąd mniejsza
+ * liczba wyników niż przy wyczyszczonych filtrach.
+ */
+function selectionIsFullUniverse(selected: string[], universe: string[]): boolean {
+  if (selected.length === 0 || universe.length === 0) return false;
+  if (selected.length !== universe.length) return false;
+  const norm = (s: string) => s.trim().toLowerCase();
+  const sel = new Set(selected.map(norm));
+  return universe.every((u) => sel.has(norm(u)));
+}
+
+export function normalizeProductFilterParams(
+  f: ProductFilterParams,
+  universe: Pick<FilterConfig, "sizes" | "materials" | "finishes">,
+): ProductFilterParams {
+  return {
+    ...f,
+    materials: selectionIsFullUniverse(f.materials, universe.materials) ? [] : f.materials,
+    finishes: selectionIsFullUniverse(f.finishes, universe.finishes) ? [] : f.finishes,
+    sizes: selectionIsFullUniverse(f.sizes, universe.sizes) ? [] : f.sizes,
+  };
 }
 
 export function productPassesFilters(p: SimpleProduct, f: ProductFilterParams): boolean {

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Fragment, Suspense } from "react";
-import type { LucideIcon } from "lucide-react";
-import { Sparkles } from "lucide-react";
+import { Suspense } from "react";
 import {
+  buildMedusaCategoryScopeMap,
   categoryIdByHandle,
   categoryIdFromKatParam,
   LISTING_CATEGORY_HANDLE,
+  medusaCategoryIdsForScope,
   type CategoryTreeNode,
 } from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
@@ -19,14 +19,6 @@ import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/glob
 import { ShopGridClient } from "./client";
 
 const INITIAL_PAGE_SIZE = 24;
-
-const PURCHASE_STEPS: readonly { label: string; Icon?: LucideIcon }[] = [
-  { label: "Personalizacja", Icon: Sparkles },
-  { label: "💳 Płatność" },
-  { label: "📐 Przygotowujemy projekt" },
-  { label: "✅ Twoja akceptacja" },
-  { label: "📦 Realizacja i wysyłka" },
-];
 
 export const metadata: Metadata = {
   title: "Gotowe wzory z plexi — cenniki, tabliczki, menu, QR | Lumine Concept",
@@ -68,11 +60,20 @@ export default async function GotoweWzoryPage({
 
   const listCategoryId = params.kat ? resolvedKatId : defaultGotoweWzoryId;
 
+  const medusaCategoryScopeMap = buildMedusaCategoryScopeMap(
+    categoryTree,
+    LISTING_CATEGORY_HANDLE.gotoweWzory,
+  );
+  const medusaListingCategoryIds = medusaCategoryIdsForScope(
+    listCategoryId,
+    medusaCategoryScopeMap,
+  );
+
   const productsResponse = await getProducts({
     limit: INITIAL_PAGE_SIZE,
     offset: 0,
     order,
-    category_id: listCategoryId ? [listCategoryId] : undefined,
+    category_id: medusaListingCategoryIds,
   }).catch(() => null);
 
   const globalConfig = await globalConfigPromise;
@@ -113,33 +114,6 @@ export default async function GotoweWzoryPage({
           <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-800 leading-relaxed">
             Cenniki, tabliczki, oznaczenia, logo — spersonalizuj na własne potrzeby.
           </p>
-          <nav
-            aria-label="Etapy zakupu"
-            className="mt-8 flex flex-wrap items-center justify-center gap-x-1 gap-y-3 text-sm font-medium leading-snug text-brand-800 sm:text-base"
-          >
-            {PURCHASE_STEPS.map((step, i) => {
-              const StepIcon = step.Icon;
-              return (
-                <Fragment key={step.label}>
-                  {i > 0 && (
-                    <span className="mx-1.5 text-brand-400 lg:mx-2" aria-hidden>
-                      →
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                    {StepIcon && (
-                      <StepIcon
-                        className="h-4 w-4 shrink-0 text-accent"
-                        strokeWidth={1.75}
-                        aria-hidden
-                      />
-                    )}
-                    {step.label}
-                  </span>
-                </Fragment>
-              );
-            })}
-          </nav>
         </div>
       </section>
 
@@ -156,6 +130,7 @@ export default async function GotoweWzoryPage({
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/gotowe-wzory"
               globalColors={globalConfig.colors}
+              medusaCategoryScopeMap={medusaCategoryScopeMap}
             />
           </Suspense>
         </div>

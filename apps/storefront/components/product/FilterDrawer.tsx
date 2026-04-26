@@ -8,9 +8,9 @@ import {
   PRICE_SLIDER_MIN,
   PRICE_SLIDER_MAX,
   PRICE_STEP,
-  clearFilters,
+  clearNonCategoryFilters,
   formatPricePLN,
-  hasAnyActiveFilter,
+  hasClearableNonCategoryFilters,
   resultCountLabel,
 } from "./filter-types";
 
@@ -113,12 +113,14 @@ export function FilterDrawer({
       <div className="fixed inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-white shadow-xl animate-in slide-in-from-bottom duration-300">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-brand-100 px-5 py-3">
-          <h2 className="text-sm font-semibold text-brand-800">Filtry</h2>
+          <h2 className="font-display text-xl font-semibold tracking-wide text-brand-800">
+            Filtry
+          </h2>
           <div className="flex items-center gap-3">
-            {hasAnyActiveFilter(activeFilters) && (
+            {hasClearableNonCategoryFilters(activeFilters) && (
               <button
                 type="button"
-                onClick={() => onFiltersChange(clearFilters(activeFilters.sort, activeFilters.pill))}
+                onClick={() => onFiltersChange(clearNonCategoryFilters(activeFilters))}
                 className="text-sm text-brand-400 underline underline-offset-2"
               >
                 Wyczyść

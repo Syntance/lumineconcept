@@ -14,10 +14,12 @@ const FOOTER_LINKS = {
     { href: "/dostawa-i-platnosci", label: "Dostawa i płatności" },
     { href: "/zwroty", label: "Reklamacje" },
   ],
-  Kontakt: [
-    { href: "mailto:kontakt@lumineconcept.pl", label: "kontakt@lumineconcept.pl" },
-    { href: "/kontakt", label: "Formularz kontaktowy" },
-  ],
+} as const;
+
+/** Treści pod e-mailem, nad linkiem do formularza — kolumna Kontakt. */
+const FOOTER_CONTACT_EXTRA = {
+  address: "34-115 Ryczów, ul. Jana Pawła II, nr 93",
+  hours: "Godziny otwarcia: pon.–pt.: 9:00–17:00",
 } as const;
 
 export function Footer() {
@@ -59,12 +61,57 @@ export function Footer() {
               </ul>
             </div>
           ))}
+
+          <div>
+            <h3 className="text-base font-semibold uppercase tracking-wider text-white">
+              Kontakt
+            </h3>
+            <ul className="mt-4 space-y-4">
+              <li className="list-none">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-brand-300 leading-relaxed">
+                  {FOOTER_CONTACT_EXTRA.address}
+                </p>
+                <p className="mt-2 text-xs font-medium uppercase tracking-[0.12em] text-brand-300 leading-relaxed">
+                  {FOOTER_CONTACT_EXTRA.hours}
+                </p>
+              </li>
+              <li>
+                <a
+                  href="mailto:kontakt@lumineconcept.pl"
+                  className="text-base text-brand-300 hover:text-white transition-colors"
+                >
+                  kontakt@lumineconcept.pl
+                </a>
+              </li>
+              <li>
+                <Link
+                  href="/kontakt"
+                  className="text-base text-brand-300 hover:text-white transition-colors"
+                >
+                  Formularz kontaktowy
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div className="mt-8 border-t border-brand-700 pt-3 lg:mt-10 lg:pt-4">
-          <p className="text-center text-sm text-brand-400 lg:text-left">
-            &copy; {new Date().getFullYear()} Lumine Concept. Wszelkie prawa zastrzeżone.
-          </p>
+          <div className="flex flex-col items-center gap-2 text-sm text-brand-400 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+            <p className="text-center lg:text-left">
+              &copy; {new Date().getFullYear()} Lumine Concept. Wszelkie prawa zastrzeżone.
+            </p>
+            <p className="text-center lg:text-right">
+              Wykonanie:{" "}
+              <a
+                href="https://syntance.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-300 underline-offset-2 hover:text-white hover:underline"
+              >
+                Syntance
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>

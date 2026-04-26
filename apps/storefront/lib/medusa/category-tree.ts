@@ -39,3 +39,57 @@ export function categoryIdFromKatParam(
   if (!kat) return undefined;
   return flattenCategoryTree(nodes).find((c) => c.handle === kat || c.id === kat)?.id;
 }
+
+export function findCategoryNodeByHandle(
+  nodes: CategoryTreeNode[],
+  handle: string,
+): CategoryTreeNode | null {
+  for (const n of nodes) {
+    if (n.handle === handle) return n;
+    const found = findCategoryNodeByHandle(n.category_children ?? [], handle);
+    if (found) return found;
+  }
+  return null;
+}
+
+/** ID węzła i wszystkich potomków — do `category_id[]` w Medusie (produkt w którejkolwiek). */
+export function collectSubtreeCategoryIds(node: CategoryTreeNode): string[] {
+  const ids: string[] = [node.id];
+  for (const ch of node.category_children ?? []) {
+    ids.push(...collectSubtreeCategoryIds(ch));
+  }
+  return ids;
+}
+
+/**
+ * Dla każdej kategorii w poddrzewie listingu: id → [ten węzeł + potomkowie].
+ * Sam root bez potomków w zapytaniu Medusy pomija produkty przypisane tylko do podkategorii.
+ */
+export function buildMedusaCategoryScopeMap(
+  tree: CategoryTreeNode[],
+  listingRootHandle: string,
+): Record<string, string[]> {
+  const root = findCategoryNodeByHandle(tree, listingRootHandle);
+  if (!root) return {};
+
+  const map: Record<string, string[]> = {};
+  function visit(node: CategoryTreeNode): void {
+    map[node.id] = collectSubtreeCategoryIds(node);
+    for (const ch of node.category_children ?? []) {
+      visit(ch);
+    }
+  }
+  visit(root);
+  return map;
+}
+
+/** Rozwiń aktywną kategorię UI do listy ID dla API Medusy. */
+export function medusaCategoryIdsForScope(
+  activeCategoryId: string | undefined,
+  scopeMap: Record<string, string[]>,
+): string[] | undefined {
+  if (!activeCategoryId) return undefined;
+  const ids = scopeMap[activeCategoryId];
+  if (ids?.length) return ids;
+  return [activeCategoryId];
+}

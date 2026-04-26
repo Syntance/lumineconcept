@@ -1,14 +1,29 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isPriceSort } from "@/components/product/filter-types";
 import { getProducts } from "@/lib/medusa/products";
-import { medusaProductToSimple, type SimpleProduct } from "@/lib/products/simple-product";
+import {
+  extractFilterConfig,
+  medusaProductToSimple,
+  type SimpleProduct,
+} from "@/lib/products/simple-product";
 import {
   type ProductFilterParams,
+  normalizeProductFilterParams,
   productPassesFilters,
 } from "@/lib/products/product-filters";
 
 const MAX_LIMIT = 50;
 const MEDUSA_BATCH = 50;
+
+function parseCategoryIds(sp: URLSearchParams): string[] | undefined {
+  const raw = sp.get("category");
+  if (!raw?.trim()) return undefined;
+  const ids = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return ids.length ? ids : undefined;
+}
 
 function parseFilters(sp: URLSearchParams): ProductFilterParams {
   const split = (key: string) =>
@@ -49,7 +64,7 @@ export async function GET(request: NextRequest) {
   const rawOffset = Number(sp.get("_offset") ?? "0");
   const limit = Math.min(Math.max(1, Number.isFinite(rawLimit) ? rawLimit : 12), MAX_LIMIT);
   const offset = Math.max(0, Number.isFinite(rawOffset) ? rawOffset : 0);
-  const category = sp.get("category") ?? undefined;
+  const categoryIds = parseCategoryIds(sp);
   const sort = sp.get("sort") ?? "-created_at";
   const priceSort = isPriceSort(sort);
   const filters = parseFilters(sp);
@@ -59,7 +74,7 @@ export async function GET(request: NextRequest) {
       const response = await getProducts({
         limit,
         offset,
-        category_id: category ? [category] : undefined,
+        category_id: categoryIds,
         order: sort,
       });
 
@@ -74,7 +89,7 @@ export async function GET(request: NextRequest) {
     }
 
     const medusaOrder = priceSort ? "-created_at" : sort;
-    const collected: SimpleProduct[] = [];
+    const allInCategory: SimpleProduct[] = [];
     let medusaOffset = 0;
     let totalMedusa = Infinity;
 
@@ -82,19 +97,26 @@ export async function GET(request: NextRequest) {
       const response = await getProducts({
         limit: MEDUSA_BATCH,
         offset: medusaOffset,
-        category_id: category ? [category] : undefined,
+        category_id: categoryIds,
         order: medusaOrder,
       });
       totalMedusa = response.count;
 
       for (const raw of response.products) {
-        const p = medusaProductToSimple(raw as unknown as Record<string, unknown>);
-        if (productPassesFilters(p, filters)) collected.push(p);
+        allInCategory.push(
+          medusaProductToSimple(raw as unknown as Record<string, unknown>),
+        );
       }
 
       medusaOffset += response.products.length;
       if (response.products.length === 0) break;
     }
+
+    const facets = extractFilterConfig(allInCategory);
+    const effectiveFilters = normalizeProductFilterParams(filters, facets);
+    const collected = allInCategory.filter((p) =>
+      productPassesFilters(p, effectiveFilters),
+    );
 
     if (priceSort) {
       collected.sort((a, b) =>

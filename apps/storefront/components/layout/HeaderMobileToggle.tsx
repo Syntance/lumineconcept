@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { Menu } from "lucide-react";
-import { MobileNav } from "./MobileNav";
+import { MobileNav, type MobileNavItem } from "./MobileNav";
 
 interface HeaderMobileToggleProps {
-  links: ReadonlyArray<{ href: string; label: string }>;
+  items: ReadonlyArray<MobileNavItem>;
 }
 
 /** Mały island: hamburger + mobile drawer. Reszta headera pozostaje RSC. */
-export function HeaderMobileToggle({ links }: HeaderMobileToggleProps) {
+export function HeaderMobileToggle({ items }: HeaderMobileToggleProps) {
   const [isOpen, setOpen] = useState(false);
 
   return (
@@ -22,11 +22,7 @@ export function HeaderMobileToggle({ links }: HeaderMobileToggleProps) {
       >
         <Menu className="h-5 w-5" />
       </button>
-      <MobileNav
-        isOpen={isOpen}
-        onClose={() => setOpen(false)}
-        links={links.map((l) => ({ href: l.href, label: l.label }))}
-      />
+      <MobileNav isOpen={isOpen} onClose={() => setOpen(false)} items={items} />
     </>
   );
 }

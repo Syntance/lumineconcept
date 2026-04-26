@@ -2,18 +2,35 @@
 
 import { useCart } from "@/hooks/useCart";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
+import { CartConfiguratorDetails } from "@/components/cart/CartConfiguratorDetails";
 import { formatPrice } from "@/lib/utils";
 
 export function OrderSummary() {
   const {
     items,
-    subtotal,
+    productsSubtotal,
     shipping_total,
+    shippingEstimate,
+    hasShippingMethodSelection,
     tax_total,
     expressDelivery,
     expressSurcharge,
     grandTotal,
   } = useCart();
+
+  const shippingDisplay =
+    shipping_total > 0
+      ? shipping_total
+      : hasShippingMethodSelection
+        ? 0
+        : shippingEstimate;
+
+  const shippingLabel =
+    shippingDisplay === null || shippingDisplay === undefined
+      ? "—"
+      : hasShippingMethodSelection && shipping_total === 0
+        ? "gratis"
+        : formatPrice(shippingDisplay);
 
   return (
     <div className="rounded-lg border border-brand-200 bg-brand-50/50 p-6">
@@ -39,6 +56,7 @@ export function OrderSummary() {
               <p className="text-xs font-medium text-brand-900 truncate">
                 {item.title}
               </p>
+              <CartConfiguratorDetails metadata={item.metadata} density="compact" />
               <p className="text-xs text-brand-500">
                 Ilość: {item.quantity}
               </p>
@@ -58,7 +76,7 @@ export function OrderSummary() {
         <div className="flex justify-between">
           <span className="text-brand-600">Produkty</span>
           <span className="font-medium tabular-nums text-brand-800">
-            {formatPrice(subtotal)}
+            {formatPrice(productsSubtotal)}
           </span>
         </div>
         <div className="flex justify-between">
@@ -72,7 +90,7 @@ export function OrderSummary() {
         <div className="flex justify-between">
           <span className="text-brand-600">Dostawa</span>
           <span className="font-medium tabular-nums text-brand-800">
-            {shipping_total > 0 ? formatPrice(shipping_total) : "—"}
+            {shippingLabel}
           </span>
         </div>
         {expressDelivery && expressSurcharge > 0 && (

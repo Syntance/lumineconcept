@@ -109,7 +109,15 @@ pnpm dev
 | **PostHog** | Analityka behawioralna (eventy, funnele, session recordings, heatmapy) | `POSTHOG_*` w `.env` |
 | **Meta Pixel + CAPI** | Remarketing FB/IG | `META_*` w `.env` |
 | **MailerLite** | Email marketing | `MAILERLITE_*` w `.env` |
+| **Resend** | Maile transakcyjne (potwierdzenie zamówienia, wysyłka, anulowanie) | `RESEND_API_KEY`, `RESEND_FROM` w `apps/backend/.env` — szczegóły w `.env.example` |
 | **CookieYes** | RODO cookie consent | Script w `CookieConsent.tsx` |
+
+### Maile po złożeniu zamówienia (Resend)
+
+1. Utwórz klucz API w [Resend](https://resend.com/api-keys) i ustaw `RESEND_API_KEY` w środowisku **backendu** (lokalnie `apps/backend/.env`, na produkcji Railway). Domyślny nadawca w kodzie to `Lumine Concept <kontakt@lumineconcept.pl>` — nadpisz `RESEND_FROM` tylko jeśli potrzebujesz innego adresu z tej samej domeny.
+2. **Domena:** w Resend → Domains zweryfikuj `lumineconcept.pl` (SPF/DKIM). Bez tego wysyłka z `kontakt@…` się nie uda. **Dev bez domeny:** ustaw `RESEND_FROM=Acme <onboarding@resend.dev>`.
+3. Backend musi startować z ustawionym kluczem — wtedy ładuje się moduł `@medusajs/medusa/notification` z providerem `notification-resend`. Wysyłka uruchamia się przy evencie `order.placed` oraz przez zapasowy endpoint `notify-order-placed` wołany ze storefrontu po `completeCart`.
+4. Na Railway worker Redis musi być ten sam deployment co API (`medusa start`), inaczej eventy z kolejki mogą nie zrealizować subscribera — wtedy nadal działa kanał HTTP ze sklepu.
 
 ## Deploy
 

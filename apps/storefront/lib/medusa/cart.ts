@@ -8,7 +8,7 @@ import { getPolishRegionId } from "./region";
  */
 const CART_RETRIEVE_QUERY = {
   fields:
-    "+items.total,+items.subtotal,+items.unit_price,+items.quantity,+subtotal,+total,+tax_total,+shipping_total",
+    "+items.total,+items.subtotal,+items.unit_price,+items.quantity,+subtotal,+total,+tax_total,+shipping_total,+shipping_methods",
 };
 
 export async function createCart() {

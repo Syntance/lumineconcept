@@ -45,6 +45,74 @@ export async function getShippingOptions(cartId: string) {
 }
 
 /**
+ * Odbiór osobisty — `type.code` / `shipping_option_type.code` z API albo nazwa
+ * (np. „Odbiór osobisty” z `ensure-lumine-shipping`).
+ */
+export function isPickupShippingOption(
+  o: Record<string, unknown> | undefined,
+): boolean {
+  if (!o) return false;
+  const codeOf = (t: unknown) =>
+    String((t as { code?: string } | undefined)?.code ?? "").toLowerCase();
+  if (codeOf(o.type) === "pickup") return true;
+  if (codeOf(o.shipping_option_type) === "pickup") return true;
+  const name = String(o.name ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
+  if (name.includes("odbior") && name.includes("osobist")) return true;
+  return false;
+}
+
+function cartOptionsHavePickup(raw: unknown[] | null | undefined): boolean {
+  if (!raw?.length) return false;
+  return raw.some((o) => isPickupShippingOption(o as Record<string, unknown>));
+}
+
+/** Wspólna logika z `ShippingSelector` — kwota z `amount` / `calculated_price` Store API. */
+export function normalizeShippingOptionsForDisplay(
+  raw: Array<Record<string, unknown>> | null | undefined,
+): Array<{ id: string; name: string; price: number; isPickup: boolean }> {
+  const list = raw ?? [];
+  return list.map((o) => {
+    const calc = o.calculated_price as
+      | { calculated_amount?: number }
+      | undefined;
+    const amount =
+      Number(o.amount ?? o.price ?? calc?.calculated_amount ?? 0) || 0;
+    return {
+      id: String(o.id),
+      name: (o.name as string | undefined) ?? "Dostawa",
+      price: amount,
+      isPickup: isPickupShippingOption(o),
+    };
+  });
+}
+
+/**
+ * Szacunek koszyka przed wyborem metody: najtańsza opcja **płatna** (kurier),
+ * bez odbioru osobistego (`pickup`), żeby min(0, 24.99) nie zerowało podglądu.
+ */
+export function pickLowestPaidShippingOptionPrice(
+  options: Array<{ price: number; isPickup: boolean }>,
+): number | null {
+  const paid = options.filter((o) => !o.isPickup);
+  if (!paid.length) return null;
+  return Math.min(...paid.map((o) => o.price));
+}
+
+/** @deprecated Użyj `pickLowestPaidShippingOptionPrice` — pickup ma cenę 0. */
+export function pickLowestShippingOptionPrice(
+  options: Array<{ price: number; isPickup?: boolean }>,
+): number | null {
+  const normalized = options.map((o) => ({
+    price: o.price,
+    isPickup: o.isPickup ?? false,
+  }));
+  return pickLowestPaidShippingOptionPrice(normalized);
+}
+
+/**
  * Moduł-level cache promise'a z opcjami dostawy per cartId.
  *
  * Przed prefetchem Step 2 wchodził a opcje ładowały się dopiero ~3,4 s po
@@ -68,9 +136,16 @@ export function prefetchShippingOptions(cartId: string) {
   if (cached) return cached;
   const promise = (async () => {
     let raw = await getShippingOptions(cartId);
-    if (!raw?.length) {
+    /**
+     * Bootstrap wcześniej tylko przy pustej liście — wtedy istniejące wdrożenia
+     * miały wyłącznie DPD i nigdy nie dostawały odbioru. Jeśli brak opcji
+     * `pickup`, wołamy `ensure-shipping` ponownie (idempotentnie dokleja brak).
+     */
+    const list = (raw ?? []) as unknown[];
+    if (!list.length || !cartOptionsHavePickup(list)) {
       await ensureLumineShippingBootstrap();
-      raw = await getShippingOptions(cartId);
+      const refreshed = await getShippingOptions(cartId);
+      if (refreshed?.length) raw = refreshed;
     }
     return raw;
   })().catch((e) => {

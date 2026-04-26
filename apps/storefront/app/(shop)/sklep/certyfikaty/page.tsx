@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import {
+  buildMedusaCategoryScopeMap,
   categoryIdByHandle,
   categoryIdFromKatParam,
   LISTING_CATEGORY_HANDLE,
+  medusaCategoryIdsForScope,
   type CategoryTreeNode,
 } from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
@@ -43,11 +45,20 @@ export default async function CertyfikatyPage({
   const resolvedKatId = params.kat ? categoryIdFromKatParam(tree, params.kat) : undefined;
   const listCategoryId = params.kat ? resolvedKatId : defaultCertyfikatyId;
 
+  const medusaCategoryScopeMap = buildMedusaCategoryScopeMap(
+    tree,
+    LISTING_CATEGORY_HANDLE.certyfikaty,
+  );
+  const medusaListingCategoryIds = medusaCategoryIdsForScope(
+    listCategoryId,
+    medusaCategoryScopeMap,
+  );
+
   const productsResponse = await getProducts({
     limit: INITIAL_PAGE_SIZE,
     offset: 0,
     order: params.sort ?? "-created_at",
-    category_id: listCategoryId ? [listCategoryId] : undefined,
+    category_id: medusaListingCategoryIds,
   }).catch(() => null);
 
   const initialCategoryId = params.kat ? resolvedKatId : defaultCertyfikatyId;
@@ -102,6 +113,7 @@ export default async function CertyfikatyPage({
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/certyfikaty"
               globalColors={globalConfig.colors}
+              medusaCategoryScopeMap={medusaCategoryScopeMap}
             />
           </Suspense>
         </div>

@@ -40,6 +40,7 @@ const EMPTY_CART = {
   total: 0,
   tax_total: 0,
   shipping_total: 0,
+  shipping_methods: [],
   metadata: {},
 };
 
@@ -60,6 +61,7 @@ function SEEDED_CART(overrides: Record<string, unknown> = {}) {
     total: 12300,
     tax_total: 2300,
     shipping_total: 0,
+    shipping_methods: [],
     metadata: {},
     ...overrides,
   };

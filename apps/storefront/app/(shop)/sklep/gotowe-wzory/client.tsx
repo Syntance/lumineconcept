@@ -6,8 +6,13 @@ import { FilterSidebar } from "@/components/product/FilterSidebar";
 import { FilterDrawer } from "@/components/product/FilterDrawer";
 import { SortBarDesktopChips, SortBarMobile } from "@/components/product/SortBar";
 import type { ActiveFilters, FilterConfig } from "@/components/product/filter-types";
-import { resultCountLabel, SORT_OPTIONS } from "@/components/product/filter-types";
+import {
+  clearNonCategoryFilters,
+  resultCountLabel,
+  SORT_OPTIONS,
+} from "@/components/product/filter-types";
 import { trackCategoryViewed, trackProductFiltered } from "@/lib/analytics/events";
+import { medusaCategoryIdsForScope } from "@/lib/medusa/category-tree";
 import { extractFilterConfig, type SimpleProduct } from "@/lib/products/simple-product";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
 
@@ -15,11 +20,20 @@ export type { SimpleProduct };
 
 const PAGE_SIZE = 24;
 
-function buildProductsUrl(offset: number, limit: number, f: ActiveFilters): string {
+/** Stała referencja — domyślne `{}` w parametrach tworzyłoby nowy obiekt co render i zapętlało useEffect. */
+const EMPTY_MEDUSA_CATEGORY_SCOPE: Record<string, string[]> = Object.freeze({});
+
+function buildProductsUrl(
+  offset: number,
+  limit: number,
+  f: ActiveFilters,
+  medusaCategoryScopeMap: Record<string, string[]>,
+): string {
   const params = new URLSearchParams();
   params.set("_offset", String(offset));
   params.set("_limit", String(limit));
-  if (f.category) params.set("category", f.category);
+  const medusaIds = medusaCategoryIdsForScope(f.category, medusaCategoryScopeMap);
+  if (medusaIds?.length) params.set("category", medusaIds.join(","));
   params.set("sort", f.sort);
   if (f.sizes.length) params.set("sizes", f.sizes.join(","));
   if (f.materials.length) params.set("materials", f.materials.join(","));
@@ -46,6 +60,11 @@ interface ShopGridClientProps {
   categories: Array<{ id: string; name: string }>;
   productBasePath: string;
   globalColors?: GlobalConfigOption[];
+  /**
+   * Mapa: aktywne `filters.category` → lista ID dla Medusy (węzeł + potomkowie).
+   * Dzięki temu „Wszystkie” / root listingu obejmuje produkty tylko w podkategoriach.
+   */
+  medusaCategoryScopeMap?: Record<string, string[]>;
 }
 
 function getBadge(tags: string[]): "bestseller" | "nowość" | null {
@@ -63,7 +82,12 @@ export function ShopGridClient({
   categories,
   productBasePath,
   globalColors = [],
+  medusaCategoryScopeMap,
 }: ShopGridClientProps) {
+  const resolvedMedusaScopeMap = medusaCategoryScopeMap ?? EMPTY_MEDUSA_CATEGORY_SCOPE;
+  /** Prymityw stabilny przy tym samym zestawie ID (w przeciwieństwie do referencji obiektu z RSC). */
+  const medusaScopeKey = JSON.stringify(resolvedMedusaScopeMap);
+
   const [products, setProducts] = useState<SimpleProduct[]>(initialProducts);
   const [totalFiltered, setTotalFiltered] = useState(totalCount);
   const [listLoading, setListLoading] = useState(false);
@@ -118,7 +142,9 @@ export function ShopGridClient({
 
   useEffect(() => {
     let cancelled = false;
-    const q = filters.category ? `?category=${encodeURIComponent(filters.category)}` : "";
+    const medusaIds = medusaCategoryIdsForScope(filters.category, resolvedMedusaScopeMap);
+    const q =
+      medusaIds?.length ? `?category=${encodeURIComponent(medusaIds.join(","))}` : "";
     fetch(`/api/products/facets${q}`)
       .then((res) => res.json())
       .then((data: FilterConfig) => {
@@ -128,7 +154,7 @@ export function ShopGridClient({
     return () => {
       cancelled = true;
     };
-  }, [filters.category]);
+  }, [filters.category, medusaScopeKey]);
 
   useEffect(() => {
     if (isFirstListEffectRef.current) {
@@ -141,7 +167,7 @@ export function ShopGridClient({
     setListLoading(true);
     setProducts([]);
 
-    fetch(buildProductsUrl(0, PAGE_SIZE, f))
+    fetch(buildProductsUrl(0, PAGE_SIZE, f, resolvedMedusaScopeMap))
       .then(async (res) => {
         const data = (await res.json()) as { products: SimpleProduct[]; count: number };
         if (!cancelled && res.ok) {
@@ -156,7 +182,7 @@ export function ShopGridClient({
     return () => {
       cancelled = true;
     };
-  }, [filterFingerprint]);
+  }, [filterFingerprint, medusaScopeKey]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || listLoading) return;
@@ -164,13 +190,15 @@ export function ShopGridClient({
     if (offset >= totalFiltered) return;
     setLoadingMore(true);
     try {
-      const res = await fetch(buildProductsUrl(offset, PAGE_SIZE, filters));
+      const res = await fetch(
+        buildProductsUrl(offset, PAGE_SIZE, filters, resolvedMedusaScopeMap),
+      );
       const data = (await res.json()) as { products: SimpleProduct[]; count: number };
       if (res.ok) setProducts((prev) => [...prev, ...data.products]);
     } finally {
       setLoadingMore(false);
     }
-  }, [filters, products.length, totalFiltered, loadingMore, listLoading]);
+  }, [filters, products.length, totalFiltered, loadingMore, listLoading, medusaScopeKey]);
 
   const handleFiltersChange = useCallback((next: ActiveFilters) => {
     setFilters(next);
@@ -219,14 +247,15 @@ export function ShopGridClient({
         />
 
         <div className="hidden lg:flex lg:flex-col">
-          <div className="flex min-h-9 w-full items-center justify-between gap-4">
+          {/* min-h-10 + mt-3 jak w FilterSidebar — jedna linia z kreską pod „Filtry”. */}
+          <div className="flex min-h-10 w-full items-center justify-between gap-4">
             <p className="min-w-0 flex-1 text-base leading-snug text-brand-800" aria-live="polite">
               {countBlock}
             </p>
             <select
               value={filters.sort}
               onChange={(e) => handleFiltersChange({ ...filters, sort: e.target.value })}
-              className="h-9 shrink-0 rounded-md border border-brand-200 bg-white px-3 py-1.5 text-sm text-brand-800"
+              className="h-9 shrink-0 self-center rounded-md border border-brand-200 bg-white px-3 py-1.5 text-sm text-brand-800"
               aria-label="Sortowanie"
             >
               {SORT_OPTIONS.map((opt) => (
@@ -313,19 +342,7 @@ export function ShopGridClient({
             <p className="text-brand-500">Brak produktów spełniających kryteria.</p>
             <button
               type="button"
-              onClick={() =>
-                setFilters({
-                  sort: filters.sort,
-                  pill: filters.pill,
-                  sizes: [],
-                  materials: [],
-                  finishes: [],
-                  category: undefined,
-                  led: undefined,
-                  priceMin: undefined,
-                  priceMax: undefined,
-                })
-              }
+              onClick={() => setFilters(clearNonCategoryFilters(filters))}
               className="mt-3 text-base text-accent underline underline-offset-2 hover:text-accent-dark"
             >
               Wyczyść filtry

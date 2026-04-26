@@ -27,6 +27,67 @@ import { getPolishRegionId } from "@/lib/medusa/region";
 
 type CheckoutStep = 1 | 2 | 3;
 
+const CHECKOUT_DRAFT_STORAGE_KEY = "lumine_checkout_draft_v1";
+
+type CheckoutFormData = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  shippingOptionId: string;
+  paymentProviderId: string;
+  newsletter: boolean;
+  wantInvoice: boolean;
+  companyName: string;
+  nip: string;
+  acceptTerms: boolean;
+  acceptRodo: boolean;
+};
+
+type CheckoutDraftPayload = {
+  v: 1;
+  cartId: string;
+  step: CheckoutStep;
+  formData: CheckoutFormData;
+};
+
+function getDefaultCheckoutFormData(): CheckoutFormData {
+  return {
+    email: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    shippingOptionId: "",
+    paymentProviderId: "",
+    newsletter: false,
+    wantInvoice: false,
+    companyName: "",
+    nip: "",
+    acceptTerms: false,
+    acceptRodo: false,
+  };
+}
+
+function clampCheckoutStep(n: unknown): CheckoutStep {
+  const s = typeof n === "number" ? n : Number(n);
+  if (s === 2 || s === 3) return s;
+  return 1;
+}
+
+function clearCheckoutDraft(): void {
+  try {
+    sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+  } catch {
+    /* prywatny tryb */
+  }
+}
+
 const STEPS = [
   { number: 1, label: "Dane" },
   { number: 2, label: "Dostawa" },
@@ -43,6 +104,7 @@ const LABEL_CLASS = "block text-sm font-medium text-brand-700 mb-1";
  * ten sam błąd. Czyścimy lokalny stan i przeładowujemy stronę.
  */
 function resetStaleCartAndReload() {
+  clearCheckoutDraft();
   try {
     localStorage.removeItem("lumine_cart_id");
     localStorage.removeItem("lumine_express");
@@ -132,26 +194,81 @@ export function CheckoutForm() {
   const [contactSaveError, setContactSaveError] = useState<string | null>(null);
   const [preparingPayment, setPreparingPayment] = useState(false);
   const [shippingSaveError, setShippingSaveError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    email: "",
-    firstName: "",
-    lastName: "",
-    phone: "",
-    address: "",
-    city: "",
-    postalCode: "",
-    shippingOptionId: "",
-    paymentProviderId: "",
-    newsletter: false,
-    wantInvoice: false,
-    companyName: "",
-    nip: "",
-    acceptTerms: false,
-    acceptRodo: false,
-  });
+  const [formData, setFormData] = useState<CheckoutFormData>(() =>
+    getDefaultCheckoutFormData(),
+  );
+
+  /** Blokuje jeden zapis do sessionStorage tuż po wczytaniu szkicu (unikamy nadpisania pustym stanem). */
+  const skipPersistDraftRef = useRef(false);
+
+  /**
+   * Po odświeżeniu / powrocie na /checkout — przywróć krok i pola z szkicu
+   * powiązanego z aktualnym `cart_id` (inny koszyk = ignorujemy stary szkic).
+   */
+  useEffect(() => {
+    if (!cartId) return;
+    skipPersistDraftRef.current = true;
+    try {
+      const raw = sessionStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
+      if (!raw) {
+        queueMicrotask(() => {
+          skipPersistDraftRef.current = false;
+        });
+        return;
+      }
+      const parsed = JSON.parse(raw) as Partial<CheckoutDraftPayload>;
+      if (parsed.v !== 1 || !parsed.formData || typeof parsed.formData !== "object") {
+        queueMicrotask(() => {
+          skipPersistDraftRef.current = false;
+        });
+        return;
+      }
+      if (parsed.cartId !== cartId) {
+        try {
+          sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+        } catch {
+          /* */
+        }
+        setStep(1);
+        setFormData(getDefaultCheckoutFormData());
+        queueMicrotask(() => {
+          skipPersistDraftRef.current = false;
+        });
+        return;
+      }
+      setStep(clampCheckoutStep(parsed.step));
+      setFormData({
+        ...getDefaultCheckoutFormData(),
+        ...parsed.formData,
+      });
+    } catch {
+      /* uszkodzony JSON */
+    }
+    queueMicrotask(() => {
+      skipPersistDraftRef.current = false;
+    });
+  }, [cartId]);
+
+  useEffect(() => {
+    if (!cartId || skipPersistDraftRef.current) return;
+    try {
+      const payload: CheckoutDraftPayload = {
+        v: 1,
+        cartId,
+        step,
+        formData,
+      };
+      sessionStorage.setItem(
+        CHECKOUT_DRAFT_STORAGE_KEY,
+        JSON.stringify(payload),
+      );
+    } catch {
+      /* prywatny tryb / quota */
+    }
+  }, [cartId, step, formData]);
 
   const updateField = useCallback(
-    <K extends keyof typeof formData>(field: K, value: (typeof formData)[K]) => {
+    <K extends keyof CheckoutFormData>(field: K, value: CheckoutFormData[K]) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
     [],
@@ -236,6 +353,7 @@ export function CheckoutForm() {
       } catch {
         /* prywatny tryb */
       }
+      clearCheckoutDraft();
       await refreshCart().catch(() => undefined);
 
       const qs = new URLSearchParams({ order_id: result.order.id });
@@ -586,6 +704,7 @@ export function CheckoutForm() {
                     formData.shippingOptionId,
                     providerId,
                   );
+                  await refreshCart().catch(() => undefined);
                   updateField("paymentProviderId", providerId);
                   setStep(3);
                 } catch (e) {

@@ -91,14 +91,18 @@ export const PRICE_STEP = 10;
 export const PRICE_SLIDER_MIN = 0;
 export const PRICE_SLIDER_MAX = 1000;
 
-export function clearFilters(sort: string, pill?: string): ActiveFilters {
+/**
+ * Czyści wyłącznie filtry atrybutów (rozmiar, materiał, wykończenie, LED, cena).
+ * **Nie zmienia** zakresu listingu: `category` (Medusa) i `pill` (np. Cenniki / Wszystkie)
+ * zostają — żeby „Wyczyść” nie rozszerzało katalogu poza wybraną sekcję ani nie
+ * gubiło wybór „Wszystkie” w pigułkach.
+ */
+export function clearNonCategoryFilters(f: ActiveFilters): ActiveFilters {
   return {
-    sort,
-    pill,
+    ...f,
     sizes: [],
     materials: [],
     finishes: [],
-    category: undefined,
     led: undefined,
     priceMin: undefined,
     priceMax: undefined,
@@ -119,15 +123,15 @@ export function formatPricePLN(amount: number): string {
   return `${Math.round(amount)} PLN`;
 }
 
-export function hasAnyActiveFilter(f: ActiveFilters): boolean {
+/** Czy przycisk „Wyczyść” ma sens — tylko filtry usuwane przez `clearNonCategoryFilters`. */
+export function hasClearableNonCategoryFilters(f: ActiveFilters): boolean {
   return (
-    !!f.category ||
     f.sizes.length > 0 ||
     f.materials.length > 0 ||
     f.finishes.length > 0 ||
     f.led !== undefined ||
     f.priceMin !== undefined ||
-    f.priceMax !== undefined ||
-    (!!f.pill && f.pill !== "all")
+    f.priceMax !== undefined
   );
 }
+

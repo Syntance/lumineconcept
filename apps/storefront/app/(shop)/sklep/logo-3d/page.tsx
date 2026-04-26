@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import {
+  buildMedusaCategoryScopeMap,
   categoryIdByHandle,
   categoryIdFromKatParam,
   LISTING_CATEGORY_HANDLE,
+  medusaCategoryIdsForScope,
   type CategoryTreeNode,
 } from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
@@ -44,11 +46,20 @@ export default async function Logo3dListingPage({
   const resolvedKatId = params.kat ? categoryIdFromKatParam(tree, params.kat) : undefined;
   const listCategoryId = params.kat ? resolvedKatId : defaultLogo3dId;
 
+  const medusaCategoryScopeMap = buildMedusaCategoryScopeMap(
+    tree,
+    LISTING_CATEGORY_HANDLE.logo3d,
+  );
+  const medusaListingCategoryIds = medusaCategoryIdsForScope(
+    listCategoryId,
+    medusaCategoryScopeMap,
+  );
+
   const productsResponse = await getProducts({
     limit: INITIAL_PAGE_SIZE,
     offset: 0,
     order: params.sort ?? "-created_at",
-    category_id: listCategoryId ? [listCategoryId] : undefined,
+    category_id: medusaListingCategoryIds,
   }).catch(() => null);
 
   const initialCategoryId = params.kat ? resolvedKatId : defaultLogo3dId;
@@ -120,6 +131,7 @@ export default async function Logo3dListingPage({
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/logo-3d"
               globalColors={globalConfig.colors}
+              medusaCategoryScopeMap={medusaCategoryScopeMap}
             />
           </Suspense>
         </div>

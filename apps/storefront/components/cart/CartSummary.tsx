@@ -5,18 +5,36 @@ import { formatPrice } from "@/lib/utils";
 
 export function CartSummary() {
   const {
-    subtotal,
+    productsSubtotal,
     shipping_total,
+    shippingEstimate,
+    hasShippingMethodSelection,
     expressDelivery,
     expressSurcharge,
     grandTotal,
   } = useCart();
 
+  const shippingDisplay =
+    shipping_total > 0
+      ? shipping_total
+      : hasShippingMethodSelection
+        ? 0
+        : shippingEstimate;
+
+  const shippingLabel =
+    shippingDisplay === null || shippingDisplay === undefined
+      ? "Do ustalenia"
+      : hasShippingMethodSelection && shipping_total === 0
+        ? "gratis"
+        : formatPrice(shippingDisplay);
+
   return (
     <div className="space-y-2.5 text-sm">
       <div className="flex justify-between">
         <span className="text-brand-500">Produkty</span>
-        <span className="tabular-nums text-brand-700">{formatPrice(subtotal)}</span>
+        <span className="tabular-nums text-brand-700">
+          {formatPrice(productsSubtotal)}
+        </span>
       </div>
       {expressDelivery && expressSurcharge > 0 && (
         <div className="flex justify-between">
@@ -28,9 +46,7 @@ export function CartSummary() {
       )}
       <div className="flex justify-between">
         <span className="text-brand-500">Dostawa</span>
-        <span className="tabular-nums text-brand-700">
-          {shipping_total > 0 ? formatPrice(shipping_total) : "Do ustalenia"}
-        </span>
+        <span className="tabular-nums text-brand-700">{shippingLabel}</span>
       </div>
       <div className="h-px bg-brand-100" />
       <div className="flex justify-between pt-0.5 text-base">

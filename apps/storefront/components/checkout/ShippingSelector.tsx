@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Truck } from "lucide-react";
+import { MapPin, Truck } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/hooks/useCart";
-import { prefetchShippingOptions } from "@/lib/medusa/checkout";
+import {
+  normalizeShippingOptionsForDisplay,
+  prefetchShippingOptions,
+} from "@/lib/medusa/checkout";
 
 interface ShippingOptionView {
   id: string;
   name: string;
   price: number;
   description?: string;
+  isPickup: boolean;
 }
 
 interface ShippingSelectorProps {
@@ -21,19 +25,15 @@ interface ShippingSelectorProps {
 function mapOptions(
   raw: Array<Record<string, unknown>> | null | undefined,
 ): ShippingOptionView[] {
-  const list = (raw ?? []) as Array<Record<string, unknown>>;
-  return list.map((o) => {
-    const calc = o.calculated_price as
-      | { calculated_amount?: number }
-      | undefined;
-    const amount =
-      Number(o.amount ?? o.price ?? calc?.calculated_amount ?? 0) || 0;
-    return {
-      id: String(o.id),
-      name: (o.name as string | undefined) ?? "Dostawa",
-      price: amount,
-      description: (o.data as { description?: string } | undefined)?.description,
-    };
+  const mapped = normalizeShippingOptionsForDisplay(raw).map((o) => {
+    const row = (raw ?? []).find((x) => String(x.id) === o.id);
+    const description = (row?.data as { description?: string } | undefined)
+      ?.description;
+    return { ...o, description };
+  });
+  return [...mapped].sort((a, b) => {
+    if (a.isPickup === b.isPickup) return 0;
+    return a.isPickup ? 1 : -1;
   });
 }
 
@@ -109,6 +109,7 @@ export function ShippingSelector({
     <div className="space-y-3">
       {options.map((option) => {
         const isSelected = selectedOptionId === option.id;
+        const Icon = option.isPickup ? MapPin : Truck;
         return (
           <button
             key={option.id}
@@ -127,7 +128,7 @@ export function ShippingSelector({
             >
               {isSelected && <div className="h-2.5 w-2.5 rounded-full bg-brand-800" />}
             </div>
-            <Truck className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+            <Icon className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-brand-900">{option.name}</span>

@@ -12,14 +12,7 @@ import { ExpressToggle } from "./ExpressToggle";
 import { trackReferralApplied, trackCartViewed } from "@/lib/analytics/events";
 
 export function CartDrawer() {
-  const {
-    isOpen,
-    closeCart,
-    items,
-    itemCount,
-    applyDiscount,
-    expressDelivery,
-  } = useCart();
+  const { isOpen, closeCart, items, itemCount, applyDiscount } = useCart();
 
   const [referralCode, setReferralCode] = useState("");
   const [referralStatus, setReferralStatus] = useState<
@@ -222,17 +215,6 @@ export function CartDrawer() {
                 >
                   lub zobacz pełny koszyk
                 </Link>
-              </div>
-
-              {/* Micro trust */}
-              <div className="flex items-center justify-center gap-4 border-t border-brand-50 px-6 py-3 text-[10px] uppercase tracking-widest text-brand-400">
-                <span>Bezpieczna płatność</span>
-                <span className="text-brand-200">·</span>
-                <span>
-                  {expressDelivery
-                    ? "Ekspress: 3 dni robocze"
-                    : "Realizacja ok. 10 dni roboczych"}
-                </span>
               </div>
             </div>
           </>

@@ -3,8 +3,60 @@ import type {
   MedusaContainer,
 } from "@medusajs/framework/types";
 import { Modules } from "@medusajs/framework/utils";
+import { Resend } from "resend";
 import type { OrderEmailPayload } from "./email-templates";
+import { RESEND_DEFAULT_FROM } from "./resend-defaults";
 import { captureError } from "./sentry";
+
+/**
+ * Bezpośrednia wysyłka przez Resend (ten sam kontrakt co `notification-resend`).
+ * Używana gdy moduł `@medusajs/medusa/notification` nie jest załadowany
+ * (np. stary deploy bez `RESEND_API_KEY`) albo `createNotifications` rzuca.
+ * Bez idempotency po stronie Medusy — preferuj pełną konfigurację modułu.
+ */
+async function sendViaResendApi(params: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  context: string;
+}): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    console.warn(
+      `[mail:${params.context}] Resend API — brak RESEND_API_KEY, nie wysłano`,
+    );
+    return false;
+  }
+  const from = process.env.RESEND_FROM?.trim() ?? RESEND_DEFAULT_FROM;
+  const replyTo = process.env.RESEND_REPLY_TO?.trim();
+
+  try {
+    const resend = new Resend(apiKey);
+    const { data, error } = await resend.emails.send({
+      from,
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+      ...(params.text ? { text: params.text } : {}),
+      ...(replyTo ? { replyTo } : {}),
+    });
+    if (error) {
+      console.error(
+        `[mail:${params.context}] Resend: ${error.name} — ${error.message}`,
+      );
+      return false;
+    }
+    console.info(
+      `[mail:${params.context}] Resend (direct) id=${data?.id} → ${params.to}`,
+    );
+    return true;
+  } catch (e) {
+    console.error(`[mail:${params.context}] Resend (direct) wyjątek:`, e);
+    captureError(e, { mail: `${params.context}-resend-direct`, to: params.to });
+    return false;
+  }
+}
 
 /**
  * Zuniformowany helper do wysyłki maila. Izolujemy błędy providera (Resend
@@ -32,14 +84,14 @@ export async function sendTransactionalEmail(
     return false;
   }
 
-  let notificationService: INotificationModuleService;
+  let notificationService: INotificationModuleService | null = null;
   try {
     notificationService = container.resolve(Modules.NOTIFICATION);
   } catch (_e) {
     console.warn(
-      `[mail:${context}] moduł Notification nie jest zarejestrowany — prawdopodobnie brak RESEND_API_KEY. Pomijam.`,
+      `[mail:${context}] moduł Notification niedostępny — fallback Resend API (ustaw RESEND_API_KEY + restart, żeby włączyć moduł z idempotencją).`,
     );
-    return false;
+    return sendViaResendApi({ to, subject, html, text, context });
   }
 
   try {
@@ -66,9 +118,21 @@ export async function sendTransactionalEmail(
     console.info(`[mail:${context}] wysłano do ${to}`);
     return true;
   } catch (err) {
-    console.error(`[mail:${context}] błąd wysyłki do ${to}:`, err);
+    console.error(`[mail:${context}] błąd createNotifications do ${to}:`, err);
     captureError(err, { mail: context, orderId, to });
-    return false;
+    const recovered = await sendViaResendApi({
+      to,
+      subject,
+      html,
+      text,
+      context,
+    });
+    if (recovered) {
+      console.warn(
+        `[mail:${context}] dostarczono przez Resend (direct) po błędzie modułu Notification`,
+      );
+    }
+    return recovered;
   }
 }
 

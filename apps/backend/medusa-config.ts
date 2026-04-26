@@ -1,4 +1,5 @@
 import { defineConfig, loadEnv } from "@medusajs/framework/utils";
+import { RESEND_DEFAULT_FROM } from "./src/lib/resend-defaults";
 import { initSentry } from "./src/lib/sentry";
 
 loadEnv(process.env.NODE_ENV ?? "development", process.cwd());
@@ -356,9 +357,7 @@ export default defineConfig({
                     // trafiło do Resenda.
                     channels: ["email"],
                     apiKey: process.env.RESEND_API_KEY,
-                    from:
-                      process.env.RESEND_FROM ??
-                      "Lumine Concept <onboarding@resend.dev>",
+                    from: process.env.RESEND_FROM ?? RESEND_DEFAULT_FROM,
                     replyTo: process.env.RESEND_REPLY_TO,
                   },
                 },
