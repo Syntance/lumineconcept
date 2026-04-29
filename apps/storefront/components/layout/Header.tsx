@@ -5,7 +5,7 @@ import { HeaderMobileToggle } from "./HeaderMobileToggle";
 import { HeaderIcons } from "./HeaderIcons";
 import { SHOP_HUB_HREF, SHOP_NAV_DROPDOWN } from "./shop-nav";
 
-const NAV_LEFT = [{ href: "/salony-beauty", label: "Salony beauty" }] as const;
+const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Logo 3D" }] as const;
 
 const NAV_RIGHT = [
   { href: "/dlaczego-lumine", label: "O nas" },
@@ -42,8 +42,9 @@ export function Header() {
         Przejdź do treści
       </a>
 
-      <div className="container mx-auto grid h-16 grid-cols-3 items-center px-4 lg:px-8">
-        <div className="flex items-center gap-8">
+      <div className="container relative mx-auto flex h-16 items-center px-4 lg:px-8">
+        {/* Lewa połowa: od centrum taka sama „luźność” jak po prawej — tekst „dociska” do logo. */}
+        <div className="flex min-w-0 flex-1 items-center gap-3 lg:justify-end lg:gap-8 lg:pr-[calc(84px+5rem)]">
           <HeaderMobileToggle items={HEADER_MOBILE_ITEMS} />
           <nav className="hidden lg:flex items-center gap-8" aria-label="Nawigacja główna">
             <div className="group relative flex items-center">
@@ -87,20 +88,21 @@ export function Header() {
           </nav>
         </div>
 
-        <div className="flex justify-center">
-          <Link href="/">
-            <Image
-              src="/images/logo.png"
-              alt="Lumine Concept"
-              width={168}
-              height={38}
-              className="h-[38px] w-auto"
-              priority
-            />
-          </Link>
-        </div>
+        <Link
+          href="/"
+          className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+        >
+          <Image
+            src="/images/logo.png"
+            alt="Lumine Concept"
+            width={168}
+            height={38}
+            className="h-[38px] w-auto"
+            priority
+          />
+        </Link>
 
-        <div className="flex items-center justify-end gap-8">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:justify-start lg:gap-8 lg:pl-[calc(84px+5rem)]">
           <nav className="hidden lg:flex items-center gap-8" aria-label="Nawigacja dodatkowa">
             {NAV_RIGHT.map((link) => (
               <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
