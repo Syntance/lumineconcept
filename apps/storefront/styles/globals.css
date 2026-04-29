@@ -92,6 +92,11 @@
     font-family: var(--font-chronicle), Georgia, serif;
   }
 
+  /* Jawny Gilroy (Next: --font-gilroy) — ten sam stack co --font-sans; jawna nazwa zamiast „font-sans” w UI */
+  .font-gilroy {
+    font-family: var(--font-gilroy), system-ui, sans-serif;
+  }
+
   .skip-to-content {
     position: absolute;
     left: -10000px;
