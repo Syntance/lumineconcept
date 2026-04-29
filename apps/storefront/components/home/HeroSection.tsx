@@ -6,12 +6,11 @@ import Link from "next/link";
  * Hierarchia skalowania:
  *   1. Cień/panel (aspect-ratio + vmin) → wyznacza --panel-w (szerokość panelu).
  *   2. --panel-w → --cta-fs (rozmiar fontu głównego CTA, proporcjonalny do panelu).
- *   3. --cta-fs → rozmiary h1, podtytułu, body, CTA tekstowego, odstępów.
+ *   3. --cta-fs → rozmiary h1, podtytułu, body, głównego CTA, odstępów.
  *
  * Układ:
  *   - Główny CTA wyśrodkowany w panelu (oś łuku cienia).
  *   - Napisy: lewa krawędź = lewa krawędź obramówki CTA.
- *   - CTA tekstowe: wyśrodkowane pod głównym CTA, nigdy nie wystaje poza jego obramówkę.
  */
 
 const scale = {
@@ -22,21 +21,24 @@ const scale = {
   title: 65 / 14,
   subtitle: 27 / 14,
   body: 18 / 14,
-  ctaSecondary: 0.9,
 
   /** Padding CTA w em (skaluje się z --cta-fs) */
   ctaPadX: 2.85,
   ctaPadY: 1.05,
 
   /** Odstępy jako wielokrotność --cta-fs */
-  padTop: 150 / 14,
+  /**
+   * Po poszerzeniu panelu (aspect 1008/970) panel stał się niższy, więc stary
+   * padTop 150/14 (~10.7×) wypychał treść pod krawędź cienia. Zostawiamy
+   * 3×--cta-fs + 5% — treść wsuwa się w górę, skalując się nadal razem z
+   * panelem (--cta-fs dalej zależy od szerokości panelu).
+   */
+  padTop: 3,
   /** Osobne odstępy: CONCEPT→podtytuł, podtytuł→body, body→CTA */
   gapAfterTitle: 0.55 * 1.5,
   gapAfterSubtitle: 0.9 * 1.5,
   gapBeforeCta: 1.4,
   gapCtaStack: 1.1,
-  ctaRadius: 0.38,
-  underlineOffset: 0.42,
 } as const;
 
 export function HeroSection({ children }: { children?: React.ReactNode }) {
@@ -55,8 +57,19 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
 
       {/* Główna treść hero — rozciąga się, żeby karuzela została na dole */}
       <div className="relative z-10 flex flex-1">
+      {/* Panel cienia + treści.
+          • Szerokość: 54vmin / 100vw-1.5rem / 63rem — o 50% większa niż
+            oryginalne 36vmin / 42rem.
+          • Wysokość: aspect 1008/1200 daje h = 54vmin × 1200/1008 ≈ 65vmin
+            (między obecnymi płaskimi 52vmin a „za wysokimi” 78vmin z wcześn.
+            proporcji 672/970). Panel wraca do bardziej wertykalnego kształtu
+            łuku, ale nie jest już tak przytłaczający jak przy 1.5× w obu osiach.
+          • Wszystkie rozmiary (h1, body, CTA, odstępy) wyliczają się z tej
+            samej formuły przez --cta-fs, więc na każdym monitorze trzymają
+            spójne proporcje względem panelu (a ten do sekcji bazuje na vmin,
+            czyli mniejszym z wymiarów okna). */}
       <div
-        className="absolute top-0 flex aspect-[672/970] w-[min(36vmin,calc(100vw-1.5rem),42rem)] max-w-[calc(100vw-2rem)] flex-col"
+        className="absolute top-0 flex aspect-[1008/1200] w-[min(54vmin,calc(100vw-1.5rem),63rem)] max-w-[calc(100vw-2rem)] flex-col"
         style={{
           left: "max(1rem, calc(max(0.75rem, 4.5vmin) + 100px))",
         }}
@@ -74,7 +87,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           className="relative z-10 box-border flex min-h-[76%] w-full max-w-none flex-col items-stretch justify-center text-left"
           style={
             {
-              "--cta-fs": `calc(min(36vmin, calc(100vw - 1.5rem), 42rem) * ${scale.ctaOfPanel})`,
+              "--cta-fs": `calc(min(54vmin, calc(100vw - 1.5rem), 63rem) * ${scale.ctaOfPanel})`,
               paddingTop: `calc(var(--cta-fs) * ${scale.padTop} + 5%)`,
             } as CSSProperties
           }
@@ -131,7 +144,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
               {/* Główny CTA */}
               <Link
                 href="/sklep"
-                className="inline-flex shrink-0 items-center justify-center whitespace-nowrap border border-white/70 bg-transparent font-sans uppercase tracking-[0.2em] !text-white transition-colors hover:bg-white hover:!text-brand-900"
+                className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-none border-0 bg-white font-sans font-medium uppercase tracking-[0.2em] !text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 style={{
                   fontSize: "var(--cta-fs)",
                   lineHeight: 1.15,
@@ -139,22 +152,10 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
                   paddingRight: `${scale.ctaPadX}em`,
                   paddingTop: `${scale.ctaPadY}em`,
                   paddingBottom: `${scale.ctaPadY}em`,
-                  borderRadius: `calc(var(--cta-fs) * ${scale.ctaRadius})`,
+                  borderRadius: 0,
                 }}
               >
                 Zobacz produkty
-              </Link>
-
-              {/* CTA tekstowe — max-width = 100% kolumny (= szerokość przycisku), nigdy nie wystaje */}
-              <Link
-                href="/logo-3d"
-                className="max-w-full text-center font-sans leading-tight tracking-[0.14em] !text-white/92 underline decoration-white/35 transition-colors hover:!text-white hover:decoration-white/55"
-                style={{
-                  fontSize: `calc(var(--cta-fs) * ${scale.ctaSecondary})`,
-                  textUnderlineOffset: `calc(var(--cta-fs) * ${scale.underlineOffset})`,
-                }}
-              >
-                Logo 3D na zamówienie&nbsp;&rarr;
               </Link>
             </div>
           </div>
