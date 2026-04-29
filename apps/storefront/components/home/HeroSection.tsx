@@ -19,7 +19,7 @@ const scale = {
 
   /** CONCEPT: było 60/14 względem CTA — podniesione ~8% */
   title: 65 / 14,
-  subtitle: 27 / 14,
+  subtitle: 20 / 14,
   body: 18 / 14,
 
   /** Padding CTA w em (skaluje się z --cta-fs) */
@@ -35,7 +35,7 @@ const scale = {
    */
   padTop: 3,
   /** Osobne odstępy: CONCEPT→podtytuł, podtytuł→body, body→CTA */
-  gapAfterTitle: 0.55 * 1.5,
+  gapAfterTitle: 0.65 * 1.5,
   gapAfterSubtitle: 0.9 * 1.5,
   gapBeforeCta: 1.4,
   gapCtaStack: 1.1,
@@ -119,10 +119,10 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
                 </h1>
 
                 <p
-                  className="m-0 whitespace-nowrap text-left font-sans font-normal uppercase leading-none tracking-[0.18em] !text-white"
+                  className="m-0 whitespace-nowrap text-left font-gilroy font-medium uppercase leading-none tracking-[0.18em] !text-white"
                   style={{
                     fontSize: `calc(var(--cta-fs) * ${scale.subtitle})`,
-                    fontWeight: 400,
+                    fontWeight: 500,
                     marginTop: `calc(var(--cta-fs) * ${scale.gapAfterTitle})`,
                   }}
                 >
@@ -130,7 +130,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
                 </p>
 
                 <p
-                  className="m-0 whitespace-nowrap text-left font-sans font-light leading-tight tracking-[0.06em] !text-white/90"
+                  className="m-0 whitespace-nowrap text-left font-gilroy font-light leading-tight tracking-[0.06em] !text-white/90"
                   style={{
                     fontSize: `calc(var(--cta-fs) * ${scale.body})`,
                     fontWeight: 300,
@@ -144,7 +144,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
               {/* Główny CTA */}
               <Link
                 href="/sklep"
-                className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-none border-0 bg-white font-sans font-medium uppercase tracking-[0.2em] !text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-none border-0 bg-white font-gilroy font-medium uppercase tracking-[0.2em] !text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 style={{
                   fontSize: "var(--cta-fs)",
                   lineHeight: 1.15,
