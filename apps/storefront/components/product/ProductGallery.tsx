@@ -161,9 +161,11 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
       style={GALLERY_VARS}
     >
       {/* Mobile: kolumna (główne nad miniaturami). Desktop: rząd, justify-end —
-         para (miniatury, główne) jest dosunięta do prawej krawędzi kolumny PDP,
-         co przy mx-auto kontenerze 1fr_1fr daje prawą krawędź głównego = 50vw. */}
-      <div className="relative flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-end lg:gap-0">
+         para (miniatury, główne) jest dosunięta do prawej krawędzi flex containera.
+         lg:-mr-5 (= 1.25rem = połowa lg:gap-10 z gridu PDP) wypycha tę krawędź
+         o 1.25rem poza kolumnę galerii — dzięki temu prawa krawędź głównego
+         siedzi dokładnie na 50vw (środek strony). */}
+      <div className="relative flex flex-col gap-3 lg:-mr-5 lg:flex-row lg:items-start lg:justify-end lg:gap-0">
         {/* Miniatury — order-2 mobile (poziomy pasek pod zdjęciem), order-1 desktop (kolumna po lewej, przyklejona do głównego) */}
         {multiImage && (
           <div
