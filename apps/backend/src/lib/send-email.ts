@@ -84,7 +84,7 @@ export async function sendTransactionalEmail(
     return false;
   }
 
-  let notificationService: INotificationModuleService | null = null;
+  let notificationService: INotificationModuleService;
   try {
     notificationService = container.resolve(Modules.NOTIFICATION);
   } catch (_e) {
