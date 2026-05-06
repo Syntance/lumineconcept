@@ -33,16 +33,16 @@ export function PriceDisplay({
     : 0;
 
   const sizeClasses = {
-    sm: "text-[1rem]",
-    md: "text-[1.125rem]",
-    lg: "text-[1.375rem]",
+    sm: "text-[18px]",
+    md: "text-[20px]",
+    lg: "text-[24px]",
   };
 
   /** Mniejsze, czytelne kwoty na kafelkach siatki (bez Chronicle + kursywy). */
   const listingSizeClasses = {
-    sm: "text-[0.9375rem]",
-    md: "text-base",
-    lg: "text-lg",
+    sm: "text-[17px]",
+    md: "text-[18px]",
+    lg: "text-[20px]",
   };
 
   const sizeStyle =
@@ -57,15 +57,15 @@ export function PriceDisplay({
   if (variant === "badge") {
     return (
       <div className="flex items-center gap-3">
-        <span className="inline-block bg-brand-800 px-5 py-1.5 font-display text-[1.25rem] italic text-white">
+        <span className="inline-block bg-brand-800 px-5 py-1.5 font-display text-[22px] italic text-white">
           {formatPrice(amount, currency)}
         </span>
         {hasDiscount && (
           <>
-            <span className="text-base text-brand-400 line-through">
+            <span className="text-[18px] text-brand-400 line-through">
               {formatPrice(compareAtAmount, currency)}
             </span>
-            <span className="rounded bg-red-100 px-1.5 py-0.5 text-sm font-medium text-red-700">
+            <span className="rounded bg-red-100 px-1.5 py-0.5 text-[16px] font-medium text-red-700">
               -{discountPercent}%
             </span>
           </>
@@ -103,7 +103,7 @@ export function PriceDisplay({
           >
             {formatPrice(compareAtAmount, currency)}
           </span>
-          <span className="rounded bg-red-100 px-1.5 py-0.5 text-sm font-medium text-red-700">
+          <span className="rounded bg-red-100 px-1.5 py-0.5 text-[16px] font-medium text-red-700">
             -{discountPercent}%
           </span>
         </>

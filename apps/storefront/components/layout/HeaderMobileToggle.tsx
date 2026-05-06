@@ -20,7 +20,7 @@ export function HeaderMobileToggle({ items }: HeaderMobileToggleProps) {
         onClick={() => setOpen(true)}
         aria-label="Otwórz menu"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-[22px] w-[22px]" />
       </button>
       <MobileNav isOpen={isOpen} onClose={() => setOpen(false)} items={items} />
     </>

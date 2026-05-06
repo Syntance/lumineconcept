@@ -25,7 +25,7 @@ export function ReferralBanner() {
   if (!code || dismissed) return null;
 
   return (
-    <div className="bg-accent text-white">
+    <div className="referral-banner-strip bg-accent text-white">
       <div className="container mx-auto flex items-center justify-between gap-2 px-4 py-2">
         <p className="text-xs tracking-wide">
           <span className="font-semibold">-10%</span> z kodem od znajomej! Kod{" "}

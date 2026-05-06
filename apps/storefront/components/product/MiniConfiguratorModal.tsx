@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "./PriceDisplay";
+import { formatColorOptionLabel } from "./ColorStepPanel";
 import {
   CUSTOM_COLOR_VALUE,
-  getColorHex,
   isEveryColorOptionChosen,
   isMatAllowed,
   isMirrorColor,
@@ -47,7 +47,7 @@ function ColorPicker({
   values,
   state,
   onChange,
-  colorMap,
+  colorMap: _colorMap,
   coloredSet,
   mirrorSet,
   matDisabledSet,
@@ -65,6 +65,10 @@ function ColorPicker({
   const colorInputRef = useRef<HTMLInputElement>(null);
   const [hexInput, setHexInput] = useState(state.customHex ?? "#000000");
 
+  useEffect(() => {
+    setHexInput(state.customHex ?? "#000000");
+  }, [state.customHex]);
+
   const standard = values.filter(
     (v) => !isMirrorColor(v, mirrorSet) && !coloredSet.has(v.toLowerCase()),
   );
@@ -73,150 +77,122 @@ function ColorPicker({
   const isCustom = state.selected === CUSTOM_COLOR_VALUE;
   const matAllowed = isCustom || isMatAllowed(state.selected, matDisabledSet);
 
-  const filterId = `mini-blur-${uniqueId.replace(/:/g, "")}`;
-  const clipId = `mini-clip-${uniqueId.replace(/:/g, "")}`;
+  const selectId = `mini-color-${label}-${uniqueId.replace(/:/g, "")}`;
 
-  const renderSwatch = (value: string) => {
-    const isSelected = state.selected === value;
-    const hex = getColorHex(value, colorMap);
-    const isTransparent = value.toLowerCase() === "bezbarwny" || value.toLowerCase() === "przezroczysty";
-    const isMilky = value.toLowerCase() === "mleczny";
-
-    return (
-      <div
-        key={value}
-        className={cn(
-          "flex flex-col items-center gap-0.5 rounded-md p-0.5 transition-colors",
-          isSelected && "bg-brand-50",
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => {
-            const next = { ...state, selected: value };
-            if (
-              value !== CUSTOM_COLOR_VALUE &&
-              !isMatAllowed(value, matDisabledSet)
-            ) {
-              next.matFinish = false;
-            }
-            onChange(next);
-          }}
-          className={`relative h-8 w-8 shrink-0 rounded-full border-2 transition-all overflow-hidden ${
-            isSelected ? "border-accent ring-2 ring-accent/30" : "border-brand-200 hover:border-brand-400"
-          }`}
-          style={isMilky ? undefined : { backgroundColor: hex }}
-          title={value}
-          aria-pressed={isSelected}
-        >
-          {isTransparent && <span className="absolute inset-0.5 rounded-full border border-dashed border-brand-300" />}
-          {isMilky && (
-            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 36 36">
-              <defs>
-                <clipPath id={clipId}><circle cx="18" cy="18" r="17" /></clipPath>
-                <filter id={filterId}><feGaussianBlur stdDeviation="2.5" /></filter>
-              </defs>
-              <g clipPath={`url(#${clipId})`}>
-                <rect width="36" height="36" fill="#F5F0E8" />
-                <line x1="-10" y1="46" x2="14" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-                <line x1="2" y1="46" x2="26" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-                <line x1="14" y1="46" x2="38" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-                <line x1="26" y1="46" x2="50" y2="-10" stroke="#000" strokeWidth="2.5" filter={`url(#${filterId})`} />
-                <rect width="36" height="36" fill="rgba(245,240,232,0.25)" />
-              </g>
-            </svg>
-          )}
-        </button>
-        <span className="max-w-15 text-center text-[8px] leading-tight text-brand-500">
-          {value}
-        </span>
-      </div>
-    );
+  const applySelect = (raw: string) => {
+    if (raw === "") {
+      onChange({ ...state, selected: "", customHex: null, matFinish: false });
+      return;
+    }
+    const next: ColorState = {
+      ...state,
+      selected: raw,
+      customHex:
+        raw === CUSTOM_COLOR_VALUE
+          ? state.customHex ?? (/^#[0-9a-fA-F]{6}$/.test(hexInput) ? hexInput : null)
+          : null,
+    };
+    if (raw !== CUSTOM_COLOR_VALUE && !isMatAllowed(raw, matDisabledSet)) {
+      next.matFinish = false;
+    }
+    onChange(next);
   };
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium text-brand-600">{label}</p>
-
-      {standard.length > 0 && (
-        <div>
-          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Standardowe</p>
-          <div className="flex flex-wrap gap-x-2 gap-y-1.5">{standard.map(renderSwatch)}</div>
-        </div>
-      )}
-      {colored.length > 0 && (
-        <div>
-          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Kolorowe</p>
-          <div className="flex flex-wrap gap-x-2 gap-y-1.5">{colored.map(renderSwatch)}</div>
-        </div>
-      )}
-      {mirror.length > 0 && (
-        <div>
-          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-brand-400">Lustrzane</p>
-          <div className="flex flex-wrap gap-x-2 gap-y-1.5">{mirror.map(renderSwatch)}</div>
-        </div>
-      )}
-
-      <div>
-        <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-brand-400">Indywidualny</p>
-        <p className="mb-1.5 text-[9px] leading-snug text-brand-500/85">Własny odcień lub kod HEX.</p>
-        <div className="flex flex-wrap items-center gap-1.5">
-        <button
-          type="button"
-          onClick={() => {
-            onChange({ ...state, selected: CUSTOM_COLOR_VALUE, customHex: state.customHex ?? hexInput });
-          }}
-          className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${
-            isCustom ? "border-accent ring-2 ring-accent/30" : "border-dashed border-brand-300 hover:border-brand-400"
-          }`}
-          style={{
-            background: isCustom && state.customHex
-              ? state.customHex
-              : "conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
-          }}
-          title="Własny kolor"
-          aria-pressed={isCustom}
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+        <label
+          htmlFor={selectId}
+          className="shrink-0 text-xs font-bold uppercase leading-none tracking-[0.08em] text-brand-800"
         >
-          {!isCustom && <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-bold text-brand-600">+</span>}
-        </button>
-
-        {isCustom && (
-          <div className="flex flex-wrap items-center gap-1.5 rounded-md bg-brand-50 px-1.5 py-1.5">
-            <button
-              type="button"
-              onClick={() => colorInputRef.current?.click()}
-              className="h-8 w-8 shrink-0 cursor-pointer rounded-lg border border-brand-200"
-              style={{ backgroundColor: state.customHex ?? hexInput }}
-            >
-              <input
-                ref={colorInputRef}
-                type="color"
-                value={state.customHex ?? hexInput}
-                onChange={(e) => {
-                  setHexInput(e.target.value);
-                  onChange({ ...state, customHex: e.target.value });
-                }}
-                className="sr-only"
-                tabIndex={-1}
-              />
-            </button>
-            <input
-              type="text"
-              value={hexInput}
-              onChange={(e) => {
-                setHexInput(e.target.value);
-                if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
-                  onChange({ ...state, customHex: e.target.value });
-                }
-              }}
-              placeholder="#000000"
-              className="w-20 rounded-md border border-brand-200 bg-white px-2 py-1 text-xs font-mono text-brand-700 focus:border-accent focus:outline-none"
-              maxLength={7}
-            />
-          </div>
+          {formatColorOptionLabel(label)}
+        </label>
+        <div className="relative w-[min(100%,12rem)] shrink-0">
+          <select
+            id={selectId}
+            value={state.selected === "" ? "" : state.selected}
+            onChange={(e) => applySelect(e.target.value)}
+            className={cn(
+              "w-full cursor-pointer appearance-none border-0 border-b border-brand-300 bg-transparent py-0 pl-0 pr-7 pb-1.5 text-xs font-normal leading-none focus:border-brand-600 focus:outline-none focus:ring-0",
+              state.selected === "" ? "text-brand-400" : "text-brand-800",
+            )}
+          >
+        <option value="">Wybierz opcję</option>
+        {standard.length > 0 && (
+          <optgroup label="Standardowe">
+            {standard.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </optgroup>
         )}
+        {colored.length > 0 && (
+          <optgroup label="Kolorowe">
+            {colored.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        {mirror.length > 0 && (
+          <optgroup label="Lustrzane">
+            {mirror.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        <optgroup label="Indywidualny">
+          <option value={CUSTOM_COLOR_VALUE}>Własny kolor (HEX)</option>
+        </optgroup>
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute right-0 bottom-1 h-3.5 w-3.5 translate-y-px text-brand-400"
+            aria-hidden
+          />
         </div>
       </div>
+
+      {isCustom && (
+        <div className="flex flex-wrap items-center gap-1.5 rounded-md bg-brand-50 px-1.5 py-1.5">
+          <button
+            type="button"
+            onClick={() => colorInputRef.current?.click()}
+            className="h-8 w-8 shrink-0 cursor-pointer rounded-full border border-brand-200 shadow-sm ring-1 ring-inset ring-black/5"
+            style={{ backgroundColor: state.customHex ?? hexInput }}
+            aria-label="Wybierz kolor"
+          >
+            <input
+              ref={colorInputRef}
+              type="color"
+              value={state.customHex ?? hexInput}
+              onChange={(e) => {
+                setHexInput(e.target.value);
+                onChange({ ...state, customHex: e.target.value });
+              }}
+              className="sr-only"
+              tabIndex={-1}
+            />
+          </button>
+          <input
+            type="text"
+            value={hexInput}
+            onChange={(e) => {
+              setHexInput(e.target.value);
+              if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
+                onChange({ ...state, customHex: e.target.value });
+              }
+            }}
+            placeholder="#000000"
+            className="w-20 rounded-md border border-brand-200 bg-white px-2 py-1 font-mono text-xs text-brand-700 focus:border-accent focus:outline-none"
+            maxLength={7}
+          />
+          <span className="text-[9px] text-brand-400">HEX</span>
+        </div>
+      )}
 
       <button
         type="button"

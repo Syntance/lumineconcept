@@ -213,6 +213,20 @@ export function stripHtmlForDimensions(html: string): string {
     .trim();
 }
 
+/** Czy zwykły tekst opisu zawiera słowo „wymiary” (bez \\b — polskie znaki). */
+export function plainTextMentionsWymiary(plain: string): boolean {
+  return plain.toLowerCase().includes("wymiary");
+}
+
+/**
+ * Czy opis zawiera materiał (PL lub uproszczony „material”).
+ * Używane, by nie znikała linia z metadanych, gdy w opisie jest tylko wymiar.
+ */
+export function plainTextMentionsMaterial(plain: string): boolean {
+  const t = plain.toLowerCase();
+  return t.includes("materiał") || t.includes("material");
+}
+
 const MAX_LABEL_LEN = 160;
 
 function trimLabel(s: string): string {

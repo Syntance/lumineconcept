@@ -10,8 +10,15 @@ import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { extractSchemaImage } from "@/lib/products/product-images";
-import { SITE_URL } from "@/lib/utils";
-import { formatDimensionsWxH, getProductDimensionParts } from "@/lib/products/dimensions";
+import { sanitizeProductCardDescriptionHtml } from "@/lib/products/sanitize-product-card-html";
+import { cn, SITE_URL } from "@/lib/utils";
+import {
+  formatDimensionsWxH,
+  getProductDimensionParts,
+  plainTextMentionsMaterial,
+  plainTextMentionsWymiary,
+  stripHtmlForDimensions,
+} from "@/lib/products/dimensions";
 import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
 import {
   getGlobalProductConfig,
@@ -192,6 +199,21 @@ export async function ProductPageLayout({
     firstVariant?.metadata ?? null,
   );
   const dimensionsWxHLine = formatDimensionsWxH(dimensionParts.width, dimensionParts.height);
+  const pdpLeadDescriptionHtml = sanitizeProductCardDescriptionHtml(product.description);
+  const pdpDescPlain = pdpLeadDescriptionHtml
+    ? stripHtmlForDimensions(pdpLeadDescriptionHtml)
+    : "";
+  const showPdpMetadataWymiary =
+    Boolean(
+      dimensionParts.width ||
+        dimensionParts.height ||
+        dimensionParts.dimensionsFallback,
+    ) &&
+    (!pdpLeadDescriptionHtml || !plainTextMentionsWymiary(pdpDescPlain));
+  const showPdpMetadataMaterial =
+    Boolean(dimensionParts.thickness) &&
+    (!pdpLeadDescriptionHtml || !plainTextMentionsMaterial(pdpDescPlain));
+  const showPdpMetadataBlock = showPdpMetadataWymiary || showPdpMetadataMaterial;
   const firstVariantPrice = firstVariant?.calculated_price?.calculated_amount ?? 0;
   const price = firstVariantPrice > 0 ? firstVariantPrice : (extractBasePrice(metadata) ?? 0);
 
@@ -261,14 +283,22 @@ export async function ProductPageLayout({
               {product.title}
             </h1>
 
-            {(dimensionParts.width ||
-              dimensionParts.height ||
-              dimensionParts.dimensionsFallback ||
-              dimensionParts.thickness) && (
+            {pdpLeadDescriptionHtml ? (
+              <div
+                className={cn(
+                  "space-y-3 text-base leading-snug text-brand-700",
+                  "[&_p]:m-0 [&_p+p]:mt-3 [&_strong]:font-bold [&_b]:font-bold [&_strong]:text-brand-800",
+                )}
+                dangerouslySetInnerHTML={{ __html: pdpLeadDescriptionHtml }}
+              />
+            ) : null}
+
+            {showPdpMetadataBlock ? (
               <div className="space-y-3 text-base leading-snug text-brand-700">
-                {(dimensionParts.width ||
-                  dimensionParts.height ||
-                  dimensionParts.dimensionsFallback) && (
+                {showPdpMetadataWymiary &&
+                  (dimensionParts.width ||
+                    dimensionParts.height ||
+                    dimensionParts.dimensionsFallback) && (
                   <div className="leading-snug text-brand-700">
                     <span className="font-bold text-brand-800">Wymiary:</span>{" "}
                     {dimensionParts.dimensionsFallback &&
@@ -278,14 +308,14 @@ export async function ProductPageLayout({
                       : dimensionsWxHLine}
                   </div>
                 )}
-                {dimensionParts.thickness && (
+                {showPdpMetadataMaterial && dimensionParts.thickness ? (
                   <div>
                     <span className="font-bold">Materiał:</span> {PDP_MATERIAL_ACRYLIC}{" "}
                     {dimensionParts.thickness} grubości
                   </div>
-                )}
+                ) : null}
               </div>
-            )}
+            ) : null}
 
             <PriceDisplay amount={price} variant="badge" />
             {certificateStandAvailable && (
@@ -339,7 +369,7 @@ export async function ProductPageLayout({
       {/* Tabs */}
       <section className="border-t border-brand-100 bg-brand-50">
         <div className="container mx-auto max-w-[min(102rem,calc(100vw-2rem))] px-4 py-10 lg:py-14">
-          <ProductTabs description={product.description ?? null} metadata={metadata} />
+          <ProductTabs metadata={metadata} />
         </div>
       </section>
 
@@ -389,6 +419,7 @@ async function CrossSellSection({
                 thumbnail={p.thumbnail ?? null}
                 price={extractPrice(p.variants?.[0], p.metadata as Record<string, unknown> | undefined)}
                 href={`${basePath}/${p.handle}`}
+                description={sanitizeProductCardDescriptionHtml(p.description)}
                 variantId={fv?.id}
                 productId={p.id}
                 productMetadata={
@@ -413,7 +444,7 @@ function CrossSellSkeleton() {
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-3">
-              <div className="aspect-square rounded-lg bg-brand-100" />
+              <div className="aspect-[3/4] rounded-lg bg-brand-100" />
               <div className="h-4 w-3/4 rounded bg-brand-200" />
               <div className="h-4 w-1/3 rounded bg-brand-200" />
             </div>

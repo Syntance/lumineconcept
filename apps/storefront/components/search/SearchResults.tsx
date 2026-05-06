@@ -28,13 +28,13 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
               onClick={onSelect}
               className="flex items-center gap-4 rounded-lg p-3 hover:bg-brand-50 transition-colors"
             >
-              <div className="relative h-14 w-14 flex-shrink-0 rounded-md bg-brand-100 overflow-hidden">
+              <div className="relative h-14 w-[2.625rem] shrink-0 overflow-hidden rounded-md bg-brand-100">
                 {product.thumbnail ? (
                   <Image
                     src={product.thumbnail}
                     alt={product.title}
                     fill
-                    sizes="56px"
+                    sizes="42px"
                     className="object-cover"
                   />
                 ) : (

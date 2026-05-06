@@ -39,6 +39,11 @@
 }
 
 @layer base {
+  /* Domyślna wartość, gdyby HeroSection renderował się poza #main-content (np. podgląd). */
+  :root {
+    --shop-chrome-h: calc(2.35rem + 4rem + 1px);
+  }
+
   /* Bazowy rozmiar jak na odświeżonej stronie głównej — treść czytelniejsza niż domyślne 16px */
   body {
     background-color: #fff;
@@ -49,6 +54,14 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     @apply bg-background text-foreground;
+  }
+
+  /* Wysokość „chrome” nad treścią main — odejmowana od 100svh w HeroSection (hero + karuzela mieści się w oknie). */
+  #main-content {
+    --shop-chrome-h: calc(2.35rem + var(--header-sticky-height) + 1px);
+  }
+  #main-content:has(.referral-banner-strip) {
+    --shop-chrome-h: calc(2.35rem + var(--header-sticky-height) + 1px + 2.75rem);
   }
 
   /* Nagłówki — kolor z brandbooka #725750 */

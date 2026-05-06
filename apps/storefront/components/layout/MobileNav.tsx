@@ -47,7 +47,7 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
       />
       <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-brand-100">
-          <span className="font-display text-xl font-bold text-brand-800">
+          <span className="font-display text-[22px] font-bold leading-none text-brand-800">
             Menu
           </span>
           <button
@@ -56,7 +56,7 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
             className="p-2 -mr-2 text-brand-800"
             aria-label="Zamknij menu"
           >
-            <X className="h-5 w-5" />
+            <X className="h-[22px] w-[22px]" />
           </button>
         </div>
         <nav className="p-4" aria-label="Menu mobilne">
@@ -67,7 +67,7 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
                   <Link
                     href={entry.href}
                     onClick={onClose}
-                    className="block rounded-lg px-4 py-3 text-base font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                    className="block rounded-lg px-4 py-3 text-[17.6px] font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
                   >
                     {entry.label}
                   </Link>
@@ -77,7 +77,7 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
                   <Link
                     href={entry.href}
                     onClick={onClose}
-                    className="block rounded-lg px-4 py-3 text-base font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                    className="block rounded-lg px-4 py-3 text-[17.6px] font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
                   >
                     {entry.label}
                   </Link>
@@ -87,7 +87,7 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
                         <Link
                           href={sub.href}
                           onClick={onClose}
-                          className="block rounded-lg px-4 py-2.5 text-[15px] text-brand-600 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                          className="block rounded-lg px-4 py-2.5 text-[16.5px] text-brand-600 hover:bg-brand-50 hover:text-brand-900 transition-colors"
                         >
                           {sub.label}
                         </Link>

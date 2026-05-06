@@ -46,7 +46,7 @@ async function _getProducts(params?: {
       order: params?.order,
       region_id: regionId,
       fields:
-        "+variants.calculated_price,+variants.metadata,+options,+tags,*images,+thumbnail,+metadata",
+        "+variants.calculated_price,+variants.metadata,+options,+tags,*images,+thumbnail,+metadata,+description",
     });
   } catch (e) {
     logMedusaFailure("getProducts", e);
@@ -89,7 +89,7 @@ async function _getProductByHandle(handle: string) {
         handle,
         region_id: regionId,
         fields:
-          "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options,+tags,+collection.handle,+collection.title,+categories.handle,+categories.name" +
+          "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options,+tags,+collection.handle,+collection.title,+categories.handle,+categories.name,+description" +
           medusaCategoryAncestorFields(8),
       });
       return response.products[0] ?? null;
@@ -125,7 +125,7 @@ export async function getProductsByTag(tag: string, limit = 6) {
     const response = await medusa.store.product.list({
       limit: fetchLimit,
       region_id: regionId,
-      fields: "+variants.calculated_price,+variants.metadata,+tags,*images,+thumbnail,+metadata",
+      fields: "+variants.calculated_price,+variants.metadata,+tags,*images,+thumbnail,+metadata,+description",
     });
 
     const normalised = tag.toLowerCase();

@@ -1,4 +1,5 @@
 import type { FilterConfig } from "@/components/product/filter-types";
+import { sanitizeProductCardDescriptionHtml } from "@/lib/products/sanitize-product-card-html";
 
 export interface SimpleProduct {
   id: string;
@@ -15,6 +16,22 @@ export interface SimpleProduct {
   metadata?: Record<string, unknown>;
   /** Metadane pierwszego wariantu (np. wymiary zapisane per wariant). */
   firstVariantMetadata?: Record<string, unknown>;
+  /** Opis pod tytułem na karcie (z Medusy `description`, przefiltrowany HTML). */
+  description?: string | null;
+}
+
+/** Skraca opis z Medusy (HTML) do zwykłego tekstu — np. podgląd w wyszukiwarce, nie na kartę. */
+export function plainProductDescription(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const text = raw
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&(#\d+|[a-z]+);/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > 0 ? text : null;
 }
 
 function minPriceFromVariants(variants: unknown[] | null | undefined): number {
@@ -81,6 +98,7 @@ export function medusaProductToSimple(p: Record<string, unknown>): SimpleProduct
     linksCount: Number.isFinite(rawLinks) && rawLinks > 0 ? rawLinks : 0,
     metadata: hasMeta ? meta : undefined,
     firstVariantMetadata,
+    description: sanitizeProductCardDescriptionHtml(p.description),
   };
 }
 

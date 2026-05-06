@@ -24,9 +24,9 @@ const HEADER_MOBILE_ITEMS = [
   ...NAV_RIGHT.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
 ];
 
-/** Jedna stała klasy (jawny 14px = text-sm) — ta sama w SSR i kliencie; unika hydratacji przy mieszanym cache .next. */
+/** Jedna stała klasy (14px × 1.1) — ta sama w SSR i kliencie; unika hydratacji przy mieszanym cache .next. */
 const NAV_LINK_CLASS =
-  "text-[14px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors";
+  "whitespace-nowrap text-[15.4px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors";
 
 /**
  * Header = RSC. Interaktywne części są dwoma małymi „island":
@@ -44,9 +44,9 @@ export function Header() {
 
       <div className="container relative mx-auto flex h-16 items-center px-4 lg:px-8">
         {/* Lewa połowa: od centrum taka sama „luźność” jak po prawej — tekst „dociska” do logo. */}
-        <div className="flex min-w-0 flex-1 items-center gap-3 lg:justify-end lg:gap-8 lg:pr-[calc(84px+5rem)]">
+        <div className="flex min-w-0 flex-1 items-center gap-3 lg:justify-end lg:gap-8 lg:pr-[calc(92.4px+5rem)]">
           <HeaderMobileToggle items={HEADER_MOBILE_ITEMS} />
-          <nav className="hidden lg:flex items-center gap-8" aria-label="Nawigacja główna">
+          <nav className="hidden shrink-0 lg:flex items-center gap-8" aria-label="Nawigacja główna">
             <div className="group relative flex items-center">
               <Link
                 href={SHOP_HUB_HREF}
@@ -54,7 +54,7 @@ export function Header() {
               >
                 Sklep
                 <ChevronDown
-                  className="h-3.5 w-3.5 shrink-0 opacity-60 transition-transform duration-200 group-hover:rotate-180"
+                  className="h-[15.4px] w-[15.4px] shrink-0 opacity-60 transition-transform duration-200 group-hover:rotate-180"
                   strokeWidth={2}
                   aria-hidden
                 />
@@ -71,7 +71,7 @@ export function Header() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className="block px-4 py-2.5 text-[13px] font-medium uppercase tracking-[0.12em] text-brand-700 transition-colors hover:bg-brand-50 hover:text-brand-900"
+                        className="block px-4 py-2.5 text-[14.3px] font-medium uppercase tracking-[0.12em] text-brand-700 transition-colors hover:bg-brand-50 hover:text-brand-900"
                       >
                         {item.label}
                       </Link>
@@ -95,15 +95,15 @@ export function Header() {
           <Image
             src="/images/logo.png"
             alt="Lumine Concept"
-            width={168}
-            height={38}
-            className="h-[38px] w-auto"
+            width={185}
+            height={42}
+            className="h-[42px] w-auto"
             priority
           />
         </Link>
 
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:justify-start lg:gap-8 lg:pl-[calc(84px+5rem)]">
-          <nav className="hidden lg:flex items-center gap-8" aria-label="Nawigacja dodatkowa">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:justify-start lg:gap-8 lg:pl-[calc(92.4px+5rem)]">
+          <nav className="hidden shrink-0 lg:flex items-center gap-8" aria-label="Nawigacja dodatkowa">
             {NAV_RIGHT.map((link) => (
               <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
                 {link.label}

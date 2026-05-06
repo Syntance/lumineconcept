@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getProductsByTag } from "@/lib/medusa/products";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
+import { PRODUCT_IMAGE_ASPECT_CLASS } from "@/lib/products/product-image-aspect";
 
 export async function BestsellersSection() {
   let products: Awaited<ReturnType<typeof getProductsByTag>>;
@@ -81,7 +82,7 @@ export async function BestsellersSection() {
                     imageOnly
                     linkless
                     sharpCorners={sharpCorners}
-                    imageAspectClassName="aspect-[10/11]"
+                    imageAspectClassName={PRODUCT_IMAGE_ASPECT_CLASS}
                     imageAreaClassName="bg-white"
                   />
                 </div>

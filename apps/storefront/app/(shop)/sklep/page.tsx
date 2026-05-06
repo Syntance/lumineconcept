@@ -8,6 +8,7 @@ import type { Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
+import { PRODUCT_IMAGE_ASPECT_CLASS } from "@/lib/products/product-image-aspect";
 import { cn, SITE_URL } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -46,7 +47,7 @@ const CATEGORIES = [
   {
     title: "Logo 3D",
     subtitle: "Plexi · LED · matowe UV",
-    description: "Tablica z Twoim Logo 3D",
+    description: "Logo Twojej marki zrealizowane w postaci ozdobnej tablicy.",
     cta: "Zobacz logo 3D",
     href: "/sklep/logo-3d",
     image: "/images/categories/logo-kategoria-nail-boss.png",
@@ -54,7 +55,7 @@ const CATEGORIES = [
   {
     title: "Certyfikaty",
     subtitle: "Dyplomy · podziękowania · vouchery",
-    description: "Eleganckie certyfikaty z plexi dla Twoich klientek.",
+    description: "Eleganckie certyfikaty z plexi dla Twoich kursantek.",
     cta: "Zobacz certyfikaty",
     href: "/sklep/certyfikaty",
     image: "/images/categories/certyfikat-kategoria.png",
@@ -123,8 +124,8 @@ export default async function ShopHubPage() {
 
       {/* Kategorie obok siebie */}
       <section className="bg-brand-100 pb-16 pt-10 lg:pb-24 lg:pt-14">
-        <nav className="container mx-auto max-w-4xl px-4">
-          <div className="grid gap-6 sm:grid-cols-3 sm:items-stretch">
+        <nav className="container mx-auto max-w-[61.6rem] px-4">
+          <div className="grid gap-6 sm:grid-cols-3 sm:items-stretch sm:gap-12">
             {CATEGORIES.map((cat, index) => (
               <Link
                 key={cat.href}
@@ -244,7 +245,7 @@ export default async function ShopHubPage() {
                           imageOnly
                           linkless
                           sharpCorners={sharpCorners}
-                          imageAspectClassName="aspect-[10/11]"
+                          imageAspectClassName={PRODUCT_IMAGE_ASPECT_CLASS}
                           imageAreaClassName="bg-white"
                         />
                       </div>

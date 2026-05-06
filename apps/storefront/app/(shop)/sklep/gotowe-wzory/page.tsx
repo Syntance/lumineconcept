@@ -140,7 +140,7 @@ export default async function GotoweWzoryPage({
       <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
         <div className="container mx-auto max-w-7xl px-4 text-center">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-800">
-            <span>📷 {trustBar?.followers ?? "25 000+"} obserwujących</span>
+            <span>{trustBar?.followers ?? "25 000+"} obserwujących</span>
             <span className="text-brand-300">·</span>
             <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
             <span className="text-brand-300">·</span>

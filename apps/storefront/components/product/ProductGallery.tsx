@@ -5,16 +5,28 @@ import Image from "next/image";
 import { cloudinaryLoader } from "@/lib/cloudinary/utils";
 import { CloudinaryImage } from "../common/CloudinaryImage";
 
+import {
+  PRODUCT_GALLERY_MAX_WIDTH_STYLE,
+  PRODUCT_IMAGE_ASPECT_CLASS,
+} from "@/lib/products/product-image-aspect";
+import { cn } from "@/lib/utils";
+
 /**
  * Zamiast JSowego `useGalleryMaxWidth` (listener resize + 2 reflowy),
  * używamy `clamp()` i CSS custom propertów. Kwadrat tła + maxWidth są
  * liczone przez przeglądarkę natywnie, bez re-renderu Reacta.
  *
- * 10/11 to proporcja slidera; `1.1` odpowiada poprzedniej heurystyce
- * „10% większy niż czysta kalkulacja wysokość-viewport × 10/11".
+ * Proporcja 3:4 — jak zdjęcia produktowe (np. 3024×4032 z Photoshopu).
  */
-const GALLERY_MAX_WIDTH_DESKTOP =
-  "calc((100dvh - 200px) * (10 / 11) * 1.1)";
+const GALLERY_MAX_WIDTH_DESKTOP = PRODUCT_GALLERY_MAX_WIDTH_STYLE;
+/**
+ * Wariant z miniaturkami: cap szerokości tak, żeby
+ *   image_col * 1.317 + sticky_top(88px) ≤ 100dvh
+ * gdzie image_col = gallery_w − (thumbs_col 4.125rem + gap 1rem) = gallery_w − 5.125rem.
+ *  →  gallery_w ≤ (100dvh − 5.5rem) * 0.76 + 5.125rem
+ * Używamy 0.75 i 4rem dla zapasu bezpieczeństwa.
+ */
+const GALLERY_MAX_WIDTH_MULTI = "calc((100dvh - 5.5rem) * 0.75 + 4rem)";
 
 function GalleryMainImage({
   url,
@@ -127,22 +139,37 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
 
   if (images.length === 0) {
     return (
-      <div className="aspect-square bg-brand-100 flex items-center justify-center">
+      <div className={`${PRODUCT_IMAGE_ASPECT_CLASS} bg-brand-100 flex items-center justify-center`}>
         <span className="text-brand-300">Brak zdjęć</span>
       </div>
     );
   }
 
   const selectedImage = images[selectedIndex] ?? images[0]!;
+  const multiImage = images.length > 1;
+  const galleryMaxWidth = multiImage
+    ? GALLERY_MAX_WIDTH_MULTI
+    : GALLERY_MAX_WIDTH_DESKTOP;
 
   return (
-    <div className="relative isolate w-full overflow-visible">
-      {/* Desktop: miniatury + zdjęcie + kwadrat tła — maxWidth ogranicza, ml-auto przykleja do prawej */}
+    <div
+      className={cn(
+        "relative isolate w-full overflow-visible",
+        /* Wiele zdjęć: cofamy w lewo o (lg:px-8 + mx-auto 1rem − lg:gap-4) = 2rem,
+           żeby od krawędzi ekranu do miniatur = od miniatur do głównego zdjęcia (= 1rem). */
+        multiImage && "lg:-ml-8 lg:w-[calc(100%+2rem)]",
+      )}
+    >
+      {/* Desktop: miniatury + zdjęcie + kwadrat tła. Wiele zdjęć — równy odstęp 1rem z obu stron
+         kolumny miniatur (patrz −ml / w powyżej). Pojedyncze zdjęcie: ml-auto, większy gap do treści. */}
       <div
-        className="relative ml-auto flex flex-col gap-3 lg:flex-row-reverse lg:items-start lg:gap-4 lg:[max-width:var(--gallery-max-w)]"
+        className={cn(
+          "relative flex flex-col gap-3 lg:flex-row-reverse lg:items-start lg:gap-4 lg:[max-width:var(--gallery-max-w)]",
+          !multiImage && "ml-auto",
+        )}
         style={
           {
-            ["--gallery-max-w" as string]: GALLERY_MAX_WIDTH_DESKTOP,
+            ["--gallery-max-w" as string]: galleryMaxWidth,
           } as React.CSSProperties
         }
       >
@@ -158,7 +185,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
             />
             <div
               ref={mainRef}
-              className={`relative mx-auto aspect-10/11 w-full overflow-hidden lg:mx-0 lg:!max-h-none ${
+              className={`relative mx-auto ${PRODUCT_IMAGE_ASPECT_CLASS} w-full overflow-hidden lg:mx-0 lg:!max-h-none ${
                 zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
               }`}
               style={{ maxHeight: "calc(100dvh - 14rem)" }}
@@ -215,7 +242,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
         {/* Miniatury — na mobile: poziomy pasek pod zdjęciem, wyśrodkowany; na desktop: kolumna po lewej */}
         {images.length > 1 && (
           <div
-            className="flex justify-center gap-2 overflow-x-auto pb-1 pt-1 lg:w-21 lg:shrink-0 lg:flex-col lg:justify-start lg:gap-2 lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0 lg:max-h-[min(87vh,calc(100vh-10rem))]"
+            className="flex justify-center gap-2 overflow-x-auto pb-1 pt-1 lg:w-fit lg:shrink-0 lg:flex-col lg:justify-start lg:gap-2.5 lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0 lg:max-h-[min(87vh,calc(100vh-10rem))]"
             role="tablist"
             aria-label="Galeria produktu"
           >
@@ -224,7 +251,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 key={image.id}
                 type="button"
                 onClick={() => goTo(index)}
-                className={`relative h-14 w-14 shrink-0 overflow-hidden border transition-colors lg:h-18 lg:w-18 ${
+                className={`relative h-[4.25rem] w-[3.25rem] shrink-0 overflow-hidden border transition-colors lg:h-[5.5rem] lg:w-[4.125rem] ${
                   index === selectedIndex
                     ? "border-brand-400"
                     : "border-transparent hover:border-brand-200"
@@ -237,7 +264,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                   publicId={image.url}
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
                   width={72}
-                  height={72}
+                  height={96}
                   className="object-cover"
                 />
               </button>

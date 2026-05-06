@@ -41,7 +41,7 @@ export function OrderSummary() {
       <div className="space-y-3 mb-4">
         {items.map((item) => (
           <div key={item.id} className="flex gap-3">
-            <div className="h-12 w-12 flex-shrink-0 rounded bg-white overflow-hidden">
+            <div className="h-12 w-9 shrink-0 overflow-hidden rounded bg-white">
               {item.thumbnail ? (
                 <img
                   src={item.thumbnail}

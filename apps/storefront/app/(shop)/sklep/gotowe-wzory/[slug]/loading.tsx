@@ -17,10 +17,10 @@ export default function ProductLoading() {
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
             {/* Gallery skeleton */}
             <div className="space-y-3">
-              <div className="aspect-square rounded-lg bg-brand-100" />
+              <div className="aspect-[3/4] rounded-lg bg-brand-100" />
               <div className="flex gap-2">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-16 w-16 rounded bg-brand-100" />
+                  <div key={i} className="h-16 w-12 rounded bg-brand-100" />
                 ))}
               </div>
             </div>

@@ -1,8 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ColorStepPanel } from "./ColorStepPanel";
 import { FileUploadSection, type UploadedFile } from "./FileUploadSection";
@@ -105,173 +103,58 @@ export function ProductConfigurator({
     textFields.length > 0 || (linksCount > 0 && !!onLinksChange);
   const hasUploads = uploadsCount > 0 && !!onUploadedFilesChange;
 
-  /** Każdy kolor osobno zwijany / rozwijany (jak dropdown na zrzucie). */
-  const [openColors, setOpenColors] = useState<Record<string, boolean>>({});
-
-  const colorSummary = (title: string) => {
-    const selected = selectedOptions[title];
-    if (!selected) return null;
-    if (selected === CUSTOM_COLOR_VALUE) {
-      const hex = colorCustomizations[title]?.customColor;
-      return hex ? `Własny ${hex}` : "Własny kolor";
-    }
-    const mat = colorCustomizations[title]?.matFinish ? " · mat" : "";
-    return `${selected}${mat}`;
-  };
-
-  /** Gotowy wybór: kolor z palety albo własny z poprawnym HEX. */
-  const isColorChoiceComplete = (title: string) => {
-    const selected = selectedOptions[title] ?? "";
-    if (!selected) return false;
-    if (selected === CUSTOM_COLOR_VALUE) {
-      const hex = colorCustomizations[title]?.customColor;
-      return !!hex && /^#[0-9a-fA-F]{6}$/.test(hex);
-    }
-    return true;
-  };
-
   return (
     <div className="space-y-8">
       {colorOptions.length > 0 && (
-        <div className="flex flex-col gap-3.5">
-          {colorOptions.map((option, colorIndex) => {
-        const isOpen = openColors[option.id] ?? false;
-        const summary = colorSummary(option.title);
-        const colorComplete = isColorChoiceComplete(option.title);
-        const hasNextColorSection = colorIndex < colorOptions.length - 1;
-        return (
-          <div key={option.id}>
-            <button
-              type="button"
-              onClick={() =>
-                setOpenColors((prev) => {
-                  const wasOpen = prev[option.id] ?? false;
-                  if (wasOpen) {
-                    return { ...prev, [option.id]: false };
+        <div className="flex flex-col gap-8">
+          {colorOptions.map((option) => (
+            <div key={option.id}>
+              <ColorStepPanel
+                option={option}
+                selectedColor={selectedOptions[option.title] ?? ""}
+                onColorChange={(value) => {
+                  onOptionChange(option.title, value);
+                  if (value !== CUSTOM_COLOR_VALUE) {
+                    onColorCustomizationChange(
+                      option.title,
+                      "customColor",
+                      null,
+                    );
                   }
-                  const next: Record<string, boolean> = {};
-                  for (const o of colorOptions) {
-                    next[o.id] = o.id === option.id;
+                  if (
+                    value !== CUSTOM_COLOR_VALUE &&
+                    !isMatAllowed(value, matDisabledSet)
+                  ) {
+                    onColorCustomizationChange(
+                      option.title,
+                      "matFinish",
+                      false,
+                    );
                   }
-                  return next;
-                })
-              }
-              className="w-full text-left transition-colors hover:bg-brand-50/80"
-              aria-expanded={isOpen}
-              aria-controls={`color-panel-${option.id}`}
-              id={`color-trigger-${option.id}`}
-            >
-              {/* Etykieta | linia | chevron — odstępy poziome ~12–16px jak na zrzucie */}
-              <div className="flex w-full items-center gap-1.5 py-1 sm:gap-2">
-                <span className="shrink-0 text-sm font-bold uppercase tracking-[0.15em] text-brand-700">
-                  {option.title}
-                </span>
-                <span
-                  className="h-px min-h-px flex-1 bg-brand-300"
-                  aria-hidden
-                />
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 shrink-0 text-brand-500 transition-transform duration-200",
-                    isOpen && "-rotate-180",
-                  )}
-                  aria-hidden
-                />
-              </div>
-              {summary && (
-                <p className="truncate pb-0.5 pt-0.5 text-sm font-normal normal-case tracking-normal text-brand-500">
-                  {summary}
-                </p>
-              )}
-            </button>
-
-            {isOpen && (
-              <div
-                id={`color-panel-${option.id}`}
-                role="region"
-                aria-labelledby={`color-trigger-${option.id}`}
-              >
-                <div className="pb-1.5 pt-1">
-                  <ColorStepPanel
-                    option={option}
-                    expanded
-                    onExpandedChange={() => {}}
-                    showNextButton={colorComplete}
-                    nextButtonLabel={
-                      hasNextColorSection ? "Następny kolor" : "Gotowe"
-                    }
-                    nextButtonShowArrow={hasNextColorSection}
-                    onNext={() => {
-                      const nextOption = colorOptions[colorIndex + 1];
-                      if (hasNextColorSection && nextOption) {
-                        const nextId = nextOption.id;
-                        setOpenColors(() => {
-                          const next: Record<string, boolean> = {};
-                          for (const o of colorOptions) {
-                            next[o.id] = o.id === nextId;
-                          }
-                          return next;
-                        });
-                        queueMicrotask(() => {
-                          document
-                            .getElementById(`color-trigger-${nextId}`)
-                            ?.scrollIntoView({
-                              behavior: "smooth",
-                              block: "nearest",
-                            });
-                        });
-                      } else {
-                        setOpenColors({});
-                      }
-                    }}
-                    selectedColor={selectedOptions[option.title] ?? ""}
-                    onColorChange={(value) => {
-                      onOptionChange(option.title, value);
-                      if (value !== CUSTOM_COLOR_VALUE) {
-                        onColorCustomizationChange(
-                          option.title,
-                          "customColor",
-                          null,
-                        );
-                      }
-                      if (
-                        value !== CUSTOM_COLOR_VALUE &&
-                        !isMatAllowed(value, matDisabledSet)
-                      ) {
-                        onColorCustomizationChange(
-                          option.title,
-                          "matFinish",
-                          false,
-                        );
-                      }
-                    }}
-                    customColor={
-                      colorCustomizations[option.title]?.customColor ?? null
-                    }
-                    onCustomColorChange={(hex) =>
-                      onColorCustomizationChange(option.title, "customColor", hex)
-                    }
-                    matFinish={
-                      colorCustomizations[option.title]?.matFinish ?? false
-                    }
-                    onMatFinishChange={(enabled) =>
-                      onColorCustomizationChange(
-                        option.title,
-                        "matFinish",
-                        enabled,
-                      )
-                    }
-                    colorMap={colorMap}
-                    coloredSet={coloredSet}
-                    mirrorSet={mirrorSet}
-                    matDisabledSet={matDisabledSet}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
+                }}
+                customColor={
+                  colorCustomizations[option.title]?.customColor ?? null
+                }
+                onCustomColorChange={(hex) =>
+                  onColorCustomizationChange(option.title, "customColor", hex)
+                }
+                matFinish={
+                  colorCustomizations[option.title]?.matFinish ?? false
+                }
+                onMatFinishChange={(enabled) =>
+                  onColorCustomizationChange(
+                    option.title,
+                    "matFinish",
+                    enabled,
+                  )
+                }
+                colorMap={colorMap}
+                coloredSet={coloredSet}
+                mirrorSet={mirrorSet}
+                matDisabledSet={matDisabledSet}
+              />
+            </div>
+          ))}
         </div>
       )}
 
@@ -372,7 +255,7 @@ export function ProductConfigurator({
           <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-wider text-brand-500">
             Schemat personalizacji
           </p>
-          <div className="relative aspect-square w-full overflow-hidden border border-brand-200">
+          <div className="relative aspect-[3/4] w-full overflow-hidden border border-brand-200">
             <Image
               src={schemaImageUrl}
               alt="Schemat personalizacji produktu"

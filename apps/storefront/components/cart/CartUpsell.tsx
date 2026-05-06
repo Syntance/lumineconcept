@@ -49,12 +49,12 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
               <Image
                 src={p.thumbnail}
                 alt={p.title}
-                width={48}
+                width={36}
                 height={48}
                 className="rounded-md object-cover"
               />
             ) : (
-              <div className="h-12 w-12 rounded-md bg-brand-100" />
+              <div className="h-12 w-[2.25rem] rounded-md bg-brand-100" />
             )}
             <div className="flex-1 min-w-0">
               <p className="truncate text-xs font-medium text-brand-800">{p.title}</p>

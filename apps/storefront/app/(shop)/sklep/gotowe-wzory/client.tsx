@@ -294,7 +294,7 @@ export function ShopGridClient({
           <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:mt-4 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="aspect-square rounded-lg bg-brand-100" />
+                <div className="aspect-[3/4] rounded-lg bg-brand-100" />
                 <div className="mt-3 h-4 w-3/4 rounded bg-brand-100" />
                 <div className="mt-2 h-4 w-1/3 rounded bg-brand-100" />
               </div>
@@ -311,6 +311,7 @@ export function ShopGridClient({
                     thumbnail={product.thumbnail}
                     price={product.price}
                     href={`${productBasePath}/${product.handle}`}
+                    hideMaterialRow
                     badge={getBadge(product.tags)}
                     hasVariantPrices={product.hasVariantPrices}
                     variantId={product.variantId ?? undefined}

@@ -2,7 +2,18 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { getProductDimensionsLabel } from "@/lib/products/dimensions";
+import {
+  getProductDimensionParts,
+  getProductDimensionsLabel,
+  plainTextMentionsMaterial,
+  plainTextMentionsWymiary,
+} from "@/lib/products/dimensions";
+import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
+import {
+  PRODUCT_CARD_IMAGE_HEIGHT,
+  PRODUCT_CARD_IMAGE_WIDTH,
+  PRODUCT_IMAGE_ASPECT_CLASS,
+} from "@/lib/products/product-image-aspect";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
 import { CloudinaryImage } from "../common/CloudinaryImage";
 import { PriceDisplay } from "./PriceDisplay";
@@ -32,7 +43,20 @@ interface ProductCardProps {
   productMetadata?: Record<string, unknown>;
   /** Gdy wymiary są tylko na wariancie (Medusa). */
   variantMetadata?: Record<string, unknown>;
+  /** Gdy true — bez linii „Materiał:” z metadanych (np. skrócona karta w siatce). */
+  hideMaterialRow?: boolean;
   globalColors?: GlobalConfigOption[];
+  /** Opis pod tytułem (HTML z Medusy, po sanityzacji — patrz mapowanie `SimpleProduct`). */
+  description?: string | null;
+}
+
+function htmlPlainText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function ProductCard({
@@ -44,7 +68,7 @@ export function ProductCard({
   currency = "PLN",
   frameVariant = "square",
   imageOnly = false,
-  imageAspectClassName = "aspect-[10/11]",
+  imageAspectClassName = PRODUCT_IMAGE_ASPECT_CLASS,
   linkless = false,
   sharpCorners = false,
   imageAreaClassName = "bg-brand-50",
@@ -58,9 +82,20 @@ export function ProductCard({
   productMetadata,
   variantMetadata,
   globalColors: _globalColors,
+  description,
+  hideMaterialRow = false,
 }: ProductCardProps) {
   const productHref = href ?? `/sklep/gotowe-wzory/${handle}`;
   const dimensionsLabel = getProductDimensionsLabel(productMetadata, variantMetadata);
+  const dimensionPartsCard = getProductDimensionParts(productMetadata, variantMetadata);
+  const descPlainForFlags = description ? htmlPlainText(description) : "";
+  const showDimensionsRow =
+    Boolean(dimensionsLabel) &&
+    (!description || !plainTextMentionsWymiary(descPlainForFlags));
+  const showMaterialMetaRow =
+    !hideMaterialRow &&
+    Boolean(dimensionPartsCard.thickness) &&
+    (!description || !plainTextMentionsMaterial(descPlainForFlags));
 
   const sharpSquare = sharpCorners && frameVariant === "square";
 
@@ -78,9 +113,10 @@ export function ProductCard({
       ? "rounded-lg"
       : "";
 
-  const imageIsPortrait = imageAspectClassName !== "aspect-square" && imageAspectClassName !== "aspect-[10/11]";
-  const imageWidth = 600;
-  const imageHeight = imageIsPortrait ? 750 : 600;
+  const imageWidth =
+    imageAspectClassName === "aspect-square" ? 600 : PRODUCT_CARD_IMAGE_WIDTH;
+  const imageHeight =
+    imageAspectClassName === "aspect-square" ? 600 : PRODUCT_CARD_IMAGE_HEIGHT;
 
   const articleBody = (
     <article
@@ -136,11 +172,26 @@ export function ProductCard({
           <h3 className="min-h-11 shrink-0 font-sans text-base font-semibold leading-snug tracking-normal text-brand-800 line-clamp-2">
             {title}
           </h3>
-          {dimensionsLabel && (
+          {description ? (
+            <div
+              className={cn(
+                "-mt-0.5 text-sm font-normal leading-snug text-brand-700 line-clamp-5",
+                "[&_p]:m-0 [&_p+p]:mt-1 [&_strong]:font-bold [&_b]:font-bold [&_strong]:text-brand-800",
+              )}
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
+          ) : null}
+          {showDimensionsRow ? (
             <p className="text-sm font-normal leading-snug text-brand-800 line-clamp-2">
               <span className="font-medium">Wymiary:</span> {dimensionsLabel}
             </p>
-          )}
+          ) : null}
+          {showMaterialMetaRow ? (
+            <p className="text-sm font-normal leading-snug text-brand-800 line-clamp-2">
+              <span className="font-medium">Materiał:</span> {PDP_MATERIAL_ACRYLIC}{" "}
+              {dimensionPartsCard.thickness} grubości
+            </p>
+          ) : null}
           <div className="pointer-events-auto">
             <Link
               href={productHref}
