@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 import { ColorStepPanel } from "./ColorStepPanel";
 import { FileUploadSection, type UploadedFile } from "./FileUploadSection";
 import {

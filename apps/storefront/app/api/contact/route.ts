@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const name = String(body.name ?? "").trim();
     const email = String(body.email ?? "").trim().toLowerCase();
     const phone = String(body.phone ?? "").trim();
-    let message = String(body.message ?? "").trim();
+    const message = String(body.message ?? "").trim();
 
     if (!name || name.length > LIMITS.name) {
       return NextResponse.json(

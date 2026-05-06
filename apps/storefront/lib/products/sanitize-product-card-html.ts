@@ -47,9 +47,10 @@ function splitPlainIntoSegments(plain: string): string[] {
   const wIdx = single.search(/Wymiary\s*:/i);
   const mMateriał = single.search(/Materiał\s*:/i);
   const mMaterial = single.search(/Material\s*:/i);
-  let mIdx = -1;
-  if (mMateriał >= 0 && mMaterial >= 0) mIdx = Math.min(mMateriał, mMaterial);
-  else mIdx = Math.max(mMateriał, mMaterial);
+  const mIdx =
+    mMateriał >= 0 && mMaterial >= 0
+      ? Math.min(mMateriał, mMaterial)
+      : Math.max(mMateriał, mMaterial);
   if (wIdx < 0 && mIdx < 0) return [single];
 
   const rawPoints = [0, wIdx, mIdx, single.length].filter(
