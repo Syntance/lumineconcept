@@ -1,9 +1,19 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 import { stripHtmlForDimensions } from "@/lib/products/dimensions";
 
-const SANITIZE_OPTIONS = {
-  ALLOWED_TAGS: ["p", "br", "strong", "b", "em", "i", "u", "span", "div"],
-  ALLOWED_ATTR: [] as string[],
+/**
+ * Używamy `sanitize-html` (czysty htmlparser2, bez jsdom) zamiast
+ * `isomorphic-dompurify`, bo ten ostatni na Vercelu/Next 16 z Turbopackiem
+ * próbuje załadować ESM-only `@exodus/bytes/encoding-lite.js` przez
+ * synchroniczny `require()` jsdomu i wywala 500 (ERR_REQUIRE_ESM).
+ */
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: ["p", "br", "strong", "b", "em", "i", "u", "span", "div"],
+  allowedAttributes: {},
+  /** Zachowujemy lekkie znaki diakrytyczne — nie chcemy escape encji UTF-8. */
+  disallowedTagsMode: "discard",
+  allowedSchemes: [],
+  allowedSchemesByTag: {},
 };
 
 function escapeHtml(s: string): string {
@@ -92,13 +102,13 @@ function formatProductCardDescriptionStructure(sanitized: string): string {
   }
 
   const html = segments.map(segmentToParagraphHtml).join("");
-  return DOMPurify.sanitize(html, SANITIZE_OPTIONS).trim();
+  return sanitizeHtml(html, SANITIZE_OPTIONS).trim();
 }
 
 /** Bezpieczny podzbiór HTML z Medusy pod kartę produktu (strong, akapity, łamania linii). */
 export function sanitizeProductCardDescriptionHtml(raw: unknown): string | null {
   if (typeof raw !== "string" || !raw.trim()) return null;
-  const clean = DOMPurify.sanitize(raw.trim(), SANITIZE_OPTIONS);
+  const clean = sanitizeHtml(raw.trim(), SANITIZE_OPTIONS);
   const trimmed = clean.trim();
   if (trimmed.length === 0) return null;
   const structured = formatProductCardDescriptionStructure(trimmed);
