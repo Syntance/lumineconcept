@@ -251,7 +251,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 key={image.id}
                 type="button"
                 onClick={() => goTo(index)}
-                className={`relative h-[4.25rem] w-[3.25rem] shrink-0 overflow-hidden border transition-colors lg:h-[5.5rem] lg:w-[4.125rem] ${
+                className={`relative h-[4.25rem] w-[3.25rem] shrink-0 overflow-hidden border transition-colors lg:aspect-[3/4] lg:h-auto lg:w-[clamp(4.125rem,7vw,7rem)] ${
                   index === selectedIndex
                     ? "border-brand-400"
                     : "border-transparent hover:border-brand-200"
@@ -263,9 +263,9 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 <CloudinaryImage
                   publicId={image.url}
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
-                  width={72}
-                  height={96}
-                  className="object-cover"
+                  width={144}
+                  height={192}
+                  className="h-full w-full object-cover"
                 />
               </button>
             ))}
