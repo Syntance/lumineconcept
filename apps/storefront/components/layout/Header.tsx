@@ -44,7 +44,7 @@ export function Header() {
 
       <div className="container relative mx-auto flex h-16 items-center px-4 lg:px-8">
         {/* Lewa połowa: od centrum taka sama „luźność” jak po prawej — tekst „dociska” do logo. */}
-        <div className="flex min-w-0 flex-1 items-center gap-3 lg:justify-end lg:gap-8 lg:pr-[calc(92.4px+5rem)]">
+        <div className="flex min-w-0 flex-1 items-center gap-3 lg:justify-end lg:gap-8 lg:pr-[calc(101.75px+5rem)]">
           <HeaderMobileToggle items={HEADER_MOBILE_ITEMS} />
           <nav className="hidden shrink-0 lg:flex items-center gap-8" aria-label="Nawigacja główna">
             <div className="group relative flex items-center">
@@ -95,14 +95,14 @@ export function Header() {
           <Image
             src="/images/logo.png"
             alt="Lumine Concept"
-            width={185}
-            height={42}
-            className="h-[42px] w-auto"
+            width={204}
+            height={46}
+            className="h-[46.2px] w-auto"
             priority
           />
         </Link>
 
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:justify-start lg:gap-8 lg:pl-[calc(92.4px+5rem)]">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:justify-start lg:gap-8 lg:pl-[calc(101.75px+5rem)]">
           <nav className="hidden shrink-0 lg:flex items-center gap-8" aria-label="Nawigacja dodatkowa">
             {NAV_RIGHT.map((link) => (
               <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
