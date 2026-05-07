@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { PRODUCT_IMAGE_ARCH_UP_BORDER_RADIUS } from "@/lib/products/product-image-aspect";
 import { SITE_URL } from "@/lib/utils";
 import { TablicaZLogoFormClient } from "./client";
 
@@ -86,48 +87,54 @@ function HeroSection() {
 
 function CustomQuoteSection() {
   return (
-    <section className="bg-brand-50 py-16 lg:py-24">
-      <div className="container mx-auto max-w-6xl px-4">
+    <section className="relative overflow-x-clip bg-brand-50 pb-16 lg:pb-24">
+      {/* Desktop: biały pas tylko pod padding + H2; reszta sekcji na kremie (brand-50). */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden min-h-52 bg-white lg:block"
+      />
+
+      <div className="relative z-1 mx-auto max-w-6xl px-4 pt-16 lg:pt-24">
         <div
           id="formularz"
-          className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14 lg:items-start"
+          className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-x-14 lg:gap-y-10 lg:items-start"
         >
-          <div className="bg-white p-6 lg:p-8 lg:sticky lg:top-24 lg:self-start">
-            <div className="relative aspect-3/4 w-full overflow-hidden">
-              <Image
-                src="/images/categories/logo-kategoria-nail-boss.png"
-                alt="Tablica z logo Nail Boss — przykładowa realizacja"
-                fill
-                sizes="(max-width: 1024px) 100vw, 45vw"
-                className="object-cover object-center"
-              />
-            </div>
+          <div
+            className="relative z-2 aspect-3/4 w-full overflow-hidden max-lg:mx-auto max-lg:max-h-[min(100vw,28rem)] max-lg:max-w-md lg:sticky lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:max-h-none lg:top-24"
+            style={{ borderRadius: PRODUCT_IMAGE_ARCH_UP_BORDER_RADIUS }}
+          >
+            <Image
+              src="/images/categories/logo-kategoria-nail-boss.png"
+              alt="Tablica z logo Nail Boss — przykładowa realizacja"
+              fill
+              sizes="(max-width: 1024px) 100vw, 45vw"
+              className="object-cover object-center"
+            />
           </div>
 
-          <div className="flex min-h-0 flex-col">
-            <div className="bg-white p-6 lg:p-8">
-              <h2 className="font-display text-3xl uppercase leading-tight tracking-[0.06em] text-brand-800 lg:text-4xl">
-                Tablica wizerunkowa
-                <br />z logo
-              </h2>
-            </div>
+          <div className="relative z-2 max-lg:-mx-4 max-lg:bg-white max-lg:px-4 max-lg:pb-6 lg:col-start-2 lg:row-start-1 lg:bg-transparent lg:px-0">
+            <h2 className="font-display text-3xl uppercase leading-tight tracking-[0.06em] text-brand-800 lg:text-4xl">
+              Tablica wizerunkowa
+              <br />
+              z logo
+            </h2>
+          </div>
 
-            <div className="px-6 pb-6 pt-6 lg:px-8 lg:pb-0 lg:pt-8">
-              <p className="text-base leading-relaxed text-brand-800 lg:text-lg">
-                Tablica akrylowa z Twoim logo, może mieć dowolny kształt, jednak
-                maksymalnie mieszczący się w rozmiarze 120×80 cm. Dodatkową opcją
-                może być podświetlenie LED.
-              </p>
+          <div className="relative z-2 space-y-6 lg:col-start-2 lg:row-start-2 lg:pt-0">
+            <p className="text-base leading-relaxed text-brand-800 lg:text-lg">
+              Tablica akrylowa z Twoim logo, może mieć dowolny kształt, jednak
+              maksymalnie mieszczący się w rozmiarze 120×80 cm. Dodatkową opcją
+              może być podświetlenie LED.
+            </p>
 
-              <p className="mt-4 text-sm leading-relaxed text-brand-700">
-                W związku z tym, że każdy produkt jest zupełnie inny, dokonujemy
-                indywidualnej wyceny. Wpisz poniżej specyfikację, która pomoże nam
-                oszacować kosztorys dla Ciebie.
-              </p>
+            <p className="text-sm leading-relaxed text-brand-700">
+              W związku z tym, że każdy produkt jest zupełnie inny, dokonujemy
+              indywidualnej wyceny. Wpisz poniżej specyfikację, która pomoże nam
+              oszacować kosztorys dla Ciebie.
+            </p>
 
-              <div className="mt-8">
-                <TablicaZLogoFormClient />
-              </div>
+            <div className="pt-2">
+              <TablicaZLogoFormClient />
             </div>
           </div>
         </div>

@@ -12,6 +12,7 @@ import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
 import {
   PRODUCT_CARD_IMAGE_HEIGHT,
   PRODUCT_CARD_IMAGE_WIDTH,
+  PRODUCT_IMAGE_ARCH_UP_BORDER_RADIUS,
   PRODUCT_IMAGE_ASPECT_CLASS,
 } from "@/lib/products/product-image-aspect";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
@@ -102,7 +103,7 @@ export function ProductCard({
   const archFrameStyle: CSSProperties | undefined = sharpSquare
     ? { borderRadius: 0 }
     : frameVariant === "arch-up"
-      ? { borderRadius: "50% 50% 0 0 / 40% 40% 0 0" }
+      ? { borderRadius: PRODUCT_IMAGE_ARCH_UP_BORDER_RADIUS }
       : frameVariant === "arch-down"
         ? { borderRadius: "0 0 50% 50% / 0 0 40% 40%" }
         : undefined;
