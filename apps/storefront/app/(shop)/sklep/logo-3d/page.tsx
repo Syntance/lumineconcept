@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { PRODUCT_IMAGE_ARCH_UP_BORDER_RADIUS } from "@/lib/products/product-image-aspect";
 import { SITE_URL } from "@/lib/utils";
 import { TablicaZLogoFormClient } from "./client";
+import { QuoteTitleBandMeasure } from "./QuoteTitleBandMeasure";
 
 export const metadata: Metadata = {
   title: "Tablica z logo — wycena indywidualna | Lumine Concept",
@@ -88,10 +89,10 @@ function HeroSection() {
 function CustomQuoteSection() {
   return (
     <section className="relative overflow-x-clip bg-brand-50 pb-16 lg:pb-24">
-      {/* Desktop: biały pas tylko pod padding + H2; reszta sekcji na kremie (brand-50). */}
+      {/* lg: pełna szerokość viewportu; wysokość z --logo3d-white-h (QuoteTitleBandMeasure). */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden min-h-52 bg-white lg:block"
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden bg-white lg:block lg:h-(--logo3d-white-h,15rem)"
       />
 
       <div className="relative z-1 mx-auto max-w-6xl px-4 pt-16 lg:pt-24">
@@ -100,7 +101,7 @@ function CustomQuoteSection() {
           className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-x-14 lg:gap-y-10 lg:items-start"
         >
           <div
-            className="relative z-2 aspect-3/4 w-full overflow-hidden max-lg:mx-auto max-lg:max-h-[min(100vw,28rem)] max-lg:max-w-md lg:sticky lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:max-h-none lg:top-24"
+            className="relative z-2 aspect-3/4 w-full overflow-hidden max-lg:mx-auto max-lg:max-h-[min(100vw,28rem)] max-lg:max-w-md lg:sticky lg:top-24 lg:z-20 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:max-h-none"
             style={{ borderRadius: PRODUCT_IMAGE_ARCH_UP_BORDER_RADIUS }}
           >
             <Image
@@ -112,12 +113,14 @@ function CustomQuoteSection() {
             />
           </div>
 
-          <div className="relative z-2 max-lg:-mx-4 max-lg:bg-white max-lg:px-4 max-lg:pb-6 lg:col-start-2 lg:row-start-1 lg:bg-transparent lg:px-0">
-            <h2 className="font-display text-3xl uppercase leading-tight tracking-[0.06em] text-brand-800 lg:text-4xl">
-              Tablica wizerunkowa
-              <br />
-              z logo
-            </h2>
+          <div className="relative z-2 max-lg:-mx-4 max-lg:bg-white max-lg:px-4 max-lg:pb-6 lg:col-start-2 lg:row-start-1 lg:z-10 lg:bg-transparent lg:px-0">
+            <QuoteTitleBandMeasure>
+              <h2 className="font-display text-3xl uppercase leading-tight tracking-[0.06em] text-brand-800 lg:text-5xl">
+                Tablica wizerunkowa
+                <br />
+                z logo
+              </h2>
+            </QuoteTitleBandMeasure>
           </div>
 
           <div className="relative z-2 space-y-6 lg:col-start-2 lg:row-start-2 lg:pt-0">
