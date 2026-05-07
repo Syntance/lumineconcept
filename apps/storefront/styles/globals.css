@@ -40,6 +40,11 @@
 
 @layer base {
   /* Płynne przewijanie do #kotwic (np. „Zobacz więcej” → formularz). Wyłączone przy reduced motion. */
+  /* Kotwice # — treść nie chowa się pod announcement + header (bez paska referencyjnego). */
+  html {
+    scroll-padding-top: calc(2.35rem + var(--header-sticky-height) + 1px);
+  }
+
   @media (prefers-reduced-motion: no-preference) {
     html {
       scroll-behavior: smooth;

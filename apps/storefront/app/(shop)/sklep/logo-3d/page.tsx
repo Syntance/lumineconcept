@@ -66,13 +66,13 @@ function HeroSection() {
               którą możesz zamieścić na ścianie.
             </p>
             <div className="mt-10">
-              <Link
+              <a
                 href="#formularz"
                 className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
                 aria-label="Przewiń do formularza — zamów tablicę z logo"
               >
                 Zamów tablicę
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -85,12 +85,12 @@ function HeroSection() {
 
 function CustomQuoteSection() {
   return (
-    <section
-      id="formularz"
-      className="scroll-mt-[var(--shop-chrome-h)] bg-brand-50 py-16 lg:py-24"
-    >
+    <section className="bg-brand-50 py-16 lg:py-24">
       <div className="container mx-auto max-w-6xl px-4">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14 lg:items-start">
+        <div
+          id="formularz"
+          className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14 lg:items-start"
+        >
           <div className="relative aspect-3/4 w-full overflow-hidden lg:sticky lg:top-24">
             <Image
               src="/images/categories/logo-kategoria-nail-boss.png"
