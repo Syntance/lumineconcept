@@ -39,6 +39,13 @@
 }
 
 @layer base {
+  /* Płynne przewijanie do #kotwic (np. „Zobacz więcej” → formularz). Wyłączone przy reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
   /* Domyślna wartość, gdyby HeroSection renderował się poza #main-content (np. podgląd). */
   :root {
     --shop-chrome-h: calc(2.35rem + 4rem + 1px);
