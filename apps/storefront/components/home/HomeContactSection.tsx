@@ -87,7 +87,7 @@ export function HomeContactSection() {
       <section id="kontakt" aria-label="Formularz kontaktowy — wysłano wiadomość">
         <ContactSectionSignetBlock />
         <div className="bg-brand-50 pt-3 pb-16 md:pt-4 lg:pt-4 lg:pb-20">
-          <div className="container mx-auto max-w-xl px-4 text-center">
+          <div className="mx-auto w-[min(100%,80%)] px-4 text-center">
             <div className="mb-10 text-center lg:mb-12">
               <h2 className="font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
                 Napisz do nas
@@ -109,7 +109,7 @@ export function HomeContactSection() {
       <ContactSectionSignetBlock />
 
       <div className="bg-brand-50 pt-3 pb-16 md:pt-4 lg:pt-4 lg:pb-20">
-        <div className="container mx-auto max-w-xl px-4">
+        <div className="mx-auto w-[min(100%,80%)] px-4">
           <div className="mb-10 text-center lg:mb-12">
             <h2
               id="home-contact-heading"
@@ -134,8 +134,8 @@ export function HomeContactSection() {
           <form onSubmit={handleSubmit} className="relative mt-10 grid gap-5">
           <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="contact-name" className="text-sm font-medium text-brand-800">
-                Imię lub nazwa
+              <label htmlFor="contact-name" className="sr-only">
+                Imię i nazwisko
               </label>
               <input
                 id="contact-name"
@@ -146,11 +146,12 @@ export function HomeContactSection() {
                 onChange={(e) => setName(e.target.value)}
                 onFocus={() => trackFormStart("home_contact")}
                 maxLength={120}
-                className="rounded-none border border-brand-200 bg-white px-4 py-2.5 text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:border-accent focus:ring-1 focus:ring-accent"
+                placeholder="Imię i nazwisko"
+                className="rounded-none border border-brand-200 bg-white px-4 py-2.5 text-left text-brand-900 outline-none transition-colors placeholder:text-brand-700 placeholder:text-sm focus:border-accent focus:ring-1 focus:ring-accent"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="contact-email" className="text-sm font-medium text-brand-800">
+              <label htmlFor="contact-email" className="sr-only">
                 E-mail
               </label>
               <input
@@ -162,14 +163,15 @@ export function HomeContactSection() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 maxLength={200}
-                className="rounded-none border border-brand-200 bg-white px-4 py-2.5 text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:border-accent focus:ring-1 focus:ring-accent"
+                placeholder="E-mail"
+                className="rounded-none border border-brand-200 bg-white px-4 py-2.5 text-left text-brand-900 outline-none transition-colors placeholder:text-brand-700 placeholder:text-sm focus:border-accent focus:ring-1 focus:ring-accent"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="contact-phone" className="text-sm font-medium text-brand-800">
-              Telefon <span className="font-normal text-brand-500">(opcjonalnie)</span>
+            <label htmlFor="contact-phone" className="sr-only">
+              Telefon (opcjonalnie)
             </label>
             <input
               id="contact-phone"
@@ -179,12 +181,13 @@ export function HomeContactSection() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               maxLength={40}
-              className="rounded-none border border-brand-200 bg-white px-4 py-2.5 text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:border-accent focus:ring-1 focus:ring-accent"
+              placeholder="Telefon (opcjonalnie)"
+              className="rounded-none border border-brand-200 bg-white px-4 py-2.5 text-left text-brand-900 outline-none transition-colors placeholder:text-brand-700 placeholder:text-sm focus:border-accent focus:ring-1 focus:ring-accent"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="contact-message" className="text-sm font-medium text-brand-800">
+            <label htmlFor="contact-message" className="sr-only">
               Wiadomość
             </label>
             <textarea
@@ -195,7 +198,8 @@ export function HomeContactSection() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               maxLength={4000}
-              className="resize-y rounded-none border border-brand-200 bg-white px-4 py-2.5 text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:border-accent focus:ring-1 focus:ring-accent min-h-[8rem]"
+              placeholder="Wiadomość"
+              className="min-h-[8rem] resize-y rounded-none border border-brand-200 bg-white px-4 py-2.5 text-left text-brand-900 outline-none transition-colors placeholder:text-brand-700 placeholder:text-sm focus:border-accent focus:ring-1 focus:ring-accent"
             />
           </div>
 

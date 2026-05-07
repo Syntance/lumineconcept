@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     if (!name || name.length > LIMITS.name) {
       return NextResponse.json(
-        { success: false, message: "Podaj imię lub nazwę (do 120 znaków)." },
+        { success: false, message: "Podaj imię i nazwisko (do 120 znaków)." },
         { status: 400 },
       );
     }
