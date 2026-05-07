@@ -85,13 +85,13 @@ function HeroSection() {
 
 function CustomQuoteSection() {
   return (
-    <section className="bg-brand-50 py-16 lg:py-24">
+    <section
+      id="formularz"
+      className="scroll-mt-[var(--shop-chrome-h)] bg-brand-50 py-16 lg:py-24"
+    >
       <div className="container mx-auto max-w-6xl px-4">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14 lg:items-start">
-          <div
-            id="formularz"
-            className="relative aspect-3/4 w-full overflow-hidden scroll-mt-24 lg:sticky lg:top-24"
-          >
+          <div className="relative aspect-3/4 w-full overflow-hidden lg:sticky lg:top-24">
             <Image
               src="/images/categories/logo-kategoria-nail-boss.png"
               alt="Tablica z logo Nail Boss — przykładowa realizacja"
