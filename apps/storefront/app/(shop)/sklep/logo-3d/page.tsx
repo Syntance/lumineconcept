@@ -28,7 +28,7 @@ export default function TablicaZLogoPage() {
 
 function HeroSection() {
   return (
-    <section className="relative isolate overflow-hidden bg-brand-900 text-white">
+    <section className="relative isolate flex h-[calc(100svh-var(--shop-chrome-h))] min-h-0 w-full flex-col overflow-hidden bg-brand-900 text-white">
       <div className="absolute inset-0 -z-10">
         <Image
           src="/images/categories/logo-kategoria-nail-boss.png"
@@ -44,31 +44,35 @@ function HeroSection() {
         />
       </div>
 
-      <div className="container mx-auto max-w-5xl px-4 pt-10 pb-24 lg:pt-12 lg:pb-32">
-        <Breadcrumbs
-          className="mb-0 [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white"
-          items={[
-            { label: "Strona główna", href: "/" },
-            { label: "Sklep", href: "/sklep" },
-            { label: "Tablica z logo" },
-          ]}
-        />
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-4 pt-6 pb-12 sm:pt-10">
+        <div className="container mx-auto max-w-5xl shrink-0">
+          <Breadcrumbs
+            className="mb-0 [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white"
+            items={[
+              { label: "Strona główna", href: "/" },
+              { label: "Sklep", href: "/sklep" },
+              { label: "Tablica z logo" },
+            ]}
+          />
+        </div>
 
-        <div className="mt-12 text-center lg:mt-16">
-          <h1 className="font-display text-4xl uppercase tracking-[0.08em] text-white sm:text-5xl lg:text-6xl">
-            Tablica z logo
-          </h1>
-          <p className="mt-6 mx-auto max-w-2xl text-sm uppercase leading-relaxed tracking-[0.18em] text-white/85 sm:text-base">
-            Tablica wizerunkowa z Twoim logo — kreatywna, ozdobna tablica,
-            którą możesz zamieścić na ścianie.
-          </p>
-          <div className="mt-10">
-            <Link
-              href="#formularz"
-              className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
-            >
-              Wyślij zapytanie
-            </Link>
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-8 sm:py-12">
+          <div className="container mx-auto max-w-5xl text-center">
+            <h1 className="font-display text-4xl uppercase tracking-[0.08em] text-white sm:text-5xl lg:text-6xl">
+              Tablica z logo
+            </h1>
+            <p className="mt-6 mx-auto max-w-2xl text-sm uppercase leading-relaxed tracking-[0.18em] text-white/85 sm:text-base">
+              Tablica wizerunkowa z Twoim logo — kreatywna, ozdobna tablica,
+              którą możesz zamieścić na ścianie.
+            </p>
+            <div className="mt-10">
+              <Link
+                href="#formularz"
+                className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
+              >
+                Wyślij zapytanie
+              </Link>
+            </div>
           </div>
         </div>
       </div>
