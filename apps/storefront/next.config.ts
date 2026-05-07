@@ -50,8 +50,7 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       /**
-       * Stary URL strony zapytania o Logo 3D — przeniesiony pod sklepowy listing
-       * Logo 3D, który teraz pełni rolę głównej strony Logo 3D.
+       * Stary URL `/logo-3d` — przekierowanie do strony „Tablica z logo” (`/sklep/logo-3d`).
        */
       {
         source: "/logo-3d",

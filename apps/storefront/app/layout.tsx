@@ -54,7 +54,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const description =
     settings?.seo?.metaDescription ||
     settings?.description ||
-    "Produkty z plexi i rozwiązania brandingowe dla salonów beauty. Loga 3D, stojaki, organizery, tablice cennikowe i więcej.";
+    "Produkty z plexi i rozwiązania brandingowe dla salonów beauty. Tablice z logo, stojaki, organizery, tablice cennikowe i więcej.";
   const ogImageUrl =
     settings?.seo?.ogImage?.asset?.url ||
     settings?.defaultOgImage?.asset?.url;

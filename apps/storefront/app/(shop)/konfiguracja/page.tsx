@@ -28,7 +28,7 @@ export default function KonfiguracjaPage() {
         <div className="rounded-lg border border-brand-200 p-8 text-center text-brand-500">
           <p className="text-lg">Konfigurator produktu w przygotowaniu</p>
           <p className="mt-2 text-sm">
-            Trwają prace nad interaktywnym konfiguratorem. W międzyczasie skontaktuj się z nami przez formularz logo 3D.
+            Trwają prace nad interaktywnym konfiguratorem. W międzyczasie skontaktuj się z nami przez formularz tablicy z logo.
           </p>
         </div>
       </div>

@@ -106,7 +106,7 @@ interface ProductPageLayoutProps {
   /**
    * Etykieta (tag Medusy) wymagana na produkcie, żeby ta ścieżka była
    * aktywna. Zapobiega crossrenderowaniu produktów pod złymi slugami
-   * (np. logo-3d pod gotowe-wzory). Brak tagu → notFound().
+   * (np. kategoria logo-3d pod gotowe-wzory). Brak tagu → notFound().
    */
   requiredTag?: string;
   ProductPageClient: React.ComponentType<{

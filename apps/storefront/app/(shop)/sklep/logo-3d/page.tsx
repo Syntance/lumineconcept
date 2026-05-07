@@ -4,18 +4,18 @@ import Image from "next/image";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { HeroShadowPanel, heroPanelScale } from "@/components/home/hero-shadow-panel";
 import { SITE_URL } from "@/lib/utils";
-import { Logo3DFormClient } from "./client";
+import { TablicaZLogoFormClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "Logo 3D — wycena indywidualna | Lumine Concept",
+  title: "Tablica z logo — wycena indywidualna | Lumine Concept",
   description:
-    "Logo Twojej marki w postaci ozdobnej tablicy 3D z plexi. Prześlij plik, podaj wymiary i kształt — bezpłatna wycena w 24h.",
+    "Tablica z logo Twojej marki z plexi (także z podświetleniem LED). Prześlij plik, podaj wymiary i kształt — bezpłatna wycena w 24h.",
   alternates: { canonical: `${SITE_URL}/sklep/logo-3d` },
 };
 
 export const revalidate = 60;
 
-export default function Logo3dInquiryPage() {
+export default function TablicaZLogoPage() {
   return (
     <>
       <HeroSection />
@@ -51,7 +51,7 @@ function HeroSection() {
               items={[
                 { label: "Strona główna", href: "/" },
                 { label: "Sklep", href: "/sklep" },
-                { label: "Logo 3D" },
+                { label: "Tablica z logo" },
               ]}
             />
           </div>
@@ -79,7 +79,7 @@ function HeroSection() {
                       fontWeight: 400,
                     }}
                   >
-                    Logo 3D
+                    Tablica z logo
                   </h1>
 
                   <div
@@ -145,7 +145,7 @@ function CustomQuoteSection() {
           <div className="relative aspect-3/4 w-full overflow-hidden lg:sticky lg:top-24">
             <Image
               src="/images/categories/logo-kategoria-nail-boss.png"
-              alt="Tablica z logo Nail Boss — przykładowa realizacja Logo 3D"
+              alt="Tablica z logo Nail Boss — przykładowa realizacja"
               fill
               sizes="(max-width: 1024px) 100vw, 45vw"
               className="object-cover object-center"
@@ -155,11 +155,11 @@ function CustomQuoteSection() {
           <div>
             <h2 className="font-display text-3xl uppercase leading-tight tracking-[0.06em] text-brand-800 lg:text-4xl">
               Tablica wizerunkowa
-              <br />z Logo
+              <br />z logo
             </h2>
 
             <p className="mt-6 text-base leading-relaxed text-brand-800 lg:text-lg">
-              Tablica akrylowa z logo 3D, może mieć dowolny kształt, jednak
+              Tablica akrylowa z Twoim logo, może mieć dowolny kształt, jednak
               maksymalnie mieszczący się w rozmiarze 120×80 cm. Dodatkową opcją
               może być podświetlenie LED.
             </p>
@@ -171,7 +171,7 @@ function CustomQuoteSection() {
             </p>
 
             <div className="mt-8">
-              <Logo3DFormClient />
+              <TablicaZLogoFormClient />
             </div>
           </div>
         </div>
@@ -191,11 +191,11 @@ function RealizationsCta() {
         </h2>
         <div className="mx-auto mt-3 h-px w-12 bg-accent" />
         <p className="mx-auto mt-6 max-w-2xl text-base text-brand-700">
-          Zobacz, jak Logo 3D wygląda w salonach beauty, gabinetach i punktach
+          Zobacz, jak tablice z logo prezentują się w salonach beauty, gabinetach i punktach
           usługowych — od minimalistycznych logotypów po ozdobne tablice z LED.
         </p>
         <Link
-          href="/realizacje#logo-3d"
+          href="/realizacje#tablica-z-logo"
           className="mt-8 inline-flex items-center justify-center border border-brand-300 px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-800 transition-colors hover:bg-brand-50 hover:text-brand-900"
         >
           Przejdź do realizacji &rarr;

@@ -5,7 +5,7 @@ import { HeaderMobileToggle } from "./HeaderMobileToggle";
 import { HeaderIcons } from "./HeaderIcons";
 import { SHOP_HUB_HREF, SHOP_NAV_DROPDOWN } from "./shop-nav";
 
-const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Logo 3D" }] as const;
+const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Tablica z logo" }] as const;
 
 const NAV_RIGHT = [
   { href: "/dlaczego-lumine", label: "O nas" },

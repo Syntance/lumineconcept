@@ -13,7 +13,7 @@ const INPUT_CLASS =
 
 const LABEL_CLASS = "block text-sm font-medium text-brand-700 mb-1.5";
 
-export function Logo3DFormClient() {
+export function TablicaZLogoFormClient() {
   const [size, setSize] = useState("");
   const [shape, setShape] = useState("");
   const [led, setLed] = useState(false);
@@ -34,16 +34,16 @@ export function Logo3DFormClient() {
     if (status === "loading") return;
 
     setStatus("loading");
-    trackFormSubmit("logo_3d");
+    trackFormSubmit("tablica_z_logo");
 
     /**
      * Łączymy pola formularza w jedną wiadomość — `/api/contact` to generic
      * endpoint kontaktowy. Dla nazwy nadawcy bierzemy lokalną część e-maila,
      * żeby nie dodawać kolejnego pola w UI.
      */
-    const derivedName = email.split("@")[0]?.slice(0, 80) || "Logo 3D — wycena";
+    const derivedName = email.split("@")[0]?.slice(0, 80) || "Tablica z logo — wycena";
     const message = [
-      "Zapytanie o wycenę: Logo 3D",
+      "Zapytanie o wycenę: Tablica z logo",
       "",
       `Rozmiar: ${size || "—"}`,
       `Kształt: ${shape || "—"}`,
@@ -124,7 +124,7 @@ export function Logo3DFormClient() {
             type="file"
             accept=".png,.svg,.ai,.pdf,.jpg,.jpeg"
             onChange={handleFileChange}
-            onFocus={() => trackFormStart("logo_3d")}
+            onFocus={() => trackFormStart("tablica_z_logo")}
             className="sr-only"
           />
         </div>
@@ -145,7 +145,7 @@ export function Logo3DFormClient() {
             type="text"
             value={size}
             onChange={(e) => setSize(e.target.value)}
-            onFocus={() => trackFormStart("logo_3d")}
+            onFocus={() => trackFormStart("tablica_z_logo")}
             placeholder="np. 60 × 40 cm"
             maxLength={80}
             className={INPUT_CLASS}

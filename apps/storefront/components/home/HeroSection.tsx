@@ -88,7 +88,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
                         fontWeight: 300,
                       }}
                     >
-                      Logo 3D, cenniki i oznaczenia z plexi
+                        Tablica z logo, cenniki i oznaczenia z plexi
                     </p>
                   </div>
                 </div>

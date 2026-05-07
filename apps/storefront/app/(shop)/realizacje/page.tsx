@@ -27,7 +27,8 @@ export default function RealizacjePage() {
         klientów. Każda realizacja jest unikalna i dopasowana do charakteru marki.
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div id="tablica-z-logo" className="scroll-mt-28">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
@@ -38,6 +39,7 @@ export default function RealizacjePage() {
             </span>
           </div>
         ))}
+        </div>
       </div>
     </div>
   );

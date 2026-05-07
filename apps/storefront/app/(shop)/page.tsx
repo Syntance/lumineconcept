@@ -18,9 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     seo: settings?.seo ?? undefined,
     fallbackTitle:
-      "Lumine Concept \u2014 branding z plexi dla salon\u00f3w beauty | Logo 3D, cenniki, oznaczenia",
+      "Lumine Concept \u2014 branding z plexi dla salon\u00f3w beauty | Tablica z logo, cenniki, oznaczenia",
     fallbackDescription:
-      "Logo 3D, cenniki i oznaczenia z plexi. Matowe UV, LED z pilotem, 15+ kolor\u00f3w. Express 72h. 6 000+ realizacji. Wy\u015blij logo \u2014 wycena w 24h.",
+      "Tablica z logo, cenniki i oznaczenia z plexi. Matowe UV, LED z pilotem, 15+ kolor\u00f3w. Express 72h. 6 000+ realizacji. Wy\u015blij logo \u2014 wycena w 24h.",
     siteSettings: settings,
     path: "/",
   });
@@ -35,7 +35,7 @@ export default function HomePage() {
     name: "Lumine Concept",
     url: SITE_URL,
     logo: `${SITE_URL}/images/logo.png`,
-    description: "Logo 3D, cenniki i oznaczenia z plexi dla salon\u00f3w beauty. Matowe UV, LED z pilotem, 15+ kolor\u00f3w.",
+    description: "Produkty z plexi: tablica z logo Twojej marki, cenniki i oznaczenia w technice 3D. Matowe UV, LED z pilotem, 15+ kolor\u00f3w.",
     sameAs: [
       "https://www.instagram.com/lumineconcept/",
       "https://www.facebook.com/lumineconcept/",

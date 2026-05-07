@@ -45,10 +45,10 @@ const CATEGORIES = [
     image: "/images/categories/gotowe-wzory-personel.png",
   },
   {
-    title: "Logo 3D",
+    title: "Tablica z logo",
     subtitle: "Plexi · LED · matowe UV",
     description: "Logo Twojej marki zrealizowane w postaci ozdobnej tablicy.",
-    cta: "Zobacz logo 3D",
+    cta: "Zobacz tablicę z logo",
     href: "/sklep/logo-3d",
     image: "/images/categories/logo-kategoria-nail-boss.png",
   },
