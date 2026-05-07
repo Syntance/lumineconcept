@@ -49,6 +49,15 @@ const nextConfig: NextConfig = {
         destination: "/sklep/gotowe-wzory/:path*",
         permanent: true,
       },
+      /**
+       * Stary URL strony zapytania o Logo 3D — przeniesiony pod sklepowy listing
+       * Logo 3D, który teraz pełni rolę głównej strony Logo 3D.
+       */
+      {
+        source: "/logo-3d",
+        destination: "/sklep/logo-3d",
+        permanent: true,
+      },
     ];
   },
 

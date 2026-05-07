@@ -1,154 +1,147 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import Link from "next/link";
-import {
-  buildMedusaCategoryScopeMap,
-  categoryIdByHandle,
-  categoryIdFromKatParam,
-  LISTING_CATEGORY_HANDLE,
-  medusaCategoryIdsForScope,
-  type CategoryTreeNode,
-} from "@/lib/medusa/category-tree";
-import { getProducts, getProductCategories } from "@/lib/medusa/products";
-import { getSiteSettings } from "@/lib/sanity/client";
+import Image from "next/image";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { SITE_URL } from "@/lib/utils";
-import { medusaProductToSimple } from "@/lib/products/simple-product";
-import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/global-config";
-import { ShopGridClient } from "../gotowe-wzory/client";
-
-const INITIAL_PAGE_SIZE = 24;
+import { Logo3DFormClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "Logo 3D z plexi — gotowe wzory do Twojego salonu | Lumine Concept",
+  title: "Logo 3D — wycena indywidualna | Lumine Concept",
   description:
-    "Gotowe logo 3D z plexi i LED. Wybierz wzór, zamów online — szybka wysyłka.",
+    "Logo Twojej marki w postaci ozdobnej tablicy 3D z plexi. Prześlij plik, podaj wymiary i kształt — bezpłatna wycena w 24h.",
   alternates: { canonical: `${SITE_URL}/sklep/logo-3d` },
 };
 
 export const revalidate = 60;
 
-export default async function Logo3dListingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ kat?: string; sort?: string }>;
-}) {
-  const params = await searchParams;
-
-  const [categories, settings, globalConfig] = await Promise.all([
-    getProductCategories().catch(() => []),
-    getSiteSettings(),
-    getGlobalProductConfig().catch(() => EMPTY_GLOBAL_CONFIG),
-  ]);
-
-  const tree = categories as unknown as CategoryTreeNode[];
-  const defaultLogo3dId = categoryIdByHandle(tree, LISTING_CATEGORY_HANDLE.logo3d);
-  const resolvedKatId = params.kat ? categoryIdFromKatParam(tree, params.kat) : undefined;
-  const listCategoryId = params.kat ? resolvedKatId : defaultLogo3dId;
-
-  const medusaCategoryScopeMap = buildMedusaCategoryScopeMap(
-    tree,
-    LISTING_CATEGORY_HANDLE.logo3d,
-  );
-  const medusaListingCategoryIds = medusaCategoryIdsForScope(
-    listCategoryId,
-    medusaCategoryScopeMap,
-  );
-
-  const productsResponse = await getProducts({
-    limit: INITIAL_PAGE_SIZE,
-    offset: 0,
-    order: params.sort ?? "-created_at",
-    category_id: medusaListingCategoryIds,
-  }).catch(() => null);
-
-  const initialCategoryId = params.kat ? resolvedKatId : defaultLogo3dId;
-
-  const products = productsResponse?.products ?? [];
-  const totalCount = productsResponse?.count ?? 0;
-  const trustBar = settings?.trustBar;
-
-  const initialProducts = products.map((p) =>
-    medusaProductToSimple(p as unknown as Record<string, unknown>),
-  );
-
+export default function Logo3dInquiryPage() {
   return (
     <>
-      {/* Hero */}
-      <section className="bg-brand-50 pt-10 pb-14 lg:pt-12 lg:pb-20">
-        <div className="container mx-auto max-w-4xl px-4">
-          <Breadcrumbs
-            className="mb-0"
-            items={[
-              { label: "Strona główna", href: "/" },
-              { label: "Sklep", href: "/sklep" },
-              { label: "Logo 3D" },
-            ]}
-          />
-        </div>
-        <div className="container mx-auto max-w-7xl px-4 pt-10 text-center lg:pt-16">
-          <h1 className="font-display text-4xl tracking-[0.06em] text-brand-800 lg:text-5xl">
-            Logo 3D z plexi — gotowe wzory do Twojego salonu
-          </h1>
-          <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-800 leading-relaxed">
-            Gotowe wzory logo 3D i LED. Wybierz model, zamów online — szybka realizacja.
-          </p>
-        </div>
-      </section>
+      <HeroSection />
+      <CustomQuoteSection />
+      <RealizationsCta />
+    </>
+  );
+}
 
-      {/* Bridge banner */}
-      <section className="bg-brand-100/50 py-8">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex flex-col items-center gap-4 rounded-2xl bg-white px-6 py-8 text-center shadow-sm lg:flex-row lg:justify-between lg:text-left lg:px-10">
-            <div>
-              <p className="font-display text-lg tracking-wide text-brand-800">
-                Masz własne logo?
-              </p>
-              <p className="mt-1 text-base text-brand-800">
-                Zamów indywidualny projekt — logo 3D z Twoim designem, wycena w 24h.
-              </p>
-            </div>
+/* ── Hero ───────────────────────────────────────────────────────── */
+
+function HeroSection() {
+  return (
+    <section className="relative isolate overflow-hidden bg-brand-900 text-white">
+      <div className="absolute inset-0 -z-10">
+        <Image
+          src="/images/categories/logo-kategoria-nail-boss.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center opacity-40"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(38,29,24,0.45)_0%,rgba(20,14,10,0.85)_70%)]"
+        />
+      </div>
+
+      <div className="container mx-auto max-w-5xl px-4 pt-10 pb-24 lg:pt-12 lg:pb-32">
+        <Breadcrumbs
+          className="mb-0 [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white"
+          items={[
+            { label: "Strona główna", href: "/" },
+            { label: "Sklep", href: "/sklep" },
+            { label: "Logo 3D" },
+          ]}
+        />
+
+        <div className="mt-12 text-center lg:mt-16">
+          <h1 className="font-display text-4xl uppercase tracking-[0.08em] text-white sm:text-5xl lg:text-6xl">
+            Logo 3D
+          </h1>
+          <p className="mt-6 mx-auto max-w-2xl text-sm uppercase leading-relaxed tracking-[0.18em] text-white/85 sm:text-base">
+            Logo Twojej marki zrealizowane w postaci kreatywnej, ozdobnej tablicy,
+            którą możesz zamieścić na ścianie.
+          </p>
+          <div className="mt-10">
             <Link
-              href="/logo-3d/#formularz"
-              className="shrink-0 inline-flex items-center justify-center rounded-md bg-brand-900 px-6 py-2.5 text-sm font-medium uppercase tracking-wider text-white transition-colors hover:bg-brand-800"
+              href="#formularz"
+              className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
             >
-              Wyślij logo &rarr;
+              Wyślij zapytanie
             </Link>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* Product grid */}
-      <section className="bg-white py-10 lg:py-14">
-        <div className="container mx-auto max-w-7xl px-4">
-          <Suspense fallback={null}>
-            <ShopGridClient
-              initialProducts={initialProducts}
-              totalCount={totalCount}
-              initialFilter={initialCategoryId}
-              defaultListingCategoryId={defaultLogo3dId ?? ""}
-              initialSort={params.sort ?? "-created_at"}
-              categories={categories.map((c) => ({ id: c.id, name: c.name }))}
-              productBasePath="/sklep/logo-3d"
-              globalColors={globalConfig.colors}
-              medusaCategoryScopeMap={medusaCategoryScopeMap}
+/* ── Custom quote section ───────────────────────────────────────── */
+
+function CustomQuoteSection() {
+  return (
+    <section id="formularz" className="bg-brand-50 py-16 lg:py-24">
+      <div className="container mx-auto max-w-6xl px-4">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14 lg:items-start">
+          <div className="relative aspect-3/4 w-full overflow-hidden lg:sticky lg:top-24">
+            <Image
+              src="/images/categories/logo-kategoria-nail-boss.png"
+              alt="Tablica z logo Nail Boss — przykładowa realizacja Logo 3D"
+              fill
+              sizes="(max-width: 1024px) 100vw, 45vw"
+              className="object-cover object-center"
             />
-          </Suspense>
-        </div>
-      </section>
+          </div>
 
-      {/* Trust bar */}
-      <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
-        <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-800">
-            <span>{trustBar?.followers ?? "25 000+"} obserwujących</span>
-            <span className="text-brand-300">·</span>
-            <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
-            <span className="text-brand-300">·</span>
-            <span>{trustBar?.shippingLabel ?? "Realizacja ok. 10 dni roboczych"}</span>
+          <div>
+            <h2 className="font-display text-3xl uppercase leading-tight tracking-[0.06em] text-brand-800 lg:text-4xl">
+              Tablica wizerunkowa
+              <br />z Logo
+            </h2>
+
+            <p className="mt-6 text-base leading-relaxed text-brand-800 lg:text-lg">
+              Tablica akrylowa z logo 3D, może mieć dowolny kształt, jednak
+              maksymalnie mieszczący się w rozmiarze 120×80 cm. Dodatkową opcją
+              może być podświetlenie LED.
+            </p>
+
+            <p className="mt-4 text-sm leading-relaxed text-brand-700">
+              W związku z tym, że każdy produkt jest zupełnie inny, dokonujemy
+              indywidualnej wyceny. Wpisz poniżej specyfikację, która pomoże nam
+              oszacować kosztorys dla Ciebie.
+            </p>
+
+            <div className="mt-8">
+              <Logo3DFormClient />
+            </div>
           </div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
+  );
+}
+
+/* ── Realizations CTA ───────────────────────────────────────────── */
+
+function RealizationsCta() {
+  return (
+    <section className="bg-white py-16 lg:py-20">
+      <div className="container mx-auto max-w-4xl px-4 text-center">
+        <h2 className="font-display text-2xl uppercase tracking-[0.18em] text-brand-800 lg:text-3xl">
+          Zapoznaj się z naszymi realizacjami
+        </h2>
+        <div className="mx-auto mt-3 h-px w-12 bg-accent" />
+        <p className="mx-auto mt-6 max-w-2xl text-base text-brand-700">
+          Zobacz, jak Logo 3D wygląda w salonach beauty, gabinetach i punktach
+          usługowych — od minimalistycznych logotypów po ozdobne tablice z LED.
+        </p>
+        <Link
+          href="/realizacje#logo-3d"
+          className="mt-8 inline-flex items-center justify-center border border-brand-300 px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-800 transition-colors hover:bg-brand-50 hover:text-brand-900"
+        >
+          Przejdź do realizacji &rarr;
+        </Link>
+      </div>
+    </section>
   );
 }
