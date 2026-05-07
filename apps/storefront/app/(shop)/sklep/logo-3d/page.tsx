@@ -69,9 +69,9 @@ function HeroSection() {
               <Link
                 href="#formularz"
                 className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
-                aria-label="Przejdź do formularza poniżej — uzupełnij dane i wyślij zapytanie o wycenę"
+                aria-label="Przewiń do kolejnej sekcji"
               >
-                Skonfiguruj i wyślij zapytanie
+                Zobacz więcej
               </Link>
             </div>
           </div>
