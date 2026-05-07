@@ -20,12 +20,13 @@ import {
 const GALLERY_MAX_WIDTH_DESKTOP = PRODUCT_GALLERY_MAX_WIDTH_STYLE;
 /**
  * Wariant z miniaturkami: cap szerokości tak, żeby
- *   image_col * 1.317 + sticky_top(88px) ≤ 100dvh
- * gdzie image_col = gallery_w − (thumbs_col 4.125rem + gap 1rem) = gallery_w − 5.125rem.
- *  →  gallery_w ≤ (100dvh − 5.5rem) * 0.76 + 5.125rem
- * Używamy 0.75 i 4rem dla zapasu bezpieczeństwa.
+ *   image_col * 1.4 + sticky_top(88px) ≤ 100dvh
+ * gdzie image_col = gallery_w − (thumbs_col + gap 1rem). Miniatury skalują się
+ * od 4.125rem (lg) do 8.25rem (2xl) — najgorszy przypadek 9.25rem boku.
+ *  →  gallery_w ≤ (100dvh − 5.5rem) * 0.71 + 9.25rem (na 2xl)
+ * Bezpieczna wartość pośrednia, działa od lg do 2xl.
  */
-const GALLERY_MAX_WIDTH_MULTI = "calc((100dvh - 5.5rem) * 0.75 + 4rem)";
+const GALLERY_MAX_WIDTH_MULTI = "calc((100dvh - 5.5rem) * 0.71 + 6rem)";
 
 function GalleryMainImage({
   url,
@@ -240,7 +241,13 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 key={image.id}
                 type="button"
                 onClick={() => goTo(index)}
-                className={`relative h-[4.25rem] w-[3.25rem] shrink-0 overflow-hidden border transition-colors lg:h-[5.5rem] lg:w-[4.125rem] ${
+                /**
+                 * Miniatury rosną progresywnie wraz z dostępną szerokością —
+                 * lg: 66×88, xl: 88×117, 2xl: 132×176 (czyli +100% względem lg).
+                 * Kolumna z miniaturami ma `lg:w-fit`, więc rośnie automatycznie
+                 * (zjada wolne miejsce po lewej, gdy galeria jest `ml-auto`).
+                 */
+                className={`relative h-[4.25rem] w-[3.25rem] shrink-0 overflow-hidden border transition-colors lg:h-[5.5rem] lg:w-[4.125rem] xl:h-[7.25rem] xl:w-[5.5rem] 2xl:h-[11rem] 2xl:w-[8.25rem] ${
                   index === selectedIndex
                     ? "border-brand-400"
                     : "border-transparent hover:border-brand-200"
@@ -252,8 +259,8 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 <CloudinaryImage
                   publicId={image.url}
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
-                  width={72}
-                  height={96}
+                  width={144}
+                  height={192}
                   className="object-cover"
                 />
               </button>
