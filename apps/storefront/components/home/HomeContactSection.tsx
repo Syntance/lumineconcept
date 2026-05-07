@@ -223,8 +223,8 @@ export function HomeContactSection() {
             </div>
           )}
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-            <p className="min-w-0 flex-1 text-center text-sm leading-snug text-brand-600 sm:text-left">
+          <div className="flex flex-col items-start gap-4">
+            <p className="max-w-prose text-left text-sm leading-snug text-brand-600">
               Wysyłając formularz akceptujesz{" "}
               <Link href="/polityka-prywatnosci" className="font-medium text-brand-700 underline underline-offset-2 hover:text-brand-900">
                 politykę prywatności
