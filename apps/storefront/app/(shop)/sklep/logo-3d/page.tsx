@@ -69,9 +69,9 @@ function HeroSection() {
               <Link
                 href="#formularz"
                 className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
-                aria-label="Przewiń do kolejnej sekcji"
+                aria-label="Przewiń do formularza — zamów tablicę z logo"
               >
-                Zobacz więcej
+                Zamów tablicę
               </Link>
             </div>
           </div>
