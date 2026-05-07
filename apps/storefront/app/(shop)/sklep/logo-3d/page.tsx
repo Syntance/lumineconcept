@@ -28,7 +28,7 @@ export default function TablicaZLogoPage() {
 
 function HeroSection() {
   return (
-    <section className="relative isolate flex h-[calc(100svh-var(--shop-chrome-h))] min-h-0 w-full flex-col overflow-hidden bg-brand-900 text-white">
+    <section className="relative isolate flex h-[calc(100svh-var(--shop-chrome-h)+1px)] min-h-0 w-full flex-col overflow-hidden bg-brand-900 text-white">
       <div className="absolute inset-0 -z-10">
         <Image
           src="/images/categories/logo-kategoria-nail-boss.png"
