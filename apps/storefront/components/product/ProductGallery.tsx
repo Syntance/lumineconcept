@@ -26,13 +26,12 @@ import { PRODUCT_IMAGE_ASPECT_CLASS } from "@/lib/products/product-image-aspect"
  * Aspect 3:4 dla miniatur trzymamy przez `aspect-[3/4]` na <button>,
  * więc wysokość liczy się sama z `--thumb-w`.
  */
-const GALLERY_VARS = {
-  ["--main-h" as string]: "clamp(24rem, calc((100dvh - 5.5rem) * 0.95), 56rem)",
-  ["--main-w" as string]: "calc(var(--main-h) * 3 / 4)",
-  ["--main-left" as string]: "calc(50vw - var(--main-w))",
-  ["--thumb-max-w" as string]: "max(0px, calc(var(--main-left) - 1rem))",
-  ["--thumb-w" as string]:
-    "min(calc(var(--main-h) / 5 * 3 / 4), var(--thumb-max-w))",
+const GALLERY_VARS: React.CSSProperties = {
+  "--main-h": "clamp(24rem, calc((100dvh - 5.5rem) * 0.95), 56rem)",
+  "--main-w": "calc(var(--main-h) * 3 / 4)",
+  "--main-left": "calc(50vw - var(--main-w))",
+  "--thumb-max-w": "max(0px, calc(var(--main-left) - 1rem))",
+  "--thumb-w": "min(calc(var(--main-h) / 5 * 3 / 4), var(--thumb-max-w))",
 } as React.CSSProperties;
 
 function GalleryMainImage({
@@ -157,19 +156,22 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
 
   return (
     <div
-      className="relative isolate w-full overflow-visible"
+      className="relative isolate w-full overflow-visible lg:h-[var(--main-h)]"
       style={GALLERY_VARS}
     >
-      {/* Mobile: kolumna (główne nad miniaturami). Desktop: rząd, justify-end —
-         para (miniatury, główne) jest dosunięta do prawej krawędzi flex containera.
-         lg:-mr-5 (= 1.25rem = połowa lg:gap-10 z gridu PDP) wypycha tę krawędź
-         o 1.25rem poza kolumnę galerii — dzięki temu prawa krawędź głównego
-         siedzi dokładnie na 50vw (środek strony). */}
-      <div className="relative flex flex-col gap-3 lg:-mr-5 lg:flex-row lg:items-start lg:justify-end lg:gap-0">
+      {/* Mobile: zwykły flex-col w przepływie strony.
+         Desktop: cały blok (miniatury + główne) jest pozycjonowany absolutnie
+         z `right: -1.25rem` względem kolumny gridu PDP (= połowa lg:gap-10).
+         Dzięki temu prawa krawędź głównego zdjęcia trafia dokładnie w 50vw
+         (środek strony) niezależnie od wewnętrznej szerokości flex itemów —
+         co nie udaje się z `margin-right` ujemnym, bo margin nie wpływa
+         na wewnętrzny content box flex containera (justify-end mierzyłby
+         od krawędzi kolumny, nie od krawędzi marginu). */}
+      <div className="relative flex flex-col gap-3 lg:absolute lg:right-[-1.25rem] lg:top-0 lg:flex-row lg:items-start lg:gap-0">
         {/* Miniatury — order-2 mobile (poziomy pasek pod zdjęciem), order-1 desktop (kolumna po lewej, przyklejona do głównego) */}
         {multiImage && (
           <div
-            className="order-2 flex justify-center gap-2 overflow-x-auto pb-1 pt-1 lg:order-1 lg:flex-col lg:justify-start lg:gap-2 lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0 lg:[max-height:var(--main-h)]"
+            className="order-2 flex justify-center gap-2 overflow-x-auto pb-1 pt-1 lg:order-1 lg:max-h-[var(--main-h)] lg:flex-col lg:justify-start lg:gap-2 lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0"
             role="tablist"
             aria-label="Galeria produktu"
           >
@@ -200,7 +202,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
         )}
 
         {/* Główne zdjęcie + kwadrat tła */}
-        <div className="relative order-1 w-full min-w-0 lg:order-2 lg:w-[var(--main-w)] lg:shrink-0 lg:[height:var(--main-h)]">
+        <div className="relative order-1 w-full min-w-0 lg:order-2 lg:h-[var(--main-h)] lg:w-[var(--main-w)] lg:shrink-0">
           {/* Kwadrat tła — tylko desktop, lekko wystaje poza obrazek (5% w prawo i w dół) */}
           <div
             aria-hidden
@@ -208,7 +210,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
           />
           <div
             ref={mainRef}
-            className={`relative ${PRODUCT_IMAGE_ASPECT_CLASS} w-full overflow-hidden lg:!aspect-auto lg:h-full lg:w-full ${
+            className={`relative ${PRODUCT_IMAGE_ASPECT_CLASS} w-full overflow-hidden lg:aspect-auto lg:h-full lg:max-h-none! lg:w-full ${
               zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
             }`}
             style={{ maxHeight: "calc(100dvh - 14rem)" }}
