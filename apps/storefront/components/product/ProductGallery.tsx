@@ -5,34 +5,27 @@ import Image from "next/image";
 import { cloudinaryLoader } from "@/lib/cloudinary/utils";
 import { CloudinaryImage } from "../common/CloudinaryImage";
 
-import { PRODUCT_IMAGE_ASPECT_CLASS } from "@/lib/products/product-image-aspect";
+import {
+  PRODUCT_GALLERY_MAX_WIDTH_STYLE,
+  PRODUCT_IMAGE_ASPECT_CLASS,
+} from "@/lib/products/product-image-aspect";
 
 /**
- * Wymiary galerii liczone w CSS, przez customy (zero JS reflowów):
+ * Zamiast JSowego `useGalleryMaxWidth` (listener resize + 2 reflowy),
+ * używamy `clamp()` i CSS custom propertów. Kwadrat tła + maxWidth są
+ * liczone przez przeglądarkę natywnie, bez re-renderu Reacta.
  *
- * --main-h     wysokość głównego zdjęcia. Cap: nie większa niż dostępny
- *              viewport po odjęciu sticky-top (header 4rem + gap 1.5rem)
- *              i odrobiny rezerwy. Dolny clamp 24rem.
- * --main-w     = main-h * 3/4 (proporcja portretowa 3:4 jak Photoshop).
- * --main-left  pozioma odległość od lewej krawędzi viewportu do lewej
- *              krawędzi głównego zdjęcia (= 50vw − main-w), bo prawa
- *              krawędź zdjęcia musi siedzieć dokładnie na środku strony.
- * --thumb-w    szerokość miniatury: preferowana to main-h/5 * 3/4 (czyli
- *              każda miniatura jest dokładnie 1/5 wysokości głównego),
- *              ograniczona przez (main-left − 1rem) — gdy strona robi
- *              się wąska, miniatury kurczą się tak, by zachować 1rem
- *              odstępu od lewej krawędzi viewportu.
- *
- * Aspect 3:4 dla miniatur trzymamy przez `aspect-[3/4]` na <button>,
- * więc wysokość liczy się sama z `--thumb-w`.
+ * Proporcja 3:4 — jak zdjęcia produktowe (np. 3024×4032 z Photoshopu).
  */
-const GALLERY_VARS: React.CSSProperties = {
-  "--main-h": "clamp(24rem, calc((100dvh - 5.5rem) * 0.95), 56rem)",
-  "--main-w": "calc(var(--main-h) * 3 / 4)",
-  "--main-left": "calc(50vw - var(--main-w))",
-  "--thumb-max-w": "max(0px, calc(var(--main-left) - 1rem))",
-  "--thumb-w": "min(calc(var(--main-h) / 5 * 3 / 4), var(--thumb-max-w))",
-} as React.CSSProperties;
+const GALLERY_MAX_WIDTH_DESKTOP = PRODUCT_GALLERY_MAX_WIDTH_STYLE;
+/**
+ * Wariant z miniaturkami: cap szerokości tak, żeby
+ *   image_col * 1.317 + sticky_top(88px) ≤ 100dvh
+ * gdzie image_col = gallery_w − (thumbs_col 4.125rem + gap 1rem) = gallery_w − 5.125rem.
+ *  →  gallery_w ≤ (100dvh − 5.5rem) * 0.76 + 5.125rem
+ * Używamy 0.75 i 4rem dla zapasu bezpieczeństwa.
+ */
+const GALLERY_MAX_WIDTH_MULTI = "calc((100dvh - 5.5rem) * 0.75 + 4rem)";
 
 function GalleryMainImage({
   url,
@@ -153,25 +146,92 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
 
   const selectedImage = images[selectedIndex] ?? images[0]!;
   const multiImage = images.length > 1;
+  const galleryMaxWidth = multiImage
+    ? GALLERY_MAX_WIDTH_MULTI
+    : GALLERY_MAX_WIDTH_DESKTOP;
 
   return (
-    <div
-      className="relative isolate w-full overflow-visible lg:h-[var(--main-h)]"
-      style={GALLERY_VARS}
-    >
-      {/* Mobile: zwykły flex-col w przepływie strony.
-         Desktop: cały blok (miniatury + główne) jest pozycjonowany absolutnie
-         z `right: -1.25rem` względem kolumny gridu PDP (= połowa lg:gap-10).
-         Dzięki temu prawa krawędź głównego zdjęcia trafia dokładnie w 50vw
-         (środek strony) niezależnie od wewnętrznej szerokości flex itemów —
-         co nie udaje się z `margin-right` ujemnym, bo margin nie wpływa
-         na wewnętrzny content box flex containera (justify-end mierzyłby
-         od krawędzi kolumny, nie od krawędzi marginu). */}
-      <div className="relative flex flex-col gap-3 lg:absolute lg:right-[-1.25rem] lg:top-0 lg:flex-row lg:items-start lg:gap-0">
-        {/* Miniatury — order-2 mobile (poziomy pasek pod zdjęciem), order-1 desktop (kolumna po lewej, przyklejona do głównego) */}
-        {multiImage && (
+    <div className="relative isolate w-full overflow-visible">
+      {/* Desktop: cały blok dosunięty do prawej (do środka strony) przez ml-auto;
+         miniatury przylegają do głównego zdjęcia (lg:gap-4). */}
+      <div
+        className="relative ml-auto flex flex-col gap-3 lg:flex-row-reverse lg:items-start lg:gap-4 lg:[max-width:var(--gallery-max-w)]"
+        style={
+          {
+            ["--gallery-max-w" as string]: galleryMaxWidth,
+          } as React.CSSProperties
+        }
+      >
+        {/* Główne zdjęcie + kwadrat tła */}
+        <div className="relative min-w-0 flex-1">
+          {/* Na mobile: bez paddingu/kwadrat; na desktop: kwadrat z proporcjonalnym offsetem */}
+          <div className="relative w-full lg:pb-[5%] lg:pr-[5%]">
+            {/* Kwadrat tła — tylko desktop */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute bottom-0 right-0 top-[20%] -z-10 hidden bg-brand-100 lg:block"
+              style={{ left: "min(0px, calc(-1 * (100vw - 100%)))" }}
+            />
+            <div
+              ref={mainRef}
+              className={`relative mx-auto ${PRODUCT_IMAGE_ASPECT_CLASS} w-full overflow-hidden lg:mx-0 lg:!max-h-none ${
+                zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
+              }`}
+              style={{ maxHeight: "calc(100dvh - 14rem)" }}
+              onClick={handleMainClick}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={() => zoomed && setZoomed(false)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div
+                className="relative h-full w-full transition-transform duration-200"
+                style={
+                  zoomed
+                    ? {
+                        transform: "scale(2)",
+                        transformOrigin: `${panOrigin.x}% ${panOrigin.y}%`,
+                      }
+                    : undefined
+                }
+              >
+                <GalleryMainImage
+                  url={selectedImage.url}
+                  alt={selectedImage.alt || productTitle}
+                  priority={selectedIndex === 0}
+                />
+              </div>
+              <Image
+                src="/images/watermark.png"
+                alt=""
+                aria-hidden="true"
+                width={128}
+                height={128}
+                unoptimized
+                className="pointer-events-none absolute right-4 -top-0.5 h-32 w-auto select-none opacity-100"
+                style={{ filter: "brightness(0) invert(1)" }}
+                draggable={false}
+              />
+              {images.length > 1 && (
+                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 lg:hidden">
+                  {images.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`block h-1.5 rounded-full transition-all ${
+                        i === selectedIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Miniatury — na mobile: poziomy pasek pod zdjęciem, wyśrodkowany; na desktop: kolumna po lewej */}
+        {images.length > 1 && (
           <div
-            className="order-2 flex justify-center gap-2 overflow-x-auto pb-1 pt-1 lg:order-1 lg:max-h-[var(--main-h)] lg:flex-col lg:justify-start lg:gap-2 lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0"
+            className="flex justify-center gap-2 overflow-x-auto pb-1 pt-1 lg:w-fit lg:shrink-0 lg:flex-col lg:justify-start lg:gap-2.5 lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pt-0 lg:max-h-[min(87vh,calc(100vh-10rem))]"
             role="tablist"
             aria-label="Galeria produktu"
           >
@@ -180,7 +240,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 key={image.id}
                 type="button"
                 onClick={() => goTo(index)}
-                className={`relative aspect-[3/4] h-[4.25rem] w-[3.25rem] shrink-0 overflow-hidden border transition-colors lg:h-auto lg:w-[var(--thumb-w)] ${
+                className={`relative h-[4.25rem] w-[3.25rem] shrink-0 overflow-hidden border transition-colors lg:h-[5.5rem] lg:w-[4.125rem] ${
                   index === selectedIndex
                     ? "border-brand-400"
                     : "border-transparent hover:border-brand-200"
@@ -192,76 +252,14 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 <CloudinaryImage
                   publicId={image.url}
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
-                  width={144}
-                  height={192}
-                  className="h-full w-full object-cover"
+                  width={72}
+                  height={96}
+                  className="object-cover"
                 />
               </button>
             ))}
           </div>
         )}
-
-        {/* Główne zdjęcie + kwadrat tła */}
-        <div className="relative order-1 w-full min-w-0 lg:order-2 lg:h-[var(--main-h)] lg:w-[var(--main-w)] lg:shrink-0">
-          {/* Kwadrat tła — tylko desktop, lekko wystaje poza obrazek (5% w prawo i w dół) */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-[5%] left-[5%] -right-[5%] top-[25%] -z-10 hidden bg-brand-100 lg:block"
-          />
-          <div
-            ref={mainRef}
-            className={`relative ${PRODUCT_IMAGE_ASPECT_CLASS} w-full overflow-hidden lg:aspect-auto lg:h-full lg:max-h-none! lg:w-full ${
-              zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
-            }`}
-            style={{ maxHeight: "calc(100dvh - 14rem)" }}
-            onClick={handleMainClick}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={() => zoomed && setZoomed(false)}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            <div
-              className="relative h-full w-full transition-transform duration-200"
-              style={
-                zoomed
-                  ? {
-                      transform: "scale(2)",
-                      transformOrigin: `${panOrigin.x}% ${panOrigin.y}%`,
-                    }
-                  : undefined
-              }
-            >
-              <GalleryMainImage
-                url={selectedImage.url}
-                alt={selectedImage.alt || productTitle}
-                priority={selectedIndex === 0}
-              />
-            </div>
-            <Image
-              src="/images/watermark.png"
-              alt=""
-              aria-hidden="true"
-              width={128}
-              height={128}
-              unoptimized
-              className="pointer-events-none absolute right-4 -top-0.5 h-32 w-auto select-none opacity-100"
-              style={{ filter: "brightness(0) invert(1)" }}
-              draggable={false}
-            />
-            {multiImage && (
-              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 lg:hidden">
-                {images.map((_, i) => (
-                  <span
-                    key={i}
-                    className={`block h-1.5 rounded-full transition-all ${
-                      i === selectedIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
