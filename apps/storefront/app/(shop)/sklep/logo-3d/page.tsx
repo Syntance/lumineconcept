@@ -86,42 +86,48 @@ function HeroSection() {
 
 function CustomQuoteSection() {
   return (
-    <section className="bg-brand-50 py-16 lg:py-24">
-      <div className="container mx-auto max-w-6xl px-4">
-        <div
-          id="formularz"
-          className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14 lg:items-start"
-        >
-          <div className="relative aspect-3/4 w-full overflow-hidden lg:sticky lg:top-24">
-            <Image
-              src="/images/categories/logo-kategoria-nail-boss.png"
-              alt="Tablica z logo Nail Boss — przykładowa realizacja"
-              fill
-              sizes="(max-width: 1024px) 100vw, 45vw"
-              className="object-cover object-center"
-            />
-          </div>
+    <section>
+      <div className="bg-white">
+        <div className="container mx-auto max-w-6xl px-4 py-10 lg:py-12">
+          <h2 className="font-display text-3xl uppercase leading-tight tracking-[0.06em] text-brand-800 lg:text-4xl">
+            Tablica wizerunkowa
+            <br />z logo
+          </h2>
+        </div>
+      </div>
 
-          <div>
-            <h2 className="font-display text-3xl uppercase leading-tight tracking-[0.06em] text-brand-800 lg:text-4xl">
-              Tablica wizerunkowa
-              <br />z logo
-            </h2>
+      <div className="bg-brand-50 py-12 lg:py-16 lg:pb-24">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div
+            id="formularz"
+            className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14 lg:items-start"
+          >
+            <div className="relative aspect-3/4 w-full overflow-hidden lg:sticky lg:top-24">
+              <Image
+                src="/images/categories/logo-kategoria-nail-boss.png"
+                alt="Tablica z logo Nail Boss — przykładowa realizacja"
+                fill
+                sizes="(max-width: 1024px) 100vw, 45vw"
+                className="object-cover object-center"
+              />
+            </div>
 
-            <p className="mt-6 text-base leading-relaxed text-brand-800 lg:text-lg">
-              Tablica akrylowa z Twoim logo, może mieć dowolny kształt, jednak
-              maksymalnie mieszczący się w rozmiarze 120×80 cm. Dodatkową opcją
-              może być podświetlenie LED.
-            </p>
+            <div>
+              <p className="text-base leading-relaxed text-brand-800 lg:text-lg">
+                Tablica akrylowa z Twoim logo, może mieć dowolny kształt, jednak
+                maksymalnie mieszczący się w rozmiarze 120×80 cm. Dodatkową opcją
+                może być podświetlenie LED.
+              </p>
 
-            <p className="mt-4 text-sm leading-relaxed text-brand-700">
-              W związku z tym, że każdy produkt jest zupełnie inny, dokonujemy
-              indywidualnej wyceny. Wpisz poniżej specyfikację, która pomoże nam
-              oszacować kosztorys dla Ciebie.
-            </p>
+              <p className="mt-4 text-sm leading-relaxed text-brand-700">
+                W związku z tym, że każdy produkt jest zupełnie inny, dokonujemy
+                indywidualnej wyceny. Wpisz poniżej specyfikację, która pomoże nam
+                oszacować kosztorys dla Ciebie.
+              </p>
 
-            <div className="mt-8">
-              <TablicaZLogoFormClient />
+              <div className="mt-8">
+                <TablicaZLogoFormClient />
+              </div>
             </div>
           </div>
         </div>
