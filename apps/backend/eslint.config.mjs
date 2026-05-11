@@ -3,8 +3,12 @@
 // a migracje generuje CLI. Chcemy wychwytywać realne bugi: unused vars,
 // nieprawidłowe importy, literówki.
 import js from "@eslint/js";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import tseslint from "typescript-eslint";
 import globals from "globals";
+
+const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default [
   {
@@ -22,6 +26,9 @@ export default [
   {
     languageOptions: {
       globals: { ...globals.node },
+      parserOptions: {
+        tsconfigRootDir,
+      },
     },
     rules: {
       "no-console": "off",

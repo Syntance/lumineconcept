@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       /**
-       * Stary URL `/logo-3d` — przekierowanie do strony „Tablica z logo” (`/sklep/logo-3d`).
+       * Stary URL `/logo-3d` — przekierowanie do strony „Tablice z logo” (`/sklep/logo-3d`).
        */
       {
         source: "/logo-3d",

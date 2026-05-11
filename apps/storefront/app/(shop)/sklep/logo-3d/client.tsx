@@ -184,7 +184,7 @@ export function TablicaZLogoFormClient() {
       {/* Notatki */}
       <div>
         <label htmlFor="logo-notes" className={LABEL_CLASS}>
-          W uwagach prosimy o wpisanie treści, która ma być zawarta na przedmiocie
+          W uwagach prosimy o wpisanie treści, która ma być zawarta na tablicy.
         </label>
         <textarea
           id="logo-notes"

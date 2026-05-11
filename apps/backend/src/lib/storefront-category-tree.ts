@@ -1,6 +1,6 @@
 /**
  * Taksonomia zgodna ze storefrontem:
- * - Hub /sklep: Gotowe wzory, Tablica z logo (handle: logo-3d)
+ * - Hub /sklep: Gotowe wzory, Tablice z logo (handle: logo-3d)
  * - Pod /sklep/gotowe-wzory: „pigułki” — cenniki, tabliczki, menu, QR, wizytowniki, certyfikaty
  * - /sklep/certyfikaty dalej renderuje się jako osobny listing (root = handle „certyfikaty”),
  *   mimo że w drzewie Medusy jest pod „gotowe-wzory”. Dzięki temu produkty z certyfikatów
@@ -17,8 +17,8 @@ export const STOREFRONT_ROOT_CATEGORIES = [
   },
   {
     handle: "logo-3d",
-    name: "Tablica z logo",
-    description: "Tablica z logo z plexi — LED, matowe wykończenia.",
+    name: "Tablice z logo",
+    description: "Tablice z logo z plexi — LED, matowe wykończenia.",
   },
 ] as const;
 
@@ -87,7 +87,12 @@ export function isLogo3dProduct(handle: string, title: string): boolean {
   if (h.includes("logo-3d") || h.includes("logo_3d")) return true;
   if (h.includes("logo") && (h.includes("3d") || h.includes("3-d"))) return true;
   if (t.includes("logo 3d") || t.includes("logo 3 d")) return true;
-  if (t.includes("tablica z logo")) return true;
+  if (
+    t.includes("tablica z logo") ||
+    t.includes("tablice z logo") ||
+    t.includes("tablicy z logo")
+  )
+    return true;
   return false;
 }
 

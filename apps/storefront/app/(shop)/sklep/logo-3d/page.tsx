@@ -8,9 +8,9 @@ import { TablicaZLogoFormClient } from "./client";
 import { QuoteTitleBandMeasure } from "./QuoteTitleBandMeasure";
 
 export const metadata: Metadata = {
-  title: "Tablica z logo — wycena indywidualna | Lumine Concept",
+  title: "Tablice z logo — wycena indywidualna | Lumine Concept",
   description:
-    "Tablica z logo Twojej marki z plexi (także z podświetleniem LED). Prześlij plik, podaj wymiary i kształt — bezpłatna wycena w 24h.",
+    "Tablice z logo Twojej marki z plexi (także z podświetleniem LED). Prześlij plik, podaj wymiary i kształt — bezpłatna wycena w 24h.",
   alternates: { canonical: `${SITE_URL}/sklep/logo-3d` },
 };
 
@@ -54,7 +54,7 @@ function HeroSection() {
             items={[
               { label: "Strona główna", href: "/" },
               { label: "Sklep", href: "/sklep" },
-              { label: "Tablica z logo" },
+              { label: "Tablice z logo" },
             ]}
           />
         </div>
@@ -62,7 +62,7 @@ function HeroSection() {
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-8 sm:py-12">
           <div className="container mx-auto max-w-5xl text-center">
             <h1 className="font-display text-4xl uppercase tracking-[0.08em] text-white sm:text-5xl lg:text-6xl">
-              Tablica z logo
+              Tablice z logo
             </h1>
             <p className="mt-6 mx-auto max-w-2xl text-sm uppercase leading-relaxed tracking-[0.18em] text-white/85 sm:text-base">
               Logo Twojej marki zrealizowane w postaci kreatywnej, ozdobnej tablicy,
@@ -72,9 +72,9 @@ function HeroSection() {
               <a
                 href="#formularz"
                 className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
-                aria-label="Przewiń do formularza — zamów tablicę z logo"
+                aria-label="Przewiń do formularza — ę z logo"
               >
-                Zamów tablicę
+                Uzyskaj wycenę
               </a>
             </div>
           </div>

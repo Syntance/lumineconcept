@@ -45,7 +45,7 @@ const CATEGORIES = [
     image: "/images/categories/gotowe-wzory-personel.png",
   },
   {
-    title: "Tablica z logo",
+    title: "Tablice z logo",
     subtitle: "Plexi · LED · matowe UV",
     description: "Logo Twojej marki zrealizowane w postaci ozdobnej tablicy.",
     cta: "Zobacz tablicę z logo",

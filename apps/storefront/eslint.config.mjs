@@ -1,9 +1,13 @@
 // @ts-check
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import nextPlugin from "@next/eslint-plugin-next";
 import globals from "globals";
+
+const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Flat config dla storefrontu. Next.js 16 usunął `next lint`, więc sami
@@ -36,6 +40,9 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
+      },
+      parserOptions: {
+        tsconfigRootDir,
       },
     },
     rules: {
