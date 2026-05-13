@@ -43,11 +43,14 @@ function HeroSection() {
         className="w-full object-cover"
       />
 
-      {/* Treść nałożona na zdjęcie */}
-      <div className="absolute inset-0 z-10 flex flex-col px-4 pt-4 pb-6 sm:pt-6">
-        <div className="container mx-auto max-w-5xl shrink-0">
+      {/* Treść — wszystkie rozmiary skalują się z szerokością (= 100vw = szerokość hero 8:3) */}
+      <div
+        className="absolute inset-0 z-10 flex flex-col"
+        style={{ padding: "2vw 3vw 2vw" }}
+      >
+        <div className="w-full shrink-0" style={{ fontSize: "clamp(0.5rem, 1vw, 0.8rem)" }}>
           <Breadcrumbs
-            className="mb-0 [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white"
+            className="mb-0 text-[1em] [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white [&_ol]:text-[1em]"
             items={[
               { label: "Strona główna", href: "/" },
               { label: "Sklep", href: "/sklep" },
@@ -56,19 +59,37 @@ function HeroSection() {
           />
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-start pt-10 sm:pt-14">
-          <div className="container mx-auto max-w-5xl text-center">
-            <h1 className="font-binerka text-3xl uppercase tracking-[0.06em] text-white sm:text-4xl lg:text-5xl">
+        <div
+          className="flex flex-1 flex-col items-center"
+          style={{ paddingTop: "clamp(0.5rem, 2.5vw, 2.5rem)" }}
+        >
+          <div className="text-center">
+            <h1
+              className="font-binerka uppercase tracking-[0.06em] text-white"
+              style={{ fontSize: "clamp(1rem, 4.7vw, 3.5rem)", lineHeight: 1.1 }}
+            >
               Tablica z logo
             </h1>
-            <p className="mt-3 mx-auto max-w-xl text-xs uppercase leading-relaxed tracking-[0.15em] text-white/80 sm:text-sm">
+            <p
+              className="mx-auto uppercase leading-relaxed text-white/80"
+              style={{
+                fontSize: "clamp(0.55rem, 1.3vw, 0.9rem)",
+                letterSpacing: "0.15em",
+                marginTop: "clamp(0.2rem, 0.7vw, 0.5rem)",
+                maxWidth: "50vw",
+              }}
+            >
               Logo Twojej marki zrealizowane w postaci kreatywnej ozdobnej tablicy,
               którą możesz zamieścić na ścianie
             </p>
-            <div className="mt-6">
+            <div style={{ marginTop: "clamp(0.4rem, 1.3vw, 1rem)" }}>
               <a
                 href="#formularz"
-                className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
+                className="inline-flex items-center justify-center bg-white font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
+                style={{
+                  fontSize: "clamp(0.55rem, 1.2vw, 0.85rem)",
+                  padding: "0.9em 2.2em",
+                }}
                 aria-label="Przewiń do formularza — zamów tablicę z logo"
               >
                 Uzyskaj wycenę
