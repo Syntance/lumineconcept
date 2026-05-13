@@ -31,48 +31,45 @@ export default function TablicaZLogoPage() {
 
 function HeroSection() {
   return (
-    <section className="relative isolate flex h-[calc(100svh-var(--shop-chrome-h)+3px)] min-h-0 w-full flex-col overflow-hidden bg-brand-900 text-white">
-      <div className="absolute inset-0 -z-10">
-        <Image
-          src="/images/categories/logo-kategoria-nail-boss.png"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center opacity-40"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(38,29,24,0.45)_0%,rgba(20,14,10,0.85)_70%)]"
-        />
-      </div>
+    <section className="relative isolate w-full overflow-hidden bg-brand-900 text-white">
+      {/* Zdjęcie ustawia wysokość sekcji — proporcje 1024×384 (8:3) */}
+      <Image
+        src="/images/categories/logo-hero-bg.png"
+        alt=""
+        width={1024}
+        height={384}
+        priority
+        sizes="100vw"
+        className="w-full object-cover"
+      />
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col px-4 pt-6 pb-12 sm:pt-10">
+      {/* Treść nałożona na zdjęcie */}
+      <div className="absolute inset-0 z-10 flex flex-col px-4 pt-4 pb-6 sm:pt-6">
         <div className="container mx-auto max-w-5xl shrink-0">
           <Breadcrumbs
             className="mb-0 [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white"
             items={[
               { label: "Strona główna", href: "/" },
               { label: "Sklep", href: "/sklep" },
-              { label: "Tablice z logo" },
+              { label: "Tablica z logo" },
             ]}
           />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-8 sm:py-12">
+        <div className="flex flex-1 flex-col items-center justify-start pt-10 sm:pt-14">
           <div className="container mx-auto max-w-5xl text-center">
-            <h1 className="font-display text-4xl uppercase tracking-[0.08em] text-white sm:text-5xl lg:text-6xl">
-              Tablice z logo
+            <h1 className="font-binerka text-3xl uppercase tracking-[0.06em] text-white sm:text-4xl lg:text-5xl">
+              Tablica z logo
             </h1>
-            <p className="mt-6 mx-auto max-w-2xl text-sm uppercase leading-relaxed tracking-[0.18em] text-white/85 sm:text-base">
-              Logo Twojej marki zrealizowane w postaci kreatywnej, ozdobnej tablicy,
-              którą możesz zamieścić na ścianie.
+            <p className="mt-3 mx-auto max-w-xl text-xs uppercase leading-relaxed tracking-[0.15em] text-white/80 sm:text-sm">
+              Logo Twojej marki zrealizowane w postaci kreatywnej ozdobnej tablicy,
+              którą możesz zamieścić na ścianie
             </p>
-            <div className="mt-10">
+            <div className="mt-6">
               <a
                 href="#formularz"
                 className="inline-flex items-center justify-center bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
-                aria-label="Przewiń do formularza — ę z logo"
+                aria-label="Przewiń do formularza — zamów tablicę z logo"
               >
                 Uzyskaj wycenę
               </a>
