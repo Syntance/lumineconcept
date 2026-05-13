@@ -54,14 +54,14 @@ function HeroSection() {
             items={[
               { label: "Strona główna", href: "/" },
               { label: "Sklep", href: "/sklep" },
-              { label: "Tablica z logo" },
+              { label: "Tablice z logo" },
             ]}
           />
         </div>
 
         <div
           className="flex flex-1 flex-col items-center"
-          style={{ paddingTop: "clamp(0.5rem, 2.5vw, 2.5rem)" }}
+          style={{ paddingTop: "clamp(0.5rem, 5vw, 4rem)" }}
         >
           <div className="text-center">
             <h1
@@ -73,7 +73,7 @@ function HeroSection() {
             <p
               className="mx-auto uppercase leading-relaxed text-white/80"
               style={{
-                fontSize: "clamp(0.55rem, 1.3vw, 0.9rem)",
+                fontSize: "clamp(0.6rem, 1.6vw, 1rem)",
                 letterSpacing: "0.15em",
                 marginTop: "clamp(0.2rem, 0.7vw, 0.5rem)",
                 maxWidth: "50vw",
@@ -82,7 +82,7 @@ function HeroSection() {
               Logo Twojej marki zrealizowane w postaci kreatywnej ozdobnej tablicy,
               którą możesz zamieścić na ścianie
             </p>
-            <div style={{ marginTop: "clamp(0.4rem, 1.3vw, 1rem)" }}>
+            <div style={{ marginTop: "clamp(0.6rem, 2.2vw, 1.75rem)" }}>
               <a
                 href="#formularz"
                 className="inline-flex items-center justify-center bg-white font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
