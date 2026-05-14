@@ -66,11 +66,6 @@ export function LogoBoardRealizations({ items }: Props) {
             Zapoznaj się z naszymi realizacjami
           </h2>
           <div className="mx-auto mt-3 h-px w-12 bg-accent" />
-          <p className="mx-auto mt-6 max-w-2xl text-base text-brand-700">
-            Jak tablice z logo prezentują się w salonach beauty, gabinetach i
-            punktach usługowych — od minimalistycznych logotypów po ozdobne
-            tablice z LED.
-          </p>
         </div>
 
         <ul className="mt-10 grid grid-cols-2 items-start gap-3 sm:gap-4 lg:grid-cols-4">
