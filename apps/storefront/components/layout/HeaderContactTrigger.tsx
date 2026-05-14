@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ContactCalloutPanel } from "./ContactCalloutPanel";
+import { trackCtaClick } from "@/lib/analytics/events";
 
 interface HeaderContactTriggerProps {
   /** Te same klasy co linki nawigacji (`NAV_LINK_CLASS`). */
@@ -42,7 +43,19 @@ export function HeaderContactTrigger({ className }: HeaderContactTriggerProps) {
         aria-expanded={open}
         aria-controls={panelId}
         aria-haspopup="dialog"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOpen((v) => {
+            // Otwarcie calloutu = intencja kontaktu (Notion: Pixel `Contact`).
+            if (!v) {
+              trackCtaClick({
+                ctaLabel: "kontakt_callout_open",
+                position: "header",
+                contactIntent: true,
+              });
+            }
+            return !v;
+          });
+        }}
       >
         Kontakt
       </button>

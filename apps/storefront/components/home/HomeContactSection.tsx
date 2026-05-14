@@ -4,7 +4,9 @@ import { useState } from "react";
 import Image from "next/image";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { trackFormStart, trackFormSubmit } from "@/lib/analytics/events";
+import { trackFormSubmit } from "@/lib/analytics/events";
+import { useFormTracking } from "@/hooks/useFormTracking";
+import { identifyLead } from "@/lib/analytics/identify";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -42,13 +44,17 @@ export function HomeContactSection() {
   const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [feedback, setFeedback] = useState("");
+  const tracker = useFormTracking("kontakt");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (status === "loading") return;
 
     setStatus("loading");
-    trackFormSubmit("home_contact");
+    if (email.trim()) {
+      identifyLead({ email, name, source: "form_kontakt" });
+    }
+    trackFormSubmit({ formName: "kontakt" });
 
     try {
       const response = await fetch("/api/contact", {
@@ -68,6 +74,7 @@ export function HomeContactSection() {
       if (data.success) {
         setStatus("success");
         setFeedback(data.message);
+        tracker.handleSubmitSuccess();
         setName("");
         setEmail("");
         setPhone("");
@@ -75,10 +82,12 @@ export function HomeContactSection() {
       } else {
         setStatus("error");
         setFeedback(data.message);
+        tracker.reportError("form", "server");
       }
     } catch {
       setStatus("error");
       setFeedback("Wystąpił błąd sieci. Spróbuj ponownie.");
+      tracker.reportError("form", "server");
     }
   };
 
@@ -144,7 +153,8 @@ export function HomeContactSection() {
                 autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onFocus={() => trackFormStart("home_contact")}
+                onFocus={tracker.handleFocus}
+                onBlur={tracker.recordField("name")}
                 maxLength={120}
                 placeholder="Imię i nazwisko"
                 className="rounded-none border border-brand-200 bg-white px-4 py-2.5 text-left text-brand-900 outline-none transition-colors placeholder:text-brand-700 placeholder:text-sm focus:border-accent focus:ring-1 focus:ring-accent"
@@ -161,6 +171,13 @@ export function HomeContactSection() {
                 required
                 autoComplete="email"
                 value={email}
+                onFocus={tracker.handleFocus}
+                onBlur={(e) => {
+                  tracker.recordField("email")();
+                  if (e.target.value.includes("@")) {
+                    identifyLead({ email: e.target.value, name, source: "form_kontakt" });
+                  }
+                }}
                 onChange={(e) => setEmail(e.target.value)}
                 maxLength={200}
                 placeholder="E-mail"
@@ -179,6 +196,8 @@ export function HomeContactSection() {
               type="tel"
               autoComplete="tel"
               value={phone}
+              onFocus={tracker.handleFocus}
+              onBlur={tracker.recordField("phone")}
               onChange={(e) => setPhone(e.target.value)}
               maxLength={40}
               placeholder="Telefon (opcjonalnie)"
@@ -196,6 +215,8 @@ export function HomeContactSection() {
               required
               rows={5}
               value={message}
+              onFocus={tracker.handleFocus}
+              onBlur={tracker.recordField("message")}
               onChange={(e) => setMessage(e.target.value)}
               maxLength={4000}
               placeholder="Wiadomość"

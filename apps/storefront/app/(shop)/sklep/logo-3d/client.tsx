@@ -2,7 +2,9 @@
 
 import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
-import { trackFormStart, trackFormSubmit } from "@/lib/analytics/events";
+import { trackFormSubmit } from "@/lib/analytics/events";
+import { useFormTracking } from "@/hooks/useFormTracking";
+import { identifyLead } from "@/lib/analytics/identify";
 
 const NOTES_LIMIT = 180;
 
@@ -55,6 +57,7 @@ export function TablicaZLogoFormClient() {
   const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [feedback, setFeedback] = useState("");
+  const tracker = useFormTracking("logo3d_wycena");
 
   const resetFile = () => {
     setLogoFile(null);
@@ -75,12 +78,14 @@ export function TablicaZLogoFormClient() {
       setFileError(
         `Plik jest za duży (maks. ${MAX_ATTACHMENT_LABEL}). Większy plik prześlij mailem na kontakt@lumineconcept.pl po wysłaniu zapytania.`,
       );
+      tracker.reportError("attachment", "size");
       resetFile();
       return;
     }
 
     if (DISALLOWED_EXTENSIONS.has(getExtension(f.name))) {
       setFileError("Ten typ pliku nie jest obsługiwany.");
+      tracker.reportError("attachment", "format");
       resetFile();
       return;
     }
@@ -94,7 +99,17 @@ export function TablicaZLogoFormClient() {
     if (status === "loading") return;
 
     setStatus("loading");
-    trackFormSubmit("tablica_z_logo");
+    if (email.trim()) {
+      identifyLead({ email, source: "form_logo3d" });
+    }
+    trackFormSubmit({
+      formName: "logo3d_wycena",
+      hasLogo: !!logoFile,
+      hasPhoto: false,
+      led: led ? "bialy" : "bez",
+      size: size?.trim() ? "custom" : "nie_wiem",
+      express: /(eks|express)/i.test(notes),
+    });
 
     const derivedName = email.split("@")[0]?.slice(0, 80) || "Tablica z logo — wycena";
     const message = [
@@ -127,6 +142,7 @@ export function TablicaZLogoFormClient() {
       if (data.success) {
         setStatus("success");
         setFeedback(data.message);
+        tracker.handleSubmitSuccess();
         setSize("");
         setShape("");
         setLed(false);
@@ -136,10 +152,12 @@ export function TablicaZLogoFormClient() {
       } else {
         setStatus("error");
         setFeedback(data.message);
+        tracker.reportError("form", "server");
       }
     } catch {
       setStatus("error");
       setFeedback("Wystąpił błąd sieci. Spróbuj ponownie.");
+      tracker.reportError("form", "server");
     }
   };
 
@@ -178,7 +196,8 @@ export function TablicaZLogoFormClient() {
             id="logo-file"
             type="file"
             onChange={handleFileChange}
-            onFocus={() => trackFormStart("tablica_z_logo")}
+            onFocus={tracker.handleFocus}
+            onBlur={tracker.recordField("attachment")}
             className="sr-only"
           />
         </div>
@@ -203,7 +222,8 @@ export function TablicaZLogoFormClient() {
             type="text"
             value={size}
             onChange={(e) => setSize(e.target.value)}
-            onFocus={() => trackFormStart("tablica_z_logo")}
+            onFocus={tracker.handleFocus}
+            onBlur={tracker.recordField("size")}
             placeholder="np. 60 × 40 cm"
             maxLength={80}
             className={INPUT_CLASS}
@@ -218,6 +238,8 @@ export function TablicaZLogoFormClient() {
             type="text"
             value={shape}
             onChange={(e) => setShape(e.target.value)}
+            onFocus={tracker.handleFocus}
+            onBlur={tracker.recordField("shape")}
             placeholder="np. okrągły, prostokątny, według logo"
             maxLength={80}
             className={INPUT_CLASS}
@@ -249,6 +271,8 @@ export function TablicaZLogoFormClient() {
           rows={4}
           value={notes}
           onChange={(e) => setNotes(e.target.value.slice(0, NOTES_LIMIT))}
+          onFocus={tracker.handleFocus}
+          onBlur={tracker.recordField("notes")}
           maxLength={NOTES_LIMIT}
           className={`${INPUT_CLASS} resize-y`}
         />
@@ -268,7 +292,14 @@ export function TablicaZLogoFormClient() {
           required
           autoComplete="email"
           value={email}
+          onFocus={tracker.handleFocus}
           onChange={(e) => setEmail(e.target.value)}
+          onBlur={(e) => {
+            tracker.recordField("email")();
+            if (e.target.value.includes("@")) {
+              identifyLead({ email: e.target.value, source: "form_logo3d" });
+            }
+          }}
           maxLength={200}
           className={INPUT_CLASS}
         />

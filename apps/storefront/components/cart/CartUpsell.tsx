@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { trackCrossSellClick } from "@/lib/analytics/events";
 
 interface UpsellProduct {
   id: string;
@@ -43,6 +44,12 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
           <Link
             key={p.id}
             href={`/sklep/gotowe-wzory/${p.handle}`}
+            onClick={() =>
+              trackCrossSellClick({
+                fromProduct: currentItemIds[0],
+                toProduct: p.id,
+              })
+            }
             className="flex items-center gap-3 rounded-md p-1.5 transition-colors hover:bg-brand-50"
           >
             {p.thumbnail ? (

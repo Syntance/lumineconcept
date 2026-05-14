@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { SITE_CONTACT } from "@/lib/site-contact";
+import { trackCtaClick } from "@/lib/analytics/events";
 
 interface ContactCalloutPanelProps {
   className?: string;
@@ -19,6 +22,14 @@ export function ContactCalloutPanel({ className = "", onNavigate }: ContactCallo
       <p>
         <a
           href={`mailto:${SITE_CONTACT.email}`}
+          onClick={() =>
+            trackCtaClick({
+              ctaLabel: "contact_email",
+              position: "drawer",
+              targetUrl: `mailto:${SITE_CONTACT.email}`,
+              contactIntent: true,
+            })
+          }
           className="text-base font-medium text-brand-800 underline underline-offset-2 hover:text-brand-950"
         >
           {SITE_CONTACT.email}
@@ -27,7 +38,15 @@ export function ContactCalloutPanel({ className = "", onNavigate }: ContactCallo
       <p>
         <Link
           href={SITE_CONTACT.formHref}
-          onClick={onNavigate}
+          onClick={() => {
+            trackCtaClick({
+              ctaLabel: "contact_form_link",
+              position: "drawer",
+              targetUrl: SITE_CONTACT.formHref,
+              contactIntent: true,
+            });
+            onNavigate?.();
+          }}
           className="text-base font-medium text-brand-800 underline underline-offset-2 hover:text-brand-950"
         >
           Formularz kontaktowy

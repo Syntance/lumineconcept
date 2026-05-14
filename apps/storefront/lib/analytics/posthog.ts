@@ -69,6 +69,15 @@ export function identifyUser(
   void ensurePostHog().then((ph) => ph?.identify(distinctId, properties));
 }
 
+/**
+ * `posthog.people.set` — przypisuje cechy do profilu (np. po purchase
+ * dodajemy `firstOrderId`, `totalSpent`, `ordersCount`). Wymaga wcześniejszego
+ * `identify(...)`.
+ */
+export function setUserProperties(properties: Record<string, unknown>) {
+  void ensurePostHog().then((ph) => ph?.people?.set?.(properties));
+}
+
 export function resetPostHog() {
   void ensurePostHog().then((ph) => ph?.reset());
 }

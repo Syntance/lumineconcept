@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
-import { trackNewsletterSignup, trackFormStart, trackFormSubmit } from "@/lib/analytics/events";
+import {
+  trackEmailSignup,
+  trackFormSubmit,
+} from "@/lib/analytics/events";
+import { useFormTracking } from "@/hooks/useFormTracking";
+import { identifyLead } from "@/lib/analytics/identify";
 
 interface NewsletterFormProps {
   variant?: "default" | "footer";
@@ -12,6 +17,7 @@ export function NewsletterForm({ variant = "default" }: NewsletterFormProps) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const tracker = useFormTracking("newsletter");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,15 +38,22 @@ export function NewsletterForm({ variant = "default" }: NewsletterFormProps) {
       if (data.success) {
         setStatus("success");
         setMessage(data.message);
-        trackNewsletterSignup(email);
+        identifyLead({ email, source: "newsletter" });
+        trackEmailSignup({
+          source: variant === "footer" ? "footer" : "newsletter",
+          emailDomain: email.split("@")[1],
+        });
+        tracker.handleSubmitSuccess();
         setEmail("");
       } else {
         setStatus("error");
         setMessage(data.message);
+        tracker.reportError("email", "server");
       }
     } catch {
       setStatus("error");
       setMessage("Wystąpił błąd. Spróbuj ponownie.");
+      tracker.reportError("email", "server");
     }
   };
 
@@ -61,7 +74,8 @@ export function NewsletterForm({ variant = "default" }: NewsletterFormProps) {
         type="email"
         required
         value={email}
-        onFocus={() => trackFormStart("newsletter")}
+        onFocus={tracker.handleFocus}
+        onBlur={tracker.recordField("email")}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Twój adres email"
         className={`flex-1 rounded-md border px-4 py-2.5 text-sm outline-none transition-colors ${

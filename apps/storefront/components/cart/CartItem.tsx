@@ -57,7 +57,7 @@ export function CartItem({ item }: { item: CartItemData }) {
   const handleRemove = async () => {
     if (isOptimistic) return;
     setIsUpdating(true);
-    trackRemoveFromCart({ id: item.id, title: item.title, price: item.total });
+    trackRemoveFromCart({ id: item.id, price: item.total });
     try {
       await removeItem(item.id);
     } finally {

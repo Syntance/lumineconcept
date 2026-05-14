@@ -6,12 +6,14 @@ import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
 import {
-  trackBeginCheckout,
+  trackCheckoutAbandon,
+  trackCheckoutStart,
+  trackCheckoutStep,
   trackFormStart,
   trackFormSubmit,
-  trackCheckoutStepCompleted,
   trackPurchase,
 } from "@/lib/analytics/events";
+import { identifyLead, markPurchaseCustomer } from "@/lib/analytics/identify";
 import { useCart } from "@/hooks/useCart";
 import {
   completeCart,
@@ -172,7 +174,7 @@ export function CheckoutForm() {
     if (beginCheckoutFiredRef.current) return;
     if (!cartId || items.length === 0) return;
     beginCheckoutFiredRef.current = true;
-    trackBeginCheckout({
+    trackCheckoutStart({
       total,
       currency: "PLN",
       items: items.map((i) => ({
@@ -183,6 +185,18 @@ export function CheckoutForm() {
       })),
     });
   }, [cartId, items, total]);
+
+  // Notion: `checkout_abandon` — refy zadeklarujemy tu (potrzebne wyżej w kodzie),
+  // a właściwy nasłuch beforeunload montujemy poniżej, gdy `formData` już istnieje.
+  const purchaseSentRef = useRef(false);
+  const lastStepRef = useRef<CheckoutStep>(1);
+  const abandonSnapshotRef = useRef<{ cartValue: number; hasEmail: boolean }>({
+    cartValue: 0,
+    hasEmail: false,
+  });
+  useEffect(() => {
+    lastStepRef.current = step;
+  }, [step]);
 
   const scheduleStaleReset = useCallback(() => {
     if (staleResetTimerRef.current) {
@@ -197,6 +211,34 @@ export function CheckoutForm() {
   const [formData, setFormData] = useState<CheckoutFormData>(() =>
     getDefaultCheckoutFormData(),
   );
+
+  // Snapshot do `checkout_abandon` (Notion) — nie chcemy rejestrować nowego
+  // listenera na każdy keystroke, więc trzymamy w refie.
+  useEffect(() => {
+    abandonSnapshotRef.current = {
+      cartValue: total,
+      hasEmail: formData.email.includes("@"),
+    };
+  }, [total, formData.email]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onUnload = () => {
+      if (purchaseSentRef.current) return;
+      if (!cartId || items.length === 0) return;
+      trackCheckoutAbandon({
+        lastStep: lastStepRef.current,
+        cartValue: abandonSnapshotRef.current.cartValue,
+        hasEmail: abandonSnapshotRef.current.hasEmail,
+      });
+    };
+    window.addEventListener("beforeunload", onUnload);
+    window.addEventListener("pagehide", onUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onUnload);
+      window.removeEventListener("pagehide", onUnload);
+    };
+  }, [cartId, items.length]);
 
   /** Blokuje jeden zapis do sessionStorage tuż po wczytaniu szkicu (unikamy nadpisania pustym stanem). */
   const skipPersistDraftRef = useRef(false);
@@ -277,9 +319,20 @@ export function CheckoutForm() {
   const handleFocus = useCallback(() => {
     if (!formStarted) {
       setFormStarted(true);
-      trackFormStart("checkout");
+      trackFormStart("checkout_contact");
     }
   }, [formStarted]);
+
+  /**
+   * Identyfikujemy użytkownika dopiero przy `onBlur` z poprawnym emailem,
+   * żeby nie strzelać `identify()` na każdą literę. Notion: "Checkout (krok 1: email):
+   * `posthog.identify(email)` po blur na polu email".
+   */
+  const handleEmailBlur = useCallback(() => {
+    if (formData.email.includes("@")) {
+      identifyLead({ email: formData.email, source: "checkout" });
+    }
+  }, [formData.email]);
 
   const isNipValid = /^\d{10}$/.test(formData.nip.replace(/[-\s]/g, ""));
   const vatValid =
@@ -313,7 +366,7 @@ export function CheckoutForm() {
     setSubmitting(true);
     setSubmitSlow(false);
     submitSlowTimerRef.current = setTimeout(() => setSubmitSlow(true), 3000);
-    trackFormSubmit("checkout_payment");
+    trackFormSubmit({ formName: "checkout_payment" });
 
     try {
       const result = await completeCart(cartId);
@@ -329,7 +382,7 @@ export function CheckoutForm() {
         throw new Error(msg);
       }
 
-      trackCheckoutStepCompleted(3, "payment");
+      trackCheckoutStep({ stepNumber: 3, cartValue: total });
       trackPurchase({
         id: result.order.id,
         total,
@@ -340,7 +393,16 @@ export function CheckoutForm() {
           price: i.unit_price,
           quantity: i.quantity,
         })),
+        paymentMethod: formData.paymentProviderId,
+        shippingMethod: formData.shippingOptionId,
       });
+      // Notion: po `purchase` aktualizujemy profil PostHog (`firstOrderId`, `totalSpent`).
+      markPurchaseCustomer({
+        email: formData.email,
+        orderId: result.order.id,
+        value: total,
+      });
+      purchaseSentRef.current = true;
 
       // Niezawodny kanał wysyłki maila potwierdzającego — fire-and-forget
       // (sendBeacon + keepalive fetch). Nie blokuje nawigacji do strony
@@ -455,6 +517,7 @@ export function CheckoutForm() {
                 autoFocus
                 value={formData.email}
                 onFocus={handleFocus}
+                onBlur={handleEmailBlur}
                 onChange={(e) => updateField("email", e.target.value)}
                 className={INPUT_CLASS}
                 placeholder="twoj@email.pl"
@@ -638,8 +701,15 @@ export function CheckoutForm() {
                       ? { company: formData.companyName }
                       : {}),
                   };
-                  trackFormSubmit("checkout_contact");
-                  trackCheckoutStepCompleted(1, "contact");
+                  trackFormSubmit({ formName: "checkout_contact" });
+                  trackCheckoutStep({ stepNumber: 1, cartValue: total });
+                  if (formData.email.includes("@")) {
+                    identifyLead({
+                      email: formData.email,
+                      name: `${formData.firstName} ${formData.lastName}`.trim(),
+                      source: "checkout",
+                    });
+                  }
                   await saveContactDetails(cartId, formData.email, address);
                   setStep(2);
                 } catch (e) {
@@ -690,8 +760,8 @@ export function CheckoutForm() {
                 setShippingSaveError(null);
                 setPreparingPayment(true);
                 try {
-                  trackFormSubmit("checkout_shipping");
-                  trackCheckoutStepCompleted(2, "shipping");
+                  trackFormSubmit({ formName: "checkout_shipping" });
+                  trackCheckoutStep({ stepNumber: 2, cartValue: total });
                   // Najpierw czekamy na providerId (prefetched, zwykle < 50 ms),
                   // żeby w 1 request dolecieć shipping + payment-session.
                   // Wcześniej były to 2 sekwencyjne round-tripy (600 + 200 ms)

@@ -1,32 +1,40 @@
 "use client";
 
+/**
+ * Skrót do najczęściej używanych funkcji trackujących z `@/lib/analytics/events`.
+ * Wszystkie referencje są stabilne (importowane funkcje), więc hook jest no-op poza
+ * wygodnym aliasem importów.
+ */
 import {
-  trackEvent,
-  trackProductViewed,
-  trackAddToCart,
-  trackBeginCheckout,
-  trackPurchase,
+  trackCartAdd,
+  trackCheckoutStart,
   trackCtaClick,
+  trackEmailSignup,
+  trackEvent,
   trackFormStart,
   trackFormSubmit,
-  trackNewsletterSignup,
+  trackProductView,
+  trackPurchase,
 } from "@/lib/analytics/events";
 
-/**
- * Funkcje analityczne to stabilne, importowane referencje — `useCallback`
- * z `[]` był no-opem (i łamał regułę `react-hooks/use-memo` w eslint-plugin-react-hooks
- * 7+, która wymaga inline funkcji). Zwracamy je bezpośrednio.
- */
 export function useAnalytics() {
   return {
     trackEvent,
-    trackProductViewed,
-    trackAddToCart,
-    trackBeginCheckout,
+    trackProductView,
+    trackProductViewed: trackProductView,
+    trackCartAdd,
+    trackAddToCart: trackCartAdd,
+    trackCheckoutStart,
+    trackBeginCheckout: trackCheckoutStart,
     trackPurchase,
     trackCtaClick,
     trackFormStart,
     trackFormSubmit,
-    trackNewsletterSignup,
+    trackEmailSignup,
+    trackNewsletterSignup: (email: string) =>
+      trackEmailSignup({
+        source: "newsletter",
+        emailDomain: email.split("@")[1],
+      }),
   };
 }
