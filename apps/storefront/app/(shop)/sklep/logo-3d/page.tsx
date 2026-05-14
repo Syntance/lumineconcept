@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Image from "next/image";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { PRODUCT_IMAGE_ARCH_UP_BORDER_RADIUS } from "@/lib/products/product-image-aspect";
+
 import { SITE_URL } from "@/lib/utils";
+import { sanityClient } from "@/lib/sanity/client";
+import { REALIZATION_GALLERY_PHOTOS_QUERY } from "@/lib/sanity/queries";
+import { REALIZATION_GALLERY_DOC_IDS } from "@/lib/sanity/realization-gallery-doc-ids";
+import type { RealizationPhoto, SanityImage } from "@/lib/sanity/types";
 import { TablicaZLogoFormClient } from "./client";
 import { QuoteTitleBandMeasure } from "./QuoteTitleBandMeasure";
+import { LogoBoardRealizations } from "./LogoBoardRealizations";
 
 export const metadata: Metadata = {
   title: "Tablice z logo — wycena indywidualna | Lumine Concept",
@@ -16,13 +20,38 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-export default function TablicaZLogoPage() {
+type GalleryQueryRow = {
+  photos?: Array<{
+    _key: string;
+    alt?: string;
+    asset?: SanityImage["asset"];
+  }> | null;
+} | null;
+
+export default async function TablicaZLogoPage() {
+  const docId = REALIZATION_GALLERY_DOC_IDS["tablica-z-logo"];
+  const row = await sanityClient
+    .fetch<GalleryQueryRow>(
+      REALIZATION_GALLERY_PHOTOS_QUERY,
+      { docId },
+      { next: { revalidate: 60, tags: ["sanity"] } },
+    )
+    .catch(() => null);
+
+  const realizations: RealizationPhoto[] =
+    row?.photos
+      ?.filter((p) => p.asset?.url != null)
+      .map((p) => ({
+        _key: p._key,
+        image: { asset: p.asset!, alt: p.alt },
+      })) ?? [];
+
   return (
     /* Jednolite tło kremowe — szczeliny subpikselowe nie przeświecają białym (#fff) z main/body. */
     <div className="bg-brand-50">
       <HeroSection />
       <CustomQuoteSection />
-      <RealizationsCta />
+      <LogoBoardRealizations items={realizations} />
     </div>
   );
 }
@@ -107,7 +136,10 @@ function HeroSection() {
 function CustomQuoteSection() {
   return (
     <section className="relative overflow-x-clip bg-brand-50 pb-16 lg:pb-24">
-      {/* lg: pełna szerokość viewportu; wysokość z --logo3d-white-h (QuoteTitleBandMeasure). */}
+      {/* Pełnoszerokościowy biały pasek u góry sekcji — jego wysokość ustawia
+          QuoteTitleBandMeasure (do dolnej krawędzi tytułu po prawej).
+          Zdjęcie z lewej ma przezroczyste rogi, więc na wysokości paska świecą
+          one białym, a niżej — kremowym tłem sekcji. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden bg-white lg:block lg:h-(--logo3d-white-h,15rem)"
@@ -116,22 +148,18 @@ function CustomQuoteSection() {
       <div className="relative z-1 mx-auto max-w-6xl px-4 pt-16 lg:pt-24">
         <div
           id="formularz"
-          className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-x-14 lg:gap-y-10 lg:items-start"
+          className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-x-14"
         >
-          <div
-            className="relative z-2 aspect-3/4 w-full overflow-hidden max-lg:mx-auto max-lg:max-h-[min(100vw,28rem)] max-lg:max-w-md lg:sticky lg:top-24 lg:z-20 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:max-h-none"
-            style={{ borderRadius: PRODUCT_IMAGE_ARCH_UP_BORDER_RADIUS }}
-          >
-            <Image
-              src="/images/categories/logo-kategoria-nail-boss.png"
-              alt="Tablica z logo Nail Boss — przykładowa realizacja"
-              fill
-              sizes="(max-width: 1024px) 100vw, 45vw"
-              className="object-cover object-center"
-            />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- PNG z alfą: bez optymalizacji Next (ostrzejsza maska). */}
+          <img
+            src="/images/categories/logo-kategoria-beauty-sisters.png"
+            alt="Tablica z logo Beauty Sisters — przykładowa realizacja"
+            width={693}
+            height={915}
+            className="relative z-2 h-auto w-full max-lg:mx-auto max-lg:max-w-md lg:sticky lg:top-24"
+          />
 
-          <div className="relative z-2 max-lg:-mx-4 max-lg:bg-white max-lg:px-4 max-lg:pb-6 lg:col-start-2 lg:row-start-1 lg:z-10 lg:bg-transparent lg:px-0">
+          <div className="relative z-2 space-y-6">
             <QuoteTitleBandMeasure>
               <h2 className="font-display text-3xl uppercase leading-tight tracking-[0.06em] text-brand-800 lg:text-5xl">
                 Tablica wizerunkowa
@@ -139,9 +167,7 @@ function CustomQuoteSection() {
                 z logo
               </h2>
             </QuoteTitleBandMeasure>
-          </div>
 
-          <div className="relative z-2 space-y-6 lg:col-start-2 lg:row-start-2 lg:pt-0">
             <p className="text-base leading-relaxed text-brand-800 lg:text-lg">
               Tablica akrylowa z Twoim logo, może mieć dowolny kształt, jednak
               maksymalnie mieszczący się w rozmiarze 120×80 cm. Dodatkową opcją
@@ -159,31 +185,6 @@ function CustomQuoteSection() {
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Realizations CTA ───────────────────────────────────────────── */
-
-function RealizationsCta() {
-  return (
-    <section className="bg-white py-16 lg:py-20">
-      <div className="container mx-auto max-w-4xl px-4 text-center">
-        <h2 className="font-display text-2xl uppercase tracking-[0.18em] text-brand-800 lg:text-3xl">
-          Zapoznaj się z naszymi realizacjami
-        </h2>
-        <div className="mx-auto mt-3 h-px w-12 bg-accent" />
-        <p className="mx-auto mt-6 max-w-2xl text-base text-brand-700">
-          Zobacz, jak tablice z logo prezentują się w salonach beauty, gabinetach i punktach
-          usługowych — od minimalistycznych logotypów po ozdobne tablice z LED.
-        </p>
-        <Link
-          href="/realizacje#tablica-z-logo"
-          className="mt-8 inline-flex items-center justify-center border border-brand-300 px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-800 transition-colors hover:bg-brand-50 hover:text-brand-900"
-        >
-          Przejdź do realizacji &rarr;
-        </Link>
       </div>
     </section>
   );

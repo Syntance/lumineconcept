@@ -1,10 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { trackFormStart, trackFormSubmit } from "@/lib/analytics/events";
 
 const NOTES_LIMIT = 180;
+
+const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+const MAX_ATTACHMENT_LABEL = "4 MB";
+
+const DISALLOWED_EXTENSIONS = new Set([
+  "exe",
+  "bat",
+  "cmd",
+  "com",
+  "msi",
+  "scr",
+  "sh",
+  "ps1",
+  "vbs",
+  "jar",
+  "js",
+  "mjs",
+  "html",
+  "htm",
+  "php",
+  "py",
+  "rb",
+]);
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -13,20 +36,57 @@ const INPUT_CLASS =
 
 const LABEL_CLASS = "block text-sm font-medium text-brand-700 mb-1.5";
 
+function getExtension(name: string): string {
+  const i = name.lastIndexOf(".");
+  if (i < 0 || i === name.length - 1) return "";
+  return name.slice(i + 1).toLowerCase();
+}
+
 export function TablicaZLogoFormClient() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [size, setSize] = useState("");
   const [shape, setShape] = useState("");
   const [led, setLed] = useState(false);
   const [notes, setNotes] = useState("");
   const [email, setEmail] = useState("");
   const [fileName, setFileName] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [feedback, setFeedback] = useState("");
 
+  const resetFile = () => {
+    setLogoFile(null);
+    setFileName("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    setFileName(f ? f.name : "");
+    const f = e.target.files?.[0] ?? null;
+    setFileError("");
+
+    if (!f) {
+      resetFile();
+      return;
+    }
+
+    if (f.size > MAX_ATTACHMENT_BYTES) {
+      setFileError(
+        `Plik jest za duży (maks. ${MAX_ATTACHMENT_LABEL}). Większy plik prześlij mailem na kontakt@lumineconcept.pl po wysłaniu zapytania.`,
+      );
+      resetFile();
+      return;
+    }
+
+    if (DISALLOWED_EXTENSIONS.has(getExtension(f.name))) {
+      setFileError("Ten typ pliku nie jest obsługiwany.");
+      resetFile();
+      return;
+    }
+
+    setLogoFile(f);
+    setFileName(f.name);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,11 +96,6 @@ export function TablicaZLogoFormClient() {
     setStatus("loading");
     trackFormSubmit("tablica_z_logo");
 
-    /**
-     * Łączymy pola formularza w jedną wiadomość — `/api/contact` to generic
-     * endpoint kontaktowy. Dla nazwy nadawcy bierzemy lokalną część e-maila,
-     * żeby nie dodawać kolejnego pola w UI.
-     */
     const derivedName = email.split("@")[0]?.slice(0, 80) || "Tablica z logo — wycena";
     const message = [
       "Zapytanie o wycenę: Tablica z logo",
@@ -48,24 +103,24 @@ export function TablicaZLogoFormClient() {
       `Rozmiar: ${size || "—"}`,
       `Kształt: ${shape || "—"}`,
       `Podświetlenie LED: ${led ? "tak" : "nie"}`,
-      fileName ? `Plik (nazwa, do dosłania): ${fileName}` : null,
       "",
       "Uwagi:",
       notes || "—",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    ].join("\n");
 
     try {
+      const formData = new FormData();
+      formData.set("name", derivedName);
+      formData.set("email", email);
+      formData.set("message", message);
+      formData.set("website", honeypot);
+      if (logoFile) {
+        formData.set("attachment", logoFile, logoFile.name);
+      }
+
       const response = await fetch("/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: derivedName,
-          email,
-          message,
-          website: honeypot,
-        }),
+        body: formData,
       });
       const data = (await response.json()) as { success: boolean; message: string };
 
@@ -77,7 +132,7 @@ export function TablicaZLogoFormClient() {
         setLed(false);
         setNotes("");
         setEmail("");
-        setFileName("");
+        resetFile();
       } else {
         setStatus("error");
         setFeedback(data.message);
@@ -94,8 +149,7 @@ export function TablicaZLogoFormClient() {
         <CheckCircle className="h-8 w-8" aria-hidden />
         <p className="text-base font-medium">{feedback}</p>
         <p className="text-sm text-green-700">
-          Jeśli przygotowałeś plik z logo, prześlij go w odpowiedzi na maila —
-          potwierdzimy wycenę.
+          Twój plik (jeśli dodany) trafił do nas razem z wiadomością.
         </p>
       </div>
     );
@@ -120,18 +174,22 @@ export function TablicaZLogoFormClient() {
             {fileName || "Nie wybrano żadnego pliku"}
           </span>
           <input
+            ref={fileInputRef}
             id="logo-file"
             type="file"
-            accept=".png,.svg,.ai,.pdf,.jpg,.jpeg"
             onChange={handleFileChange}
             onFocus={() => trackFormStart("tablica_z_logo")}
             className="sr-only"
           />
         </div>
-        <p className="mt-2 text-xs text-brand-500">
-          PNG, SVG, AI, PDF — max 10 MB. Plik możesz też przesłać mailem po
-          wysłaniu zapytania.
-        </p>
+        {fileError ? (
+          <p className="mt-2 text-xs text-red-600">{fileError}</p>
+        ) : (
+          <p className="mt-2 text-xs text-brand-500">
+            Preferowany SVG. Jeśli nie posiadasz SVG, oferujemy usługę wektorowania
+            zdjęcia. Maks. rozmiar pliku: {MAX_ATTACHMENT_LABEL}.
+          </p>
+        )}
       </div>
 
       {/* Rozmiar / Kształt */}

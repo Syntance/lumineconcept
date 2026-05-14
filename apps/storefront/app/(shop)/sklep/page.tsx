@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getProductsByTag } from "@/lib/medusa/products";
 import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
-import { TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
+import { TESTIMONIALS_BY_PAGE_QUERY } from "@/lib/sanity/queries";
 import type { Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -67,7 +67,11 @@ export default async function ShopHubPage() {
     getProductsByTag("bestseller", 4).catch(() => []),
     getSiteSettings(),
     sanityClient
-      .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
+      .fetch<Testimonial[]>(
+        TESTIMONIALS_BY_PAGE_QUERY,
+        { page: "shop" },
+        { next: { revalidate: 300, tags: ["sanity"] } },
+      )
       .catch(() => []),
   ]);
 

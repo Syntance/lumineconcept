@@ -1,7 +1,5 @@
 import type { MetadataRoute } from "next";
 import { medusa } from "@/lib/medusa/client";
-import { sanityClient } from "@/lib/sanity/client";
-import { BLOG_SLUGS_QUERY, PAGE_SLUGS_QUERY } from "@/lib/sanity/queries";
 import { SITE_URL } from "@/lib/utils";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -54,12 +52,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.6,
     },
-    {
-      url: `${SITE_URL}/blog`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.7,
-    },
   ];
 
   let productPages: MetadataRoute.Sitemap = [];
@@ -93,35 +85,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Medusa not available during build
   }
 
-  let blogPages: MetadataRoute.Sitemap = [];
-  try {
-    const posts = await sanityClient.fetch<
-      Array<{ slug: string; _updatedAt: string }>
-    >(BLOG_SLUGS_QUERY);
-    blogPages = posts.map((post) => ({
-      url: `${SITE_URL}/blog/${post.slug}`,
-      lastModified: new Date(post._updatedAt),
-      changeFrequency: "monthly" as const,
-      priority: 0.6,
-    }));
-  } catch {
-    // Sanity not available during build
-  }
-
-  let sanityPages: MetadataRoute.Sitemap = [];
-  try {
-    const pages = await sanityClient.fetch<
-      Array<{ slug: string; _updatedAt: string }>
-    >(PAGE_SLUGS_QUERY);
-    sanityPages = pages.map((p) => ({
-      url: `${SITE_URL}/${p.slug}`,
-      lastModified: new Date(p._updatedAt),
-      changeFrequency: "monthly" as const,
-      priority: 0.5,
-    }));
-  } catch {
-    // Sanity not available during build
-  }
-
-  return [...staticPages, ...productPages, ...blogPages, ...sanityPages];
+  return [...staticPages, ...productPages];
 }

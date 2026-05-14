@@ -1,30 +1,17 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Instagram } from "lucide-react";
-import { sanityClient } from "@/lib/sanity/client";
-import { INSTAGRAM_POSTS_QUERY } from "@/lib/sanity/queries";
-import type { InstagramPost } from "@/lib/sanity/types";
 
 const IG_PROFILE = "https://instagram.com/lumineconcept";
 
-async function getInstagramPosts(): Promise<InstagramPost[]> {
-  try {
-    const posts = await sanityClient.fetch<InstagramPost[]>(
-      INSTAGRAM_POSTS_QUERY,
-      {},
-      { next: { revalidate: 60 } },
-    );
-    return posts ?? [];
-  } catch (err) {
-    console.error("[FooterCTA] Nie udało się pobrać postów IG z Sanity:", err);
-    return [];
-  }
-}
-
-export async function FooterCTA() {
-  const posts = await getInstagramPosts();
-  const hasRealPosts = posts.length > 0;
-
+/**
+ * Footer CTA + sekcja "Jesteśmy na Instagramie".
+ *
+ * Sekcja IG jest aktualnie statycznym placeholderem z linkami do profilu.
+ * Feed z prawdziwych postów wymaga integracji z Instagram Graph API
+ * (token long-lived, refresh w cronie, mapowanie media → URL CDN). Do
+ * dorobienia w osobnym kroku — wtedy podmienić `slots` na fetch z API.
+ */
+export function FooterCTA() {
   return (
     <>
       <section id="footer-cta" className="relative py-20 lg:py-28 overflow-hidden">
@@ -83,40 +70,18 @@ export async function FooterCTA() {
           <div className="mt-3 mx-auto h-px w-12 bg-accent" />
 
           <div className="mt-10 grid grid-cols-3 gap-2 max-w-xl mx-auto sm:grid-cols-6">
-            {hasRealPosts
-              ? posts.slice(0, 6).map((post) => (
-                  <a
-                    key={post._id}
-                    href={post.url ?? IG_PROFILE}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={post.image?.alt ?? "Post Lumine Concept na Instagramie"}
-                    className="group relative aspect-square overflow-hidden bg-brand-100"
-                  >
-                    <Image
-                      src={post.image.asset.url}
-                      alt={post.image.alt ?? ""}
-                      fill
-                      sizes="(max-width: 640px) 33vw, 96px"
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      placeholder={post.image.asset.metadata?.lqip ? "blur" : "empty"}
-                      blurDataURL={post.image.asset.metadata?.lqip}
-                    />
-                    <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
-                  </a>
-                ))
-              : Array.from({ length: 6 }, (_, i) => (
-                  <a
-                    key={i}
-                    href={IG_PROFILE}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Lumine Concept na Instagramie"
-                    className="aspect-square bg-brand-100 hover:bg-brand-200 transition-colors flex items-center justify-center"
-                  >
-                    <Instagram className="h-4 w-4 text-brand-400" />
-                  </a>
-                ))}
+            {Array.from({ length: 6 }, (_, i) => (
+              <a
+                key={i}
+                href={IG_PROFILE}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Lumine Concept na Instagramie"
+                className="aspect-square bg-brand-100 hover:bg-brand-200 transition-colors flex items-center justify-center"
+              >
+                <Instagram className="h-4 w-4 text-brand-400" />
+              </a>
+            ))}
           </div>
 
           <a

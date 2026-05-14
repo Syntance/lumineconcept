@@ -10,7 +10,7 @@ import {
 } from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
 import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
-import { TESTIMONIALS_QUERY } from "@/lib/sanity/queries";
+import { TESTIMONIALS_BY_PAGE_QUERY } from "@/lib/sanity/queries";
 import type { Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { SITE_URL } from "@/lib/utils";
@@ -45,7 +45,11 @@ export default async function GotoweWzoryPage({
     getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
     getSiteSettings(),
     sanityClient
-      .fetch<Testimonial[]>(TESTIMONIALS_QUERY, {}, { next: { revalidate: 300 } })
+      .fetch<Testimonial[]>(
+        TESTIMONIALS_BY_PAGE_QUERY,
+        { page: "gotowe-wzory" },
+        { next: { revalidate: 300, tags: ["sanity"] } },
+      )
       .catch(() => []),
   ]);
 

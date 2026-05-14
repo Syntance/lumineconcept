@@ -1,5 +1,3 @@
-import type { PortableTextBlock } from "next-sanity";
-
 export interface SanityImage {
   asset: {
     _id: string;
@@ -30,71 +28,48 @@ export interface SeoMeta {
   noFollow?: boolean;
 }
 
-export interface BlogPost {
-  _id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  body?: PortableTextBlock[];
-  coverImage: SanityImage;
-  category: string;
-  author?: string;
-  publishedAt: string;
-  seo?: SeoMeta;
-}
+/** Identyfikator strony — patrz `sanity/schemas/objects/page-context.ts` */
+export type PageContext =
+  | "home"
+  | "shop"
+  | "logo-3d"
+  | "gotowe-wzory"
+  | "tla-do-tablic"
+  | "tablice-cenowe"
+  | "global";
 
-export interface LandingPage {
-  _id: string;
-  title: string;
-  slug: string;
-  hero: {
-    heading: string;
-    subheading?: string;
-    image?: SanityImage;
-    ctaText?: string;
-    ctaLink?: string;
-  };
-  sections: ContentSection[];
-  seo?: SeoMeta;
-}
+/** Kategoria realizacji — patrz `sanity/schemas/realization-categories.ts` */
+export type RealizationCategory =
+  | "tablica-z-logo"
+  | "tla-do-tablic"
+  | "gotowe-wzory"
+  | "tablice-cenowe"
+  | "inne";
 
-export interface Page {
-  _id: string;
-  title: string;
-  slug: string;
-  body?: PortableTextBlock[];
-  seo?: SeoMeta;
-}
-
-export interface ContentSection {
-  _type: string;
+/** Jedno zdjęcie z tablicy `photos` w dokumencie `realizationGallery`. */
+export interface RealizationPhoto {
   _key: string;
-  heading?: string;
-  body?: PortableTextBlock[];
-  image?: SanityImage;
-  items?: Array<{
-    _key: string;
-    title: string;
-    description: string;
-    icon?: string;
-  }>;
+  image: SanityImage;
 }
 
 export interface Testimonial {
   _id: string;
+  page: PageContext;
   name: string;
-  role: string;
+  role?: string;
   company: string;
   quote: string;
   image?: SanityImage;
   rating: number;
+  order?: number;
 }
 
 export interface FAQ {
   _id: string;
+  page: PageContext;
   question: string;
   answer: string;
-  category?: string;
+  order?: number;
 }
 
 export interface SalonLogo {
@@ -104,45 +79,11 @@ export interface SalonLogo {
   order: number;
 }
 
-export interface InstagramPost {
-  _id: string;
-  image: SanityImage;
-  url?: string;
-  order: number;
-}
-
 export interface ProductFaq {
   _id: string;
   question: string;
   answer: string;
   order: number;
-}
-
-export interface ShopCategory {
-  _id: string;
-  name: string;
-  icon?: string;
-  heroImage?: SanityImage;
-  description?: string;
-  medusaCategoryId?: string;
-  order: number;
-}
-
-export interface InstagramGallerySlot {
-  image: {
-    asset: { _id: string; url: string; metadata?: { lqip?: string } };
-    alt?: string;
-  };
-  url?: string;
-}
-
-export interface InstagramGallery {
-  slot1?: InstagramGallerySlot;
-  slot2?: InstagramGallerySlot;
-  slot3?: InstagramGallerySlot;
-  slot4?: InstagramGallerySlot;
-  slot5?: InstagramGallerySlot;
-  slot6?: InstagramGallerySlot;
 }
 
 export interface TrustBar {
