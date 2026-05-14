@@ -1,4 +1,5 @@
 import { defineField, defineType } from "sanity";
+import type { PreviewValue } from "sanity";
 import { PAGE_CONTEXT_OPTIONS, PAGE_CONTEXTS } from "./objects/page-context";
 
 export const testimonial = defineType({
@@ -82,12 +83,14 @@ export const testimonial = defineType({
       subtitle?: string;
       page?: string;
       media?: unknown;
-    }) {
+    }): PreviewValue {
       const pageTitle = PAGE_CONTEXTS.find((p) => p.value === page)?.title ?? page ?? "—";
       return {
         title: title ?? "Opinia",
         subtitle: `${subtitle ?? ""}${subtitle ? "  •  " : ""}${pageTitle}`,
-        media: media as Record<string, unknown> | undefined,
+        ...(media != null
+          ? { media: media as PreviewValue["media"] }
+          : {}),
       };
     },
   },

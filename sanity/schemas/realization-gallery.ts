@@ -1,4 +1,5 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
+import type { PreviewValue } from "sanity";
 
 /**
  * Zdjęcia realizacji dla /sklep/logo-3d (jedyny outlet na froncie).
@@ -26,12 +27,14 @@ export const realizationGallery = defineType({
   ],
   preview: {
     select: { photos: "photos" },
-    prepare({ photos }: { photos?: unknown[] | null }) {
+    prepare({ photos }: { photos?: unknown[] | null }): PreviewValue {
       const n = Array.isArray(photos) ? photos.length : 0;
-      const media = photos?.[0] as Record<string, unknown> | undefined;
+      const media = photos?.[0];
       return {
         title: n === 0 ? "Brak zdjęć" : `${n} zdjęć`,
-        media,
+        ...(media != null
+          ? { media: media as PreviewValue["media"] }
+          : {}),
       };
     },
   },

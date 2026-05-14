@@ -1,4 +1,5 @@
 import { defineField, defineType } from "sanity";
+import type { PreviewValue } from "sanity";
 
 /**
  * **Tylko kompatybilność.** Nadal mogą istnieć dokumenty `_type == "realization"`
@@ -54,11 +55,19 @@ export const realizationStub = defineType({
   ],
   preview: {
     select: { media: "image", category: "category" },
-    prepare({ media, category }: { media?: unknown; category?: string }) {
+    prepare({
+      media,
+      category,
+    }: {
+      media?: unknown;
+      category?: string;
+    }): PreviewValue {
       return {
         title: "Stary typ — usuń ten dokument",
         subtitle: category ?? "",
-        media: media as Record<string, unknown> | undefined,
+        ...(media != null
+          ? { media: media as PreviewValue["media"] }
+          : {}),
       };
     },
   },
