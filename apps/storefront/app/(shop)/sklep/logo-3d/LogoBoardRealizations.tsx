@@ -19,19 +19,17 @@ function RealizationTile({ item }: { item: RealizationPhoto }) {
     "Realizacja tablicy z logo — Lumine Concept";
 
   return (
-    <div className="ring-1 ring-brand-200/80">
-      <div className="relative aspect-4/3 overflow-hidden bg-brand-100">
-        <Image
-          src={item.image.asset.url}
-          alt={alt}
-          width={w}
-          height={h}
-          sizes="(max-width: 1024px) 50vw, 25vw"
-          className="h-full w-full object-cover"
-          placeholder={item.image.asset.metadata?.lqip ? "blur" : "empty"}
-          blurDataURL={item.image.asset.metadata?.lqip}
-        />
-      </div>
+    <div className="min-w-0 overflow-hidden bg-brand-100 ring-1 ring-brand-200/80">
+      <Image
+        src={item.image.asset.url}
+        alt={alt}
+        width={w}
+        height={h}
+        sizes="(max-width: 1024px) 50vw, 25vw"
+        className="h-auto w-full max-w-full"
+        placeholder={item.image.asset.metadata?.lqip ? "blur" : "empty"}
+        blurDataURL={item.image.asset.metadata?.lqip}
+      />
     </div>
   );
 }
@@ -75,7 +73,7 @@ export function LogoBoardRealizations({ items }: Props) {
           </p>
         </div>
 
-        <ul className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <ul className="mt-10 grid grid-cols-2 items-start gap-3 sm:gap-4 lg:grid-cols-4">
           {slice.map((item) => (
             <li key={item._key}>
               <RealizationTile item={item} />
