@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import type { RealizationPhoto } from "@/lib/sanity/types";
 
 const PAGE_SIZE = 4;
@@ -51,15 +50,8 @@ export function LogoBoardRealizations({ items }: Props) {
           </h2>
           <div className="mx-auto mt-3 h-px w-12 bg-accent" />
           <p className="mx-auto mt-6 max-w-2xl text-base text-brand-700">
-            Galeria jest w przygotowaniu. Pełne realizacje znajdziesz na stronie
-            realizacji.
+            Galeria jest w przygotowaniu — wkrótce dodamy tu zdjęcia realizacji.
           </p>
-          <Link
-            href="/realizacje#tablica-z-logo"
-            className="mt-8 inline-flex items-center justify-center border border-brand-300 px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-800 transition-colors hover:bg-brand-50"
-          >
-            Przejdź do realizacji &rarr;
-          </Link>
         </div>
       </section>
     );
@@ -103,12 +95,6 @@ export function LogoBoardRealizations({ items }: Props) {
               Zobacz więcej
             </button>
           ) : null}
-          <Link
-            href="/realizacje#tablica-z-logo"
-            className="text-sm font-medium uppercase tracking-[0.14em] text-brand-600 underline-offset-4 hover:text-brand-900 hover:underline"
-          >
-            Wszystkie realizacje na osobnej stronie &rarr;
-          </Link>
         </div>
       </div>
     </section>

@@ -57,6 +57,16 @@ const nextConfig: NextConfig = {
         destination: "/sklep/logo-3d",
         permanent: true,
       },
+      {
+        source: "/realizacje",
+        destination: "/sklep",
+        permanent: true,
+      },
+      {
+        source: "/realizacje/:path*",
+        destination: "/sklep",
+        permanent: true,
+      },
     ];
   },
 
