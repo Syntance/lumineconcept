@@ -50,6 +50,8 @@ interface ShopGridClientProps {
   initialProducts: SimpleProduct[];
   totalCount: number;
   initialFilter?: string;
+  /** Domyślna pigułka kategorii (Cenniki / Certyfikaty …); bez tego UI traktuje jak „Wszystkie”. */
+  initialPill?: string;
   /**
    * ID root kategorii Medusy dla tej listy (ten sam, co bez `?kat=`).
    * Używane przy pigułkach: jedna logiczna „kategoria” — reset `?kat=` i
@@ -77,6 +79,7 @@ export function ShopGridClient({
   initialProducts,
   totalCount,
   initialFilter,
+  initialPill,
   defaultListingCategoryId,
   initialSort,
   categories,
@@ -99,7 +102,8 @@ export function ShopGridClient({
 
   const [filters, setFilters] = useState<ActiveFilters>({
     category: initialFilter,
-    pill: undefined,
+    pill:
+      initialPill && initialPill !== "" && initialPill !== "all" ? initialPill : undefined,
     sort: initialSort,
     sizes: [],
     materials: [],

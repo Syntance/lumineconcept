@@ -67,6 +67,17 @@ const nextConfig: NextConfig = {
         destination: "/sklep",
         permanent: true,
       },
+      /** Konto klienta — nieużywane; stare linki i zakładki na `/konto`. */
+      {
+        source: "/konto",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/konto/:path*",
+        destination: "/",
+        permanent: true,
+      },
     ];
   },
 

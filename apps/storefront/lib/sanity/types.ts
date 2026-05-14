@@ -38,13 +38,8 @@ export type PageContext =
   | "tablice-cenowe"
   | "global";
 
-/** Kategoria realizacji — patrz `sanity/schemas/realization-categories.ts` */
-export type RealizationCategory =
-  | "tablica-z-logo"
-  | "tla-do-tablic"
-  | "gotowe-wzory"
-  | "tablice-cenowe"
-  | "inne";
+/** Kategoria galerii realizacji na froncie — obecnie tylko tablice z logo. */
+export type RealizationCategory = "tablica-z-logo";
 
 /** Jedno zdjęcie z tablicy `photos` w dokumencie `realizationGallery`. */
 export interface RealizationPhoto {

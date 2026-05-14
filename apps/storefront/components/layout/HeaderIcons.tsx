@@ -1,9 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useState } from "react";
-import { Search, ShoppingBag, User } from "lucide-react";
+import { Search, ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 
 const SearchModal = dynamic(
@@ -17,7 +16,7 @@ const CartDrawer = dynamic(
 );
 
 /**
- * Mały island: wyszukiwarka + konto + koszyk (z badge). Liczba w koszyku
+ * Mały island: wyszukiwarka + koszyk (z badge). Liczba w koszyku
  * czyta się z `useCart()` (client storage), więc SSRu i tak nie miałby
  * tu jak znać prawidłowej wartości — zostawiamy to jako island.
  */
@@ -36,13 +35,6 @@ export function HeaderIcons() {
         >
           <Search className="h-4 w-4" />
         </button>
-        <Link
-          href="/konto"
-          className="hidden sm:block p-2 text-brand-600 hover:text-brand-900 transition-colors"
-          aria-label="Moje konto"
-        >
-          <User className="h-4 w-4" />
-        </Link>
         <button
           type="button"
           onClick={openCart}

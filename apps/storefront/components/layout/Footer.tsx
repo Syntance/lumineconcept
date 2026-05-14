@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { SITE_CONTACT } from "@/lib/site-contact";
 
 const FOOTER_LINKS = {
   Sklep: [
@@ -13,12 +14,6 @@ const FOOTER_LINKS = {
     { href: "/dostawa-i-platnosci", label: "Dostawa i płatności" },
     { href: "/zwroty", label: "Reklamacje" },
   ],
-} as const;
-
-/** Treści pod e-mailem, nad linkiem do formularza — kolumna Kontakt. */
-const FOOTER_CONTACT_EXTRA = {
-  address: "34-115 Ryczów, ul. Jana Pawła II, nr 93",
-  hours: "Godziny otwarcia: pon.–pt.: 9:00–17:00",
 } as const;
 
 export function Footer() {
@@ -68,23 +63,23 @@ export function Footer() {
             <ul className="mt-4 space-y-4">
               <li className="list-none">
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-brand-300 leading-relaxed">
-                  {FOOTER_CONTACT_EXTRA.address}
+                  {SITE_CONTACT.address}
                 </p>
                 <p className="mt-2 text-xs font-medium uppercase tracking-[0.12em] text-brand-300 leading-relaxed">
-                  {FOOTER_CONTACT_EXTRA.hours}
+                  {SITE_CONTACT.hours}
                 </p>
               </li>
               <li>
                 <a
-                  href="mailto:kontakt@lumineconcept.pl"
+                  href={`mailto:${SITE_CONTACT.email}`}
                   className="text-base text-brand-300 hover:text-white transition-colors"
                 >
-                  kontakt@lumineconcept.pl
+                  {SITE_CONTACT.email}
                 </a>
               </li>
               <li>
                 <Link
-                  href="/kontakt"
+                  href={SITE_CONTACT.formHref}
                   className="text-base text-brand-300 hover:text-white transition-colors"
                 >
                   Formularz kontaktowy

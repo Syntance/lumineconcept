@@ -4,6 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { ActiveFilters, FilterConfig } from "./filter-types";
 import {
+  PRICE_RANGE_INPUT_CLASS,
+  PRICE_RANGE_INNER_CLASS,
+  PRICE_RANGE_ROW_CLASS,
+  PRICE_RANGE_TRACK_ACTIVE_CLASS,
+  PRICE_RANGE_TRACK_IDLE_CLASS,
+  priceRangeActiveTrackStyle,
   PRODUCT_PILLS,
   PRICE_SLIDER_MIN,
   PRICE_SLIDER_MAX,
@@ -170,50 +176,54 @@ export function FilterDrawer({
           {/* Cena — suwak */}
           <section>
             <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Cena</p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm font-medium tabular-nums text-brand-500">
+            <div className="grid w-full min-w-0 grid-cols-1 gap-3">
+              <div className="flex min-w-0 w-full items-center justify-between text-sm font-medium tabular-nums text-brand-500">
                 <span>{formatPricePLN(localMin)}</span>
                 <span>{formatPricePLN(localMax)}</span>
               </div>
-              <div className="relative h-5 flex items-center">
-                <input
-                  type="range"
-                  min={sliderMin}
-                  max={sliderMax}
-                  step={PRICE_STEP}
-                  value={localMin}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    if (v <= localMax - PRICE_STEP) setLocalMin(v);
-                  }}
-                  onMouseUp={commitPrice}
-                  onTouchEnd={commitPrice}
-                  className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand-500 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-brand-500"
-                  aria-label="Cena minimalna"
-                />
-                <input
-                  type="range"
-                  min={sliderMin}
-                  max={sliderMax}
-                  step={PRICE_STEP}
-                  value={localMax}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    if (v >= localMin + PRICE_STEP) setLocalMax(v);
-                  }}
-                  onMouseUp={commitPrice}
-                  onTouchEnd={commitPrice}
-                  className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand-500 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-brand-500"
-                  aria-label="Cena maksymalna"
-                />
-                <div className="absolute inset-x-0 h-1.5 rounded-full bg-brand-500/25" />
-                <div
-                  className="absolute h-1.5 rounded-full bg-brand-500"
-                  style={{
-                    left: `${((localMin - sliderMin) / (sliderMax - sliderMin)) * 100}%`,
-                    right: `${100 - ((localMax - sliderMin) / (sliderMax - sliderMin)) * 100}%`,
-                  }}
-                />
+              <div className={PRICE_RANGE_ROW_CLASS}>
+                <div className={PRICE_RANGE_INNER_CLASS}>
+                  <input
+                    type="range"
+                    min={sliderMin}
+                    max={sliderMax}
+                    step={PRICE_STEP}
+                    value={localMin}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (v <= localMax - PRICE_STEP) setLocalMin(v);
+                    }}
+                    onMouseUp={commitPrice}
+                    onTouchEnd={commitPrice}
+                    className={PRICE_RANGE_INPUT_CLASS}
+                    aria-label="Cena minimalna"
+                  />
+                  <input
+                    type="range"
+                    min={sliderMin}
+                    max={sliderMax}
+                    step={PRICE_STEP}
+                    value={localMax}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (v >= localMin + PRICE_STEP) setLocalMax(v);
+                    }}
+                    onMouseUp={commitPrice}
+                    onTouchEnd={commitPrice}
+                    className={PRICE_RANGE_INPUT_CLASS}
+                    aria-label="Cena maksymalna"
+                  />
+                  <div className={PRICE_RANGE_TRACK_IDLE_CLASS} />
+                  <div
+                    className={PRICE_RANGE_TRACK_ACTIVE_CLASS}
+                    style={priceRangeActiveTrackStyle({
+                      localMin,
+                      localMax,
+                      sliderMin,
+                      sliderMax,
+                    })}
+                  />
+                </div>
               </div>
             </div>
           </section>

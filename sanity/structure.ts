@@ -1,11 +1,10 @@
 import type { StructureResolver } from "sanity/structure";
 import { PAGE_CONTEXTS } from "./schemas/objects/page-context";
-import { REALIZATION_PAGES } from "./schemas/realization-categories";
+import { REALIZATION_GALLERY_PAGE } from "./schemas/realization-categories";
 import { REALIZATION_GALLERY_DOC_ID } from "./lib/realization-gallery-doc-ids";
 
 /**
- * Realizacje: w drugim poziomie lista **podstron** (jak zakładki w menu);
- * po wejściu — jeden dokument, pole wyłącznie ze zdjęciami.
+ * Realizacje: bezpośrednio dokument galerii zdjęć (strona /sklep/logo-3d).
  */
 export const structure: StructureResolver = (S) =>
   S.list()
@@ -81,23 +80,13 @@ export const structure: StructureResolver = (S) =>
 
       S.listItem()
         .title("Realizacje")
+        .id(REALIZATION_GALLERY_DOC_ID[REALIZATION_GALLERY_PAGE.value])
         .child(
-          S.list()
-            .title("Podstrony — zdjęcia realizacji")
-            .items(
-              REALIZATION_PAGES.map((page) => {
-                const docId = REALIZATION_GALLERY_DOC_ID[page.value];
-                const listLabel = `${page.title} — ${page.path}`;
-                return S.listItem()
-                  .title(listLabel)
-                  .id(docId)
-                  .child(
-                    S.document()
-                      .schemaType("realizationGallery")
-                      .documentId(docId)
-                      .title(`Zdjęcia: ${page.title} · ${page.path}`),
-                  );
-              }),
+          S.document()
+            .schemaType("realizationGallery")
+            .documentId(REALIZATION_GALLERY_DOC_ID[REALIZATION_GALLERY_PAGE.value])
+            .title(
+              `Zdjęcia: ${REALIZATION_GALLERY_PAGE.title} · ${REALIZATION_GALLERY_PAGE.path}`,
             ),
         ),
 

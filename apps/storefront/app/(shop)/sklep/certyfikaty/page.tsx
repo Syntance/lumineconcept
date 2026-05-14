@@ -9,14 +9,78 @@ import {
   type CategoryTreeNode,
 } from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
-import { getSiteSettings } from "@/lib/sanity/client";
+import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
+import { TESTIMONIALS_BY_PAGE_QUERY } from "@/lib/sanity/queries";
+import type { Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { isPriceSort } from "@/components/product/filter-types";
 import { SITE_URL } from "@/lib/utils";
-import { medusaProductToSimple } from "@/lib/products/simple-product";
+import {
+  medusaProductToSimple,
+  type SimpleProduct,
+} from "@/lib/products/simple-product";
+import {
+  productPassesFilters,
+  type ProductFilterParams,
+} from "@/lib/products/product-filters";
 import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/global-config";
 import { ShopGridClient } from "../gotowe-wzory/client";
 
 const INITIAL_PAGE_SIZE = 24;
+const MEDUSA_BATCH = 50;
+
+const DEFAULT_CERT_PILL: ProductFilterParams = {
+  sizes: [],
+  materials: [],
+  finishes: [],
+  pill: "certyfikaty",
+};
+
+/** Jak przy kliknięciu „Certyfikaty” w filtrze: całe poddrzewo gotowe-wzory + pill (także w `/api/products`). */
+async function fetchDefaultCertyfikatyListing(args: {
+  categoryIds: string[] | undefined;
+  sort: string;
+  pageSize: number;
+}): Promise<{ products: SimpleProduct[]; count: number } | null> {
+  const { categoryIds, sort, pageSize } = args;
+  const priceSort = isPriceSort(sort);
+  const medusaOrder = priceSort ? "-created_at" : sort;
+  const allSimple: SimpleProduct[] = [];
+  let medusaOffset = 0;
+  let totalMedusa = Infinity;
+
+  try {
+    while (medusaOffset < totalMedusa) {
+      const response = await getProducts({
+        limit: MEDUSA_BATCH,
+        offset: medusaOffset,
+        category_id: categoryIds,
+        order: medusaOrder,
+      });
+      totalMedusa = response.count;
+      for (const raw of response.products) {
+        allSimple.push(medusaProductToSimple(raw as unknown as Record<string, unknown>));
+      }
+      medusaOffset += response.products.length;
+      if (response.products.length === 0) break;
+    }
+  } catch {
+    return null;
+  }
+
+  const collected = allSimple.filter((p) => productPassesFilters(p, DEFAULT_CERT_PILL));
+
+  if (priceSort) {
+    collected.sort((a, b) =>
+      sort === "price_asc" ? a.price - b.price : b.price - a.price,
+    );
+  }
+
+  return {
+    products: collected.slice(0, pageSize),
+    count: collected.length,
+  };
+}
 
 export const metadata: Metadata = {
   title: "Certyfikaty z plexi — dyplomy, podziękowania, vouchery | Lumine Concept",
@@ -33,43 +97,71 @@ export default async function CertyfikatyPage({
   searchParams: Promise<{ kat?: string; sort?: string }>;
 }) {
   const params = await searchParams;
+  const order = params.sort ?? "-created_at";
 
-  const [categories, settings, globalConfig] = await Promise.all([
-    getProductCategories().catch(() => []),
+  const globalConfigPromise = getGlobalProductConfig().catch(() => EMPTY_GLOBAL_CONFIG);
+
+  const [allCategories, settings, testimonials] = await Promise.all([
+    getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
     getSiteSettings(),
-    getGlobalProductConfig().catch(() => EMPTY_GLOBAL_CONFIG),
+    sanityClient
+      .fetch<Testimonial[]>(
+        TESTIMONIALS_BY_PAGE_QUERY,
+        { page: "gotowe-wzory" },
+        { next: { revalidate: 300, tags: ["sanity"] } },
+      )
+      .catch(() => []),
   ]);
 
-  const tree = categories as unknown as CategoryTreeNode[];
-  const defaultCertyfikatyId = categoryIdByHandle(tree, LISTING_CATEGORY_HANDLE.certyfikaty);
+  const tree = allCategories as unknown as CategoryTreeNode[];
+  const defaultGotoweWzoryId = categoryIdByHandle(tree, LISTING_CATEGORY_HANDLE.gotoweWzory);
   const resolvedKatId = params.kat ? categoryIdFromKatParam(tree, params.kat) : undefined;
-  const listCategoryId = params.kat ? resolvedKatId : defaultCertyfikatyId;
+  const listCategoryId = params.kat ? resolvedKatId : defaultGotoweWzoryId;
 
   const medusaCategoryScopeMap = buildMedusaCategoryScopeMap(
     tree,
-    LISTING_CATEGORY_HANDLE.certyfikaty,
+    LISTING_CATEGORY_HANDLE.gotoweWzory,
   );
   const medusaListingCategoryIds = medusaCategoryIdsForScope(
     listCategoryId,
     medusaCategoryScopeMap,
   );
 
-  const productsResponse = await getProducts({
-    limit: INITIAL_PAGE_SIZE,
-    offset: 0,
-    order: params.sort ?? "-created_at",
-    category_id: medusaListingCategoryIds,
-  }).catch(() => null);
+  const globalConfig = await globalConfigPromise;
 
-  const initialCategoryId = params.kat ? resolvedKatId : defaultCertyfikatyId;
+  const initialCategoryId = params.kat ? resolvedKatId : defaultGotoweWzoryId;
+  const initialPill = params.kat ? undefined : "certyfikaty";
 
-  const products = productsResponse?.products ?? [];
-  const totalCount = productsResponse?.count ?? 0;
+  const categories = allCategories;
+
+  let initialProducts: SimpleProduct[];
+  let totalCount: number;
+
+  if (!params.kat) {
+    const pillListing = await fetchDefaultCertyfikatyListing({
+      categoryIds: medusaListingCategoryIds,
+      sort: order,
+      pageSize: INITIAL_PAGE_SIZE,
+    });
+    initialProducts = pillListing?.products ?? [];
+    totalCount = pillListing?.count ?? 0;
+  } else {
+    const productsResponse = await getProducts({
+      limit: INITIAL_PAGE_SIZE,
+      offset: 0,
+      order,
+      category_id: medusaListingCategoryIds,
+    }).catch(() => null);
+    const products = productsResponse?.products ?? [];
+    totalCount = productsResponse?.count ?? 0;
+    initialProducts = products.map((p) =>
+      medusaProductToSimple(p as unknown as Record<string, unknown>),
+    );
+  }
+
   const trustBar = settings?.trustBar;
 
-  const initialProducts = products.map((p) =>
-    medusaProductToSimple(p as unknown as Record<string, unknown>),
-  );
+  const displayTestimonials = testimonials.slice(0, 2);
 
   return (
     <>
@@ -91,13 +183,6 @@ export default async function CertyfikatyPage({
           <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-800 leading-relaxed">
             Eleganckie certyfikaty dla Twoich klientek. Idealne jako podziękowanie po szkoleniu lub voucher prezentowy.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm font-medium uppercase tracking-wider text-brand-500">
-            <span className="rounded-full border border-brand-200 px-4 py-1.5">Szybka wysyłka</span>
-            <span className="rounded-full border border-brand-200 px-4 py-1.5">Płatność online</span>
-            <span className="rounded-full border border-brand-200 px-4 py-1.5">
-              {trustBar?.realizations ?? "6 000+"} realizacji
-            </span>
-          </div>
         </div>
       </section>
 
@@ -108,7 +193,8 @@ export default async function CertyfikatyPage({
               initialProducts={initialProducts}
               totalCount={totalCount}
               initialFilter={initialCategoryId}
-              defaultListingCategoryId={defaultCertyfikatyId ?? ""}
+              initialPill={initialPill}
+              defaultListingCategoryId={defaultGotoweWzoryId ?? ""}
               initialSort={params.sort ?? "-created_at"}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/certyfikaty"
@@ -128,6 +214,21 @@ export default async function CertyfikatyPage({
             <span className="text-brand-300">·</span>
             <span>{trustBar?.shippingLabel ?? "Realizacja ok. 10 dni roboczych"}</span>
           </div>
+
+          {displayTestimonials.length > 0 && (
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
+              {displayTestimonials.map((t) => (
+                <blockquote key={t._id} className="rounded-xl bg-white p-6 text-left shadow-sm">
+                  <p className="text-base italic text-brand-800 leading-relaxed">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <footer className="mt-3 text-sm text-brand-500">
+                    — {t.name}{t.company ? `, ${t.company}` : ""}
+                  </footer>
+                </blockquote>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </>

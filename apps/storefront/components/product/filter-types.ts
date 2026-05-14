@@ -92,6 +92,64 @@ export const PRICE_SLIDER_MIN = 0;
 export const PRICE_SLIDER_MAX = 1000;
 
 /**
+ * Suwak ceny: pełna szerokość jak wiersz z kwotami (`justify-between`); kropki od krawędzi tekstu.
+ */
+export const PRICE_RANGE_ROW_CLASS = "relative h-7 w-full min-w-0";
+
+/** Wewnątrz `PRICE_RANGE_ROW_CLASS` — wspólny układ dla inputów i tła paska. */
+export const PRICE_RANGE_INNER_CLASS = "relative h-full w-full";
+
+/**
+ * Natywny `<input type="range">` (WebKit + Firefox): pełna szerokość toru, większy thumb.
+ */
+export const PRICE_RANGE_INPUT_CLASS = [
+  "pointer-events-none absolute inset-0 w-full m-0 p-0 max-w-none appearance-none bg-transparent",
+  "[&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:w-full [&::-webkit-slider-runnable-track]:rounded-full",
+  "[&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-runnable-track]:[box-shadow:none]",
+  "[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5",
+  "[&::-webkit-slider-thumb]:mt-[-7px] [&::-webkit-slider-thumb]:appearance-none",
+  "[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white",
+  "[&::-webkit-slider-thumb]:bg-brand-500 [&::-webkit-slider-thumb]:shadow-md",
+  "[&::-moz-range-track]:h-1.5 [&::-moz-range-track]:w-full [&::-moz-range-track]:rounded-full",
+  "[&::-moz-range-track]:bg-transparent [&::-moz-range-track]:border-0",
+  "[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5",
+  "[&::-moz-range-thumb]:box-border [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2",
+  "[&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-brand-500 [&::-moz-range-thumb]:shadow-none",
+].join(" ");
+
+export const PRICE_RANGE_TRACK_IDLE_CLASS =
+  "pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-brand-500/25";
+
+export const PRICE_RANGE_TRACK_ACTIVE_CLASS =
+  "pointer-events-none absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-brand-500";
+
+export const PRICE_RANGE_THUMB_RADIUS_PX = 10;
+
+/**
+ * Pasek „zakresu” między kółkami: od prawej krawędzi lewego thumb do lewej krawędzi prawego,
+ * zgodnie z `calc` na szerokości wewnętrznej (bez brązowego „wystającego” poza kropki).
+ */
+export function priceRangeActiveTrackStyle(args: {
+  localMin: number;
+  localMax: number;
+  sliderMin: number;
+  sliderMax: number;
+}): { left: string; right: string } {
+  const { localMin, localMax, sliderMin, sliderMax } = args;
+  const span = sliderMax - sliderMin;
+  const r = PRICE_RANGE_THUMB_RADIUS_PX;
+  if (span <= 0) {
+    return { left: `${r}px`, right: `${r}px` };
+  }
+  const f1 = (localMin - sliderMin) / span;
+  const f2 = (localMax - sliderMin) / span;
+  return {
+    left: `calc(${r}px + (100% - ${2 * r}px) * ${f1})`,
+    right: `calc(${r}px + (100% - ${2 * r}px) * ${1 - f2})`,
+  };
+}
+
+/**
  * Czyści wyłącznie filtry atrybutów (rozmiar, materiał, wykończenie, LED, cena).
  * **Nie zmienia** zakresu listingu: `category` (Medusa) i `pill` (np. Cenniki / Wszystkie)
  * zostają — żeby „Wyczyść” nie rozszerzało katalogu poza wybraną sekcję ani nie

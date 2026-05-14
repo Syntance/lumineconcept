@@ -3,14 +3,12 @@ import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 import { HeaderMobileToggle } from "./HeaderMobileToggle";
 import { HeaderIcons } from "./HeaderIcons";
+import { HeaderContactTrigger } from "./HeaderContactTrigger";
 import { SHOP_HUB_HREF, SHOP_NAV_DROPDOWN } from "./shop-nav";
 
 const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Tablice z logo" }] as const;
 
-const NAV_RIGHT = [
-  { href: "/dlaczego-lumine", label: "O nas" },
-  { href: "/kontakt", label: "Kontakt" },
-] as const;
+const NAV_RIGHT_LINKS = [{ href: "/dlaczego-lumine", label: "O nas" }] as const;
 
 /** Menu mobilne: Sklep z podlinkami + pozostałe linki. */
 const HEADER_MOBILE_ITEMS = [
@@ -21,7 +19,8 @@ const HEADER_MOBILE_ITEMS = [
     sub: SHOP_NAV_DROPDOWN,
   },
   ...NAV_LEFT.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
-  ...NAV_RIGHT.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
+  ...NAV_RIGHT_LINKS.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
+  { kind: "contact" as const, label: "Kontakt" },
 ];
 
 /** Jedna stała klasy (14px × 1.1) — ta sama w SSR i kliencie; unika hydratacji przy mieszanym cache .next. */
@@ -31,7 +30,7 @@ const NAV_LINK_CLASS =
 /**
  * Header = RSC. Interaktywne części są dwoma małymi „island":
  *   - `HeaderMobileToggle` (hamburger + drawer),
- *   - `HeaderIcons` (search + konto + koszyk z badge).
+ *   - `HeaderIcons` (search + koszyk z badge).
  * Reszta headera (logo, linki desktopowe) renderowana na serwerze —
  * brak niepotrzebnej hydratacji na każdej stronie.
  */
@@ -104,11 +103,12 @@ export function Header() {
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:justify-start lg:gap-8 lg:pl-[calc(101.75px+5rem)]">
           <nav className="hidden shrink-0 lg:flex items-center gap-8" aria-label="Nawigacja dodatkowa">
-            {NAV_RIGHT.map((link) => (
+            {NAV_RIGHT_LINKS.map((link) => (
               <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
                 {link.label}
               </Link>
             ))}
+            <HeaderContactTrigger className={NAV_LINK_CLASS} />
           </nav>
           <HeaderIcons />
         </div>

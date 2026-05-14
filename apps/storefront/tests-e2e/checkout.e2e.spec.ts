@@ -92,9 +92,8 @@ test.describe("Checkout — happy path", () => {
     await expect(submit).toBeEnabled();
     await submit.click();
 
-    // Po `completeCart` storefront przerzuca na /checkout/sukces albo /konto
-    // w zależności od konfiguracji — akceptujemy obie wartości.
-    await page.waitForURL(/\/checkout\/(sukces|success|dziekujemy)|\/konto\/zamowienia/i, {
+    // Po `completeCart` storefront kieruje na stronę potwierdzenia zamówienia.
+    await page.waitForURL(/\/checkout\/(sukces|success|dziekujemy|potwierdzenie)/i, {
       timeout: 60_000,
     });
 

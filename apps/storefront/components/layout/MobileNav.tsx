@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
-import { useEffect } from "react";
+import { X, ChevronLeft } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ContactCalloutPanel } from "./ContactCalloutPanel";
 
 export type MobileNavItem =
   | { kind: "link"; href: string; label: string }
+  | { kind: "contact"; label: string }
   | {
       kind: "shop";
       label: string;
@@ -20,6 +22,12 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
+  const [panel, setPanel] = useState<"menu" | "contact">("menu");
+
+  useEffect(() => {
+    if (!isOpen) setPanel("menu");
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -46,58 +54,82 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
         aria-hidden="true"
       />
       <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b border-brand-100">
-          <span className="font-display text-[22px] font-bold leading-none text-brand-800">
-            Menu
-          </span>
+        <div className="flex items-center justify-between border-b border-brand-100 p-4">
+          {panel === "contact" ? (
+            <button
+              type="button"
+              onClick={() => setPanel("menu")}
+              className="flex items-center gap-2 text-brand-800"
+              aria-label="Wróć do menu"
+            >
+              <ChevronLeft className="h-6 w-6 shrink-0" />
+              <span className="font-display text-[22px] font-bold leading-none">Kontakt</span>
+            </button>
+          ) : (
+            <span className="font-display text-[22px] font-bold leading-none text-brand-800">Menu</span>
+          )}
           <button
             type="button"
             onClick={onClose}
-            className="p-2 -mr-2 text-brand-800"
+            className="-mr-2 p-2 text-brand-800"
             aria-label="Zamknij menu"
           >
             <X className="h-[22px] w-[22px]" />
           </button>
         </div>
         <nav className="p-4" aria-label="Menu mobilne">
-          <ul className="space-y-1">
-            {items.map((entry) =>
-              entry.kind === "link" ? (
-                <li key={entry.href}>
-                  <Link
-                    href={entry.href}
-                    onClick={onClose}
-                    className="block rounded-lg px-4 py-3 text-[17.6px] font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
-                  >
-                    {entry.label}
-                  </Link>
-                </li>
-              ) : (
-                <li key={entry.href} className="rounded-lg">
-                  <Link
-                    href={entry.href}
-                    onClick={onClose}
-                    className="block rounded-lg px-4 py-3 text-[17.6px] font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
-                  >
-                    {entry.label}
-                  </Link>
-                  <ul className="mt-0.5 space-y-0.5 border-l border-brand-100 pl-2 ml-4" role="list">
-                    {entry.sub.map((sub) => (
-                      <li key={sub.href}>
-                        <Link
-                          href={sub.href}
-                          onClick={onClose}
-                          className="block rounded-lg px-4 py-2.5 text-[16.5px] text-brand-600 hover:bg-brand-50 hover:text-brand-900 transition-colors"
-                        >
-                          {sub.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ),
-            )}
-          </ul>
+          {panel === "contact" ? (
+            <ContactCalloutPanel onNavigate={onClose} />
+          ) : (
+            <ul className="space-y-1">
+              {items.map((entry) =>
+                entry.kind === "link" ? (
+                  <li key={entry.href}>
+                    <Link
+                      href={entry.href}
+                      onClick={onClose}
+                      className="block rounded-lg px-4 py-3 text-[17.6px] font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                    >
+                      {entry.label}
+                    </Link>
+                  </li>
+                ) : entry.kind === "contact" ? (
+                  <li key="contact">
+                    <button
+                      type="button"
+                      onClick={() => setPanel("contact")}
+                      className="w-full rounded-lg px-4 py-3 text-left text-[17.6px] font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                    >
+                      {entry.label}
+                    </button>
+                  </li>
+                ) : (
+                  <li key={entry.href} className="rounded-lg">
+                    <Link
+                      href={entry.href}
+                      onClick={onClose}
+                      className="block rounded-lg px-4 py-3 text-[17.6px] font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                    >
+                      {entry.label}
+                    </Link>
+                    <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-brand-100 pl-2" role="list">
+                      {entry.sub.map((sub) => (
+                        <li key={sub.href}>
+                          <Link
+                            href={sub.href}
+                            onClick={onClose}
+                            className="block rounded-lg px-4 py-2.5 text-[16.5px] text-brand-600 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                          >
+                            {sub.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
         </nav>
       </div>
     </div>

@@ -21,8 +21,8 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps)
         Dziękujemy za zamówienie!
       </h1>
       <p className="mx-auto mt-4 max-w-md text-brand-600">
-        Twoje zamówienie zostało przyjęte. Potwierdzenie zostanie wysłane na podany
-        adres email. Możesz śledzić status zamówienia w swoim panelu klienta.
+        Twoje zamówienie zostało przyjęte. Szczegóły i potwierdzenie prześlemy na podany
+        adres e-mail.
       </p>
 
       {(orderId || displayId) && (

@@ -1,8 +1,7 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
 
 /**
- * Zdjęcia realizacji dla **jednej podstrony** sklepu.
- * W edytorze jest wyłącznie lista obrazków — bez opisów, bez dodatkowych pól.
+ * Zdjęcia realizacji dla /sklep/logo-3d (jedyny outlet na froncie).
  */
 export const realizationGallery = defineType({
   name: "realizationGallery",
