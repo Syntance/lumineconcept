@@ -60,22 +60,27 @@ export default async function TablicaZLogoPage() {
 
 function HeroSection() {
   return (
-    <section className="relative isolate w-full overflow-hidden bg-brand-900 text-white">
-      {/* Zdjęcie ustawia wysokość sekcji — proporcje 1024×384 (8:3) */}
+    <section
+      className="relative isolate min-h-48 w-full overflow-hidden bg-brand-900 text-white"
+      style={{
+        height:
+          "calc(100svh - var(--shop-chrome-h) - max(1.25rem, env(safe-area-inset-bottom, 0px)))",
+      }}
+    >
+      {/* Grafika: wypełnia sekcję, dopasowanie do wysokości okna z odstępem od dołu (wzór jak home Hero). */}
       <Image
         src="/images/categories/logo-hero-bg.png"
         alt=""
-        width={1024}
-        height={384}
+        fill
         priority
         sizes="100vw"
-        className="w-full object-cover"
+        className="object-cover object-center"
       />
 
-      {/* Treść — wszystkie rozmiary skalują się z szerokością (= 100vw = szerokość hero 8:3) */}
+      {/* Breadcrumbs u góry; nagłówek i CTA wyśrodkowane w pozostałej przestrzeni pionowej */}
       <div
         className="absolute inset-0 z-10 flex flex-col"
-        style={{ padding: "2vw 3vw 2vw" }}
+        style={{ padding: "2vw 3vw max(2vw, env(safe-area-inset-bottom, 0px))" }}
       >
         <div className="w-full shrink-0" style={{ fontSize: "clamp(0.5rem, 1vw, 0.8rem)" }}>
           <Breadcrumbs
@@ -88,10 +93,7 @@ function HeroSection() {
           />
         </div>
 
-        <div
-          className="flex flex-1 flex-col items-center"
-          style={{ paddingTop: "clamp(0.5rem, 5vw, 4rem)" }}
-        >
+        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center">
           <div className="text-center">
             <h1
               className="font-binerka uppercase tracking-[0.06em] text-white"
@@ -150,14 +152,19 @@ function CustomQuoteSection() {
           id="formularz"
           className="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-x-20 xl:gap-x-24"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- PNG z alfą: bez optymalizacji Next (ostrzejsza maska). */}
-          <img
-            src="/images/categories/logo-kategoria-beauty-sisters.png"
-            alt="Tablica z logo Beauty Sisters — przykładowa realizacja"
-            width={693}
-            height={915}
-            className="relative z-2 h-auto w-full max-lg:mx-auto max-lg:max-w-md lg:sticky lg:top-24"
-          />
+          {/* Lewa kolumna: zdjęcie na środku; na lg wysokość jak okno minus sticky + dolny odstęp (safe area) */}
+          <div
+            className="relative z-2 flex w-full justify-center max-lg:mx-auto max-lg:max-w-md lg:sticky lg:top-24 lg:self-start lg:min-h-[calc(100svh-6rem-max(1.25rem,env(safe-area-inset-bottom,0px)))] lg:max-h-[calc(100svh-6rem-max(1.25rem,env(safe-area-inset-bottom,0px)))] lg:items-center lg:py-0"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- PNG z alfą: bez optymalizacji Next (ostrzejsza maska). */}
+            <img
+              src="/images/categories/logo-kategoria-beauty-sisters.png"
+              alt="Tablica z logo Beauty Sisters — przykładowa realizacja"
+              width={693}
+              height={915}
+              className="h-auto w-full max-h-[min(85svh,720px)] object-contain object-center lg:max-h-full lg:w-auto lg:max-w-[min(100%,42vw)]"
+            />
+          </div>
 
           <div className="relative z-2 space-y-6">
             <QuoteTitleBandMeasure>

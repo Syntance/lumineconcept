@@ -26,7 +26,7 @@ function RealizationTile({ item }: { item: RealizationPhoto }) {
         width={w}
         height={h}
         sizes="(max-width: 1024px) 50vw, 25vw"
-        className="h-auto w-full max-w-full"
+        className="h-auto w-full max-w-full object-cover object-center"
         placeholder={item.image.asset.metadata?.lqip ? "blur" : "empty"}
         blurDataURL={item.image.asset.metadata?.lqip}
       />
