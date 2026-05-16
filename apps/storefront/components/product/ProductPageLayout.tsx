@@ -419,7 +419,7 @@ async function CrossSellSection({
                 thumbnail={p.thumbnail ?? (p.images as unknown as Array<{ url: string }> | undefined)?.[0]?.url ?? null}
                 price={extractPrice(p.variants?.[0], p.metadata as Record<string, unknown> | undefined)}
                 href={`${basePath}/${p.handle}`}
-                description={sanitizeProductCardDescriptionHtml(p.description)}
+                hideMaterialRow
                 variantId={fv?.id}
                 productId={p.id}
                 productMetadata={
