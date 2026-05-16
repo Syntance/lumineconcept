@@ -315,7 +315,7 @@ export function TablicaZLogoFormClient() {
       </div>
 
       <p className="text-xs text-brand-500">
-        Czas realizacji zamówienia to około 10 dni lub 2–3 dni z opcją ekspres.
+        Czas realizacji zamówienia to około 7-10 dni roboczych lub 2–3 dni z opcją ekspres.
       </p>
 
       {status === "error" && (
