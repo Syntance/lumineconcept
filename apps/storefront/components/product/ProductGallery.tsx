@@ -2,8 +2,6 @@
 
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
-import { cloudinaryLoader } from "@/lib/cloudinary/utils";
-import { CloudinaryImage } from "../common/CloudinaryImage";
 
 import {
   PRODUCT_GALLERY_MAX_WIDTH_STYLE,
@@ -28,6 +26,16 @@ const GALLERY_MAX_WIDTH_DESKTOP = PRODUCT_GALLERY_MAX_WIDTH_STYLE;
  */
 const GALLERY_MAX_WIDTH_MULTI = "calc((100dvh - 5.5rem) * 0.71 + 6rem)";
 
+function medusaImageUnoptimized(src: string): boolean {
+  if (!src.startsWith("http")) return false;
+  try {
+    const h = new URL(src).hostname;
+    return h === "localhost" || h === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
 function GalleryMainImage({
   url,
   alt,
@@ -37,27 +45,8 @@ function GalleryMainImage({
   alt: string;
   priority: boolean;
 }) {
-  const isExternal = url.startsWith("http");
-  const isLocal = isExternal && new URL(url).hostname === "localhost";
-
-  if (isExternal) {
-    return (
-      <Image
-        src={url}
-        alt={alt}
-        fill
-        priority={priority}
-        loading={priority ? undefined : "lazy"}
-        className="object-cover object-center"
-        sizes="(max-width: 1024px) 100vw, (max-width: 1920px) 50vw, 1120px"
-        unoptimized={isLocal}
-      />
-    );
-  }
-
   return (
     <Image
-      loader={cloudinaryLoader}
       src={url}
       alt={alt}
       fill
@@ -65,6 +54,7 @@ function GalleryMainImage({
       loading={priority ? undefined : "lazy"}
       className="object-cover object-center"
       sizes="(max-width: 1024px) 100vw, (max-width: 1920px) 50vw, 1120px"
+      unoptimized={medusaImageUnoptimized(url)}
     />
   );
 }
@@ -256,12 +246,13 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 aria-selected={index === selectedIndex}
                 aria-label={`Zdjęcie ${index + 1} z ${images.length}`}
               >
-                <CloudinaryImage
-                  publicId={image.url}
+                <Image
+                  src={image.url}
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
-                  width={144}
-                  height={192}
+                  fill
+                  sizes="(max-width: 1024px) 3.5rem, 8.25rem"
                   className="object-cover"
+                  unoptimized={medusaImageUnoptimized(image.url)}
                 />
               </button>
             ))}

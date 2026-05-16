@@ -231,7 +231,7 @@ function mapPricesForCreate(prices: AdminPrice[] | undefined): Array<{
 }
 
 /**
- * Zamienia localhost w configuratorBaseImage na pierwszy obraz z docelowego produktu (Cloudinary).
+ * Zamienia localhost w configuratorBaseImage na pierwszy obraz z docelowego produktu.
  */
 function transformMetadata(
   meta: Record<string, unknown> | null | undefined,

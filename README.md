@@ -103,7 +103,6 @@ pnpm dev
 | **PayPo** | Płatności odroczone (30 dni) | `PAYPO_*` w `.env` |
 | **InPost** | Paczkomaty + kurier | `INPOST_*` w `.env` |
 | **DPD** | Kurier backup | `DPD_*` w `.env` |
-| **Cloudinary** | CDN zdjęć, optymalizacja | `CLOUDINARY_*` w `.env` |
 | **Meilisearch** | Instant search + filtry | `MEILISEARCH_*` w `.env` |
 | **Sanity.io** | CMS (blog, landing pages) | `SANITY_*` w `.env` |
 | **PostHog** | Analityka behawioralna (eventy, funnele, session recordings, heatmapy) | `POSTHOG_*` w `.env` |
@@ -128,7 +127,7 @@ pnpm dev
 | Baza danych | Neon PostgreSQL |
 | Cache / Kolejki | Upstash Redis |
 | CMS | Sanity.io (cloud) |
-| Zdjęcia | Cloudinary CDN |
+| Zdjęcia produktów | Medusa (`static/` + URL z backendu) |
 | Wyszukiwarka | Meilisearch Cloud |
 
 ## Komendy

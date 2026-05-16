@@ -59,6 +59,9 @@ importers:
       '@medusajs/event-bus-redis':
         specifier: ^2.13.6
         version: 2.13.6(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1))(zod@4.3.6))
+      '@medusajs/file-local':
+        specifier: ^2.13.4
+        version: 2.13.4(@medusajs/framework@2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1))(zod@4.3.6))
       '@medusajs/framework':
         specifier: ^2.13.4
         version: 2.13.4(@medusajs/cli@2.13.4(@types/node@25.5.0))(@types/node@25.5.0)(ioredis@5.10.1)(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1))(zod@4.3.6)
@@ -86,9 +89,6 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.7
         version: 18.3.7(@types/react@18.3.28)
-      cloudinary:
-        specifier: ^2.9.0
-        version: 2.9.0
       ioredis:
         specifier: ^5.10.1
         version: 5.10.1
@@ -7479,10 +7479,6 @@ packages:
   clone@2.1.2:
     resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
     engines: {node: '>=0.8'}
-
-  cloudinary@2.9.0:
-    resolution: {integrity: sha512-F3iKMOy4y0zy0bi5JBp94SC7HY7i/ImfTPSUV07iJmRzH1Iz8WavFfOlJTR1zvYM/xKGoiGZ3my/zy64In0IQQ==}
-    engines: {node: '>=9'}
 
   clsx@1.2.1:
     resolution: {integrity: sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==}
@@ -22596,10 +22592,6 @@ snapshots:
   clone@1.0.4: {}
 
   clone@2.1.2: {}
-
-  cloudinary@2.9.0:
-    dependencies:
-      lodash: 4.17.23
 
   clsx@1.2.1: {}
 

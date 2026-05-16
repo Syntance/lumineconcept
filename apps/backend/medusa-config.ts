@@ -323,13 +323,10 @@ export default defineConfig({
       options: {
         providers: [
           {
-            resolve: "./src/modules/cloudinary-file",
-            id: "cloudinary",
+            resolve: "@medusajs/file-local",
+            id: "local",
             options: {
-              cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-              apiKey: process.env.CLOUDINARY_API_KEY,
-              apiSecret: process.env.CLOUDINARY_API_SECRET,
-              folder: "lumine-products",
+              backend_url: `${BACKEND_URL.replace(/\/$/, "")}/static`,
             },
           },
         ],

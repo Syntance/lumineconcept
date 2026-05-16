@@ -21,6 +21,11 @@ const medusaUrl = new URL(MEDUSA_BACKEND_URL);
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
+      /**
+       * Istniejące produkty w Medusie mogą nadal wskazywać na URL-e z
+       * historycznego uploadu przez Cloudinary — next/image wymaga jawnego hosta.
+       * Nowe pliki idą na backend (`static/`); po migracji zdjęć można tu usunąć.
+       */
       {
         protocol: "https",
         hostname: "res.cloudinary.com",
