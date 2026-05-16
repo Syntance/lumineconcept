@@ -60,27 +60,22 @@ export default async function TablicaZLogoPage() {
 
 function HeroSection() {
   return (
-    <section
-      className="relative isolate min-h-48 w-full overflow-hidden bg-brand-900 text-white"
-      style={{
-        height:
-          "calc(100svh - var(--shop-chrome-h) - max(1.25rem, env(safe-area-inset-bottom, 0px)))",
-      }}
-    >
-      {/* Grafika: wypełnia sekcję, dopasowanie do wysokości okna z odstępem od dołu (wzór jak home Hero). */}
+    <section className="relative isolate w-full overflow-hidden bg-brand-900 text-white">
+      {/* Zdjęcie ustawia wysokość sekcji — proporcje 1024×384 (8:3) */}
       <Image
         src="/images/categories/logo-hero-bg.png"
         alt=""
-        fill
+        width={1024}
+        height={384}
         priority
         sizes="100vw"
-        className="object-cover object-center"
+        className="w-full object-cover"
       />
 
-      {/* Breadcrumbs u góry; nagłówek i CTA wyśrodkowane w pozostałej przestrzeni pionowej */}
+      {/* Treść — wszystkie rozmiary skalują się z szerokością (= 100vw = szerokość hero 8:3) */}
       <div
         className="absolute inset-0 z-10 flex flex-col"
-        style={{ padding: "2vw 3vw max(2vw, env(safe-area-inset-bottom, 0px))" }}
+        style={{ padding: "2vw 3vw 2vw" }}
       >
         <div className="w-full shrink-0" style={{ fontSize: "clamp(0.5rem, 1vw, 0.8rem)" }}>
           <Breadcrumbs
@@ -93,7 +88,10 @@ function HeroSection() {
           />
         </div>
 
-        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center">
+        <div
+          className="flex flex-1 flex-col items-center"
+          style={{ paddingTop: "clamp(0.5rem, 5vw, 4rem)" }}
+        >
           <div className="text-center">
             <h1
               className="font-binerka uppercase tracking-[0.06em] text-white"
@@ -152,9 +150,9 @@ function CustomQuoteSection() {
           id="formularz"
           className="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-x-20 xl:gap-x-24"
         >
-          {/* Lewa kolumna: zdjęcie na środku; na lg wysokość jak okno minus sticky + dolny odstęp (safe area) */}
+          {/* Lewa kolumna: sticky, wysokość dopasowana do okna (z padem od dołu), zdjęcie wyśrodkowane i skalowane (object-contain). */}
           <div
-            className="relative z-2 flex w-full justify-center max-lg:mx-auto max-lg:max-w-md lg:sticky lg:top-24 lg:self-start lg:min-h-[calc(100svh-6rem-max(1.25rem,env(safe-area-inset-bottom,0px)))] lg:max-h-[calc(100svh-6rem-max(1.25rem,env(safe-area-inset-bottom,0px)))] lg:items-center lg:py-0"
+            className="relative z-2 flex w-full max-lg:mx-auto max-lg:max-w-md max-lg:justify-center lg:sticky lg:top-[calc(var(--shop-chrome-h)+var(--product-gallery-sticky-gap))] lg:h-[calc(100svh-var(--shop-chrome-h)-var(--product-gallery-sticky-gap)-2rem-env(safe-area-inset-bottom,0px))] lg:min-h-0 lg:items-center lg:justify-center lg:self-start"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- PNG z alfą: bez optymalizacji Next (ostrzejsza maska). */}
             <img
@@ -162,7 +160,7 @@ function CustomQuoteSection() {
               alt="Tablica z logo Beauty Sisters — przykładowa realizacja"
               width={693}
               height={915}
-              className="h-auto w-full max-h-[min(85svh,720px)] object-contain object-center lg:max-h-full lg:w-auto lg:max-w-[min(100%,42vw)]"
+              className="h-auto max-h-[min(55svh,915px)] w-full max-w-full object-contain object-center lg:max-h-full lg:w-auto lg:max-w-full"
             />
           </div>
 
