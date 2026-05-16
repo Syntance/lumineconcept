@@ -148,7 +148,7 @@ function CustomQuoteSection() {
       <div className="relative z-1 mx-auto max-w-6xl px-4 pt-16 lg:pt-24">
         <div
           id="formularz"
-          className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-x-14"
+          className="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-x-20 xl:gap-x-24"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- PNG z alfą: bez optymalizacji Next (ostrzejsza maska). */}
           <img

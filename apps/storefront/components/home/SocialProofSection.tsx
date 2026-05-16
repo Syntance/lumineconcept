@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Star, Gamepad2, Scissors, Zap, Palette } from "lucide-react";
+import { Gamepad2, Scissors, Zap, Palette } from "lucide-react";
 
 const UVP_ITEMS = [
   {
@@ -26,7 +25,7 @@ const UVP_ITEMS = [
 
 export function SocialProofSection() {
   return (
-    <section className="pt-10 pb-16 lg:pt-10 lg:pb-24">
+    <section className="py-12 lg:py-16">
       <div className="container mx-auto px-4">
         {/* 4 UVP ikony */}
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4 max-w-3xl mx-auto">
@@ -46,34 +45,6 @@ export function SocialProofSection() {
               </div>
             );
           })}
-        </div>
-
-        {/* Opinia klientki */}
-        <blockquote className="mx-auto mt-20 max-w-2xl text-center">
-          <div className="flex justify-center gap-0.5 mb-5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="h-5 w-5 fill-accent text-accent" />
-            ))}
-          </div>
-          <p className="font-display text-[1.5rem] text-brand-800 leading-relaxed lg:text-[1.75rem]">
-            &ldquo;Zamówiłam tablicę z logo — klientki nie przestają robić zdjęć&rdquo;
-          </p>
-          <footer className="mt-5">
-            <p className="text-base font-medium uppercase tracking-[0.15em] text-brand-700">
-              Ania
-            </p>
-            <p className="text-base text-brand-500">salon fryzjerski, Kraków</p>
-          </footer>
-        </blockquote>
-
-        {/* CTA */}
-        <div className="mt-12 text-center">
-          <Link
-            href="/dlaczego-lumine"
-            className="text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
-          >
-            Zobacz opinie i porównanie &rarr;
-          </Link>
         </div>
       </div>
     </section>
