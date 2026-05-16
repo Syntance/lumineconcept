@@ -201,14 +201,7 @@ export function TablicaZLogoFormClient() {
             className="sr-only"
           />
         </div>
-        {fileError ? (
-          <p className="mt-2 text-xs text-red-600">{fileError}</p>
-        ) : (
-          <p className="mt-2 text-xs text-brand-500">
-            Preferowany SVG. Jeśli nie posiadasz SVG, oferujemy usługę wektorowania
-            zdjęcia. Maks. rozmiar pliku: {MAX_ATTACHMENT_LABEL}.
-          </p>
-        )}
+        {fileError ? <p className="mt-2 text-xs text-red-600">{fileError}</p> : null}
       </div>
 
       {/* Rozmiar / Kształt */}
