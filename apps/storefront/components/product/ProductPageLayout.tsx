@@ -416,7 +416,7 @@ async function CrossSellSection({
                 key={p.id}
                 handle={p.handle ?? ""}
                 title={p.title}
-                thumbnail={p.thumbnail ?? null}
+                thumbnail={p.thumbnail ?? (p.images as unknown as Array<{ url: string }> | undefined)?.[0]?.url ?? null}
                 price={extractPrice(p.variants?.[0], p.metadata as Record<string, unknown> | undefined)}
                 href={`${basePath}/${p.handle}`}
                 description={sanitizeProductCardDescriptionHtml(p.description)}

@@ -16,7 +16,6 @@ import {
   PRODUCT_IMAGE_ASPECT_CLASS,
 } from "@/lib/products/product-image-aspect";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
-import { CloudinaryImage } from "../common/CloudinaryImage";
 import { PriceDisplay } from "./PriceDisplay";
 
 export type ProductCardFrameVariant = "square" | "arch-up" | "arch-down";
@@ -133,12 +132,14 @@ export function ProductCard({
       >
         {thumbnail ? (
           <>
-            <CloudinaryImage
-              publicId={thumbnail}
+            <Image
+              src={thumbnail}
               alt={title}
               width={imageWidth}
               height={imageHeight}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              unoptimized={thumbnail.startsWith("http://localhost")}
             />
             <Image
               src="/images/watermark.png"
