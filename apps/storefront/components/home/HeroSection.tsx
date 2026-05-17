@@ -9,8 +9,8 @@ import { HeroShadowPanel, heroPanelScale } from "./hero-shadow-panel";
  *   2. Obszar grafiki: `flex-1 min-h-0` — rozciąga się w pionie i poziomie; zdjęcie object-cover.
  *   3. Panel z napisami i CTA = „kanwa projektowa” o stałych proporcjach 1008×1200,
  *      będąca **container query container** (`container-type: inline-size`).
- *      Wszystko wewnątrz (cień, CONCEPT, podtytuł, body, padding, CTA) skaluje się przez
- *      `cqw` względem **rzeczywistej szerokości kanwy** — odporne na zoom przeglądarki,
+ *      Treść (CONCEPT, podtytuł, body, padding, CTA) skaluje się przez `cqw`
+ *      względem **rzeczywistej szerokości kanwy** — odporne na zoom przeglądarki,
  *      DPR, kontekst rodzica, max-width / clampy. Zmiana szerokości panelu = zmiana
  *      całej zawartości w identycznych proporcjach.
  *   4. Sama szerokość kanwy zależy od viewportu (`min(vmin, vw, rem)`),
@@ -31,7 +31,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[50%_42%]"
+          className="object-cover object-[42%_center]"
         />
 
         <div className="pointer-events-none absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
