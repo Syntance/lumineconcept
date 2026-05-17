@@ -26,7 +26,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
       {/* Grafika wypełnia elastyczny obszar nad karuzelą — pełna szerokość i dostępna wysokość viewportu. */}
       <div className="relative min-h-0 w-full flex-1 overflow-hidden">
         <Image
-          src="/images/hero.png"
+          src="/images/hero-home-interior.png"
           alt=""
           fill
           priority
