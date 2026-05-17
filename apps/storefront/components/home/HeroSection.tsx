@@ -26,6 +26,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           height={HERO_BG_HEIGHT}
           priority
           sizes="100vw"
+          unoptimized
           className="block h-auto w-full select-none"
         />
 
