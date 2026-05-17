@@ -51,7 +51,7 @@
     }
   }
 
-  /* Domyślna wartość, gdyby HeroSection renderował się poza #main-content (np. podgląd). */
+  /* Domyślna wartość, gdyby hero lub inna treść renderowała się poza #main-content (np. podgląd). */
   :root {
     --shop-chrome-h: calc(2.35rem + 4rem + 1px);
   }
@@ -68,7 +68,7 @@
     @apply bg-background text-foreground;
   }
 
-  /* Wysokość „chrome” nad treścią main — odejmowana od 100svh w HeroSection (hero + karuzela mieści się w oknie). */
+  /* Wysokość „chrome” nad treścią main — używana m.in. do sticky galerii produktu i scroll-padding. */
   #main-content {
     --shop-chrome-h: calc(2.35rem + var(--header-sticky-height) + 1px);
   }

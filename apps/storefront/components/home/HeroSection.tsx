@@ -2,39 +2,38 @@ import Image from "next/image";
 import Link from "next/link";
 import { HeroShadowPanel, heroPanelScale } from "./hero-shadow-panel";
 
+/** Wymiary pliku `public/images/hero-main-wall.png` — przy podmianie grafiki zaktualizuj. */
+const HERO_BG_WIDTH = 1024;
+const HERO_BG_HEIGHT = 384;
+
 /**
- * Układ „nad foldem”:
- *   1. Sekcja: `100svh − (announcement + header [+ referral])` dzięki `--shop-chrome-h`
- *      na `#main-content` — hero + karuzela mieści się w jednym kadrze pod paskami.
- *   2. Obszar grafiki: `flex-1 min-h-0` — rozciąga się w pionie i poziomie; zdjęcie object-cover.
- *   3. Panel z napisami i CTA = „kanwa projektowa” o stałych proporcjach 1008×1200,
- *      będąca **container query container** (`container-type: inline-size`).
- *      Treść (CONCEPT, podtytuł, body, padding, CTA) skaluje się przez `cqw`
- *      względem **rzeczywistej szerokości kanwy** — odporne na zoom przeglądarki,
- *      DPR, kontekst rodzica, max-width / clampy. Zmiana szerokości panelu = zmiana
- *      całej zawartości w identycznych proporcjach.
- *   4. Sama szerokość kanwy zależy od viewportu (`min(vmin, vw, rem)`),
- *      ale to nie wpływa na proporcje WEWNĘTRZNE.
+ * Hero + karuzela pod spodem:
+ *   - Wysokość bloku grafiki = naturalny aspect ratio zdjęcia (`width`/`height` + `w-full h-auto`),
+ *     nie `100svh`.
+ *   - Treść w HeroShadowPanel skaluje się przez `cqw` jak wcześniej.
  */
 
 export function HeroSection({ children }: { children?: React.ReactNode }) {
   const scale = heroPanelScale;
 
   return (
-    <section className="relative flex h-[calc(100svh-var(--shop-chrome-h))] min-h-0 w-full flex-col overflow-x-hidden">
-      {/* Wysokość = widok minus announcement + sticky header (--shop-chrome-h), żeby hero + karuzela mieściły się „nad foldem”. */}
-      {/* Grafika wypełnia elastyczny obszar nad karuzelą — pełna szerokość i dostępna wysokość viewportu. */}
-      <div className="relative min-h-0 w-full flex-1 overflow-hidden">
+    <section className="relative flex w-full flex-col overflow-x-hidden">
+      <div className="relative w-full">
         <Image
-          src="/images/hero-home-interior.png"
+          src="/images/hero-main-wall.png"
           alt=""
-          fill
+          width={HERO_BG_WIDTH}
+          height={HERO_BG_HEIGHT}
           priority
           sizes="100vw"
-          className="object-cover object-[42%_center]"
+          className="block h-auto w-full select-none"
         />
 
-        <div className="pointer-events-none absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+        {/* Lekki gradient od lewej pod biały tekst — bez backdrop-blur (ostre zdjęcie). */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-linear-to-r from-black/45 via-black/15 to-transparent"
+          aria-hidden
+        />
 
         {/* Treść nad obrazem */}
         <div className="absolute inset-0 z-10 flex">
@@ -115,7 +114,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Karuzela — stała wysokość treści, zawsze widoczna pod hero w ramach 100svh */}
+      {/* Karuzela — pod grafiką, bez wymuszania pełnej wysokości viewportu */}
       {children && (
         <div className="relative z-20 w-full shrink-0">{children}</div>
       )}
