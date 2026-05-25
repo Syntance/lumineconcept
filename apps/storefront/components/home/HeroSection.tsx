@@ -10,7 +10,7 @@ const HERO_BG_HEIGHT = 384;
  * Hero + karuzela pod spodem:
  *   - Wysokość bloku grafiki = naturalny aspect ratio zdjęcia (`width`/`height` + `w-full h-auto`),
  *     nie `100svh`.
- *   - Treść w HeroShadowPanel skaluje się przez `cqw` jak wcześniej.
+ * - Obraz ustala prostokąt hero; nakładka i tekst używają `cqw` względem tego prostokąta.
  */
 
 export function HeroSection({ children }: { children?: React.ReactNode }) {
@@ -18,7 +18,8 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
 
   return (
     <section className="relative flex w-full flex-col overflow-x-hidden">
-      <div className="relative w-full">
+      {/* Kontener z inline-size pod `cqw` = szerokość obrazka; napisy są wprost w prostokącie zdjęcia */}
+      <div className="relative w-full isolation-isolate @container overflow-x-hidden">
         <Image
           src="/images/hero-main-wall.png"
           alt=""
@@ -36,10 +37,10 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           aria-hidden
         />
 
-        {/* Treść nad obrazem */}
-        <div className="absolute inset-0 z-10 flex">
+        {/* Treść: wyżej w kadrze; padding tylko w `cqw` względem prostokąta zdjęcia — skaluje 1:1 z grafiką hero */}
+        <div className="absolute inset-0 z-10 flex items-start pb-[3.24cqw] pr-[2.16cqw] pl-[30.5cqw] pt-[3.78cqw]">
           <HeroShadowPanel align="left">
-            <div className="flex w-full justify-center">
+            <div className="flex w-full justify-start">
               <div
                 className="grid w-max max-w-full grid-cols-1 justify-items-center"
                 style={{ rowGap: `calc(var(--cta-fs) * ${scale.gapCtaStack})` }}
