@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import {
+  HeroShadowPanel,
+  heroPanelScale,
+} from "@/components/home/hero-shadow-panel";
 
 import { SITE_URL } from "@/lib/utils";
 import { sanityClient } from "@/lib/sanity/client";
@@ -10,6 +14,11 @@ import type { RealizationPhoto, SanityImage } from "@/lib/sanity/types";
 import { TablicaZLogoFormClient } from "./client";
 import { QuoteTitleBandMeasure } from "./QuoteTitleBandMeasure";
 import { LogoBoardRealizations } from "./LogoBoardRealizations";
+
+/** Wymiary `public/images/categories/logo-hero-bg.png` — przy podmianie grafiki zaktualizuj. */
+const LOGO_HERO_BG_WIDTH = 1024;
+const LOGO_HERO_BG_HEIGHT = 384;
+
 
 export const metadata: Metadata = {
   title: "Tablice z logo — wycena indywidualna | Lumine Concept",
@@ -49,7 +58,7 @@ export default async function TablicaZLogoPage() {
   return (
     /* Jednolite tło kremowe — szczeliny subpikselowe nie przeświecają białym (#fff) z main/body. */
     <div className="bg-brand-50">
-      <HeroSection />
+      <LogoCategoryHeroSection />
       <CustomQuoteSection />
       <LogoBoardRealizations items={realizations} />
     </div>
@@ -58,72 +67,84 @@ export default async function TablicaZLogoPage() {
 
 /* ── Hero ───────────────────────────────────────────────────────── */
 
-function HeroSection() {
+function LogoCategoryHeroSection() {
+  const scale = heroPanelScale;
+
   return (
-    <section className="relative isolate w-full overflow-hidden bg-brand-900 text-white">
-      {/* Zdjęcie ustawia wysokość sekcji — proporcje 1024×384 (8:3) */}
-      <Image
-        src="/images/categories/logo-hero-bg.png"
-        alt=""
-        width={1024}
-        height={384}
-        priority
-        sizes="100vw"
-        className="w-full object-cover"
-      />
+    <section className="relative isolate w-full overflow-x-hidden bg-brand-900 text-white">
+      {/* Ten sam `@container` + ten sam zestaw `--cta-fs` / `HeroShadowPanel` co strona główna */}
+      <div className="relative w-full isolation-isolate @container overflow-x-hidden">
+        <Image
+          src="/images/categories/logo-hero-bg.png"
+          alt=""
+          width={LOGO_HERO_BG_WIDTH}
+          height={LOGO_HERO_BG_HEIGHT}
+          priority
+          sizes="100vw"
+          className="block h-auto w-full select-none"
+        />
 
-      {/* Treść — wszystkie rozmiary skalują się z szerokością (= 100vw = szerokość hero 8:3) */}
-      <div
-        className="absolute inset-0 z-10 flex flex-col"
-        style={{ padding: "2vw 3vw 2vw" }}
-      >
-        <div className="w-full shrink-0" style={{ fontSize: "clamp(0.5rem, 1vw, 0.8rem)" }}>
-          <Breadcrumbs
-            className="mb-0 text-[1em] [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white [&_ol]:text-[1em]"
-            items={[
-              { label: "Strona główna", href: "/" },
-              { label: "Sklep", href: "/sklep" },
-              { label: "Tablice z logo" },
-            ]}
-          />
-        </div>
+        {/* Okruszki: jak wcześniej `pl`/`pr` jak na HP; panel hero osobny `pl` w `cqw`. */}
+        <div className="absolute inset-0 z-10 flex flex-col pb-[3.24cqw] pr-[2.16cqw] pt-[3.78cqw]">
+          <div className="w-full shrink-0 pl-[2.16cqw]" style={{ fontSize: "1cqw" }}>
+            <Breadcrumbs
+              className="mb-0 text-[1em] [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white [&_ol]:text-[1em]"
+              items={[
+                { label: "Strona główna", href: "/" },
+                { label: "Sklep", href: "/sklep" },
+                { label: "Tablice z logo" },
+              ]}
+            />
+          </div>
 
-        <div
-          className="flex flex-1 flex-col items-center"
-          style={{ paddingTop: "clamp(0.5rem, 5vw, 4rem)" }}
-        >
-          <div className="text-center">
-            <h1
-              className="font-binerka uppercase tracking-[0.06em] text-white"
-              style={{ fontSize: "clamp(1rem, 4.7vw, 3.5rem)", lineHeight: 1.1 }}
-            >
-              Tablica z logo
-            </h1>
-            <p
-              className="mx-auto uppercase leading-relaxed text-white/80"
-              style={{
-                fontSize: "clamp(0.6rem, 1.6vw, 1rem)",
-                letterSpacing: "0.15em",
-                marginTop: "clamp(0.2rem, 0.7vw, 0.5rem)",
-                maxWidth: "50vw",
-              }}
-            >
-              Logo Twojej marki zrealizowane w postaci kreatywnej ozdobnej tablicy,
-              którą możesz zamieścić na ścianie
-            </p>
-            <div style={{ marginTop: "clamp(0.6rem, 2.2vw, 1.75rem)" }}>
-              <a
-                href="#formularz"
-                className="inline-flex items-center justify-center bg-white font-semibold uppercase tracking-[0.18em] text-brand-900 transition-colors hover:bg-brand-100"
-                style={{
-                  fontSize: "clamp(0.55rem, 1.2vw, 0.85rem)",
-                  padding: "0.9em 2.2em",
-                }}
-                aria-label="Przewiń do formularza — zamów tablicę z logo"
-              >
-                Uzyskaj wycenę
-              </a>
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-start pl-[10cqw]">
+            <HeroShadowPanel align="center">
+              <div className="flex flex-col items-center text-center">
+                <h1
+                  className="m-0 max-w-none font-binerka uppercase tracking-[0.06em] !font-normal !text-white"
+                  style={{
+                    fontSize: `calc(var(--cta-fs) * ${scale.title})`,
+                    lineHeight: 1,
+                    fontWeight: 400,
+                  }}
+                >
+                  Tablica z logo
+                </h1>
+                <p
+                  className="m-0 max-w-none font-gilroy font-light leading-tight tracking-[0.06em] !text-white/90"
+                  style={{
+                    fontSize: `calc(var(--cta-fs) * ${scale.body})`,
+                    marginTop: `calc(var(--cta-fs) * ${scale.gapAfterTitle})`,
+                    fontWeight: 300,
+                  }}
+                >
+                  Logo Twojej marki zrealizowane w postaci kreatywnej ozdobnej tablicy,
+                  którą możesz zamieścić na ścianie
+                </p>
+                <div
+                  style={{
+                    marginTop: `calc(var(--cta-fs) * ${scale.gapBeforeCta})`,
+                  }}
+                >
+                  <a
+                    href="#formularz"
+                    className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-none border-0 bg-white font-gilroy font-semibold uppercase tracking-[0.2em] !text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                    style={{
+                      fontSize: "var(--cta-fs)",
+                      lineHeight: 1.15,
+                      paddingLeft: `${scale.ctaPadX}em`,
+                      paddingRight: `${scale.ctaPadX}em`,
+                      paddingTop: `${scale.ctaPadY}em`,
+                      paddingBottom: `${scale.ctaPadY}em`,
+                      borderRadius: 0,
+                    }}
+                    aria-label="Przewiń do formularza — zamów tablicę z logo"
+                  >
+                    Uzyskaj wycenę
+                  </a>
+                </div>
+              </div>
+            </HeroShadowPanel>
           </div>
         </div>
       </div>

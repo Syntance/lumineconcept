@@ -5,8 +5,8 @@ import type { CSSProperties, ReactNode } from "react";
  * `cqw` w tym komponencie liczy się od kontenera `@container` przy obrazku w `HeroSection`
  * (wszystko skaluje liniowo z szerokością kadru grafiki, bez stałego capu rem/vmin).
  */
-/** Szerokość panelu jako ułamek szerokości hero (~62% szerokości zdjęcia). */
-const PANEL_WIDTH_PER_CENT = 62;
+/** Szerokość panelu jako ułamek szerokości hero (~62% szerokości zdjęcia); ta sama wartość co strona główna dla spójnej skali. */
+export const PANEL_WIDTH_PER_CENT = 62;
 
 /** Współczynniki skali względem `--cta-fs` — jedna baza dla napisów i CTA (`fontSize`/padding przycisku w `em`). */
 export const heroPanelScale = {
