@@ -1,17 +1,34 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import { Instagram } from "lucide-react";
 import { getSiteSettings } from "@/lib/sanity/client";
+import { heroPanelScale } from "@/components/home/hero-shadow-panel";
 import {
   homepageInstagramTilesFromSettings,
   type HomepageInstagramTile,
 } from "@/lib/homepage-instagram-tiles";
 
+
 const IG_PROFILE = "https://instagram.com/lumineconcept";
 
-/** Klasy CTA zsynchronizowane z poprzednią wersją sekcji (padding + typografia przycisku). */
+/** Wymiary `public/images/monia-branding-cta-bg.png` — przy podmianie zdjęcia zaktualizuj. */
+const BRANDING_BG_WIDTH = 1024;
+const BRANDING_BG_HEIGHT = 384;
+
+/** Przy szerokości kadru = BRANDING_BG_WIDTH px bazowy nagłówek ~40px (`cqw` jak hero HP). */
+const BRANDING_REF_HEAD_PX = 40;
+/** Jednolita korekta sekcji (np. −10 % dla copy + przycisku + stopki przy tym bannerze). */
+const BRANDING_SECTION_SCALE = 0.9;
+
+const BRANDING_LINE2_TO_LINE1 = 0.94; // druga linia odrobinę mniejsza niż pierwsza (jak na ref.)
+const BRANDING_BTN_TO_HEAD = 14.2 / 40;
+const BRANDING_BODY_TO_HEAD = 18 / 40; // ~ text-lg
+const BRANDING_MT_BLOCKS_TO_HEAD = 2.5 * 16 / 40; // ~ mt-10
+
+/** Klasy przycisku — `--banner-btn-fs` skalowane względem `--banner-fs` (bazowy rozmiar pierwszej linii). */
 const SHOP_CTA_CLASS =
-  "inline-flex items-center justify-start border px-10 py-3.5 text-[14.2px] font-medium uppercase tracking-[0.2em] transition-colors";
+  "inline-flex items-center justify-center whitespace-nowrap rounded-none border font-gilroy font-medium uppercase tracking-[0.2em] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
 const IG_GRID_SLOTS = 6;
 
@@ -62,6 +79,60 @@ function InstagramGrid({
   );
 }
 
+/** Treść nad zdjęciem — rozmiary z `var(--banner-fs)` z `cqw` względem kadru jak hero HP. */
+function BrandingBannerCopy() {
+  const scale = heroPanelScale;
+
+  return (
+    <div className="flex min-h-0 flex-col items-start justify-center px-[2.16cqw] pb-[min(6cqw,2.5rem)] pt-[min(12cqw,5rem)]">
+      {/* Szerokość = max napisów; druga linia i CTA wyśrodkowane w obrębie tej szpalty (jak przy pierwszej linii). */}
+      <div className="flex w-fit max-w-[min(90cqw,42rem)] flex-col items-center text-center">
+        <h2
+          className="m-0 text-center text-balance font-binerka font-medium uppercase leading-[1.1] tracking-[0.06em] text-brand-800"
+          style={{ fontSize: "var(--banner-fs)" }}
+        >
+          Gotowa na branding,
+        </h2>
+        <p
+          className="m-0 text-center text-balance font-gilroy font-light leading-snug text-brand-800"
+          style={{
+            fontSize: `calc(var(--banner-fs) * ${BRANDING_LINE2_TO_LINE1})`,
+            fontWeight: 300,
+            marginTop: 0,
+            letterSpacing: `calc(var(--banner-fs) * ${2 / BRANDING_REF_HEAD_PX})`,
+          }}
+        >
+          który wyróżni Twój salon?
+        </p>
+
+        <div
+          className="flex w-full justify-center"
+          style={{ marginTop: `calc(var(--banner-fs) * ${BRANDING_MT_BLOCKS_TO_HEAD})` }}
+        >
+          <Link
+            href="/sklep"
+            className={`${SHOP_CTA_CLASS} border-brand-800 bg-transparent text-brand-800 hover:bg-brand-800 hover:text-white`}
+            style={
+              {
+                ["--banner-btn-fs"]: `calc(var(--banner-fs) * ${BRANDING_BTN_TO_HEAD})`,
+                fontSize: "var(--banner-btn-fs)",
+                lineHeight: 1.15,
+                paddingLeft: `${scale.ctaPadX}em`,
+                paddingRight: `${scale.ctaPadX}em`,
+                paddingTop: `${scale.ctaPadY}em`,
+                paddingBottom: `${scale.ctaPadY}em`,
+                borderRadius: 0,
+              } as CSSProperties
+            }
+          >
+            Zobacz sklep &rarr;
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Footer CTA + sekcja „Jesteśmy na Instagramie”.
  * Kafelki IG z Sanity: Ustawienia strony → Social Media → „Instagram — kafelki na stronie głównej”.
@@ -72,62 +143,53 @@ export async function FooterCTA() {
 
   return (
     <>
-      <section id="footer-cta" className="relative isolate overflow-hidden">
-        {/* JPG ~1024px — na full width wart podmienić na ~1920px+; unoptimized = bez drugiej kompresji. */}
-        <Image
-          src="/images/monia-branding-cta-bg.png"
-          alt=""
-          fill
-          className="object-cover object-[80%_center] max-lg:object-[center_top]"
-          sizes="100vw"
-          unoptimized
-          priority={false}
-        />
+      <section id="footer-cta" className="relative isolate overflow-x-hidden">
+        {/* Ta sama idea co hero HP: szerokość zdjęcia = kontener dla `cqw`; treść na absolutnej nakładce. */}
+        <div className="relative w-full isolation-isolate @container overflow-x-hidden">
+          <Image
+            src="/images/monia-branding-cta-bg.png"
+            alt=""
+            width={BRANDING_BG_WIDTH}
+            height={BRANDING_BG_HEIGHT}
+            sizes="100vw"
+            unoptimized
+            priority={false}
+            className="block h-auto w-full select-none"
+          />
 
-        {/* Grid zamiast flex-a tylko od lg: — wiersz `auto` trzyma kontakt przy dolnej krawędzi sekcji na każdej szerokości. */}
-        <div className="relative z-10 grid min-h-[min(56vh,26rem)] w-full grid-rows-[1fr_auto] lg:min-h-[min(52vh,32rem)]">
-          <div className="container mx-auto flex min-h-0 w-full flex-col justify-center px-4 pb-10 pt-20 text-left lg:px-8 lg:pb-12 lg:pt-28">
-            <div className="w-full max-w-xl sm:max-w-2xl">
-              {/* w-fit: szerokość = blok nagłówka — CTA wyśrodkowane względem tej szerokości, nie całej kolumny */}
-              <div className="flex w-fit max-w-full flex-col">
-                <h2 className="text-left text-balance font-binerka font-medium uppercase leading-[1.1] tracking-[0.06em] text-brand-800 text-[clamp(1.625rem,4.2vw,2.5rem)] lg:text-[40px]">
-                  Gotowa na branding,
-                </h2>
-                <p className="mt-0 text-left text-balance font-gilroy text-[40px] font-light leading-snug tracking-[2px] text-brand-800">
-                  który wyróżni Twój salon?
-                </p>
+          <div
+            className="absolute inset-0 z-10 grid grid-rows-[1fr_auto]"
+            style={
+              {
+                "--banner-fs": `calc(100cqw * ${BRANDING_REF_HEAD_PX / BRANDING_BG_WIDTH} * ${BRANDING_SECTION_SCALE})`,
+              } as CSSProperties
+            }
+          >
+            <BrandingBannerCopy />
 
-                <div className="mt-10 flex w-full justify-center">
-                  <Link
-                    href="/sklep"
-                    className={`${SHOP_CTA_CLASS} border-brand-800 bg-transparent text-brand-800 hover:bg-brand-800 hover:text-white`}
-                  >
-                    Zobacz sklep &rarr;
-                  </Link>
-                </div>
-              </div>
+            <div className="flex justify-start px-[2.16cqw] pb-[min(8cqw,3rem)] pt-[min(12cqw,4rem)]">
+              <p
+                className="max-w-[min(90cqw,42rem)] text-left text-balance text-brand-600"
+                style={{ fontSize: `calc(var(--banner-fs) * ${BRANDING_BODY_TO_HEAD})` }}
+              >
+                Wolisz napisać?{" "}
+                <a
+                  href="mailto:kontakt@lumineconcept.pl"
+                  className="wrap-break-word text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
+                >
+                  kontakt@lumineconcept.pl
+                </a>
+                <span className="mx-1.5 text-brand-400">&middot;</span>
+                <a
+                  href="https://ig.me/m/lumineconcept"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
+                >
+                  @lumineconcept
+                </a>
+              </p>
             </div>
-          </div>
-
-          <div className="container mx-auto px-4 pb-5 pt-10 text-left lg:px-8 lg:pb-8 lg:pt-16">
-            <p className="text-left text-balance text-lg text-brand-600">
-              Wolisz napisać?{" "}
-              <a
-                href="mailto:kontakt@lumineconcept.pl"
-                className="wrap-break-word text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
-              >
-                kontakt@lumineconcept.pl
-              </a>
-              <span className="mx-1.5 text-brand-400">&middot;</span>
-              <a
-                href="https://ig.me/m/lumineconcept"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
-              >
-                @lumineconcept
-              </a>
-            </p>
           </div>
         </div>
       </section>
