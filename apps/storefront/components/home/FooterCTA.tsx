@@ -18,13 +18,23 @@ const BRANDING_BG_HEIGHT = 384;
 
 /** Przy szerokości kadru = BRANDING_BG_WIDTH px bazowy nagłówek ~40px (`cqw` jak hero HP). */
 const BRANDING_REF_HEAD_PX = 40;
-/** Jednolita korekta sekcji (np. −10 % dla copy + przycisku + stopki przy tym bannerze). */
-const BRANDING_SECTION_SCALE = 0.9;
+/** Jednolita korekta sekcji: copy, przycisk, stopka — skalowane względem `--banner-fs` (obecnie ×0,81). */
+const BRANDING_SECTION_SCALE = 0.81;
 
 const BRANDING_LINE2_TO_LINE1 = 0.94; // druga linia odrobinę mniejsza niż pierwsza (jak na ref.)
 const BRANDING_BTN_TO_HEAD = 14.2 / 40;
 const BRANDING_BODY_TO_HEAD = 18 / 40; // ~ text-lg
 const BRANDING_MT_BLOCKS_TO_HEAD = 2.5 * 16 / 40; // ~ mt-10
+/** Jedna szpalta: nagłówek + CTA + „Wolisz…” — ta sama szerokość, więc wyśrodkowania się zgadzają. */
+const BRANDING_COLUMN_CLASS =
+  "flex min-w-[min(100%,52cqw)] max-w-[min(90cqw,42rem)] flex-col items-center self-start text-center";
+
+/** Lewy inset bloku nad banerem (+ ta sama szerokość kolumny co stopka). */
+const BRANDING_COPY_PL_CQW = 0.22;
+const BRANDING_COPY_PR_CQW = 2.16;
+
+/** Dodatkowo nieco mniejszy tekst linii kontaktowej niż proporcja bazowa. */
+const BRANDING_CONTACT_TEXT_SCALE = 0.9;
 
 /** Klasy przycisku — `--banner-btn-fs` skalowane względem `--banner-fs` (bazowy rozmiar pierwszej linii). */
 const SHOP_CTA_CLASS =
@@ -79,56 +89,86 @@ function InstagramGrid({
   );
 }
 
-/** Treść nad zdjęciem — rozmiary z `var(--banner-fs)` z `cqw` względem kadru jak hero HP. */
+/** Treść nad zdjęciem + linia kontaktowa — jedna szpalta (`BRANDING_COLUMN_CLASS`), żeby środek „Wolisz…” = środka pierwszej linii. */
 function BrandingBannerCopy() {
   const scale = heroPanelScale;
 
   return (
-    <div className="flex min-h-0 flex-col items-start justify-center px-[2.16cqw] pb-[min(6cqw,2.5rem)] pt-[min(12cqw,5rem)]">
-      {/* min-w*: bez tego przy mniejszym viewport `w-fit` + mniejsze `cqw` zwęża kolumnę
-          i tekst łamie się inaczej niż w podglądzie (inne proporcje jak na „złym” zrzucie). */}
-      <div className="flex min-w-[min(100%,52cqw)] max-w-[min(90cqw,42rem)] w-fit flex-col items-center text-center">
-        <h2
-          className="m-0 text-center font-binerka font-medium uppercase leading-[1.1] tracking-[0.06em] text-brand-800"
-          style={{ fontSize: "var(--banner-fs)" }}
-        >
-          Gotowa na branding,
-        </h2>
+    <div
+      className="flex min-h-0 flex-1 flex-col pb-[min(8cqw,3rem)] pt-[min(12cqw,5rem)]"
+      style={{
+        paddingLeft: `${BRANDING_COPY_PL_CQW}cqw`,
+        paddingRight: `${BRANDING_COPY_PR_CQW}cqw`,
+      }}
+    >
+      <div className={`${BRANDING_COLUMN_CLASS} min-h-0 flex flex-1 flex-col`}>
+        <div className="flex min-h-0 flex-1 flex-col justify-center pb-[min(6cqw,2.5rem)]">
+          <h2
+            className="m-0 text-center font-binerka font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800"
+            style={{ fontSize: "var(--banner-fs)" }}
+          >
+            Gotowa na branding,
+          </h2>
+          <p
+            className="m-0 text-center font-gilroy font-light leading-snug text-brand-800"
+            style={{
+              fontSize: `calc(var(--banner-fs) * ${BRANDING_LINE2_TO_LINE1})`,
+              fontWeight: 300,
+              marginTop: 0,
+              letterSpacing: `calc(var(--banner-fs) * ${2 / BRANDING_REF_HEAD_PX})`,
+            }}
+          >
+            który wyróżni Twój salon?
+          </p>
+
+          <div
+            className="flex w-full justify-center"
+            style={{ marginTop: `calc(var(--banner-fs) * ${BRANDING_MT_BLOCKS_TO_HEAD})` }}
+          >
+            <Link
+              href="/sklep"
+              className={`${SHOP_CTA_CLASS} border-brand-800 bg-transparent text-brand-800 hover:bg-brand-800 hover:text-white`}
+              style={
+                {
+                  ["--banner-btn-fs"]: `calc(var(--banner-fs) * ${BRANDING_BTN_TO_HEAD})`,
+                  fontSize: "var(--banner-btn-fs)",
+                  lineHeight: 1.15,
+                  paddingLeft: `${scale.ctaPadX}em`,
+                  paddingRight: `${scale.ctaPadX}em`,
+                  paddingTop: `${scale.ctaPadY}em`,
+                  paddingBottom: `${scale.ctaPadY}em`,
+                  borderRadius: 0,
+                } as CSSProperties
+              }
+            >
+              Zobacz sklep &rarr;
+            </Link>
+          </div>
+        </div>
+
         <p
-          className="m-0 text-center font-gilroy font-light leading-snug text-brand-800"
+          className="m-0 shrink-0 pt-[min(12cqw,4rem)] text-center text-brand-600"
           style={{
-            fontSize: `calc(var(--banner-fs) * ${BRANDING_LINE2_TO_LINE1})`,
-            fontWeight: 300,
-            marginTop: 0,
-            letterSpacing: `calc(var(--banner-fs) * ${2 / BRANDING_REF_HEAD_PX})`,
+            fontSize: `calc(var(--banner-fs) * ${BRANDING_BODY_TO_HEAD} * ${BRANDING_CONTACT_TEXT_SCALE})`,
           }}
         >
-          który wyróżni Twój salon?
-        </p>
-
-        <div
-          className="flex w-full justify-center"
-          style={{ marginTop: `calc(var(--banner-fs) * ${BRANDING_MT_BLOCKS_TO_HEAD})` }}
-        >
-          <Link
-            href="/sklep"
-            className={`${SHOP_CTA_CLASS} border-brand-800 bg-transparent text-brand-800 hover:bg-brand-800 hover:text-white`}
-            style={
-              {
-                ["--banner-btn-fs"]: `calc(var(--banner-fs) * ${BRANDING_BTN_TO_HEAD})`,
-                fontSize: "var(--banner-btn-fs)",
-                lineHeight: 1.15,
-                paddingLeft: `${scale.ctaPadX}em`,
-                paddingRight: `${scale.ctaPadX}em`,
-                paddingTop: `${scale.ctaPadY}em`,
-                paddingBottom: `${scale.ctaPadY}em`,
-                borderRadius: 0,
-              } as CSSProperties
-            }
+          Wolisz napisać?{" "}
+          <a
+            href="mailto:kontakt@lumineconcept.pl"
+            className="wrap-break-word text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
           >
-            Zobacz sklep &rarr;
-          </Link>
-        </div>
+            kontakt@lumineconcept.pl
+          </a>
+          <span className="mx-1.5 text-brand-400">&middot;</span>
+          <a
+            href="https://ig.me/m/lumineconcept"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
+          >
+            @lumineconcept
+          </a>
+        </p>
       </div>
     </div>
   );
@@ -162,7 +202,7 @@ export async function FooterCTA() {
           />
 
           <div
-            className="absolute inset-0 z-10 grid grid-rows-[1fr_auto]"
+            className="absolute inset-0 z-10 flex min-h-0 flex-col"
             style={
               {
                 "--banner-fs": `calc(100cqw * ${BRANDING_REF_HEAD_PX / BRANDING_BG_WIDTH} * ${BRANDING_SECTION_SCALE})`,
@@ -170,30 +210,6 @@ export async function FooterCTA() {
             }
           >
             <BrandingBannerCopy />
-
-            <div className="flex justify-start px-[2.16cqw] pb-[min(8cqw,3rem)] pt-[min(12cqw,4rem)]">
-              <p
-                className="max-w-[min(90cqw,42rem)] text-left text-brand-600"
-                style={{ fontSize: `calc(var(--banner-fs) * ${BRANDING_BODY_TO_HEAD})` }}
-              >
-                Wolisz napisać?{" "}
-                <a
-                  href="mailto:kontakt@lumineconcept.pl"
-                  className="wrap-break-word text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
-                >
-                  kontakt@lumineconcept.pl
-                </a>
-                <span className="mx-1.5 text-brand-400">&middot;</span>
-                <a
-                  href="https://ig.me/m/lumineconcept"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
-                >
-                  @lumineconcept
-                </a>
-              </p>
-            </div>
           </div>
         </div>
       </section>
