@@ -95,7 +95,7 @@ export function Footer() {
               &copy; {new Date().getFullYear()} Lumine Concept. Wszelkie prawa zastrzeżone.
             </p>
             <p className="text-center lg:text-right">
-              Wykonanie:{" "}
+              Wdrożenie strony:{" "}
               <a
                 href="https://syntance.dev"
                 target="_blank"

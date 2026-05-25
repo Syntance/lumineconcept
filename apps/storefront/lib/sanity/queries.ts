@@ -80,6 +80,14 @@ export const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0] {
   announcementBar,
   trustBar,
   checkoutCallout,
+  homepageInstagramPosts[] {
+    _key,
+    postUrl,
+    alt,
+    image {
+      asset-> { _id, url }
+    }
+  },
   socialLinks,
   footerText,
   titleTemplate,

@@ -1,6 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Instagram } from "lucide-react";
+import { getSiteSettings } from "@/lib/sanity/client";
+import {
+  homepageInstagramTilesFromSettings,
+  type HomepageInstagramTile,
+} from "@/lib/homepage-instagram-tiles";
 
 const IG_PROFILE = "https://instagram.com/lumineconcept";
 
@@ -8,15 +13,63 @@ const IG_PROFILE = "https://instagram.com/lumineconcept";
 const SHOP_CTA_CLASS =
   "inline-flex items-center justify-start border px-10 py-3.5 text-[14.2px] font-medium uppercase tracking-[0.2em] transition-colors";
 
+const IG_GRID_SLOTS = 6;
+
+function InstagramGrid({
+  posts,
+}: {
+  posts: HomepageInstagramTile[];
+}) {
+  return (
+    <div className="mt-10 grid grid-cols-3 gap-2 max-w-xl mx-auto sm:grid-cols-6">
+      {Array.from({ length: IG_GRID_SLOTS }, (_, i) => {
+        const post = posts[i];
+        if (post) {
+          return (
+            <a
+              key={post.id}
+              href={post.permalink}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Otwórz post na Instagramie"
+              className="group relative aspect-square block overflow-hidden bg-brand-100 outline-none ring-brand-800 transition-[transform,box-shadow] hover:z-1 hover:shadow-md focus-visible:ring-2 focus-visible:ring-offset-2"
+            >
+              <Image
+                src={post.imageUrl}
+                alt={post.alt}
+                fill
+                sizes="(max-width: 640px) 34vw, 120px"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                loading={i < 3 ? "eager" : "lazy"}
+              />
+            </a>
+          );
+        }
+        return (
+          <a
+            key={`ig-placeholder-${i}`}
+            href={IG_PROFILE}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Lumine Concept na Instagramie"
+            className="aspect-square bg-brand-100 hover:bg-brand-200 transition-colors flex items-center justify-center"
+          >
+            <Instagram className="h-4 w-4 text-brand-400" />
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
- * Footer CTA + sekcja "Jesteśmy na Instagramie".
- *
- * Sekcja IG jest aktualnie statycznym placeholderem z linkami do profilu.
- * Feed z prawdziwych postów wymaga integracji z Instagram Graph API
- * (token long-lived, refresh w cronie, mapowanie media → URL CDN). Do
- * dorobienia w osobnym kroku — wtedy podmienić `slots` na fetch z API.
+ * Footer CTA + sekcja „Jesteśmy na Instagramie”.
+ * Kafelki IG z Sanity: Ustawienia strony → Social Media → „Instagram — kafelki na stronie głównej”.
  */
-export function FooterCTA() {
+export async function FooterCTA() {
+  const settings = await getSiteSettings();
+  const igPosts = homepageInstagramTilesFromSettings(settings);
+
   return (
     <>
       <section id="footer-cta" className="relative isolate overflow-hidden">
@@ -86,20 +139,7 @@ export function FooterCTA() {
           </h2>
           <div className="mt-3 mx-auto h-px w-12 bg-accent" />
 
-          <div className="mt-10 grid grid-cols-3 gap-2 max-w-xl mx-auto sm:grid-cols-6">
-            {Array.from({ length: 6 }, (_, i) => (
-              <a
-                key={i}
-                href={IG_PROFILE}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Lumine Concept na Instagramie"
-                className="aspect-square bg-brand-100 hover:bg-brand-200 transition-colors flex items-center justify-center"
-              >
-                <Instagram className="h-4 w-4 text-brand-400" />
-              </a>
-            ))}
-          </div>
+          <InstagramGrid posts={igPosts} />
 
           <a
             href={IG_PROFILE}

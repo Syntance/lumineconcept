@@ -94,6 +94,18 @@ export interface CheckoutCallout {
   confirmLabel?: string;
 }
 
+export interface HomepageInstagramPostTile {
+  _key: string;
+  postUrl: string;
+  alt?: string;
+  image?: {
+    asset?: {
+      _id: string;
+      url: string | null;
+    } | null;
+  } | null;
+}
+
 export interface SiteSettings {
   title: string;
   description: string;
@@ -104,6 +116,7 @@ export interface SiteSettings {
   };
   trustBar?: TrustBar;
   checkoutCallout?: CheckoutCallout;
+  homepageInstagramPosts?: HomepageInstagramPostTile[];
   socialLinks?: {
     instagram?: string;
     facebook?: string;

@@ -1,4 +1,4 @@
-import { defineField, defineType } from "sanity";
+import { defineArrayMember, defineField, defineType } from "sanity";
 
 export const siteSettings = defineType({
   name: "siteSettings",
@@ -134,6 +134,53 @@ export const siteSettings = defineType({
           type: "string",
           initialValue: "Rozumiem, kontynuuj",
         },
+      ],
+    }),
+
+    defineField({
+      name: "homepageInstagramPosts",
+      title: "Instagram — kafelki na stronie głównej",
+      type: "array",
+      group: "social",
+      description:
+        "Do 6 miniaturek pod nagłówkiem „Jesteśmy na Instagramie”. Wgraj obraz (np. zrzut posta) i wklej link do postu/reels — bez konfiguracji Meta API.",
+      validation: (rule) => rule.max(6),
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "homepageInstagramPostTile",
+          title: "Post",
+          fields: [
+            defineField({
+              name: "image",
+              title: "Miniatura",
+              type: "image",
+              options: { hotspot: true },
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "postUrl",
+              title: "Link do posta (Instagram)",
+              type: "url",
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "alt",
+              title: "Krótki opis (dostępność)",
+              type: "string",
+            }),
+          ],
+          preview: {
+            select: { url: "postUrl", media: "image" },
+            prepare({ url, media }) {
+              return {
+                title: url ? String(url).slice(0, 48) : "Post",
+                subtitle: "Instagram",
+                media,
+              };
+            },
+          },
+        }),
       ],
     }),
 
