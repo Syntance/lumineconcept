@@ -85,16 +85,17 @@ function BrandingBannerCopy() {
 
   return (
     <div className="flex min-h-0 flex-col items-start justify-center px-[2.16cqw] pb-[min(6cqw,2.5rem)] pt-[min(12cqw,5rem)]">
-      {/* Szerokość = max napisów; druga linia i CTA wyśrodkowane w obrębie tej szpalty (jak przy pierwszej linii). */}
-      <div className="flex w-fit max-w-[min(90cqw,42rem)] flex-col items-center text-center">
+      {/* min-w*: bez tego przy mniejszym viewport `w-fit` + mniejsze `cqw` zwęża kolumnę
+          i tekst łamie się inaczej niż w podglądzie (inne proporcje jak na „złym” zrzucie). */}
+      <div className="flex min-w-[min(100%,52cqw)] max-w-[min(90cqw,42rem)] w-fit flex-col items-center text-center">
         <h2
-          className="m-0 text-center text-balance font-binerka font-medium uppercase leading-[1.1] tracking-[0.06em] text-brand-800"
+          className="m-0 text-center font-binerka font-medium uppercase leading-[1.1] tracking-[0.06em] text-brand-800"
           style={{ fontSize: "var(--banner-fs)" }}
         >
           Gotowa na branding,
         </h2>
         <p
-          className="m-0 text-center text-balance font-gilroy font-light leading-snug text-brand-800"
+          className="m-0 text-center font-gilroy font-light leading-snug text-brand-800"
           style={{
             fontSize: `calc(var(--banner-fs) * ${BRANDING_LINE2_TO_LINE1})`,
             fontWeight: 300,
@@ -145,7 +146,10 @@ export async function FooterCTA() {
     <>
       <section id="footer-cta" className="relative isolate overflow-x-hidden">
         {/* Ta sama idea co hero HP: szerokość zdjęcia = kontener dla `cqw`; treść na absolutnej nakładce. */}
-        <div className="relative w-full isolation-isolate @container overflow-x-hidden">
+        <div
+          className="relative w-full isolation-isolate @container overflow-x-hidden"
+          style={{ containerType: "inline-size" } as CSSProperties}
+        >
           <Image
             src="/images/monia-branding-cta-bg.png"
             alt=""
@@ -169,7 +173,7 @@ export async function FooterCTA() {
 
             <div className="flex justify-start px-[2.16cqw] pb-[min(8cqw,3rem)] pt-[min(12cqw,4rem)]">
               <p
-                className="max-w-[min(90cqw,42rem)] text-left text-balance text-brand-600"
+                className="max-w-[min(90cqw,42rem)] text-left text-brand-600"
                 style={{ fontSize: `calc(var(--banner-fs) * ${BRANDING_BODY_TO_HEAD})` }}
               >
                 Wolisz napisać?{" "}
