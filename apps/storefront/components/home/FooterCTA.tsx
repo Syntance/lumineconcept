@@ -18,8 +18,8 @@ const BRANDING_BG_HEIGHT = 384;
 
 /** Przy szerokości kadru = BRANDING_BG_WIDTH px bazowy nagłówek ~40px (`cqw` jak hero HP). */
 const BRANDING_REF_HEAD_PX = 40;
-/** Jednolita korekta sekcji: copy, przycisk, stopka — skalowane względem `--banner-fs` (obecnie ×0,81). */
-const BRANDING_SECTION_SCALE = 0.81;
+/** Jednolita korekta sekcji: copy, przycisk, stopka — skalowane względem `--banner-fs` (obecnie ×0,729). */
+const BRANDING_SECTION_SCALE = 0.729;
 
 const BRANDING_LINE2_TO_LINE1 = 0.94; // druga linia odrobinę mniejsza niż pierwsza (jak na ref.)
 const BRANDING_BTN_TO_HEAD = 14.2 / 40;
