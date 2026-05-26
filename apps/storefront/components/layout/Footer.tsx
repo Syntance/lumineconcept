@@ -5,8 +5,9 @@ import { SITE_CONTACT } from "@/lib/site-contact";
 const FOOTER_LINKS = {
   Sklep: [
     { href: "/sklep", label: "Wszystkie produkty" },
+    { href: "/sklep/logo-3d", label: "Tablice z logo" },
+    { href: "/sklep/certyfikaty", label: "Certyfikaty" },
     { href: "/salony-beauty", label: "Salony Beauty" },
-    { href: "/konfiguracja", label: "Konfigurator" },
   ],
   Informacje: [
     { href: "/regulamin", label: "Regulamin" },
