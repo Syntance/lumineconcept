@@ -6,6 +6,9 @@ dist/
 .env
 .env.local
 .env.*.local
+.env.*.tmp
+*.tmp
+KLUCZE_API_KLIENT.md
 *.log
 *.tsbuildinfo
 .DS_Store

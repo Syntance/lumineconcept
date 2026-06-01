@@ -17,29 +17,6 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
   const result = await ensureLuminePayment(req.scope);
 
-  // Tymczasowa diagnostyka P24 — usunąć po potwierdzeniu działania.
-  let registeredProviders: string[] = [];
-  try {
-    const paymentModule = req.scope.resolve("payment") as {
-      listPaymentProviders?: (
-        sel?: Record<string, unknown>,
-        cfg?: Record<string, unknown>,
-      ) => Promise<Array<{ id: string }>>;
-    };
-    const list = (await paymentModule.listPaymentProviders?.({}, {})) ?? [];
-    registeredProviders = list.map((p) => p.id);
-  } catch (e) {
-    registeredProviders = [`ERR: ${(e as Error).message}`];
-  }
-
-  const debug = {
-    env_merchant: !!process.env.PRZELEWY24_MERCHANT_ID,
-    env_apikey: !!process.env.PRZELEWY24_API_KEY,
-    env_pos: process.env.PRZELEWY24_POS_ID ?? null,
-    env_sandbox: process.env.PRZELEWY24_SANDBOX ?? null,
-    registered_providers: registeredProviders,
-  };
-
   const status = result.ok ? 200 : 422;
-  return res.status(status).json({ ...result, debug });
+  return res.status(status).json(result);
 }
