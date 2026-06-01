@@ -59,6 +59,7 @@ interface ProductPageClientProps {
   globalColors?: GlobalConfigOption[];
   schemaImageUrl?: string | null;
   certificateStandAvailable?: boolean;
+  isVoucher?: boolean;
 }
 
 function extractMetaKey(optionTitle: string): string {
@@ -73,6 +74,7 @@ export function ProductPageClient({
   globalColors = [],
   schemaImageUrl,
   certificateStandAvailable = false,
+  isVoucher = false,
 }: ProductPageClientProps) {
 
   const colorMap = useMemo(() => buildColorMap(globalColors), [globalColors]);
@@ -455,6 +457,7 @@ export function ProductPageClient({
             }}
             disabled={!selectedVariant || !availableToOrder}
             maxQuantity={maxOrderQty}
+            minQuantity={isVoucher ? 5 : 1}
             onBeforeAdd={handleBeforeAdd}
             metadata={buildMetadata()}
           />

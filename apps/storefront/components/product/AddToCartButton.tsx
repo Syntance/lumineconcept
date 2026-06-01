@@ -16,6 +16,7 @@ interface AddToCartButtonProps {
   disabled?: boolean;
   compact?: boolean;
   maxQuantity?: number;
+  minQuantity?: number;
   /**
    * If provided, called before adding to cart. Return true to prevent the default action.
    * `checkoutAfterAdd` is true when the user chose „Kup teraz” (checkout), false for „Dodaj do koszyka”.
@@ -30,12 +31,13 @@ export function AddToCartButton({
   disabled,
   compact,
   maxQuantity = 99,
+  minQuantity = 1,
   onBeforeAdd,
   metadata,
 }: AddToCartButtonProps) {
   const { addItemWithTracking } = useCart();
   const [isAdding, setIsAdding] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(minQuantity);
   const [pendingFromCallout, setPendingFromCallout] = useState(false);
   /** Po potwierdzeniu calloutu: tylko koszyk albo koszyk + `/checkout`. */
   const pendingRedirectRef = useRef<string | null>(null);
@@ -141,8 +143,8 @@ export function AddToCartButton({
       <div className="flex shrink-0 items-stretch justify-center gap-2 sm:justify-start">
         <button
           type="button"
-          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-          disabled={quantity <= 1}
+          onClick={() => setQuantity((q) => Math.max(minQuantity, q - 1))}
+          disabled={quantity <= minQuantity}
           className={stepperBtn}
           aria-label="Zmniejsz ilość"
         >

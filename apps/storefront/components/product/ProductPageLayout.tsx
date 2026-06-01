@@ -82,6 +82,24 @@ function productIsCertyfikaty(
   return categories?.some((c) => categoryNodeOrAncestorsMatchCertyfikaty(c ?? null)) ?? false;
 }
 
+/**
+ * Voucher podarunkowy — wykrywa przez tag "voucher", handle lub tytuł.
+ * Dla voucherów: min 5 sztuk + BRAK opcji podstawki.
+ */
+function productIsVoucher(
+  product: NonNullable<Awaited<ReturnType<typeof getProductByHandle>>>,
+): boolean {
+  const hasTag =
+    (product.tags as Array<{ value?: string }> | undefined)?.some(
+      (t) => t.value?.toLowerCase().trim() === "voucher",
+    ) ?? false;
+  if (hasTag) return true;
+
+  const handle = (product.handle ?? "").toLowerCase();
+  const title = (product.title ?? "").toLowerCase();
+  return handle.includes("voucher") || title.includes("voucher");
+}
+
 function extractBasePrice(metadata: Record<string, unknown> | undefined | null): number | null {
   const raw = metadata?.base_price;
   if (raw === undefined || raw === null || raw === "") return null;
@@ -131,6 +149,8 @@ interface ProductPageLayoutProps {
     schemaImageUrl?: string | null;
     /** PDP certyfikatów — opcja dopłaty za podstawkę w kolorze certyfikatu */
     certificateStandAvailable?: boolean;
+    /** Voucher podarunkowy — min 5 sztuk, brak opcji podstawki */
+    isVoucher?: boolean;
   }>;
 }
 
@@ -170,7 +190,8 @@ export async function ProductPageLayout({
     if (!hasTag) notFound();
   }
 
-  const certificateStandAvailable = productIsCertyfikaty(product);
+  const certificateStandAvailable = productIsCertyfikaty(product) && !productIsVoucher(product);
+  const isVoucher = productIsVoucher(product);
 
   const { galleryImages: images, schemaImageUrl } = extractSchemaImage({
     title: product.title,
@@ -360,6 +381,7 @@ export async function ProductPageLayout({
               globalColors={productConfig.colors}
               schemaImageUrl={schemaImageUrl}
               certificateStandAvailable={certificateStandAvailable}
+              isVoucher={isVoucher}
             />
           </div>
         </div>
