@@ -34,8 +34,8 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
         <div
           className="absolute z-10 flex flex-col items-start gap-6"
           style={{
-            left: "8%",
-            top: "15%",
+            left: "18%",
+            top: "30%",
           }}
         >
           <div className="flex flex-col items-start gap-4">
