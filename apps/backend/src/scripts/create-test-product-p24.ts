@@ -2,16 +2,17 @@ import type { SubscriberArgs } from "@medusajs/framework";
 import { Modules } from "@medusajs/framework/utils";
 import {
   createProductsWorkflow,
-  updateProductsWorkflow,
+  deleteProductsWorkflow,
 } from "@medusajs/medusa/core-flows";
 
 /**
- * Tworzy / naprawia tani produkt testowy „TEST P24 1 zł" do weryfikacji
+ * Tworzy (idempotentnie) tani produkt testowy „TEST P24 1 zł" do weryfikacji
  * realnej płatności Przelewy24 na produkcji za grosze. Opublikowany w domyślnym
  * kanale, bez śledzenia stanu (manage_inventory: false), z kategorią i tagiem
  * „gotowe-wzory" — dzięki temu otwiera się pod /sklep/gotowe-wzory/<handle>.
  *
- * Idempotentny: jeśli produkt istnieje, tylko dokleja kategorię + tag.
+ * Jeśli produkt już istnieje, usuwa go i tworzy na nowo (pewna ścieżka — krok
+ * update workflow ma buga przy populate `category_ids`).
  * Uruchom (w kontenerze): pnpm medusa exec ./src/scripts/create-test-product-p24.ts
  * Po teście usuń/odepnij produkt w Admin.
  */
@@ -66,19 +67,12 @@ export default async function createTestProductP24({
   const existing = await productService.listProducts({ handle: TEST_HANDLE });
   const existingProduct = existing[0];
   if (existingProduct) {
-    await updateProductsWorkflow(container).run({
-      input: {
-        selector: { id: existingProduct.id },
-        update: {
-          category_ids: [category.id],
-          tag_ids: [tag.id],
-        },
-      },
+    await deleteProductsWorkflow(container).run({
+      input: { ids: [existingProduct.id] },
     });
     console.log(
-      `[create-test-product-p24] Zaktualizowano istniejący „TEST P24 1 zł" — kategoria „${category.name ?? CATEGORY_HANDLE}" + tag „${TAG_VALUE}".`,
+      `[create-test-product-p24] Usunięto istniejący produkt (id=${existingProduct.id}) — tworzę na nowo z kategorią + tagiem.`,
     );
-    return;
   }
 
   const salesChannelService = container.resolve(Modules.SALES_CHANNEL) as {
