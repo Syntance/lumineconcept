@@ -11,10 +11,10 @@ export const PANEL_WIDTH_PER_CENT = 62;
 /** Współczynniki skali względem `--cta-fs` — jedna baza dla napisów i CTA (`fontSize`/padding przycisku w `em`). */
 export const heroPanelScale = {
   /** Bazowy rozmiar względem szerokości kolumny; mniejsze = proporcjonalnie mniejsze wszystko */
-  ctaOfPanel: 0.0167265,
-  title: 65 / 14,
-  subtitle: 20 / 14,
-  body: 18 / 14,
+  ctaOfPanel: 0.013,
+  title: 50 / 14,
+  subtitle: 16 / 14,
+  body: 15 / 14,
   ctaPadX: 1.85,
   ctaPadY: 0.76,
   /** Mniejszy odstęp „od góry” kolumny — treść siedzi wyżej */

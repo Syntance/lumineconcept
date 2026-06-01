@@ -1,25 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
-import { HeroShadowPanel, heroPanelScale } from "./hero-shadow-panel";
 
 /** Wymiary pliku `public/images/hero-main-wall.png` — przy podmianie grafiki zaktualizuj. */
-const HERO_BG_WIDTH = 1024;
-const HERO_BG_HEIGHT = 384;
+const HERO_BG_WIDTH = 2560;
+const HERO_BG_HEIGHT = 966;
 
 /**
- * Hero + karuzela pod spodem:
- *   - Wysokość bloku grafiki = naturalny aspect ratio zdjęcia (`width`/`height` + `w-full h-auto`),
- *     nie `100svh`.
- * - Obraz ustala prostokąt hero; nakładka i tekst używają `cqw` względem tego prostokąta.
+ * Hero z napisami i CTA — rozmiary w `vw`, pozycja w `%`.
+ * Nie skaluje się proporcjonalnie do obrazu, tylko do viewportu.
  */
-
 export function HeroSection({ children }: { children?: React.ReactNode }) {
-  const scale = heroPanelScale;
-
   return (
     <section className="relative flex w-full flex-col overflow-x-hidden">
-      {/* Kontener z inline-size pod `cqw` = szerokość obrazka; napisy są wprost w prostokącie zdjęcia */}
-      <div className="relative w-full isolation-isolate @container overflow-x-hidden">
+      <div className="relative w-full overflow-x-hidden">
         <Image
           src="/images/hero-main-wall.png"
           alt=""
@@ -31,88 +24,63 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           className="block h-auto w-full select-none"
         />
 
-        {/* Lekki gradient od lewej pod biały tekst — bez backdrop-blur (ostre zdjęcie). */}
+        {/* Lekki gradient od lewej pod biały tekst */}
         <div
           className="pointer-events-none absolute inset-0 bg-linear-to-r from-black/45 via-black/15 to-transparent"
           aria-hidden
         />
 
-        {/* Treść: wyżej w kadrze; padding tylko w `cqw` względem prostokąta zdjęcia — skaluje 1:1 z grafiką hero */}
-        <div className="absolute inset-0 z-10 flex items-start pb-[3.24cqw] pr-[2.16cqw] pl-[30.5cqw] pt-[3.78cqw]">
-          <HeroShadowPanel align="left">
-            <div className="flex w-full justify-start">
-              <div
-                className="grid w-max max-w-full grid-cols-1 justify-items-center"
-                style={{ rowGap: `calc(var(--cta-fs) * ${scale.gapCtaStack})` }}
+        {/* Treść: pozycja w % od kontenera obrazu, rozmiary w vw */}
+        <div
+          className="absolute z-10 flex flex-col items-start gap-6"
+          style={{
+            left: "8%",
+            top: "15%",
+          }}
+        >
+          <div className="flex flex-col items-start gap-4">
+            <h1
+              className="m-0 whitespace-nowrap text-left font-binerka tracking-[0.06em] font-normal text-white"
+              style={{
+                fontSize: "clamp(32px, 4vw, 72px)",
+                lineHeight: 1,
+              }}
+            >
+              CONCEPT
+            </h1>
+
+            <div className="flex flex-col items-start gap-2">
+              <p
+                className="m-0 whitespace-nowrap text-left font-gilroy font-medium uppercase leading-none tracking-[0.08em] text-white"
+                style={{
+                  fontSize: "clamp(14px, 1.5vw, 24px)",
+                }}
               >
-                {/* Napisy: width:0 + overflow:visible → nie rozciągają siatki; lewa krawędź = lewa krawędź obramówki CTA */}
-                <div
-                  className="flex flex-col items-start justify-self-start overflow-visible"
-                  style={{
-                    width: 0,
-                    minWidth: 0,
-                    marginBottom: `calc(var(--cta-fs) * ${scale.gapBeforeCta})`,
-                    rowGap: `calc(var(--cta-fs) * ${scale.gapAfterTitle})`,
-                  }}
-                >
-                  <h1
-                    className="m-0 whitespace-nowrap text-left font-binerka tracking-[0.06em] !font-normal !text-white"
-                    style={{
-                      fontSize: `calc(var(--cta-fs) * ${scale.title})`,
-                      lineHeight: 1,
-                      fontWeight: 400,
-                    }}
-                  >
-                    CONCEPT
-                  </h1>
+                Wyróżnij swój salon
+              </p>
 
-                  <div
-                    className="flex flex-col items-start overflow-visible"
-                    style={{
-                      rowGap: `calc(var(--cta-fs) * ${scale.gapAfterSubtitle})`,
-                    }}
-                  >
-                    <p
-                      className="m-0 whitespace-nowrap text-left font-gilroy font-medium uppercase leading-none tracking-[0.08em] !text-white"
-                      style={{
-                        fontSize: `calc(var(--cta-fs) * ${scale.subtitle})`,
-                        fontWeight: 500,
-                      }}
-                    >
-                      Wyróżnij swój salon
-                    </p>
-
-                    <p
-                      className="m-0 whitespace-nowrap text-left font-gilroy font-light leading-tight tracking-[0.06em] !text-white/90"
-                      style={{
-                        fontSize: `calc(var(--cta-fs) * ${scale.body})`,
-                        fontWeight: 300,
-                      }}
-                    >
-                        Tablice z logo, cenniki i oznaczenia z plexi
-                    </p>
-                  </div>
-                </div>
-
-                {/* Główny CTA */}
-                <Link
-                  href="/sklep"
-                  className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-none border-0 bg-white font-gilroy font-semibold uppercase tracking-[0.2em] !text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-                  style={{
-                    fontSize: "var(--cta-fs)",
-                    lineHeight: 1.15,
-                    paddingLeft: `${scale.ctaPadX}em`,
-                    paddingRight: `${scale.ctaPadX}em`,
-                    paddingTop: `${scale.ctaPadY}em`,
-                    paddingBottom: `${scale.ctaPadY}em`,
-                    borderRadius: 0,
-                  }}
-                >
-                  Zobacz produkty
-                </Link>
-              </div>
+              <p
+                className="m-0 whitespace-nowrap text-left font-gilroy font-light leading-tight tracking-[0.06em] text-white/90"
+                style={{
+                  fontSize: "clamp(12px, 1.2vw, 20px)",
+                }}
+              >
+                Tablice z logo, cenniki i oznaczenia z plexi
+              </p>
             </div>
-          </HeroShadowPanel>
+          </div>
+
+          {/* Główny CTA */}
+          <Link
+            href="/sklep"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-0 bg-white px-7 py-3 font-gilroy font-semibold uppercase tracking-[0.2em] text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            style={{
+              fontSize: "clamp(11px, 1vw, 16px)",
+              lineHeight: 1.15,
+            }}
+          >
+            Zobacz produkty
+          </Link>
         </div>
       </div>
 
