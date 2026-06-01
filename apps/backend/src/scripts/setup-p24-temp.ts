@@ -1,7 +1,7 @@
 import type { ExecArgs } from "@medusajs/framework/types";
 import { updateRegionsWorkflow } from "@medusajs/medusa/core-flows";
 
-const P24_PROVIDER_ID = "pp_przelewy24";
+const P24_PROVIDER_ID = "pp_przelewy24_przelewy24";
 
 export default async function run({ container }: ExecArgs) {
   const query = container.resolve("query") as {
