@@ -176,7 +176,12 @@ export function invalidateShippingOptionsCache(cartId?: string) {
 type PaymentReadiness = {
   regionId: string;
   providerId: string;
+  /** Wszystkie aktywne providery w regionie (np. pp_system_default, pp_przelewy24_przelewy24). */
+  providerIds: string[];
 };
+
+/** Pełny id providera Przelewy24 w Medusie: `pp_{provider.id}_{service.identifier}`. */
+export const PRZELEWY24_PROVIDER_ID = "pp_przelewy24_przelewy24";
 
 let paymentReadinessPromise: Promise<PaymentReadiness> | null = null;
 
@@ -206,7 +211,7 @@ export function prefetchPaymentReadiness(
         "Brak skonfigurowanych metod płatności. Skontaktuj się z obsługą.",
       );
     }
-    return { regionId, providerId };
+    return { regionId, providerId, providerIds: providers.map((p) => p.id) };
   })().catch((e) => {
     paymentReadinessPromise = null;
     throw e;
@@ -424,6 +429,46 @@ export async function initPaymentSession(
     { provider_id: providerId },
   );
   return response;
+}
+
+/**
+ * Inicjuje sesję płatności Przelewy24 i zwraca URL panelu P24, na który
+ * przekierowujemy klienta. Po opłaceniu P24:
+ *   1) wysyła notyfikację na `urlStatus` → backend `/hooks/payment/...`
+ *      weryfikuje transakcję i oznacza płatność jako opłaconą,
+ *   2) przekierowuje klienta na `urlReturn` (/checkout/przelewy24/return),
+ *      gdzie finalizujemy koszyk (`completeCart`) i tworzymy zamówienie.
+ */
+export async function initPrzelewy24Redirect(
+  cartId: string,
+  freshCart?: HttpTypes.StoreCart,
+): Promise<string> {
+  const cart = freshCart ?? (await medusa.store.cart.retrieve(cartId)).cart;
+  const response = (await medusa.store.payment.initiatePaymentSession(cart, {
+    provider_id: PRZELEWY24_PROVIDER_ID,
+    data: {
+      cart_id: cartId,
+      email: (cart as { email?: string }).email ?? "",
+    },
+  })) as {
+    payment_collection?: {
+      payment_sessions?: Array<{
+        provider_id: string;
+        data?: { redirect_url?: string };
+      }>;
+    };
+  };
+
+  const session = response.payment_collection?.payment_sessions?.find(
+    (s) => s.provider_id === PRZELEWY24_PROVIDER_ID,
+  );
+  const redirectUrl = session?.data?.redirect_url;
+  if (!redirectUrl) {
+    throw new Error(
+      "Nie udało się przygotować płatności Przelewy24. Spróbuj ponownie.",
+    );
+  }
+  return redirectUrl;
 }
 
 export type CompleteCartResponse =

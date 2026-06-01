@@ -18,11 +18,13 @@ import { useCart } from "@/hooks/useCart";
 import {
   completeCart,
   describeMedusaError,
+  initPrzelewy24Redirect,
   isCartAlreadyCompletedError,
   notifyOrderPlaced,
   prefetchPaymentReadiness,
   prefetchShippingOptions,
   prepareCheckout,
+  PRZELEWY24_PROVIDER_ID,
   saveContactDetails,
 } from "@/lib/medusa/checkout";
 import { getPolishRegionId } from "@/lib/medusa/region";
@@ -160,9 +162,11 @@ export function CheckoutForm() {
     void prefetchShippingOptions(cartId).catch(() => {
       /* błąd dopiero w Step 2 — tam jest UI do pokazania */
     });
-    void prefetchPaymentReadiness(getPolishRegionId).catch(() => {
-      /* błąd dopiero w Step 3 — tam jest UI do pokazania */
-    });
+    void prefetchPaymentReadiness(getPolishRegionId)
+      .then((r) => setAvailableProviderIds(r.providerIds))
+      .catch(() => {
+        /* błąd dopiero w Step 3 — tam jest UI do pokazania */
+      });
   }, [cartId]);
 
   /**
@@ -208,6 +212,7 @@ export function CheckoutForm() {
   const [contactSaveError, setContactSaveError] = useState<string | null>(null);
   const [preparingPayment, setPreparingPayment] = useState(false);
   const [shippingSaveError, setShippingSaveError] = useState<string | null>(null);
+  const [availableProviderIds, setAvailableProviderIds] = useState<string[]>([]);
   const [formData, setFormData] = useState<CheckoutFormData>(() =>
     getDefaultCheckoutFormData(),
   );
@@ -369,6 +374,18 @@ export function CheckoutForm() {
     trackFormSubmit({ formName: "checkout_payment" });
 
     try {
+      // Przelewy24 = płatność z przekierowaniem. Inicjujemy sesję P24,
+      // a finalizację koszyka (utworzenie zamówienia) robi strona powrotu
+      // /checkout/przelewy24/return po potwierdzeniu płatności przez webhook.
+      if (formData.paymentProviderId === PRZELEWY24_PROVIDER_ID) {
+        const redirectUrl = await initPrzelewy24Redirect(cartId);
+        trackCheckoutStep({ stepNumber: 3, cartValue: total });
+        if (typeof window !== "undefined") {
+          window.location.assign(redirectUrl);
+          return;
+        }
+      }
+
       const result = await completeCart(cartId);
 
       if (result.type !== "order") {
@@ -812,6 +829,7 @@ export function CheckoutForm() {
             <PaymentSelector
               selectedProviderId={formData.paymentProviderId}
               onSelect={(id: string) => updateField("paymentProviderId", id)}
+              availableProviderIds={availableProviderIds}
             />
 
             <div className="space-y-3 border-t border-brand-100 pt-4">
@@ -864,7 +882,11 @@ export function CheckoutForm() {
               disabled={!canSubmit}
               className="w-full rounded-md bg-brand-800 py-3 text-sm font-semibold text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:bg-brand-200 disabled:text-brand-500 transition-colors"
             >
-              {submitting ? "Składanie zamówienia…" : "Zamawiam i płacę"}
+              {submitting
+                ? formData.paymentProviderId === PRZELEWY24_PROVIDER_ID
+                  ? "Przekierowuję do Przelewy24…"
+                  : "Składanie zamówienia…"
+                : "Zamawiam i płacę"}
             </button>
             {submitSlow && submitting && (
               <p
@@ -875,10 +897,17 @@ export function CheckoutForm() {
                 Przetwarzamy zamówienie, nie zamykaj tego okna…
               </p>
             )}
-            <p className="text-center text-[11px] text-brand-400">
-              Tryb testowy — zamówienie trafia do Medusy bez rzeczywistej
-              płatności (bramki skonfigurujemy na końcu).
-            </p>
+            {formData.paymentProviderId === PRZELEWY24_PROVIDER_ID ? (
+              <p className="text-center text-[11px] text-brand-400">
+                Po kliknięciu przejdziesz do bezpiecznego panelu Przelewy24,
+                gdzie dokończysz płatność (BLIK, przelew, karta).
+              </p>
+            ) : (
+              <p className="text-center text-[11px] text-brand-400">
+                Tryb testowy — zamówienie trafia do Medusy bez rzeczywistej
+                płatności.
+              </p>
+            )}
           </section>
         )}
       </div>

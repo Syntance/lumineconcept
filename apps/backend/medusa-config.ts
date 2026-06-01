@@ -209,24 +209,13 @@ export default defineConfig({
         ]
       : []),
     /**
-     * Dodatkowe moduły (Przelewy24, PayPo, InPost) ładowane warunkowo —
-     * dopiero gdy envy są uzupełnione. Wcześniej ładowaliśmy je zawsze,
-     * co przy pustym kluczu tworzyło niepotrzebny overhead na starcie
-     * (~2 s × 3 modules) i logi zaśmiecone błędami konfiguracji.
+     * Dodatkowe moduły (InPost) ładowane warunkowo — dopiero gdy envy są
+     * uzupełnione. Wcześniej ładowaliśmy je zawsze, co przy pustym kluczu
+     * tworzyło niepotrzebny overhead na starcie i logi zaśmiecone błędami.
+     *
+     * UWAGA: Przelewy24 NIE jest już osobnym top-level modułem — to payment
+     * provider, więc rejestrujemy go w `providers: [...]` modułu payment niżej.
      */
-    ...(process.env.PRZELEWY24_MERCHANT_ID && process.env.PRZELEWY24_API_KEY
-      ? [{
-          key: "przelewy24",
-          resolve: "./src/modules/przelewy24",
-          options: {
-            merchantId: process.env.PRZELEWY24_MERCHANT_ID,
-            posId: process.env.PRZELEWY24_POS_ID,
-            apiKey: process.env.PRZELEWY24_API_KEY,
-            crc: process.env.PRZELEWY24_CRC,
-            sandbox: process.env.PRZELEWY24_SANDBOX === "true",
-          },
-        }]
-      : []),
     ...(process.env.PAYPO_API_KEY
       ? [{
           key: "paypo",
@@ -249,20 +238,39 @@ export default defineConfig({
         }]
       : []),
     /**
-     * Payment: wbudowany system provider („manual"/testowy). Bez rejestracji
-     * tego modułu Medusa nie ma *żadnego* payment providera, przez co
-     * `initiatePaymentSession` / `cart.complete` wywala się generycznym
-     * „An unknown error occurred". Prawdziwe bramki (P24/PayPo) dopinamy
-     * osobnymi providerami po testach.
+     * Payment: wbudowany system provider („manual"/testowy) jest rejestrowany
+     * automatycznie przez moduł `@medusajs/medusa/payment` jako
+     * `pp_system_default`. Dodatkowe bramki (Przelewy24) dopinamy przez
+     * `providers: [...]` — wyłącznie gdy envy są ustawione (feature flag).
+     *
+     * Provider id w Medusie: `pp_{provider.id}_{service.identifier}` =
+     * `pp_przelewy24_przelewy24`. Webhook P24 (urlStatus) trafia na
+     * `/hooks/payment/pp_przelewy24_przelewy24` (wbudowany routing Medusy).
      */
     {
-      // Medusa v2.13 automatycznie rejestruje wbudowany `SystemPaymentProvider`
-      // jako `pp_system_default` (patrz `@medusajs/payment/dist/loaders/providers.js`).
-      // Próba ręcznej rejestracji via `resolve` wywołuje błąd
-      // "moduleProviderServices is not iterable", bo wbudowany provider nie jest
-      // opakowany w `ModuleProvider(...)`. Dodatkowe providery (np. Przelewy24)
-      // podłączamy warunkowo przez `providers: [...]`.
       resolve: "@medusajs/medusa/payment",
+      options: {
+        providers: [
+          ...(process.env.PRZELEWY24_MERCHANT_ID && process.env.PRZELEWY24_API_KEY
+            ? [{
+                resolve: "./src/modules/przelewy24",
+                id: "przelewy24",
+                options: {
+                  merchantId: process.env.PRZELEWY24_MERCHANT_ID,
+                  posId:
+                    process.env.PRZELEWY24_POS_ID ??
+                    process.env.PRZELEWY24_MERCHANT_ID,
+                  apiKey: process.env.PRZELEWY24_API_KEY,
+                  crc: process.env.PRZELEWY24_CRC,
+                  sandbox: process.env.PRZELEWY24_SANDBOX === "true",
+                  backendUrl: BACKEND_URL,
+                  storefrontUrl:
+                    process.env.STOREFRONT_URL ?? STOREFRONT_URL,
+                },
+              }]
+            : []),
+        ],
+      },
     },
     /**
      * Fulfillment: Manual + DPD.

@@ -9,6 +9,21 @@ import { updateRegionsWorkflow } from "@medusajs/medusa/core-flows";
  * `pp_system_default` (logika w `@medusajs/payment/dist/loaders/providers.js`).
  */
 const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
+/** Pełny id providera P24 w Medusie: `pp_{provider.id}_{service.identifier}`. */
+const PRZELEWY24_PROVIDER_ID = "pp_przelewy24_przelewy24";
+
+/**
+ * Providery, które powinny być podpięte do każdego regionu. Bazowo systemowy
+ * (tryb testowy); Przelewy24 dokładamy tylko, gdy moduł jest skonfigurowany
+ * (te same envy, które rejestrują provider w `medusa-config.ts`).
+ */
+function getDesiredProviderIds(): string[] {
+  const ids = [SYSTEM_PAYMENT_PROVIDER_ID];
+  if (process.env.PRZELEWY24_MERCHANT_ID && process.env.PRZELEWY24_API_KEY) {
+    ids.push(PRZELEWY24_PROVIDER_ID);
+  }
+  return ids;
+}
 
 export interface EnsureLuminePaymentResult {
   ok: boolean;
@@ -62,21 +77,23 @@ export async function ensureLuminePayment(
     };
   }
 
+  const desiredIds = getDesiredProviderIds();
+
   for (const region of regions) {
     const currentIds = (region.payment_providers ?? [])
       .map((p) => p?.id)
       .filter((id): id is string => typeof id === "string" && id.length > 0);
 
-    if (currentIds.includes(SYSTEM_PAYMENT_PROVIDER_ID)) {
+    const missing = desiredIds.filter((id) => !currentIds.includes(id));
+
+    if (missing.length === 0) {
       messages.push(
-        `Region „${region.name ?? region.id}" już ma ${SYSTEM_PAYMENT_PROVIDER_ID} — pomijam.`,
+        `Region „${region.name ?? region.id}" ma już wszystkie providery (${desiredIds.join(", ")}) — pomijam.`,
       );
       continue;
     }
 
-    const nextIds = Array.from(
-      new Set([...currentIds, SYSTEM_PAYMENT_PROVIDER_ID]),
-    );
+    const nextIds = Array.from(new Set([...currentIds, ...desiredIds]));
 
     await updateRegionsWorkflow(container).run({
       input: {
@@ -89,7 +106,7 @@ export async function ensureLuminePayment(
 
     updated.push(region.id);
     messages.push(
-      `Region „${region.name ?? region.id}" → podpięto ${SYSTEM_PAYMENT_PROVIDER_ID}.`,
+      `Region „${region.name ?? region.id}" → podpięto ${missing.join(", ")}.`,
     );
   }
 

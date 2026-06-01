@@ -1,4 +1,32 @@
 import crypto from "node:crypto";
+import {
+  AbstractPaymentProvider,
+  MedusaError,
+  PaymentActions,
+} from "@medusajs/framework/utils";
+import type {
+  AuthorizePaymentInput,
+  AuthorizePaymentOutput,
+  CancelPaymentInput,
+  CancelPaymentOutput,
+  CapturePaymentInput,
+  CapturePaymentOutput,
+  DeletePaymentInput,
+  DeletePaymentOutput,
+  GetPaymentStatusInput,
+  GetPaymentStatusOutput,
+  InitiatePaymentInput,
+  InitiatePaymentOutput,
+  Logger,
+  ProviderWebhookPayload,
+  RefundPaymentInput,
+  RefundPaymentOutput,
+  RetrievePaymentInput,
+  RetrievePaymentOutput,
+  UpdatePaymentInput,
+  UpdatePaymentOutput,
+  WebhookActionResult,
+} from "@medusajs/framework/types";
 
 interface Przelewy24Options {
   merchantId: string;
@@ -6,181 +34,394 @@ interface Przelewy24Options {
   apiKey: string;
   crc: string;
   sandbox: boolean;
+  /** Publiczny URL backendu — buduje urlStatus (webhook P24). */
+  backendUrl: string;
+  /** Publiczny URL storefrontu — buduje urlReturn (powrót klienta). */
+  storefrontUrl: string;
 }
 
-interface TransactionRegisterPayload {
-  sessionId: string;
-  amount: number;
-  currency: string;
-  description: string;
-  email: string;
-  country: string;
-  language: string;
-  urlReturn: string;
-  urlStatus: string;
-}
-
-interface TransactionVerifyPayload {
-  sessionId: string;
-  orderId: number;
-  amount: number;
-  currency: string;
+interface InjectedDependencies {
+  logger: Logger;
+  [key: string]: unknown;
 }
 
 /**
- * Przelewy24 Payment Provider for MedusaJS v2
- *
- * Supports: BLIK, bank transfers, credit cards via P24 gateway.
- * Flow: register transaction → redirect to P24 → callback verification
+ * Surowe dane sesji P24 zapisywane w `PaymentSession.data`.
+ * `p24_session_id` to nasz unikalny `sessionId` wysłany do P24 (≤ 100 znaków);
+ * P24 zwraca go w notyfikacji do `urlStatus`, dzięki czemu Medusa dopasowuje
+ * webhook do właściwej sesji.
  */
-export default class Przelewy24PaymentService {
+interface Przelewy24SessionData {
+  p24_session_id: string;
+  token?: string;
+  redirect_url?: string;
+  /** Kwota w groszach (integer) — P24 operuje wyłącznie na groszach. */
+  amount_grosz: number;
+  currency: string;
+  /** Numeryczny identyfikator transakcji nadany przez P24 (z notyfikacji). */
+  order_id?: number;
+  status?: "pending" | "verified";
+  [k: string]: unknown;
+}
+
+const P24_STATUS_PAID = 2;
+
+/**
+ * Przelewy24 Payment Provider (MedusaJS v2).
+ *
+ * Flow (redirect, async):
+ *  1. `initiatePayment` → `transaction/register` → token + redirect_url (zapis w `data`).
+ *  2. Storefront przekierowuje klienta na `redirect_url`.
+ *  3. P24 wysyła notyfikację na `urlStatus` (webhook Medusy `/hooks/payment/...`).
+ *  4. `getWebhookActionAndData` weryfikuje podpis + `transaction/verify` → SUCCESSFUL.
+ *
+ * Podpisy: SHA-384 z `json_encode` o ŚCIŚLE określonej kolejności pól
+ * (zweryfikowane z dok. developers.przelewy24.pl). `JSON.stringify` w Node nie
+ * escapuje slashy ani unicode → zgodne z `JSON_UNESCAPED_SLASHES|UNICODE`.
+ */
+export default class Przelewy24PaymentService extends AbstractPaymentProvider<Przelewy24Options> {
   static identifier = "przelewy24";
 
-  private merchantId: string;
-  private posId: string;
-  private apiKey: string;
-  private crc: string;
-  private sandbox: boolean;
-  private baseUrl: string;
+  protected readonly logger_: Logger;
+  protected readonly options_: Przelewy24Options;
+  private readonly apiBaseUrl: string;
+  private readonly redirectBaseUrl: string;
 
-  constructor(_container: Record<string, unknown>, options: Przelewy24Options) {
-    this.merchantId = options.merchantId;
-    this.posId = options.posId;
-    this.apiKey = options.apiKey;
-    this.crc = options.crc;
-    this.sandbox = options.sandbox;
-    this.baseUrl = this.sandbox
+  constructor(container: InjectedDependencies, options: Przelewy24Options) {
+    super(container, options);
+    this.logger_ = container.logger;
+    // P24: posId domyślnie = merchantId (typowa konfiguracja jedno-sklepowa).
+    this.options_ = {
+      ...options,
+      posId: options.posId || options.merchantId,
+    };
+    const host = options.sandbox
       ? "https://sandbox.przelewy24.pl"
       : "https://secure.przelewy24.pl";
+    this.apiBaseUrl = `${host}/api/v1`;
+    this.redirectBaseUrl = host;
   }
 
-  private generateSign(data: Record<string, string | number>): string {
-    const jsonPayload = JSON.stringify(data);
-    return crypto.createHash("sha384").update(jsonPayload).digest("hex");
+  static validateOptions(options: Record<string, unknown>): void {
+    // posId pomijamy — domyślnie przyjmujemy merchantId (patrz konstruktor).
+    for (const key of ["merchantId", "apiKey", "crc"]) {
+      if (!options[key]) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          `Przelewy24: brak wymaganej opcji "${key}".`,
+        );
+      }
+    }
   }
 
-  private async apiRequest<T>(
+  private sign(payload: Record<string, string | number>): string {
+    // Kolejność kluczy w obiekcie = kolejność w JSON (load-bearing dla P24).
+    return crypto
+      .createHash("sha384")
+      .update(JSON.stringify(payload))
+      .digest("hex");
+  }
+
+  private async api<T>(
     endpoint: string,
-    method: "GET" | "POST" | "PUT" = "POST",
+    method: "GET" | "POST" | "PUT",
     body?: Record<string, unknown>,
   ): Promise<T> {
-    const credentials = Buffer.from(`${this.posId}:${this.apiKey}`).toString("base64");
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const credentials = Buffer.from(
+      `${this.options_.posId}:${this.options_.apiKey}`,
+    ).toString("base64");
+
+    const res = await fetch(`${this.apiBaseUrl}${endpoint}`, {
       method,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Basic ${credentials}`,
       },
       body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(30_000),
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Przelewy24 API error: ${response.status} — ${error}`);
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Przelewy24 API ${method} ${endpoint} → ${res.status}: ${text}`,
+      );
+    }
+    return (await res.json()) as T;
+  }
+
+  private toGrosz(amount: unknown): number {
+    // Medusa v2 przekazuje kwoty w jednostce głównej waluty (dziesiętne PLN).
+    return Math.round(Number(amount) * 100);
+  }
+
+  async initiatePayment(
+    input: InitiatePaymentInput,
+  ): Promise<InitiatePaymentOutput> {
+    const amountGrosz = this.toGrosz(input.amount);
+    const currency = (input.currency_code ?? "pln").toUpperCase();
+
+    const ctx = (input.data ?? {}) as Record<string, unknown>;
+    const customerCtx = (input.context?.customer ?? {}) as {
+      email?: string;
+    };
+    const sessionId = `p24_${crypto.randomUUID()}`;
+    const email =
+      (ctx.email as string | undefined) ||
+      customerCtx.email ||
+      "";
+    const cartId = (ctx.cart_id as string | undefined) ?? "";
+
+    const urlStatus = `${this.options_.backendUrl.replace(/\/$/, "")}/hooks/payment/pp_przelewy24_przelewy24`;
+    const urlReturn = `${this.options_.storefrontUrl.replace(/\/$/, "")}/checkout/przelewy24/return${
+      cartId ? `?cart_id=${encodeURIComponent(cartId)}` : ""
+    }`;
+
+    const sign = this.sign({
+      sessionId,
+      merchantId: Number(this.options_.merchantId),
+      amount: amountGrosz,
+      currency,
+      crc: this.options_.crc,
+    });
+
+    let token: string | undefined;
+    try {
+      const result = await this.api<{ data: { token: string } }>(
+        "/transaction/register",
+        "POST",
+        {
+          merchantId: Number(this.options_.merchantId),
+          posId: Number(this.options_.posId),
+          sessionId,
+          amount: amountGrosz,
+          currency,
+          description: cartId
+            ? `Zamowienie Lumine ${cartId}`
+            : "Zamowienie Lumine",
+          email,
+          country: "PL",
+          language: "pl",
+          urlReturn,
+          urlStatus,
+          sign,
+        },
+      );
+      token = result.data?.token;
+    } catch (e) {
+      this.logger_.error(
+        `[przelewy24] register nieudany: ${(e as Error).message}`,
+      );
+      throw e;
     }
 
-    return response.json() as Promise<T>;
+    if (!token) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        "Przelewy24: brak tokenu w odpowiedzi register.",
+      );
+    }
+
+    const data: Przelewy24SessionData = {
+      p24_session_id: sessionId,
+      token,
+      redirect_url: `${this.redirectBaseUrl}/trnRequest/${token}`,
+      amount_grosz: amountGrosz,
+      currency,
+      status: "pending",
+    };
+
+    return { id: sessionId, data };
   }
 
-  async registerTransaction(payload: TransactionRegisterPayload): Promise<{ token: string }> {
-    const sign = this.generateSign({
-      sessionId: payload.sessionId,
-      merchantId: Number(this.merchantId),
-      amount: payload.amount,
-      currency: payload.currency,
-      crc: this.crc,
+  async authorizePayment(
+    input: AuthorizePaymentInput,
+  ): Promise<AuthorizePaymentOutput> {
+    const data = (input.data ?? {}) as Przelewy24SessionData;
+    // Płatność jest potwierdzona dopiero po notyfikacji + verify (webhook).
+    // Dopóki nie ma `status: verified`, trzymamy „pending" — Medusa nie
+    // utworzy zamówienia, dopóki webhook nie oznaczy płatności jako opłaconej.
+    if (data.status === "verified") {
+      return { status: "captured", data };
+    }
+    return { status: "pending", data };
+  }
+
+  async capturePayment(
+    input: CapturePaymentInput,
+  ): Promise<CapturePaymentOutput> {
+    // P24 rozlicza środki w momencie weryfikacji transakcji — capture to no-op.
+    return { data: input.data ?? {} };
+  }
+
+  async getPaymentStatus(
+    input: GetPaymentStatusInput,
+  ): Promise<GetPaymentStatusOutput> {
+    const data = (input.data ?? {}) as Przelewy24SessionData;
+    if (data.status === "verified") {
+      return { status: "captured", data };
+    }
+
+    // Fallback: odpytaj P24 o stan transakcji po sessionId.
+    const sessionId = data.p24_session_id;
+    if (!sessionId) {
+      return { status: "pending", data };
+    }
+    try {
+      const result = await this.api<{
+        data: { status: number; orderId: number };
+      }>(`/transaction/by/sessionId/${encodeURIComponent(sessionId)}`, "GET");
+      if (result.data?.status === P24_STATUS_PAID) {
+        return {
+          status: "captured",
+          data: { ...data, status: "verified", order_id: result.data.orderId },
+        };
+      }
+    } catch (e) {
+      this.logger_.warn(
+        `[przelewy24] getPaymentStatus by sessionId nieudany: ${(e as Error).message}`,
+      );
+    }
+    return { status: "pending", data };
+  }
+
+  async cancelPayment(
+    input: CancelPaymentInput,
+  ): Promise<CancelPaymentOutput> {
+    // P24 nie udostępnia anulowania zarejestrowanej, nieopłaconej transakcji
+    // — wygasa sama. Zwracamy bieżący stan.
+    return { data: input.data ?? {} };
+  }
+
+  async deletePayment(
+    input: DeletePaymentInput,
+  ): Promise<DeletePaymentOutput> {
+    return { data: input.data ?? {} };
+  }
+
+  async refundPayment(
+    input: RefundPaymentInput,
+  ): Promise<RefundPaymentOutput> {
+    const data = (input.data ?? {}) as Przelewy24SessionData;
+    const orderId = data.order_id;
+    if (!orderId) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Przelewy24: brak orderId — nie można wykonać zwrotu (zrób zwrot w panelu P24).",
+      );
+    }
+    const amountGrosz = this.toGrosz(input.amount);
+    try {
+      await this.api("/transaction/refund", "POST", {
+        requestId: crypto.randomUUID(),
+        refunds: [
+          {
+            orderId,
+            sessionId: data.p24_session_id,
+            amount: amountGrosz,
+            description: "Zwrot Lumine",
+          },
+        ],
+      });
+    } catch (e) {
+      this.logger_.error(
+        `[przelewy24] refund nieudany: ${(e as Error).message}`,
+      );
+      throw e;
+    }
+    return { data };
+  }
+
+  async retrievePayment(
+    input: RetrievePaymentInput,
+  ): Promise<RetrievePaymentOutput> {
+    return { data: input.data ?? {} };
+  }
+
+  async updatePayment(
+    input: UpdatePaymentInput,
+  ): Promise<UpdatePaymentOutput> {
+    const data = (input.data ?? {}) as Przelewy24SessionData;
+    const amountGrosz = this.toGrosz(input.amount);
+    return { data: { ...data, amount_grosz: amountGrosz } };
+  }
+
+  /**
+   * Webhook P24 (urlStatus). Medusa kieruje tu POST z `/hooks/payment/...`.
+   * Weryfikujemy podpis notyfikacji, potem wołamy `transaction/verify`
+   * (bez tego środki nie zostaną rozliczone) i zwracamy akcję SUCCESSFUL.
+   */
+  async getWebhookActionAndData(
+    payload: ProviderWebhookPayload["payload"],
+  ): Promise<WebhookActionResult> {
+    const body = (payload.data ?? {}) as Record<string, unknown>;
+    const merchantId = Number(body.merchantId);
+    const posId = Number(body.posId);
+    const sessionId = String(body.sessionId ?? "");
+    const amount = Number(body.amount);
+    const originAmount = Number(body.originAmount);
+    const currency = String(body.currency ?? "");
+    const orderId = Number(body.orderId);
+    const methodId = Number(body.methodId);
+    const statement = String(body.statement ?? "");
+    const receivedSign = String(body.sign ?? "");
+
+    if (!sessionId || !orderId) {
+      return { action: PaymentActions.NOT_SUPPORTED };
+    }
+
+    const expectedSign = this.sign({
+      merchantId,
+      posId,
+      sessionId,
+      amount,
+      originAmount,
+      currency,
+      orderId,
+      methodId,
+      statement,
+      crc: this.options_.crc,
     });
 
-    // TODO: Verify endpoint path with P24 v2 REST API docs
-    const result = await this.apiRequest<{ data: { token: string } }>(
-      "/api/v1/transaction/register",
-      "POST",
-      {
-        merchantId: Number(this.merchantId),
-        posId: Number(this.posId),
-        sessionId: payload.sessionId,
-        amount: payload.amount,
-        currency: payload.currency,
-        description: payload.description,
-        email: payload.email,
-        country: payload.country,
-        language: payload.language,
-        urlReturn: payload.urlReturn,
-        urlStatus: payload.urlStatus,
-        sign,
-      },
-    );
+    if (expectedSign !== receivedSign) {
+      this.logger_.error(
+        `[przelewy24] webhook: niezgodny podpis dla sessionId=${sessionId}`,
+      );
+      return { action: PaymentActions.FAILED };
+    }
 
-    return { token: result.data.token };
-  }
-
-  getRedirectUrl(token: string): string {
-    return `${this.baseUrl}/trnRequest/${token}`;
-  }
-
-  async verifyTransaction(payload: TransactionVerifyPayload): Promise<{ status: string }> {
-    const sign = this.generateSign({
-      sessionId: payload.sessionId,
-      orderId: payload.orderId,
-      amount: payload.amount,
-      currency: payload.currency,
-      crc: this.crc,
+    // Potwierdzenie transakcji — obowiązkowe, inaczej P24 nie rozliczy środków.
+    const verifySign = this.sign({
+      sessionId,
+      orderId,
+      amount,
+      currency,
+      crc: this.options_.crc,
     });
-
-    // TODO: Verify endpoint path with P24 v2 REST API docs
-    const result = await this.apiRequest<{ data: { status: string } }>(
-      "/api/v1/transaction/verify",
-      "PUT",
-      {
-        merchantId: Number(this.merchantId),
-        posId: Number(this.posId),
-        sessionId: payload.sessionId,
-        orderId: payload.orderId,
-        amount: payload.amount,
-        currency: payload.currency,
-        sign,
-      },
-    );
-
-    return { status: result.data.status };
-  }
-
-  async initiatePayment(context: {
-    amount: number;
-    currency_code: string;
-    resource_id: string;
-    customer: { email: string };
-    return_url: string;
-    webhook_url: string;
-  }): Promise<{
-    session_data: Record<string, unknown>;
-    update_requests: { customer_metadata: Record<string, unknown> };
-  }> {
-    const { token } = await this.registerTransaction({
-      sessionId: context.resource_id,
-      amount: Math.round(context.amount),
-      currency: context.currency_code.toUpperCase(),
-      description: `Zamówienie Lumine #${context.resource_id}`,
-      email: context.customer.email,
-      country: "PL",
-      language: "pl",
-      urlReturn: context.return_url,
-      urlStatus: context.webhook_url,
-    });
+    try {
+      await this.api("/transaction/verify", "PUT", {
+        merchantId,
+        posId,
+        sessionId,
+        amount,
+        currency,
+        orderId,
+        sign: verifySign,
+      });
+    } catch (e) {
+      this.logger_.error(
+        `[przelewy24] webhook verify nieudany dla sessionId=${sessionId}: ${(e as Error).message}`,
+      );
+      return { action: PaymentActions.FAILED };
+    }
 
     return {
-      session_data: {
-        token,
-        redirect_url: this.getRedirectUrl(token),
-      },
-      update_requests: {
-        customer_metadata: { p24_session: context.resource_id },
+      action: PaymentActions.SUCCESSFUL,
+      data: {
+        session_id: sessionId,
+        amount,
       },
     };
-  }
-
-  async getPaymentStatus(paymentSessionData: Record<string, unknown>): Promise<string> {
-    const status = paymentSessionData.status as string | undefined;
-    return status ?? "pending";
   }
 }

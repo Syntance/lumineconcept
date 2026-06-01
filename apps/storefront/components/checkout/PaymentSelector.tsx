@@ -13,6 +13,8 @@ const PAYPO_MAX_AMOUNT = 3000;
 
 /** ID providera `@medusajs/payment/providers/system` (manual). */
 const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
+/** Pełny id providera Przelewy24 w Medusie. */
+const PRZELEWY24_PROVIDER_ID = "pp_przelewy24_przelewy24";
 
 interface PaymentOption {
   id: string;
@@ -26,20 +28,20 @@ interface PaymentOption {
 
 const PAYMENT_OPTIONS: PaymentOption[] = [
   {
+    id: PRZELEWY24_PROVIDER_ID,
+    name: "Przelewy24",
+    description: "BLIK, przelew bankowy, karta płatnicza — szybka płatność online",
+    icon: CreditCard,
+    methods: ["BLIK", "Przelew", "Karta"],
+    enabled: true,
+  },
+  {
     id: SYSTEM_PAYMENT_PROVIDER_ID,
     name: "Przelew tradycyjny (tryb testowy)",
     description:
       "Zamówienie trafia do Admina Medusy bez rzeczywistego pobrania środków.",
     icon: ReceiptText,
     enabled: true,
-  },
-  {
-    id: "przelewy24",
-    name: "Przelewy24",
-    description: "BLIK, przelew bankowy, karta płatnicza (wkrótce)",
-    icon: CreditCard,
-    methods: ["BLIK", "Przelew", "Karta"],
-    enabled: false,
   },
   {
     id: "paypo",
@@ -53,23 +55,36 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
 interface PaymentSelectorProps {
   selectedProviderId: string;
   onSelect: (providerId: string) => void;
+  /**
+   * Aktywne providery zarejestrowane dla regionu. Gdy podane, opcja jest
+   * dostępna tylko, jeśli jej provider faktycznie istnieje w backendzie
+   * (np. P24 pokazujemy dopiero po podpięciu do regionu).
+   */
+  availableProviderIds?: string[];
 }
 
 export function PaymentSelector({
   selectedProviderId,
   onSelect,
+  availableProviderIds,
 }: PaymentSelectorProps) {
   const { grandTotal } = useCart();
   const isPayPoEligible =
     grandTotal >= PAYPO_MIN_AMOUNT && grandTotal <= PAYPO_MAX_AMOUNT;
+  const isRegistered = (id: string) =>
+    !availableProviderIds || availableProviderIds.includes(id);
 
   return (
     <div className="space-y-3">
-      {PAYMENT_OPTIONS.map((option) => {
+      {PAYMENT_OPTIONS.filter(
+        (option) => option.enabled === false || isRegistered(option.id),
+      ).map((option) => {
         const Icon = option.icon;
         const isSelected = selectedProviderId === option.id;
         const isDisabled =
-          !option.enabled || (option.id === "paypo" && !isPayPoEligible);
+          !option.enabled ||
+          !isRegistered(option.id) ||
+          (option.id === "paypo" && !isPayPoEligible);
 
         return (
           <button

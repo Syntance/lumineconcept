@@ -1,6 +1,6 @@
-import { Module } from "@medusajs/framework/utils";
+import { ModuleProvider, Modules } from "@medusajs/framework/utils";
 import Przelewy24PaymentService from "./service";
 
-export default Module("przelewy24", {
-  service: Przelewy24PaymentService,
+export default ModuleProvider(Modules.PAYMENT, {
+  services: [Przelewy24PaymentService],
 });
