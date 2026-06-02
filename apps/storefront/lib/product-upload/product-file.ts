@@ -1,5 +1,6 @@
 import "server-only";
 import { put } from "@vercel/blob";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
@@ -113,6 +114,62 @@ async function uploadViaVercelBlob(file: File): Promise<ProductUploadResult> {
   return { url: blob.url, filename: file.name, size: file.size };
 }
 
+let cachedR2: S3Client | null = null;
+
+function getR2Config() {
+  const endpoint = process.env.S3_ENDPOINT?.trim();
+  const accessKeyId = process.env.S3_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY?.trim();
+  const bucket = process.env.S3_BUCKET?.trim();
+  const fileUrl = process.env.S3_FILE_URL?.trim();
+
+  if (!endpoint || !accessKeyId || !secretAccessKey || !bucket || !fileUrl) {
+    return null;
+  }
+  return { endpoint, accessKeyId, secretAccessKey, bucket, fileUrl };
+}
+
+/**
+ * Upload bezpośrednio do Cloudflare R2 (S3-compatible). Preferowany na produkcji:
+ * trwałe, off-site, niezależne od backendu Medusy/Railway. Pliki klientów lądują
+ * pod osobnym prefiksem `customer-uploads/`, żeby łatwo je odróżnić od assetów sklepu.
+ */
+async function uploadViaR2(
+  file: File,
+  config: NonNullable<ReturnType<typeof getR2Config>>,
+): Promise<ProductUploadResult> {
+  if (!cachedR2) {
+    cachedR2 = new S3Client({
+      region: process.env.S3_REGION?.trim() || "auto",
+      endpoint: config.endpoint,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+      },
+    });
+  }
+
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).slice(2, 8);
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const key = `customer-uploads/${timestamp}-${random}-${safeName}`;
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  await cachedR2.send(
+    new PutObjectCommand({
+      Bucket: config.bucket,
+      Key: key,
+      Body: bytes,
+      ContentType: file.type || "application/octet-stream",
+    }),
+  );
+
+  const base = config.fileUrl.replace(/\/$/, "");
+  return { url: `${base}/${key}`, filename: file.name, size: file.size };
+}
+
 export function validateProductUploadFile(file: File): string | null {
   if (file.size > MAX_SIZE) {
     return "Plik jest za duży (maks. 10 MB)";
@@ -127,10 +184,19 @@ export async function uploadProductFile(file: File): Promise<ProductUploadResult
   const validationError = validateProductUploadFile(file);
   if (validationError) throw new Error(validationError);
 
+  // 1) Cloudflare R2 — preferowane na produkcji (trwałe, off-site).
+  const r2 = getR2Config();
+  if (r2) {
+    return uploadViaR2(file, r2);
+  }
+
+  // 2) Vercel Blob — alternatywa, gdy R2 nieskonfigurowane.
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
   if (blobToken) {
     return uploadViaVercelBlob(file);
   }
 
+  // 3) Medusa /admin/uploads — fallback (głównie dev). Trwałe tylko gdy
+  //    backend ma file-s3 → R2; na file-local pliki są efemeryczne.
   return uploadViaMedusa(file);
 }

@@ -18,6 +18,26 @@ const SENTRY_CSP_HOSTS = process.env.NEXT_PUBLIC_SENTRY_DSN
 
 const medusaUrl = new URL(MEDUSA_BACKEND_URL);
 
+/**
+ * Publiczny host R2 (Cloudflare) — zdjęcia produktów serwowane z R2 muszą być
+ * dozwolone w next/image. Derywujemy z S3_FILE_URL (custom domain lub r2.dev),
+ * dostępnego przy buildzie. Brak = pomijamy.
+ */
+const r2PublicUrl = process.env.S3_FILE_URL?.trim();
+const r2RemotePattern = (() => {
+  if (!r2PublicUrl) return null;
+  try {
+    const u = new URL(r2PublicUrl);
+    return {
+      protocol: u.protocol.replace(":", "") as "http" | "https",
+      hostname: u.hostname,
+      port: u.port || undefined,
+    };
+  } catch {
+    return null;
+  }
+})();
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -39,6 +59,7 @@ const nextConfig: NextConfig = {
         hostname: medusaUrl.hostname,
         port: medusaUrl.port || undefined,
       },
+      ...(r2RemotePattern ? [r2RemotePattern] : []),
     ],
   },
 

@@ -326,18 +326,61 @@ export default defineConfig({
       key: "product_config",
       resolve: "./src/modules/product-config",
     },
+    /**
+     * File storage.
+     *
+     * Produkcja: Cloudflare R2 (S3-compatible) — dysk Railway jest EFEMERYCZNY,
+     * pliki przepadają przy każdym redeploy. R2 daje trwałe, off-site przechowywanie
+     * zdjęć produktów i plików klientów. Provider `@medusajs/medusa/file-s3` jest
+     * wbudowany w pakiet — bez dodatkowej zależności.
+     *
+     * Dev / brak konfiguracji R2: fallback na `file-local` (`/static`), żeby nie
+     * blokować lokalnej pracy. Modu\u0142 file akceptuje DOK\u0141ADNIE jednego providera.
+     *
+     * Dla R2:
+     *   S3_ENDPOINT  = https://<account_id>.r2.cloudflarestorage.com
+     *   S3_REGION    = auto
+     *   S3_BUCKET    = nazwa bucketa
+     *   S3_FILE_URL  = publiczny URL (custom domain R2 lub https://pub-xxxx.r2.dev)
+     *   S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY = token R2 (Object Read & Write)
+     */
     {
       resolve: "@medusajs/medusa/file",
       options: {
-        providers: [
-          {
-            resolve: "@medusajs/file-local",
-            id: "local",
-            options: {
-              backend_url: `${BACKEND_URL.replace(/\/$/, "")}/static`,
-            },
-          },
-        ],
+        providers:
+          process.env.S3_BUCKET &&
+          process.env.S3_ENDPOINT &&
+          process.env.S3_ACCESS_KEY_ID &&
+          process.env.S3_SECRET_ACCESS_KEY
+            ? [
+                {
+                  resolve: "@medusajs/medusa/file-s3",
+                  id: "s3",
+                  options: {
+                    file_url: process.env.S3_FILE_URL,
+                    access_key_id: process.env.S3_ACCESS_KEY_ID,
+                    secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
+                    region: process.env.S3_REGION ?? "auto",
+                    bucket: process.env.S3_BUCKET,
+                    endpoint: process.env.S3_ENDPOINT,
+                    // R2 nie wspiera ACL per-obiekt — publiczny dostęp idzie
+                    // przez ustawienia bucketa / custom domain, nie przez x-amz-acl.
+                    additional_client_config: {
+                      forcePathStyle: true,
+                    },
+                    prefix: process.env.S3_PREFIX ?? "",
+                  },
+                },
+              ]
+            : [
+                {
+                  resolve: "@medusajs/file-local",
+                  id: "local",
+                  options: {
+                    backend_url: `${BACKEND_URL.replace(/\/$/, "")}/static`,
+                  },
+                },
+              ],
       },
     },
     /**
