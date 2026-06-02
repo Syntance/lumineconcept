@@ -102,11 +102,22 @@ export const getStoreConfig = cache(async (): Promise<{ salesChannelId: string |
 });
 
 export async function listCategoryOptions(): Promise<CategoryOption[]> {
-	const data = await adminFetch<{ product_categories: Array<{ id: string; name: string }> }>(
-		"/admin/product-categories?limit=100&fields=id,name",
-	);
+	const data = await adminFetch<{
+		product_categories: Array<{
+			id: string;
+			name: string;
+			parent_category?: { name: string } | null;
+		}>;
+	}>("/admin/product-categories?limit=100&fields=id,name,parent_category.name");
+
 	return data.product_categories
-		.map((c) => ({ id: c.id, name: c.name }))
+		.map((c) => {
+			const parent = c.parent_category?.name?.trim();
+			return {
+				id: c.id,
+				name: parent ? `${parent} / ${c.name}` : c.name,
+			};
+		})
 		.sort((a, b) => a.name.localeCompare(b.name, "pl"));
 }
 
@@ -199,35 +210,32 @@ export async function createAdminProduct(values: ProductFormValues): Promise<str
 
 export async function updateAdminProduct(
 	id: string,
-	variantId: string | null,
 	values: ProductFormValues,
-	priceId?: string | null,
+	existingHandle?: string | null,
 ): Promise<void> {
 	const body: Record<string, unknown> = {
 		title: values.title.trim(),
-		handle: values.handle.trim(),
 		status: values.status,
 		description: values.description.trim(),
 		images: resolveMedusaMediaUrls(values.images).map((url) => ({ url })),
-		categories: values.categoryId ? [{ id: values.categoryId }] : [],
 	};
+
+	/** Nie nadpisuj handle przy edycji — slug z tytułu mógłby złamać URL produktu. */
+	if (existingHandle) {
+		body.handle = existingHandle;
+	} else {
+		body.handle = values.handle.trim();
+	}
+
+	/** Pusta kategoria = nie wysyłaj `categories` — Medusa wtedy kasuje przypisanie do drzewa sklepu. */
+	if (values.categoryId) {
+		body.categories = [{ id: values.categoryId }];
+	}
 
 	await adminFetch(`/admin/products/${id}`, { method: "POST", body: JSON.stringify(body) });
 
 	if (values.price != null) {
 		await syncProductBasePrice(id, values.price);
-	}
-
-	if (variantId && values.price != null) {
-		let resolvedPriceId = priceId ?? null;
-		if (!resolvedPriceId) {
-			const fresh = await getAdminProduct(id);
-			resolvedPriceId = fresh?.priceId ?? null;
-		}
-		await adminFetch(`/admin/products/${id}/variants/${variantId}`, {
-			method: "POST",
-			body: JSON.stringify({ prices: buildPrices(values, resolvedPriceId) }),
-		});
 	}
 }
 

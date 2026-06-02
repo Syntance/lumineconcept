@@ -8,6 +8,7 @@ import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/erro
 import { adminUpload } from "@magazyn/core/medusa/client";
 import { resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
 import { slugify } from "@magazyn/core/lib/slug";
+import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
 import {
 	createAdminProduct,
 	deleteAdminProduct,
@@ -21,6 +22,7 @@ const PRODUCTS_PATH = `${magazynConfig.basePath}/panel/produkty`;
 
 const productSchema = z.object({
 	id: z.string().trim().optional(),
+	handle: z.string().trim().optional(),
 	variantId: z.string().trim().nullable().optional(),
 	priceId: z.string().trim().nullable().optional(),
 	title: z.string().trim().min(2, "Nazwa musi mieć min. 2 znaki."),
@@ -34,9 +36,14 @@ const productSchema = z.object({
 export type ProductPayload = z.input<typeof productSchema>;
 
 function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
+	const handle =
+		data.id && data.handle?.trim()
+			? data.handle.trim()
+			: slugify(data.title);
+
 	return {
 		title: data.title,
-		handle: slugify(data.title),
+		handle,
 		status: data.status,
 		categoryId: data.categoryId,
 		description: data.description,
@@ -55,10 +62,14 @@ export async function saveProductAction(payload: ProductPayload): Promise<SavePr
 	if (data.price == null) return { ok: false, error: "Podaj cenę." };
 
 	const values = toValues(data);
+	const productHandle = values.handle;
 
 	try {
-		if (data.id) await updateAdminProduct(data.id, data.variantId ?? null, values, data.priceId ?? null);
-		else await createAdminProduct(values);
+		if (data.id) {
+			await updateAdminProduct(data.id, values, productHandle);
+		} else {
+			await createAdminProduct(values);
+		}
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
@@ -67,6 +78,12 @@ export async function saveProductAction(payload: ProductPayload): Promise<SavePr
 
 	revalidateTag("medusa-products", "max");
 	revalidateTag("medusa-categories", "max");
+	await revalidateStorefrontMedusaCache();
+	if (productHandle) {
+		revalidatePath(`/sklep/gotowe-wzory/${productHandle}`);
+		revalidatePath(`/sklep/logo-3d/${productHandle}`);
+		revalidatePath(`/sklep/certyfikaty/${productHandle}`);
+	}
 	revalidatePath(PRODUCTS_PATH);
 	redirect(PRODUCTS_PATH);
 }

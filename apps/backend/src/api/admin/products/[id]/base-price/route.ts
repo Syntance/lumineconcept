@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { IProductModuleService } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
+import { syncProductVariantPricesPln } from "../../../../../lib/sync-product-variant-prices"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const productService: IProductModuleService =
@@ -48,5 +49,22 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     },
   })
 
-  res.json({ base_price: price })
+  let variantPricesUpdated = 0
+  if (price !== null) {
+    try {
+      variantPricesUpdated = await syncProductVariantPricesPln(
+        req.scope,
+        id,
+        price,
+      )
+    } catch (e) {
+      console.error(
+        "[base-price] syncProductVariantPricesPln failed",
+        id,
+        e,
+      )
+    }
+  }
+
+  res.json({ base_price: price, variant_prices_updated: variantPricesUpdated })
 }

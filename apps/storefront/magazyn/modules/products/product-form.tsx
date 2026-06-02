@@ -58,6 +58,7 @@ export function ProductForm({ product, categories }: Props) {
 		startSave(async () => {
 			const result = await saveProductAction({
 				id: product?.id,
+				handle: product?.handle,
 				variantId: product?.variantId ?? null,
 				priceId: product?.priceId ?? null,
 				title: title.trim(),
