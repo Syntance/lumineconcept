@@ -50,8 +50,8 @@ export function FilterSidebar({
     [activeFilters, onFiltersChange],
   );
 
-  const sliderMin = filterConfig.minPrice || PRICE_SLIDER_MIN;
-  const sliderMax = filterConfig.maxPrice || PRICE_SLIDER_MAX;
+  const sliderMin = PRICE_SLIDER_MIN;
+  const sliderMax = Math.max(filterConfig.maxPrice || 0, PRICE_SLIDER_MAX);
   const [localMin, setLocalMin] = useState(activeFilters.priceMin ?? sliderMin);
   const [localMax, setLocalMax] = useState(activeFilters.priceMax ?? sliderMax);
 
