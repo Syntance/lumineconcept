@@ -386,6 +386,8 @@ export function CheckoutForm() {
         }
       }
 
+      // System payment provider (testowy) — finalizacja inline bez bramki.
+      // W produkcji ten provider powinien być niedostępny (tylko P24).
       const result = await completeCart(cartId);
 
       if (result.type !== "order") {

@@ -76,16 +76,23 @@ test.describe("Checkout — happy path", () => {
       .getByRole("button", { name: /przejd[źz] do p[łl]atno[sś]ci/i })
       .click();
 
-    // Krok 3 — płatność. PaymentSelector pokazuje „Przelew tradycyjny".
+    // Krok 3 — płatność. Wybieramy explicite "Przelew tradycyjny (tryb testowy)"
+    // żeby test działał niezależnie od tego czy P24 jest skonfigurowane.
     await expect(
       page.getByRole("heading", { name: /p[łl]atno[sś][ćc]/i }),
     ).toBeVisible();
-
-    // Zgoda na regulamin (jedna z dwóch kontrolek "Akceptuję" → dopasowanie luźne).
-    const terms = page.getByRole("checkbox").first();
-    if (await terms.isVisible()) {
-      await terms.check();
+    
+    // Wybierz system payment provider (testowy, bez bramki)
+    const systemProviderButton = page.getByRole("button", {
+      name: /przelew tradycyjny.*tryb testowy/i,
+    });
+    if (await systemProviderButton.isVisible()) {
+      await systemProviderButton.click();
     }
+
+    // Zgoda na regulamin + RODO (dwie kontrolki checkbox)
+    await page.getByRole("checkbox").first().check();
+    await page.getByRole("checkbox").last().check();
 
     // 4) Finalizacja
     const submit = page.getByRole("button", { name: /zamawiam i p[łl]ac[eę]/i });

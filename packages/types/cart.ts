@@ -56,10 +56,10 @@ export interface Address {
 
 export interface PaymentSession {
   id: string;
-  provider_id: "przelewy24" | "paypo";
+  provider_id: "pp_przelewy24_przelewy24" | "pp_system_default" | "paypo";
   status: "pending" | "authorized" | "captured" | "canceled" | "refunded";
   data: Record<string, unknown>;
 }
 
 export type ShippingProvider = "inpost_parcel_locker" | "inpost_courier" | "dpd_courier";
-export type PaymentProvider = "przelewy24" | "paypo";
+export type PaymentProvider = "pp_przelewy24_przelewy24" | "pp_system_default" | "paypo";

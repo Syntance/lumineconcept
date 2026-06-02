@@ -187,10 +187,23 @@ let paymentReadinessPromise: Promise<PaymentReadiness> | null = null;
 
 const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
 
+/**
+ * Wybiera preferowanego payment providera z listy dostępnych w regionie.
+ * Priorytet: P24 (produkcyjny) > system default (testowy) > pierwszy z listy.
+ * System provider to fallback dla testów — nigdy nie powinien być domyślny
+ * gdy P24 jest skonfigurowany.
+ */
 function pickPreferredProvider(list: Array<{ id: string }>): string | undefined {
-  return (
-    list.find((p) => p.id === SYSTEM_PAYMENT_PROVIDER_ID)?.id ?? list[0]?.id
-  );
+  // Preferuj P24 (produkcyjny) nad system (testowy)
+  const p24 = list.find((p) => p.id === PRZELEWY24_PROVIDER_ID);
+  if (p24) return p24.id;
+  
+  // Fallback: system default dla testów
+  const system = list.find((p) => p.id === SYSTEM_PAYMENT_PROVIDER_ID);
+  if (system) return system.id;
+  
+  // Ostatnia deska ratunku: pierwszy z listy
+  return list[0]?.id;
 }
 
 export function prefetchPaymentReadiness(

@@ -25,6 +25,8 @@ import {
   describeMedusaError,
   completeCart,
   listPaymentProviders as listProviders,
+  prefetchPaymentReadiness,
+  invalidatePaymentReadinessCache,
 } from "@/lib/medusa/checkout";
 
 describe("isCartAlreadyCompletedError", () => {
@@ -183,5 +185,57 @@ describe("listPaymentProviders", () => {
     listPaymentProviders.mockResolvedValueOnce({ payment_providers: [] });
     const result = await listProviders("reg_pl");
     expect(result).toEqual([]);
+  });
+});
+
+describe("prefetchPaymentReadiness — priorytet providerów", () => {
+  const getRegionId = vi.fn().mockResolvedValue("reg_pl");
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    invalidatePaymentReadinessCache();
+  });
+
+  it("preferuje P24 nad system providerem gdy oba dostępne", async () => {
+    listPaymentProviders.mockResolvedValueOnce({
+      payment_providers: [
+        { id: "pp_system_default", is_enabled: true },
+        { id: "pp_przelewy24_przelewy24", is_enabled: true },
+      ],
+    });
+
+    const result = await prefetchPaymentReadiness(getRegionId);
+    expect(result.providerId).toBe("pp_przelewy24_przelewy24");
+  });
+
+  it("używa system providera jako fallback gdy P24 niedostępny", async () => {
+    listPaymentProviders.mockResolvedValueOnce({
+      payment_providers: [{ id: "pp_system_default", is_enabled: true }],
+    });
+
+    const result = await prefetchPaymentReadiness(getRegionId);
+    expect(result.providerId).toBe("pp_system_default");
+  });
+
+  it("wybiera pierwszy provider gdy ani P24 ani system nie są dostępne", async () => {
+    listPaymentProviders.mockResolvedValueOnce({
+      payment_providers: [
+        { id: "pp_stripe", is_enabled: true },
+        { id: "pp_paypal", is_enabled: true },
+      ],
+    });
+
+    const result = await prefetchPaymentReadiness(getRegionId);
+    expect(result.providerId).toBe("pp_stripe");
+  });
+
+  it("wyrzuca błąd gdy brak jakichkolwiek providerów po bootstrap", async () => {
+    listPaymentProviders
+      .mockResolvedValueOnce({ payment_providers: [] })
+      .mockResolvedValueOnce({ payment_providers: [] });
+
+    await expect(prefetchPaymentReadiness(getRegionId)).rejects.toThrow(
+      /brak skonfigurowanych metod płatności/i,
+    );
   });
 });
