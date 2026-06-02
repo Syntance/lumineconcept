@@ -1,0 +1,70 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { magazynConfig } from "@magazyn/magazyn.config";
+import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
+import {
+	cancelOrder,
+	completeOrder,
+	getAdminOrderForEmail,
+	markOrderShipped,
+	orderToEmailSource,
+	startOrderRealization,
+} from "./store";
+
+export type OrderActionState = { error: string | null; ok: boolean };
+
+export type OrderActionType = "capture" | "ship" | "complete" | "cancel";
+
+const HANDLERS: Record<OrderActionType, (orderId: string) => Promise<void>> = {
+	capture: startOrderRealization,
+	ship: markOrderShipped,
+	complete: completeOrder,
+	cancel: cancelOrder,
+};
+
+/** Mapowanie akcji → etap maila (zob. moduł emails). */
+const ACTION_EMAIL: Record<OrderActionType, "realization_started" | "shipped" | "completed" | "cancelled"> = {
+	capture: "realization_started",
+	ship: "shipped",
+	complete: "completed",
+	cancel: "cancelled",
+};
+
+const ORDERS_PATH = `${magazynConfig.basePath}/panel/zamowienia`;
+
+/** Wysyła mail etapu — best-effort, tylko gdy moduł emails jest włączony. */
+async function notifyStage(orderId: string, action: OrderActionType): Promise<void> {
+	if (!magazynConfig.modules.emails) return;
+	try {
+		const order = await getAdminOrderForEmail(orderId);
+		if (!order) return;
+		const { sendOrderStageEmail } = await import("@magazyn/modules/emails/send-order-email");
+		await sendOrderStageEmail(ACTION_EMAIL[action], orderToEmailSource(order));
+	} catch {
+		// Mail to powiadomienie — nie blokujemy operacji na zamówieniu.
+	}
+}
+
+export async function runOrderAction(orderId: string, action: OrderActionType): Promise<OrderActionState> {
+	const handler = HANDLERS[action];
+	if (!handler) return { ok: false, error: "Nieznana akcja." };
+
+	try {
+		await handler(orderId);
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminApiError) return { ok: false, error: error.message };
+		if (error instanceof Error) return { ok: false, error: error.message };
+		return { ok: false, error: "Operacja nie powiodła się." };
+	}
+
+	revalidatePath(ORDERS_PATH);
+	revalidatePath(`${ORDERS_PATH}/${orderId}`);
+	revalidatePath(magazynConfig.basePath);
+
+	await notifyStage(orderId, action);
+
+	return { ok: true, error: null };
+}

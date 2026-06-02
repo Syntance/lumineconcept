@@ -1,0 +1,66 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { magazynConfig } from "../../magazyn.config";
+import { serverEnv } from "../env";
+import { AdminApiError, AdminUnauthorizedError } from "../medusa/errors";
+import { loginWithEmailPassword } from "../medusa/client";
+import { clearSessionToken, setSessionToken } from "../medusa/session";
+
+export type LoginState = { error: string | null };
+
+export async function loginEmailAction(
+	_prev: LoginState,
+	formData: FormData,
+): Promise<LoginState> {
+	const email = String(formData.get("email") ?? "").trim();
+	const password = String(formData.get("password") ?? "");
+
+	if (!email || !password) return { error: "Podaj email i hasło." };
+
+	try {
+		const token = await loginWithEmailPassword(email, password);
+		await setSessionToken(token);
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) return { error: error.message };
+		if (error instanceof AdminApiError) return { error: error.message };
+		return { error: "Nie udało się połączyć z serwerem. Spróbuj ponownie." };
+	}
+
+	redirect(`${magazynConfig.basePath}/panel`);
+}
+
+export async function logoutAction(): Promise<void> {
+	await clearSessionToken();
+	redirect(magazynConfig.basePath);
+}
+
+/**
+ * Start logowania Google przez provider auth w Medusa.
+ * Wymaga skonfigurowanego providera google w backendzie. Zwraca błąd gdy niedostępny.
+ */
+export async function googleStartAction(): Promise<LoginState> {
+	const callbackUrl = `${serverEnv.siteUrl}${magazynConfig.basePath}/auth/google/callback`;
+
+	let location: string | null = null;
+	try {
+		const res = await fetch(`${serverEnv.medusaBackendUrl}/auth/user/google`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ callback_url: callbackUrl }),
+			signal: AbortSignal.timeout(10_000),
+		});
+		if (res.ok) {
+			const data = (await res.json()) as { location?: string };
+			location = data.location ?? null;
+		}
+	} catch {
+		location = null;
+	}
+
+	if (!location) {
+		return { error: "Logowanie Google nie jest skonfigurowane w backendzie. Użyj logowania email." };
+	}
+
+	redirect(location);
+}

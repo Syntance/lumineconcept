@@ -1,0 +1,438 @@
+import "server-only";
+import { adminFetch, serviceAdminFetch } from "@magazyn/core/medusa/client";
+import { getSessionToken } from "@magazyn/core/medusa/session";
+import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
+import { formatPrice } from "@magazyn/core/lib/format";
+import type {
+	AdminOrderDetail,
+	AdminOrderRow,
+	OrderAddress,
+	OrderFulfillment,
+	OrderFulfillmentStatus,
+	OrderPayment,
+	OrderPaymentStatus,
+	OrderStatus,
+} from "./order-types";
+
+export type {
+	AdminOrderDetail,
+	AdminOrderRow,
+	OrderAddress,
+	OrderFulfillment,
+	OrderFulfillmentStatus,
+	OrderLineItem,
+	OrderPayment,
+	OrderPaymentStatus,
+	OrderStatus,
+} from "./order-types";
+
+type MedusaAddress = {
+	first_name?: string | null;
+	last_name?: string | null;
+	company?: string | null;
+	address_1?: string | null;
+	address_2?: string | null;
+	city?: string | null;
+	postal_code?: string | null;
+	province?: string | null;
+	country_code?: string | null;
+	phone?: string | null;
+};
+
+type MedusaOrderItem = {
+	id: string;
+	title?: string | null;
+	subtitle?: string | null;
+	product_title?: string | null;
+	variant_title?: string | null;
+	quantity?: number | null;
+	unit_price?: number | null;
+	total?: number | null;
+	thumbnail?: string | null;
+};
+
+type MedusaPayment = {
+	id: string;
+	amount?: number | null;
+	currency_code?: string | null;
+	captured_at?: string | null;
+	canceled_at?: string | null;
+};
+
+type MedusaFulfillment = {
+	id: string;
+	shipped_at?: string | null;
+	delivered_at?: string | null;
+	canceled_at?: string | null;
+	items?: Array<{ id?: string | null; line_item_id?: string | null; quantity?: number | null }> | null;
+};
+
+type MedusaOrder = {
+	id: string;
+	display_id?: number | null;
+	status?: OrderStatus | null;
+	payment_status?: OrderPaymentStatus | null;
+	fulfillment_status?: OrderFulfillmentStatus | null;
+	email?: string | null;
+	currency_code?: string | null;
+	created_at?: string | null;
+	updated_at?: string | null;
+	total?: number | null;
+	item_total?: number | null;
+	shipping_total?: number | null;
+	tax_total?: number | null;
+	discount_total?: number | null;
+	metadata?: Record<string, unknown> | null;
+	items?: MedusaOrderItem[] | null;
+	shipping_address?: MedusaAddress | null;
+	billing_address?: MedusaAddress | null;
+	shipping_methods?: Array<{ name?: string | null; shipping_option_id?: string | null }> | null;
+	payment_collections?: Array<{ payments?: MedusaPayment[] | null }> | null;
+	fulfillments?: MedusaFulfillment[] | null;
+};
+
+function mapAddress(address: MedusaAddress | null | undefined): OrderAddress | null {
+	if (!address) return null;
+	const hasData = address.first_name || address.last_name || address.address_1 || address.city || address.phone;
+	if (!hasData) return null;
+	return {
+		firstName: address.first_name ?? "",
+		lastName: address.last_name ?? "",
+		company: address.company ?? "",
+		address1: address.address_1 ?? "",
+		address2: address.address_2 ?? "",
+		city: address.city ?? "",
+		postalCode: address.postal_code ?? "",
+		province: address.province ?? "",
+		countryCode: address.country_code ?? "",
+		phone: address.phone ?? "",
+	};
+}
+
+function customerNameFrom(order: MedusaOrder): string {
+	const address = order.shipping_address ?? order.billing_address;
+	return [address?.first_name, address?.last_name].filter(Boolean).join(" ").trim();
+}
+
+function normalizeMetadata(metadata: Record<string, unknown> | null | undefined): Record<string, string> {
+	const result: Record<string, string> = {};
+	for (const [key, value] of Object.entries(metadata ?? {})) {
+		if (value == null) continue;
+		result[key] = typeof value === "string" ? value : JSON.stringify(value);
+	}
+	return result;
+}
+
+/**
+ * Konwertuje cenę z Medusa API (decimal w głównej jednostce, np. 100.50 zł)
+ * na wartość w groszach (integer, np. 10050).
+ * Medusa v2 zwraca ceny jako decimal, ale magazyn oczekuje minor units (grosze).
+ */
+function toMinorUnits(amount: number | null | undefined): number {
+	return Math.round((amount ?? 0) * 100);
+}
+
+const LIST_FIELDS = [
+	"id",
+	"display_id",
+	"status",
+	"payment_status",
+	"fulfillment_status",
+	"email",
+	"currency_code",
+	"total",
+	"created_at",
+	"items.quantity",
+	"shipping_address.first_name",
+	"shipping_address.last_name",
+	"billing_address.first_name",
+	"billing_address.last_name",
+].join(",");
+
+const DETAIL_FIELDS = [
+	"id",
+	"display_id",
+	"status",
+	"payment_status",
+	"fulfillment_status",
+	"email",
+	"currency_code",
+	"created_at",
+	"updated_at",
+	"total",
+	"item_total",
+	"shipping_total",
+	"tax_total",
+	"discount_total",
+	"metadata",
+	"*items",
+	"*shipping_address",
+	"*billing_address",
+	"shipping_methods.name",
+	"shipping_methods.shipping_option_id",
+	"*payment_collections.payments",
+	"*fulfillments",
+	"fulfillments.items.id",
+	"fulfillments.items.quantity",
+	"fulfillments.items.line_item_id",
+].join(",");
+
+export async function listAdminOrders(): Promise<AdminOrderRow[]> {
+	const data = await adminFetch<{ orders: MedusaOrder[] }>(
+		`/admin/orders?limit=100&order=-created_at&fields=${LIST_FIELDS}`,
+	);
+
+	return data.orders.map((order) => ({
+		id: order.id,
+		displayId: order.display_id ?? 0,
+		status: order.status ?? "pending",
+		paymentStatus: order.payment_status ?? "not_paid",
+		fulfillmentStatus: order.fulfillment_status ?? "not_fulfilled",
+		email: order.email ?? "",
+		customerName: customerNameFrom(order),
+		currencyCode: (order.currency_code ?? "pln").toUpperCase(),
+		total: toMinorUnits(order.total),
+		itemCount: (order.items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0),
+		createdAt: order.created_at ?? "",
+	}));
+}
+
+function mapMedusaOrderToDetail(order: MedusaOrder): AdminOrderDetail {
+	const payments: OrderPayment[] = (order.payment_collections ?? []).flatMap((collection) =>
+		(collection.payments ?? []).map((payment) => ({
+			id: payment.id,
+			amount: toMinorUnits(payment.amount),
+			currencyCode: (payment.currency_code ?? order.currency_code ?? "pln").toUpperCase(),
+			capturedAt: payment.captured_at ?? null,
+			canceledAt: payment.canceled_at ?? null,
+		})),
+	);
+
+	const fulfillments: OrderFulfillment[] = (order.fulfillments ?? []).map((fulfillment) => ({
+		id: fulfillment.id,
+		shippedAt: fulfillment.shipped_at ?? null,
+		deliveredAt: fulfillment.delivered_at ?? null,
+		canceledAt: fulfillment.canceled_at ?? null,
+		items: (fulfillment.items ?? []).map((item) => ({
+			id: item.id ?? item.line_item_id ?? "",
+			quantity: item.quantity ?? 0,
+		})),
+	}));
+
+	return {
+		id: order.id,
+		displayId: order.display_id ?? 0,
+		status: order.status ?? "pending",
+		paymentStatus: order.payment_status ?? "not_paid",
+		fulfillmentStatus: order.fulfillment_status ?? "not_fulfilled",
+		email: order.email ?? "",
+		phone: order.shipping_address?.phone ?? order.billing_address?.phone ?? "",
+		currencyCode: (order.currency_code ?? "pln").toUpperCase(),
+		createdAt: order.created_at ?? "",
+		updatedAt: order.updated_at ?? "",
+		items: (order.items ?? []).map((item) => ({
+			id: item.id,
+			title: item.title ?? item.product_title ?? "Produkt",
+			subtitle: item.variant_title ?? item.subtitle ?? "",
+			quantity: item.quantity ?? 0,
+			unitPrice: toMinorUnits(item.unit_price),
+			total: toMinorUnits(item.total),
+			thumbnail: resolveMedusaMediaUrl(item.thumbnail) ?? null,
+		})),
+		itemTotal: toMinorUnits(order.item_total),
+		shippingTotal: toMinorUnits(order.shipping_total),
+		taxTotal: toMinorUnits(order.tax_total),
+		discountTotal: toMinorUnits(order.discount_total),
+		total: toMinorUnits(order.total),
+		shippingAddress: mapAddress(order.shipping_address),
+		billingAddress: mapAddress(order.billing_address),
+		shippingMethodName: order.shipping_methods?.[0]?.name ?? null,
+		payments,
+		fulfillments,
+		metadata: normalizeMetadata(order.metadata),
+	};
+}
+
+export async function getAdminOrder(id: string): Promise<AdminOrderDetail | null> {
+	const data = await adminFetch<{ order: MedusaOrder }>(`/admin/orders/${id}?fields=${DETAIL_FIELDS}`);
+	if (!data.order) return null;
+	return mapMedusaOrderToDetail(data.order);
+}
+
+/** Pobiera zamówienie do maili — sesja panelu lub konto serwisowe (MEDUSA_ADMIN_*). */
+export async function getAdminOrderForEmail(id: string): Promise<AdminOrderDetail | null> {
+	for (let attempt = 0; attempt < 3; attempt++) {
+		const token = await getSessionToken();
+		if (token) {
+			try {
+				const order = await getAdminOrder(id);
+				if (order) return order;
+			} catch {
+				// fallback na konto serwisowe
+			}
+		}
+
+		const data = await serviceAdminFetch<{ order: MedusaOrder }>(`/admin/orders/${id}?fields=${DETAIL_FIELDS}`);
+		if (data?.order) return mapMedusaOrderToDetail(data.order);
+
+		if (attempt < 2) await new Promise((r) => setTimeout(r, 400));
+	}
+	return null;
+}
+
+/** Mapuje szczegóły zamówienia na kontekst maila (moduł emails → OrderRenderSource). */
+export function orderToEmailSource(order: AdminOrderDetail) {
+	const addr = order.shippingAddress;
+	const customerName =
+		(addr ? [addr.firstName, addr.lastName].filter(Boolean).join(" ") : "").trim() ||
+		order.email.split("@")[0] ||
+		"Kliencie";
+	const address = addr
+		? [
+				[addr.address1, addr.address2].filter(Boolean).join(" "),
+				[addr.postalCode, addr.city].filter(Boolean).join(" "),
+			]
+				.filter(Boolean)
+				.join(", ")
+		: "";
+
+	return {
+		displayId: order.displayId,
+		email: order.email,
+		phone: order.phone,
+		currencyCode: order.currencyCode,
+		total: order.total,
+		itemTotal: order.itemTotal,
+		shippingTotal: order.shippingTotal,
+		shippingMethodName: order.shippingMethodName,
+		customerName,
+		address,
+		items: order.items.map((item) => ({
+			title: item.title,
+			subtitle: item.subtitle,
+			quantity: item.quantity,
+			total: formatPrice(item.total, order.currencyCode),
+			thumbnail: item.thumbnail,
+		})),
+	};
+}
+
+/* ── Mutacje ─────────────────────────────────────────── */
+
+/** Zaksięgowanie płatności (jeśli trzeba) + rozpoczęcie realizacji (fulfillment). */
+export async function startOrderRealization(orderId: string): Promise<void> {
+	const order = await getAdminOrder(orderId);
+	if (!order) throw new Error("Nie znaleziono zamówienia.");
+
+	const pending = order.payments.find((p) => !p.capturedAt && !p.canceledAt && p.amount > 0);
+	if (pending) {
+		await adminFetch(`/admin/payments/${pending.id}/capture`, { method: "POST", body: JSON.stringify({}) });
+	}
+
+	if (["not_fulfilled", "partially_fulfilled"].includes(order.fulfillmentStatus)) {
+		await fulfillOrder(orderId);
+	}
+}
+
+type MedusaOrderRaw = {
+	items?: Array<{
+		id: string;
+		quantity?: number | null;
+		detail?: { fulfilled_quantity?: number | null; quantity?: number | null } | null;
+	}> | null;
+	shipping_methods?: Array<{ shipping_option_id?: string | null }> | null;
+};
+
+/** Utworzenie wysyłki (fulfillment) dla wszystkich niezrealizowanych pozycji. */
+export async function fulfillOrder(orderId: string): Promise<void> {
+	const data = await adminFetch<{ order: MedusaOrderRaw }>(
+		`/admin/orders/${orderId}?fields=id,*items,shipping_methods.shipping_option_id`,
+	);
+	const order = data.order;
+
+	const items = (order.items ?? [])
+		.map((item) => {
+			const detail = item.detail ?? {};
+			const fulfilled = detail.fulfilled_quantity ?? 0;
+			const quantity = item.quantity ?? detail.quantity ?? 0;
+			const remaining = quantity - fulfilled;
+			return { id: item.id, quantity: remaining };
+		})
+		.filter((item) => item.quantity > 0);
+
+	if (items.length === 0) throw new Error("Wszystkie pozycje są już zrealizowane.");
+
+	const body: Record<string, unknown> = { items };
+	const shippingOptionId = order.shipping_methods?.[0]?.shipping_option_id;
+	if (shippingOptionId) body.shipping_option_id = shippingOptionId;
+
+	const locations = await adminFetch<{ stock_locations: Array<{ id: string }> }>("/admin/stock-locations?limit=1");
+	const locationId = locations.stock_locations[0]?.id;
+	if (locationId) body.location_id = locationId;
+
+	await adminFetch(`/admin/orders/${orderId}/fulfillments`, { method: "POST", body: JSON.stringify(body) });
+}
+
+type MedusaFulfillmentForShip = {
+	id: string;
+	shipped_at?: string | null;
+	canceled_at?: string | null;
+	items?: Array<{ id?: string | null; line_item_id?: string | null; quantity?: number | null }> | null;
+};
+
+const SHIPMENT_FIELDS =
+	"id,fulfillments.id,fulfillments.shipped_at,fulfillments.canceled_at,fulfillments.items.id,fulfillments.items.line_item_id,fulfillments.items.quantity";
+
+/** Oznaczenie najnowszej wysyłki jako nadanej (shipment). */
+export async function markOrderShipped(orderId: string): Promise<void> {
+	const fetchFulfillments = () =>
+		adminFetch<{ order: { fulfillments?: MedusaFulfillmentForShip[] } }>(
+			`/admin/orders/${orderId}?fields=${SHIPMENT_FIELDS}`,
+		);
+
+	let data = await fetchFulfillments();
+	let fulfillment = (data.order.fulfillments ?? []).filter((f) => !f.canceled_at && !f.shipped_at).at(-1);
+
+	if (!fulfillment) {
+		await fulfillOrder(orderId);
+		data = await fetchFulfillments();
+		fulfillment = (data.order.fulfillments ?? []).filter((f) => !f.canceled_at && !f.shipped_at).at(-1);
+		if (!fulfillment) throw new Error("Nie udało się przygotować przesyłki.");
+	}
+
+	// Medusa oczekuje ID pozycji zamówienia (ordli_*), nie ID fulfillment item (fulit_*).
+	const items = (fulfillment.items ?? [])
+		.map((item) => ({ id: item.line_item_id ?? item.id ?? "", quantity: item.quantity ?? 0 }))
+		.filter((item) => item.id && item.quantity > 0);
+
+	await adminFetch(`/admin/orders/${orderId}/fulfillments/${fulfillment.id}/shipments`, {
+		method: "POST",
+		body: JSON.stringify(items.length > 0 ? { items } : {}),
+	});
+}
+
+/** Oznaczenie wysyłki jako dostarczonej. */
+export async function markOrderDelivered(orderId: string): Promise<void> {
+	const order = await getAdminOrder(orderId);
+	if (!order) throw new Error("Nie znaleziono zamówienia.");
+
+	const fulfillment = order.fulfillments.filter((f) => !f.canceledAt && !f.deliveredAt).at(-1);
+	if (!fulfillment) throw new Error("Brak realizacji do oznaczenia jako dostarczona.");
+
+	await adminFetch(`/admin/orders/${orderId}/fulfillments/${fulfillment.id}/mark-as-delivered`, {
+		method: "POST",
+		body: JSON.stringify({}),
+	});
+}
+
+export async function cancelOrder(orderId: string): Promise<void> {
+	await adminFetch(`/admin/orders/${orderId}/cancel`, { method: "POST", body: JSON.stringify({ no_notification: false }) });
+}
+
+export async function completeOrder(orderId: string): Promise<void> {
+	await adminFetch(`/admin/orders/${orderId}/complete`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function archiveOrder(orderId: string): Promise<void> {
+	await adminFetch(`/admin/orders/${orderId}/archive`, { method: "POST", body: JSON.stringify({}) });
+}

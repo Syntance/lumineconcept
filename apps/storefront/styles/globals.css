@@ -3,6 +3,8 @@
 /* Względna ścieżka: Turbopack + @tailwindcss/postcss nie zawsze rozwiązują
    bare import "shadcn/tailwind.css" (cwd = katalog pliku CSS). */
 @import "../node_modules/shadcn/dist/tailwind.css";
+/* Tokeny magazynu — kolory dopasowane do brandu Lumine */
+@import "../magazyn/core/styles/theme.css";
 
 @custom-variant dark (&:is(.dark *));
 
