@@ -33,6 +33,9 @@ type Body = {
  *   - payment_collection tworzone tylko jak nie istnieje,
  *   - payment_session tworzone tylko jak nie ma sesji dla podanego providera.
  *
+ * WAŻNE: Przekazuje cart.email i cart_id do payment providera przez pole `data`
+ * workflow. Przelewy24 wymaga poprawnego emaila już przy rejestracji transakcji.
+ *
  * Zwraca świeży cart + identyfikatory, żeby storefront nie musiał robić
  * dodatkowego `cart.retrieve`.
  */
@@ -64,6 +67,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
       variables: { filters: { id: cartId } },
       fields: [
         "id",
+        "email",
         "completed_at",
         "payment_collection.id",
         "payment_collection.payment_sessions.id",
@@ -75,6 +79,8 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     if (!cartSnapshot) {
       return res.status(404).json({ message: `Cart ${cartId} not found` });
     }
+    
+    const cartEmail = (cartSnapshot as { email?: string }).email ?? "";
 
     let paymentCollectionId = (cartSnapshot as {
       payment_collection?: { id?: string };
@@ -109,6 +115,10 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
         input: {
           payment_collection_id: paymentCollectionId!,
           provider_id: providerId,
+          data: {
+            cart_id: cartId,
+            email: cartEmail,
+          },
         },
       });
     }
