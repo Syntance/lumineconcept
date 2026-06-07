@@ -33,18 +33,19 @@ const productSchema = z.object({
 	images: z.array(z.string().url()),
 	disabledConfigIds: z.array(z.string().trim()).default([]),
 	disabledConfigIdsBySlot: z.record(z.string(), z.array(z.string().trim())).default({}),
+	disabledColorCategoriesBySlot: z.record(z.string(), z.array(z.string().trim())).default({}),
 	allowCustomColorBySlot: z.record(z.string(), z.boolean()).default({}),
 	productColorsBySlot: z
 		.record(
 			z.string(),
 			z.record(
-				z.enum(["standard", "color", "mirror", "custom"]),
+				z.string(),
 				z.array(
 					z.object({
 						id: z.string().trim(),
 						name: z.string().trim().min(2),
 						hex_color: z.string().trim(),
-						color_category: z.enum(["standard", "color", "mirror", "custom"]),
+						color_category: z.string().trim(),
 						mat_allowed: z.boolean(),
 					}),
 				),
@@ -74,6 +75,7 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 		images: data.images,
 		disabledConfigIds: data.disabledConfigIds ?? [],
 		disabledConfigIdsBySlot: data.disabledConfigIdsBySlot ?? {},
+		disabledColorCategoriesBySlot: data.disabledColorCategoriesBySlot ?? {},
 		allowCustomColorBySlot: data.allowCustomColorBySlot ?? {},
 		productColorsBySlot: data.productColorsBySlot ?? {},
 		colorSlotCount: data.colorSlotCount ?? 1,

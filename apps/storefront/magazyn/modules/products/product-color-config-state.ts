@@ -10,19 +10,26 @@ import {
 	MIN_COLOR_SLOTS,
 	parseAllowCustomColorBySlot,
 	parseCustomSlotNames,
+	parseDisabledColorCategoriesBySlot,
 	parseDisabledConfigIdsBySlot,
 	parseProductColorsBySlot,
 	REMOVE_COLOR_FIELD_VALUE,
 } from "@/lib/products/color-slot-config";
-import { COLOR_CATEGORY_SECTIONS } from "./color-categories";
+import {
+	categoryIds,
+	findCategoryDefinition,
+	type ColorCategoryDefinition,
+	DEFAULT_COLOR_CATEGORIES,
+} from "./color-categories";
 import type { AdminProductDetail, ConfigOption } from "./store";
 
 export type ColorSlotFormState = {
 	slotTitles: string[];
 	activeSlot: string;
 	disabledBySlot: Record<string, Set<string>>;
+	disabledCategoriesBySlot: Record<string, Set<string>>;
 	allowCustomBySlot: Record<string, boolean>;
-	productColorsBySlot: Record<string, Record<ColorCategoryId, ProductCustomColor[]>>;
+	productColorsBySlot: Record<string, Record<string, ProductCustomColor[]>>;
 	nonColorDisabledIds: Set<string>;
 };
 
@@ -44,7 +51,9 @@ function setsFromRecord(record: Record<string, string[]>): Record<string, Set<st
 export function createInitialColorSlotState(
 	product: AdminProductDetail | undefined,
 	configOptions: ConfigOption[],
+	colorCategories: ColorCategoryDefinition[] = DEFAULT_COLOR_CATEGORIES,
 ): ColorSlotFormState {
+	const categoryIdList = categoryIds(colorCategories);
 	const colorSlotCount = product?.colorSlotCount ?? 1;
 	const metadata = product?.metadata ?? {};
 	const customNames = parseCustomSlotNames(metadata);
@@ -60,12 +69,17 @@ export function createInitialColorSlotState(
 		product?.allowCustomColorBySlot ??
 		parseAllowCustomColorBySlot(metadata, slotTitles, defaultAllow);
 	const productColors =
-		product?.productColorsBySlot ?? parseProductColorsBySlot(metadata, slotTitles);
+		product?.productColorsBySlot ??
+		parseProductColorsBySlot(metadata, slotTitles, categoryIdList);
+	const disabledCategoriesRecord =
+		product?.disabledColorCategoriesBySlot ??
+		parseDisabledColorCategoriesBySlot(metadata, slotTitles);
 
 	return {
 		slotTitles,
 		activeSlot: slotTitles[0] ?? DEFAULT_FIRST_COLOR_SLOT,
 		disabledBySlot: setsFromRecord(disabledRecord),
+		disabledCategoriesBySlot: setsFromRecord(disabledCategoriesRecord),
 		allowCustomBySlot: allowRecord,
 		productColorsBySlot: productColors,
 		nonColorDisabledIds: new Set(
@@ -95,6 +109,7 @@ export function addColorSlot(state: ColorSlotFormState): ColorSlotFormState {
 		slotTitles: newTitles,
 		activeSlot: newTitle,
 		disabledBySlot: { ...state.disabledBySlot, [newTitle]: new Set() },
+		disabledCategoriesBySlot: { ...state.disabledCategoriesBySlot, [newTitle]: new Set() },
 		allowCustomBySlot: { ...state.allowCustomBySlot, [newTitle]: true },
 		productColorsBySlot: {
 			...state.productColorsBySlot,
@@ -115,8 +130,11 @@ export function removeColorSlot(state: ColorSlotFormState, titleToRemove?: strin
 	const newAllow: Record<string, boolean> = {};
 	const newProductColors: ColorSlotFormState["productColorsBySlot"] = {};
 
+	const newDisabledCategories: Record<string, Set<string>> = {};
+
 	for (const title of newTitles) {
 		newDisabled[title] = new Set(state.disabledBySlot[title] ?? []);
+		newDisabledCategories[title] = new Set(state.disabledCategoriesBySlot[title] ?? []);
 		newAllow[title] = state.allowCustomBySlot[title] ?? true;
 		newProductColors[title] = state.productColorsBySlot[title] ?? emptyProductColorsByCategory();
 	}
@@ -131,6 +149,7 @@ export function removeColorSlot(state: ColorSlotFormState, titleToRemove?: strin
 		slotTitles: newTitles,
 		activeSlot: nextActive,
 		disabledBySlot: newDisabled,
+		disabledCategoriesBySlot: newDisabledCategories,
 		allowCustomBySlot: newAllow,
 		productColorsBySlot: newProductColors,
 	};
@@ -146,9 +165,12 @@ export function renameColorSlot(state: ColorSlotFormState, oldTitle: string, new
 	const newAllow: Record<string, boolean> = {};
 	const newProductColors: ColorSlotFormState["productColorsBySlot"] = {};
 
+	const newDisabledCategories: Record<string, Set<string>> = {};
+
 	for (const title of newTitles) {
 		const sourceTitle = title === trimmed ? oldTitle : title;
 		newDisabled[title] = new Set(state.disabledBySlot[sourceTitle] ?? []);
+		newDisabledCategories[title] = new Set(state.disabledCategoriesBySlot[sourceTitle] ?? []);
 		newAllow[title] = state.allowCustomBySlot[sourceTitle] ?? true;
 		newProductColors[title] = state.productColorsBySlot[sourceTitle] ?? emptyProductColorsByCategory();
 	}
@@ -158,6 +180,7 @@ export function renameColorSlot(state: ColorSlotFormState, oldTitle: string, new
 		slotTitles: newTitles,
 		activeSlot: state.activeSlot === oldTitle ? trimmed : state.activeSlot,
 		disabledBySlot: newDisabled,
+		disabledCategoriesBySlot: newDisabledCategories,
 		allowCustomBySlot: newAllow,
 		productColorsBySlot: newProductColors,
 	};
@@ -168,8 +191,9 @@ export function addProductColor(
 	slot: string,
 	category: ColorCategoryId,
 	input: { name: string; hex_color: string },
+	categories: ColorCategoryDefinition[] = DEFAULT_COLOR_CATEGORIES,
 ): ColorSlotFormState {
-	const section = COLOR_CATEGORY_SECTIONS.find((s) => s.id === category);
+	const section = findCategoryDefinition(categories, category);
 	const slotColors = state.productColorsBySlot[slot] ?? emptyProductColorsByCategory();
 	const color: ProductCustomColor = {
 		id: `pc_${crypto.randomUUID()}`,
@@ -185,7 +209,7 @@ export function addProductColor(
 			...state.productColorsBySlot,
 			[slot]: {
 				...slotColors,
-				[category]: [...slotColors[category], color],
+				[category]: [...(slotColors[category] ?? []), color],
 			},
 		},
 	};
@@ -204,8 +228,26 @@ export function removeProductColor(
 			...state.productColorsBySlot,
 			[slot]: {
 				...slotColors,
-				[category]: slotColors[category].filter((c) => c.id !== colorId),
+				[category]: (slotColors[category] ?? []).filter((c) => c.id !== colorId),
 			},
+		},
+	};
+}
+
+export function toggleColorCategoryForSlot(
+	state: ColorSlotFormState,
+	slot: string,
+	categoryId: string,
+	enabled: boolean,
+): ColorSlotFormState {
+	const current = new Set(state.disabledCategoriesBySlot[slot] ?? []);
+	if (enabled) current.delete(categoryId);
+	else current.add(categoryId);
+	return {
+		...state,
+		disabledCategoriesBySlot: {
+			...state.disabledCategoriesBySlot,
+			[slot]: current,
 		},
 	};
 }
@@ -215,13 +257,16 @@ export function serializeColorSlotState(state: ColorSlotFormState): {
 	colorSlotNames: string[];
 	disabledConfigIds: string[];
 	disabledConfigIdsBySlot: Record<string, string[]>;
+	disabledColorCategoriesBySlot: Record<string, string[]>;
 	allowCustomColorBySlot: Record<string, boolean>;
-	productColorsBySlot: Record<string, Record<ColorCategoryId, ProductCustomColor[]>>;
+	productColorsBySlot: Record<string, Record<string, ProductCustomColor[]>>;
 	allowCustomColor: boolean;
 } {
 	const disabledConfigIdsBySlot: Record<string, string[]> = {};
+	const disabledColorCategoriesBySlot: Record<string, string[]> = {};
 	for (const title of state.slotTitles) {
 		disabledConfigIdsBySlot[title] = Array.from(state.disabledBySlot[title] ?? []);
+		disabledColorCategoriesBySlot[title] = Array.from(state.disabledCategoriesBySlot[title] ?? []);
 	}
 
 	return {
@@ -229,6 +274,7 @@ export function serializeColorSlotState(state: ColorSlotFormState): {
 		colorSlotNames: state.slotTitles,
 		disabledConfigIds: Array.from(state.nonColorDisabledIds),
 		disabledConfigIdsBySlot,
+		disabledColorCategoriesBySlot,
 		allowCustomColorBySlot: state.allowCustomBySlot,
 		productColorsBySlot: state.productColorsBySlot,
 		allowCustomColor: Object.values(state.allowCustomBySlot).some(Boolean),

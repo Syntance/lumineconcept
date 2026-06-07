@@ -31,6 +31,7 @@ vi.mock("@/lib/medusa/cart", () => ({
   updateCartMetadata,
 }));
 
+import { resetCartBootstrapCacheForTests } from "@/lib/medusa/cart-bootstrap";
 import { CartProvider, useCartContext } from "@/providers/CartProvider";
 
 const EMPTY_CART = {
@@ -121,6 +122,7 @@ function renderProvider() {
 
 describe("CartProvider", () => {
   beforeEach(() => {
+    resetCartBootstrapCacheForTests();
     getCart.mockReset();
     createCart.mockReset();
     addLineItem.mockReset();

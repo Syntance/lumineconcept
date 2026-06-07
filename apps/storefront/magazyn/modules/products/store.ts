@@ -8,15 +8,17 @@ import {
 	isColorSlotTitle,
 	parseAllowCustomColorBySlot,
 	parseCustomSlotNames,
+	parseDisabledColorCategoriesBySlot,
 	parseDisabledConfigIdsBySlot,
 	parseProductColorsBySlot,
 	type ProductCustomColor,
 } from "@/lib/products/color-slot-config";
 import {
-	COLOR_CATEGORY_SECTIONS,
+	findCategoryDefinition,
 	type ColorCategoryId,
 	normalizeHexInput,
 } from "./color-categories";
+import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
 
 export { buildColorOptionTitles } from "@/lib/products/color-slot-config";
 
@@ -46,10 +48,12 @@ export type ProductFormValues = {
 	disabledConfigIds: string[];
 	/** Wyłączone kolory per pole „Kolor”, „Kolor 2”… (metadata.disabled_config_ids_by_slot). */
 	disabledConfigIdsBySlot: Record<string, string[]>;
+	/** Wyłączone kategorie kolorów per pole (metadata.disabled_color_categories_by_slot). */
+	disabledColorCategoriesBySlot: Record<string, string[]>;
 	/** Własny HEX od klienta per pole koloru (legacy — OR po kategoriach). */
 	allowCustomColorBySlot: Record<string, boolean>;
 	/** Kolory zdefiniowane tylko dla tego produktu (metadata.product_colors_by_slot). */
-	productColorsBySlot: Record<string, Record<ColorCategoryId, ProductCustomColor[]>>;
+	productColorsBySlot: Record<string, Record<string, ProductCustomColor[]>>;
 	/** Liczba pól „Kolor” w konfiguratorze (1 = samo „Kolor”, 2+ = „Kolor 2”…). */
 	colorSlotCount: number;
 	/** Custom nazwy pól kolorów (metadata.color_slot_names). */
@@ -184,7 +188,11 @@ export async function createGlobalColorOption(input: CreateColorOptionInput): Pr
 	const allColors = (await listGlobalConfigOptions()).filter((o) => o.type === "color");
 	const inCategory = allColors.filter((o) => (o.color_category ?? "standard") === input.color_category);
 	const maxSort = inCategory.reduce((max, o) => Math.max(max, o.sort_order), -1);
-	const section = COLOR_CATEGORY_SECTIONS.find((s) => s.id === input.color_category);
+	const categories = await getColorCategories();
+	const section = findCategoryDefinition(categories, input.color_category);
+	if (!section) {
+		throw new Error("Nieznana kategoria koloru.");
+	}
 
 	const data = await adminFetch<{ config_option: ConfigOption }>("/admin/product-config", {
 		method: "POST",
@@ -227,6 +235,7 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 				...existingMeta,
 				disabled_config_ids: JSON.stringify(values.disabledConfigIds),
 				disabled_config_ids_by_slot: JSON.stringify(values.disabledConfigIdsBySlot),
+				disabled_color_categories_by_slot: JSON.stringify(values.disabledColorCategoriesBySlot),
 				allow_custom_color_by_slot: JSON.stringify(
 					Object.fromEntries(
 						Object.entries(values.allowCustomColorBySlot).map(([title, enabled]) => [
@@ -356,6 +365,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		images: resolveMedusaMediaUrls((product.images ?? []).map((i) => i.url)),
 		disabledConfigIds: legacyDisabled,
 		disabledConfigIdsBySlot: parseDisabledConfigIdsBySlot(metadata, slotTitles, []),
+		disabledColorCategoriesBySlot: parseDisabledColorCategoriesBySlot(metadata, slotTitles),
 		allowCustomColorBySlot: parseAllowCustomColorBySlot(metadata, slotTitles, defaultAllowCustom),
 		productColorsBySlot: parseProductColorsBySlot(metadata, slotTitles),
 		colorSlotCount,

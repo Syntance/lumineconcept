@@ -1,3 +1,5 @@
+import { getConfiguredMedusaBackendUrl } from "./resolve-backend-url";
+
 /**
  * Baza URL do Store API Medusy w `fetch()` i w JS SDK.
  *
@@ -18,9 +20,5 @@ export function resolveMedusaFetchBase(): string {
     return `${window.location.origin}/api/medusa`;
   }
 
-  return (
-    process.env.MEDUSA_BACKEND_URL?.trim() ||
-    process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
-    "http://localhost:9000"
-  );
+  return getConfiguredMedusaBackendUrl();
 }

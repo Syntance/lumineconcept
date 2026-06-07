@@ -31,6 +31,7 @@ import {
   flattenProductColorsForSlot,
   getEnabledColorNamesForSlot,
   parseAllowCustomColorBySlot,
+  parseDisabledColorCategoriesBySlot,
   parseDisabledConfigIds,
   parseDisabledConfigIdsBySlot,
   parseProductColorsBySlot,
@@ -322,6 +323,11 @@ export function MiniConfiguratorModal({
     [metadata, colorOptionTitles, legacyColorDisabledIds],
   );
 
+  const disabledColorCategoriesBySlot = useMemo(
+    () => parseDisabledColorCategoriesBySlot(metadata, colorOptionTitles),
+    [metadata, colorOptionTitles],
+  );
+
   const allowCustomColorBySlot = useMemo(
     () =>
       parseAllowCustomColorBySlot(
@@ -366,10 +372,17 @@ export function MiniConfiguratorModal({
             globalColors,
             flattenProductColorsForSlot(productColorsBySlot[title]),
             disabledConfigIdsBySlot,
+            disabledColorCategoriesBySlot,
           ),
         ] as [string, string[]],
     );
-  }, [colorOptionTitles, globalColors, productColorsBySlot, disabledConfigIdsBySlot]);
+  }, [
+    colorOptionTitles,
+    globalColors,
+    productColorsBySlot,
+    disabledConfigIdsBySlot,
+    disabledColorCategoriesBySlot,
+  ]);
 
   const initialColors: Record<string, ColorState> = {};
   for (const [key] of colorOptionEntries) {

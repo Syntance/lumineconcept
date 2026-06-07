@@ -11,6 +11,7 @@ import {
   ColorSelectDropdown,
   type ColorSelectGroup,
 } from "./ColorSelectDropdown";
+import type { ColorCategoryDefinition } from "@/lib/products/color-categories";
 
 /** Etykieta jak na makiecie: „KOLOR TABLICZKI :” */
 export function formatColorOptionLabel(title: string): string {
@@ -34,6 +35,45 @@ interface ColorStepPanelProps {
   customSet?: Set<string>;
   matDisabledSet: Set<string>;
   allowCustomColor?: boolean;
+  colorCategories?: ColorCategoryDefinition[];
+  categoryByColorName?: Record<string, string>;
+}
+
+function buildDynamicColorGroups(
+  values: string[],
+  categories: ColorCategoryDefinition[],
+  categoryByColorName: Record<string, string>,
+  allowCustomColor: boolean,
+): ColorSelectGroup[] {
+  const groups: ColorSelectGroup[] = [];
+
+  for (const category of categories) {
+    const categoryValues = values.filter(
+      (value) => categoryByColorName[value.toLowerCase()] === category.id,
+    );
+
+    if (category.id === "custom") {
+      if (categoryValues.length === 0 && !allowCustomColor) continue;
+      groups.push({
+        label: category.label,
+        options: [
+          ...categoryValues.map((value) => ({ value, label: value })),
+          ...(allowCustomColor
+            ? [{ value: CUSTOM_COLOR_VALUE, label: "Własny kolor (HEX)" }]
+            : []),
+        ],
+      });
+      continue;
+    }
+
+    if (categoryValues.length === 0) continue;
+    groups.push({
+      label: category.label,
+      options: categoryValues.map((value) => ({ value, label: value })),
+    });
+  }
+
+  return groups;
 }
 
 export function ColorStepPanel({
@@ -50,6 +90,8 @@ export function ColorStepPanel({
   customSet = new Set(),
   matDisabledSet,
   allowCustomColor = true,
+  colorCategories,
+  categoryByColorName,
 }: ColorStepPanelProps) {
   const [hexInput, setHexInput] = useState(customColor ?? "#000000");
   const colorInputRef = useRef<HTMLInputElement>(null);
@@ -70,30 +112,38 @@ export function ColorStepPanel({
 
   const selectId = `color-select-${option.id}-${uniqueId.replace(/:/g, "")}`;
 
-  const colorGroups: ColorSelectGroup[] = [
-    ...(standardColors.length > 0
-      ? [{ label: "Standardowe", options: standardColors.map((c) => ({ value: c, label: c })) }]
-      : []),
-    ...(coloredColors.length > 0
-      ? [{ label: "Kolorowe", options: coloredColors.map((c) => ({ value: c, label: c })) }]
-      : []),
-    ...(mirrorColors.length > 0
-      ? [{ label: "Lustrzane", options: mirrorColors.map((c) => ({ value: c, label: c })) }]
-      : []),
-    ...(showIndividualGroup
-      ? [
-          {
-            label: "Indywidualny",
-            options: [
-              ...customNamedColors.map((c) => ({ value: c, label: c })),
-              ...(allowCustomColor
-                ? [{ value: CUSTOM_COLOR_VALUE, label: "Własny kolor (HEX)" }]
-                : []),
-            ],
-          },
-        ]
-      : []),
-  ];
+  const colorGroups: ColorSelectGroup[] =
+    colorCategories && categoryByColorName
+      ? buildDynamicColorGroups(
+          option.values,
+          colorCategories,
+          categoryByColorName,
+          allowCustomColor,
+        )
+      : [
+          ...(standardColors.length > 0
+            ? [{ label: "Standardowe", options: standardColors.map((c) => ({ value: c, label: c })) }]
+            : []),
+          ...(coloredColors.length > 0
+            ? [{ label: "Kolorowe", options: coloredColors.map((c) => ({ value: c, label: c })) }]
+            : []),
+          ...(mirrorColors.length > 0
+            ? [{ label: "Lustrzane", options: mirrorColors.map((c) => ({ value: c, label: c })) }]
+            : []),
+          ...(showIndividualGroup
+            ? [
+                {
+                  label: "Indywidualny",
+                  options: [
+                    ...customNamedColors.map((c) => ({ value: c, label: c })),
+                    ...(allowCustomColor
+                      ? [{ value: CUSTOM_COLOR_VALUE, label: "Własny kolor (HEX)" }]
+                      : []),
+                  ],
+                },
+              ]
+            : []),
+        ];
 
   useEffect(() => {
     setHexInput(customColor ?? "#000000");

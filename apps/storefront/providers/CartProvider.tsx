@@ -11,6 +11,8 @@ import {
   type ReactNode,
 } from "react";
 import * as cartApi from "@/lib/medusa/cart";
+import { bootstrapCartSession } from "@/lib/medusa/cart-bootstrap";
+import { isAbortedFetchError, isTransientMedusaError } from "@/lib/medusa/transient-error";
 import { cartLineConfigFingerprint } from "@/lib/cart/line-config-fingerprint";
 import {
   invalidateShippingOptionsCache,
@@ -202,41 +204,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getOrCreateCart = useCallback(async () => {
     try {
-      const savedId =
-        typeof window !== "undefined"
-          ? localStorage.getItem(CART_ID_KEY)
-          : null;
-
-      if (savedId) {
-        try {
-          const existing = (await cartApi.getCart(savedId)) as unknown as
-            Record<string, unknown>;
-          /**
-           * Jeśli zapisany koszyk został już sfinalizowany (np. klient wrócił
-           * na stronę po zakupie albo w środku testu), Medusa zwraca go
-           * normalnie, ale kolejne update'y wywalają się z „Cart is already
-           * completed". Odrzucamy go i tworzymy świeży.
-           */
-          if (existing.completed_at) {
-            localStorage.removeItem(CART_ID_KEY);
-          } else {
-            updateCartState(existing);
-            return;
-          }
-        } catch {
-          localStorage.removeItem(CART_ID_KEY);
-        }
+      const rawCart = await bootstrapCartSession();
+      if (rawCart) {
+        updateCartState(rawCart);
       }
-
-      const newCart = await cartApi.createCart();
-      localStorage.setItem(
-        CART_ID_KEY,
-        (newCart as unknown as Record<string, unknown>).id as string,
-      );
-      updateCartState(newCart as unknown as Record<string, unknown>);
     } catch (e) {
+      if (isAbortedFetchError(e)) {
+        return;
+      }
+      const hint = isTransientMedusaError(e)
+        ? "Sprawdź, czy Medusa działa (lokalnie :9000 lub Railway) i czy /api/medusa odpowiada."
+        : "Sprawdź backend i /api/medusa.";
       console.error(
-        "[cart] Medusa niedostępna (np. 502) — koszyk nie został utworzony. Sprawdź backend i /api/medusa.",
+        `[cart] Nie udało się utworzyć koszyka. ${hint}`,
         e,
       );
     }

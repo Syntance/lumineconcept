@@ -7,8 +7,8 @@ import { CheckboxInput } from "@magazyn/core/ui/checkbox";
 import { Button } from "@magazyn/core/ui/button";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import type { ProductCustomColor } from "@/lib/products/color-slot-config";
-import type { ColorCategoryId } from "./color-categories";
-import { COLOR_CATEGORY_SECTIONS } from "./color-categories";
+import { Switch } from "@magazyn/core/ui/switch";
+import type { ColorCategoryDefinition, ColorCategoryId } from "./color-categories";
 import { AddProductColorForm } from "./add-product-color-form";
 import { ColorSlotPicker } from "./color-slot-picker";
 import { ColorSwatch, colorsInCategory } from "./color-ui";
@@ -26,6 +26,7 @@ const GLOBAL_COLORS_PATH = `${magazynConfig.basePath}/panel/ustawienia/kolory`;
 
 type Props = {
 	configOptions: ConfigOption[];
+	colorCategories: ColorCategoryDefinition[];
 	slotTitles: string[];
 	activeSlot: string;
 	onActiveSlotChange: (slot: string) => void;
@@ -34,11 +35,13 @@ type Props = {
 	onRenameSlot?: (oldTitle: string, newTitle: string) => void;
 	disabledConfigIds: Set<string>;
 	disabledColorIdsForActiveSlot: Set<string>;
-	productColorsForActiveSlot: Record<ColorCategoryId, ProductCustomColor[]>;
+	disabledCategoryIdsForActiveSlot: Set<string>;
+	productColorsForActiveSlot: Record<string, ProductCustomColor[]>;
 	onToggleColor: (id: string, enabled: boolean) => void;
 	onToggleNonColor: (id: string, enabled: boolean) => void;
 	onEnableAllColorsForActiveSlot: () => void;
 	onDisableAllColorsForActiveSlot: () => void;
+	onToggleCategory: (categoryId: ColorCategoryId, enabled: boolean) => void;
 	onAddProductColor: (category: ColorCategoryId, input: { name: string; hex_color: string }) => void;
 	onRemoveProductColor: (category: ColorCategoryId, colorId: string) => void;
 	allowCustomColor: boolean;
@@ -48,6 +51,7 @@ type Props = {
 
 export function ProductConfigSection({
 	configOptions,
+	colorCategories,
 	slotTitles,
 	activeSlot,
 	onActiveSlotChange,
@@ -56,11 +60,13 @@ export function ProductConfigSection({
 	onRenameSlot,
 	disabledConfigIds,
 	disabledColorIdsForActiveSlot,
+	disabledCategoryIdsForActiveSlot,
 	productColorsForActiveSlot,
 	onToggleColor,
 	onToggleNonColor,
 	onEnableAllColorsForActiveSlot,
 	onDisableAllColorsForActiveSlot,
+	onToggleCategory,
 	onAddProductColor,
 	onRemoveProductColor,
 	allowCustomColor,
@@ -121,17 +127,42 @@ export function ProductConfigSection({
 			) : null}
 
 			<div className="flex flex-col gap-5">
-				{COLOR_CATEGORY_SECTIONS.map((section) => {
+				{colorCategories.map((section) => {
 					const globalOpts = colorsInCategory(configOptions, section.id);
 					const productOpts = productColorsForActiveSlot[section.id] ?? [];
+					const categoryEnabled = !disabledCategoryIdsForActiveSlot.has(section.id);
 
 					return (
-						<div key={section.id} className="rounded-lg border border-border/70 p-4">
-							<h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-								{section.label}
-							</h3>
+						<div
+							key={section.id}
+							className={cn(
+								"rounded-lg border border-border/70 p-4 transition-opacity",
+								!categoryEnabled && "opacity-60",
+							)}
+						>
+							<div className="flex items-center justify-between gap-3">
+								<h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+									{section.label}
+								</h3>
+								<div className="flex items-center gap-2">
+									<span className="text-[11px] text-muted-foreground">
+										{categoryEnabled ? "Włączona" : "Wyłączona"}
+									</span>
+									<Switch
+										checked={categoryEnabled}
+										onCheckedChange={(enabled) => onToggleCategory(section.id, enabled)}
+										aria-label={`${categoryEnabled ? "Wyłącz" : "Włącz"} kategorię ${section.label} dla ${activeSlot}`}
+									/>
+								</div>
+							</div>
 
-							{globalOpts.length > 0 ? (
+							{!categoryEnabled ? (
+								<p className="mt-2 text-xs text-muted-foreground">
+									Kategoria ukryta w konfiguratorze dla pola „{activeSlot}”.
+								</p>
+							) : null}
+
+							{categoryEnabled && globalOpts.length > 0 ? (
 								<div className="mt-2">
 									<p className="mb-1.5 text-[11px] text-muted-foreground">Z globalnej palety</p>
 									<div className="flex flex-wrap gap-2">
@@ -161,7 +192,7 @@ export function ProductConfigSection({
 								</div>
 							) : null}
 
-							{productOpts.length > 0 ? (
+							{categoryEnabled && productOpts.length > 0 ? (
 								<ul className="mt-3 flex flex-col gap-2">
 									<p className="text-[11px] text-muted-foreground">Tylko ten produkt</p>
 									{productOpts.map((opt) => (
@@ -192,17 +223,19 @@ export function ProductConfigSection({
 								</ul>
 							) : null}
 
-							{globalOpts.length === 0 && productOpts.length === 0 ? (
+							{categoryEnabled && globalOpts.length === 0 && productOpts.length === 0 ? (
 								<p className="mt-2 text-xs text-muted-foreground">Brak kolorów w tej kategorii.</p>
 							) : null}
 
-							<AddProductColorForm
-								category={section.id}
-								slotLabel={activeSlot}
-								onAdd={(input) => onAddProductColor(section.id, input)}
-							/>
+							{categoryEnabled ? (
+								<AddProductColorForm
+									category={section.id}
+									slotLabel={activeSlot}
+									onAdd={(input) => onAddProductColor(section.id, input)}
+								/>
+							) : null}
 
-							{section.id === "custom" ? (
+							{categoryEnabled && section.id === "custom" ? (
 								<label className="mt-3 flex cursor-pointer items-center gap-2 text-sm">
 									<CheckboxInput
 										checked={allowCustomColor}

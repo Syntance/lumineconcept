@@ -1,8 +1,12 @@
 export const MAX_COLOR_SLOTS = 5;
 export const MIN_COLOR_SLOTS = 1;
 
-export const COLOR_CATEGORY_IDS = ["standard", "color", "mirror", "custom"] as const;
-export type ColorCategoryId = (typeof COLOR_CATEGORY_IDS)[number];
+export const DEFAULT_COLOR_CATEGORY_IDS = ["standard", "color", "mirror", "custom"] as const;
+
+/** @deprecated Użyj DEFAULT_COLOR_CATEGORY_IDS */
+export const COLOR_CATEGORY_IDS = DEFAULT_COLOR_CATEGORY_IDS;
+
+export type ColorCategoryId = string;
 
 /** Kolor zdefiniowany tylko dla danego produktu (metadata.product_colors_by_slot). */
 export type ProductCustomColor = {
@@ -13,23 +17,28 @@ export type ProductCustomColor = {
 	mat_allowed: boolean;
 };
 
-export function emptyProductColorsByCategory(): Record<ColorCategoryId, ProductCustomColor[]> {
-	return { standard: [], color: [], mirror: [], custom: [] };
+export function emptyProductColorsByCategory(
+	categoryIds: readonly string[] = DEFAULT_COLOR_CATEGORY_IDS,
+): Record<string, ProductCustomColor[]> {
+	return Object.fromEntries(categoryIds.map((id) => [id, []]));
 }
 
 export function parseProductColorsBySlot(
 	meta: Record<string, unknown> | null | undefined,
 	slotTitles: readonly string[],
-): Record<string, Record<ColorCategoryId, ProductCustomColor[]>> {
-	const result: Record<string, Record<ColorCategoryId, ProductCustomColor[]>> = {};
+	categoryIds: readonly string[] = DEFAULT_COLOR_CATEGORY_IDS,
+): Record<string, Record<string, ProductCustomColor[]>> {
+	const result: Record<string, Record<string, ProductCustomColor[]>> = {};
 	const obj = parseJsonRecord(meta?.product_colors_by_slot);
 
 	for (const title of slotTitles) {
-		const base = emptyProductColorsByCategory();
+		const base = emptyProductColorsByCategory(categoryIds);
 		const slotObj = obj?.[title];
 		if (slotObj && typeof slotObj === "object" && !Array.isArray(slotObj)) {
-			for (const id of COLOR_CATEGORY_IDS) {
-				const arr = (slotObj as Record<string, unknown>)[id];
+			const slotRecord = slotObj as Record<string, unknown>;
+			const keys = new Set([...categoryIds, ...Object.keys(slotRecord)]);
+			for (const id of keys) {
+				const arr = slotRecord[id];
 				if (Array.isArray(arr)) {
 					base[id] = arr
 						.filter(
@@ -54,10 +63,33 @@ export function parseProductColorsBySlot(
 }
 
 export function flattenProductColorsForSlot(
-	byCategory: Record<ColorCategoryId, ProductCustomColor[]> | undefined,
+	byCategory: Record<string, ProductCustomColor[]> | undefined,
+	categoryIds: readonly string[] = DEFAULT_COLOR_CATEGORY_IDS,
 ): ProductCustomColor[] {
 	if (!byCategory) return [];
-	return COLOR_CATEGORY_IDS.flatMap((id) => byCategory[id] ?? []);
+	const keys = new Set([...categoryIds, ...Object.keys(byCategory)]);
+	return [...keys].flatMap((id) => byCategory[id] ?? []);
+}
+
+export function parseDisabledColorCategoriesBySlot(
+	meta: Record<string, unknown> | null | undefined,
+	slotTitles: readonly string[],
+): Record<string, string[]> {
+	const result: Record<string, string[]> = {};
+	for (const title of slotTitles) {
+		result[title] = [];
+	}
+
+	const obj = parseJsonRecord(meta?.disabled_color_categories_by_slot);
+	if (!obj) return result;
+
+	for (const title of slotTitles) {
+		const arr = obj[title];
+		result[title] = Array.isArray(arr)
+			? arr.filter((x): x is string => typeof x === "string")
+			: [];
+	}
+	return result;
 }
 
 export const ADD_COLOR_FIELD_VALUE = "__add_color_field__";
@@ -194,15 +226,36 @@ export function parseDisabledConfigIdsBySlot(
 
 export function getEnabledColorNamesForSlot(
 	slotTitle: string,
-	globalColors: ReadonlyArray<{ id: string; name: string }>,
-	productColors: ReadonlyArray<{ name: string }>,
+	globalColors: ReadonlyArray<{ id: string; name: string; color_category?: string | null }>,
+	productColors: ReadonlyArray<{ name: string; color_category?: string | null }>,
 	disabledConfigIdsBySlot: Record<string, string[]>,
+	disabledColorCategoriesBySlot: Record<string, string[]> = {},
 ): string[] {
 	const slotDisabled = new Set(disabledConfigIdsBySlot[slotTitle] ?? []);
+	const slotDisabledCategories = new Set(disabledColorCategoriesBySlot[slotTitle] ?? []);
+
+	const categoryEnabled = (category: string | null | undefined) =>
+		!slotDisabledCategories.has(category ?? "standard");
+
 	return [
-		...globalColors.filter((c) => !slotDisabled.has(c.id)).map((c) => c.name),
-		...productColors.map((c) => c.name),
+		...globalColors
+			.filter((c) => !slotDisabled.has(c.id) && categoryEnabled(c.color_category))
+			.map((c) => c.name),
+		...productColors
+			.filter((c) => categoryEnabled(c.color_category))
+			.map((c) => c.name),
 	];
+}
+
+/** Mapa nazwa koloru (lowercase) → id kategorii — do grupowania w konfiguratorze. */
+export function buildColorNameCategoryMap(
+	colors: ReadonlyArray<{ name: string; color_category?: string | null }>,
+): Record<string, string> {
+	const map: Record<string, string> = {};
+	for (const color of colors) {
+		map[color.name.toLowerCase()] = color.color_category ?? "standard";
+	}
+	return map;
 }
 
 export function parseAllowCustomColorBySlot(

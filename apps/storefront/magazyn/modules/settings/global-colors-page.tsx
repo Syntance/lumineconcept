@@ -1,11 +1,14 @@
 import { loadAdmin } from "@magazyn/core/auth/load";
 import { listGlobalConfigOptions } from "@magazyn/modules/products/store";
+import { getColorCategories } from "./color-category-store";
 import { GlobalColorsManager } from "./global-colors-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function GlobalColorsPage() {
-	const options = await loadAdmin(listGlobalConfigOptions);
+	const [options, categories] = await loadAdmin(() =>
+		Promise.all([listGlobalConfigOptions(), getColorCategories()]),
+	);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -16,7 +19,7 @@ export default async function GlobalColorsPage() {
 				</p>
 			</header>
 
-			<GlobalColorsManager initialOptions={options} />
+			<GlobalColorsManager initialOptions={options} initialCategories={categories} />
 		</div>
 	);
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveMedusaBackendUrl } from "@/lib/medusa/resolve-backend-url";
 
 /**
  * Proxy Store API → Medusa (ten sam origin w przeglądarce, bez CORS).
@@ -28,11 +29,6 @@ export const preferredRegion = ["fra1"];
 /** Proxy nie może być cache'owany ani prerenderowany — zawsze świeży request. */
 export const dynamic = "force-dynamic";
 
-const BACKEND =
-  process.env.MEDUSA_BACKEND_URL?.trim() ||
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
-  "http://localhost:9000";
-
 const HOP_BY_HOP = new Set([
   "connection",
   "keep-alive",
@@ -45,6 +41,22 @@ const HOP_BY_HOP = new Set([
   "host",
   "content-length",
 ]);
+
+/** Node fetch dekompresuje gzip, ale zostawia nagłówek — przeglądarka wtedy psuje body. */
+const STRIP_RESPONSE_HEADERS = new Set([
+  ...HOP_BY_HOP,
+  "content-encoding",
+]);
+
+function filterResponseHeaders(upstream: Headers): Headers {
+  const out = new Headers();
+  upstream.forEach((value, key) => {
+    if (!STRIP_RESPONSE_HEADERS.has(key.toLowerCase())) {
+      out.set(key, value);
+    }
+  });
+  return out;
+}
 
 /**
  * Whitelist pierwszego segmentu ścieżki. Bez tego proxy jest otwartą bramą
@@ -92,7 +104,7 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
   }
 
   const path = pathSegments.join("/");
-  const base = BACKEND.replace(/\/$/, "");
+  const base = (await resolveMedusaBackendUrl()).replace(/\/$/, "");
   const url = `${base}/${path}${req.nextUrl.search}`;
 
   const headers = filterRequestHeaders(req);
@@ -132,10 +144,11 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
     );
   }
 
-  return new NextResponse(res.body, {
+  const body = await res.arrayBuffer();
+  return new NextResponse(body, {
     status: res.status,
     statusText: res.statusText,
-    headers: res.headers,
+    headers: filterResponseHeaders(res.headers),
   });
 }
 

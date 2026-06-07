@@ -13,7 +13,11 @@ import {
 } from "./ProductVariantSelector";
 import type { TextFieldDef } from "@/lib/products/text-fields";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
-import { getEnabledColorNamesForSlot } from "@/lib/products/color-slot-config";
+import type { ColorCategoryDefinition } from "@/lib/products/color-categories";
+import {
+  buildColorNameCategoryMap,
+  getEnabledColorNamesForSlot,
+} from "@/lib/products/color-slot-config";
 
 export interface ColorCustomization {
   customColor: string | null;
@@ -57,14 +61,16 @@ interface ProductConfiguratorProps {
   matDisabledSet?: Set<string>;
   allowCustomColor?: boolean;
   disabledConfigIdsBySlot?: Record<string, string[]>;
+  disabledColorCategoriesBySlot?: Record<string, string[]>;
   allowCustomColorBySlot?: Record<string, boolean>;
+  colorCategories?: ColorCategoryDefinition[];
   productColorsBySlot?: Record<
     string,
     Array<{
       id: string;
       name: string;
       hex_color: string;
-      color_category: "standard" | "color" | "mirror" | "custom";
+      color_category: string;
       mat_allowed: boolean;
     }>
   >;
@@ -96,10 +102,13 @@ export function ProductConfigurator({
   matDisabledSet = new Set(),
   allowCustomColor = true,
   disabledConfigIdsBySlot = {},
+  disabledColorCategoriesBySlot = {},
   allowCustomColorBySlot = {},
   productColorsBySlot = {},
+  colorCategories = [],
   schemaImageUrl,
 }: ProductConfiguratorProps) {
+  const categoryByColorName = buildColorNameCategoryMap(globalColors);
   const nonColorOptions = options.filter((o) => !isColorOption(o.title));
 
   const colorOptions: ColorOptionFromConfig[] =
@@ -112,6 +121,7 @@ export function ProductConfigurator({
             globalColors,
             productColorsBySlot[title] ?? [],
             disabledConfigIdsBySlot,
+            disabledColorCategoriesBySlot,
           ),
         }))
       : options
@@ -126,6 +136,7 @@ export function ProductConfigurator({
                     globalColors,
                     productColorsBySlot[o.title] ?? [],
                     disabledConfigIdsBySlot,
+                    disabledColorCategoriesBySlot,
                   )
                 : o.values,
           }));
@@ -187,6 +198,11 @@ export function ProductConfigurator({
                 allowCustomColor={
                   allowCustomColorBySlot[option.title] ?? allowCustomColor
                 }
+                colorCategories={colorCategories}
+                categoryByColorName={{
+                  ...categoryByColorName,
+                  ...buildColorNameCategoryMap(productColorsBySlot[option.title] ?? []),
+                }}
               />
             </div>
           ))}

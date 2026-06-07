@@ -147,6 +147,7 @@ interface ProductPageLayoutProps {
     };
     checkoutCallout?: CheckoutCallout | null;
     globalColors?: GlobalConfigOption[];
+    colorCategories?: import("@/lib/products/color-categories").ColorCategoryDefinition[];
     schemaImageUrl?: string | null;
     /** PDP certyfikatów — opcja dopłaty za podstawkę w kolorze certyfikatu */
     certificateStandAvailable?: boolean;
@@ -375,6 +376,7 @@ export async function ProductPageLayout({
               }}
               checkoutCallout={siteSettings?.checkoutCallout ?? null}
               globalColors={productConfig.colors}
+              colorCategories={productConfig.colorCategories}
               schemaImageUrl={schemaImageUrl}
               certificateStandAvailable={certificateStandAvailable}
               isVoucher={isVoucher}

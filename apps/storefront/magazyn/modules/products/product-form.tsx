@@ -8,7 +8,7 @@ import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import { cn } from "@magazyn/core/lib/cn";
 import { magazynConfig } from "@magazyn/magazyn.config";
-import type { ColorCategoryId } from "./color-categories";
+import type { ColorCategoryDefinition, ColorCategoryId } from "./color-categories";
 import type { AdminProductDetail, CategoryOption, ConfigOption } from "./store";
 import { saveProductAction, uploadImagesAction } from "./actions";
 import { ProductConfigSection } from "./product-config-section";
@@ -20,6 +20,7 @@ import {
 	removeProductColor,
 	renameColorSlot,
 	serializeColorSlotState,
+	toggleColorCategoryForSlot,
 	type ColorSlotFormState,
 } from "./product-color-config-state";
 
@@ -27,12 +28,13 @@ type Props = {
 	product?: AdminProductDetail;
 	categories: CategoryOption[];
 	configOptions: ConfigOption[];
+	colorCategories: ColorCategoryDefinition[];
 };
 
 const inputClass =
 	"w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export function ProductForm({ product, categories, configOptions }: Props) {
+export function ProductForm({ product, categories, configOptions, colorCategories }: Props) {
 	const router = useRouter();
 	const titleId = useId();
 	const fileId = useId();
@@ -44,7 +46,7 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 	const [priceMajor, setPriceMajor] = useState<string>(product?.price != null ? String(product.price / 100) : "");
 	const [images, setImages] = useState<string[]>(product?.images ?? []);
 	const [colorSlotState, setColorSlotState] = useState<ColorSlotFormState>(() =>
-		createInitialColorSlotState(product, configOptions),
+		createInitialColorSlotState(product, configOptions, colorCategories),
 	);
 
 	const [error, setError] = useState<string | null>(null);
@@ -55,6 +57,11 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 	const disabledColorIdsForActiveSlot = useMemo(
 		() => colorSlotState.disabledBySlot[colorSlotState.activeSlot] ?? new Set<string>(),
 		[colorSlotState.activeSlot, colorSlotState.disabledBySlot],
+	);
+
+	const disabledCategoryIdsForActiveSlot = useMemo(
+		() => colorSlotState.disabledCategoriesBySlot[colorSlotState.activeSlot] ?? new Set<string>(),
+		[colorSlotState.activeSlot, colorSlotState.disabledCategoriesBySlot],
 	);
 
 	const allowCustomForActiveSlot =
@@ -145,7 +152,13 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 		input: { name: string; hex_color: string },
 	) {
 		setColorSlotState((prev) =>
-			addProductColor(prev, prev.activeSlot, category, input),
+			addProductColor(prev, prev.activeSlot, category, input, colorCategories),
+		);
+	}
+
+	function toggleCategoryForActiveSlot(categoryId: ColorCategoryId, enabled: boolean) {
+		setColorSlotState((prev) =>
+			toggleColorCategoryForSlot(prev, prev.activeSlot, categoryId, enabled),
 		);
 	}
 
@@ -176,6 +189,7 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 				images,
 				disabledConfigIds: colorConfig.disabledConfigIds,
 				disabledConfigIdsBySlot: colorConfig.disabledConfigIdsBySlot,
+				disabledColorCategoriesBySlot: colorConfig.disabledColorCategoriesBySlot,
 				allowCustomColorBySlot: colorConfig.allowCustomColorBySlot,
 				productColorsBySlot: colorConfig.productColorsBySlot,
 				colorSlotCount: colorConfig.colorSlotCount,
@@ -234,6 +248,7 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 
 				<ProductConfigSection
 					configOptions={configOptions}
+					colorCategories={colorCategories}
 					slotTitles={colorSlotState.slotTitles}
 					activeSlot={colorSlotState.activeSlot}
 					onActiveSlotChange={(slot) => setColorSlotState((prev) => ({ ...prev, activeSlot: slot }))}
@@ -242,7 +257,9 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 				onRenameSlot={(oldTitle, newTitle) => setColorSlotState((prev) => renameColorSlot(prev, oldTitle, newTitle))}
 					disabledConfigIds={colorSlotState.nonColorDisabledIds}
 					disabledColorIdsForActiveSlot={disabledColorIdsForActiveSlot}
+					disabledCategoryIdsForActiveSlot={disabledCategoryIdsForActiveSlot}
 					onToggleColor={toggleColorForActiveSlot}
+					onToggleCategory={toggleCategoryForActiveSlot}
 					onToggleNonColor={toggleNonColorOption}
 					onEnableAllColorsForActiveSlot={enableAllColorsForActiveSlot}
 					onDisableAllColorsForActiveSlot={disableAllColorsForActiveSlot}

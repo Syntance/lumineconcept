@@ -1,4 +1,5 @@
 import { loadAdmin } from "@magazyn/core/auth/load";
+import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
 import { listCategoryOptions, listGlobalConfigOptions } from "./store";
 import { ProductForm } from "./product-form";
 
@@ -9,8 +10,8 @@ import { ProductForm } from "./product-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewProductPage() {
-	const [categories, configOptions] = await loadAdmin(() =>
-		Promise.all([listCategoryOptions(), listGlobalConfigOptions()]),
+	const [categories, configOptions, colorCategories] = await loadAdmin(() =>
+		Promise.all([listCategoryOptions(), listGlobalConfigOptions(), getColorCategories()]),
 	);
 
 	return (
@@ -18,7 +19,11 @@ export default async function NewProductPage() {
 			<header>
 				<h1 className="font-serif text-2xl text-foreground">Nowy produkt</h1>
 			</header>
-			<ProductForm categories={categories} configOptions={configOptions} />
+			<ProductForm
+				categories={categories}
+				configOptions={configOptions}
+				colorCategories={colorCategories}
+			/>
 		</div>
 	);
 }

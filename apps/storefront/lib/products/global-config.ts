@@ -1,11 +1,17 @@
 import { unstable_cache } from "next/cache"
+import { resolveMedusaBackendUrl } from "@/lib/medusa/resolve-backend-url"
+import {
+  DEFAULT_COLOR_CATEGORIES,
+  type ColorCategoryDefinition,
+  parseColorCategories,
+} from "./color-categories"
 
 export interface GlobalConfigOption {
   id: string
   type: "color" | "size" | "material" | "led" | "finish"
   name: string
   hex_color: string | null
-  color_category: "standard" | "color" | "mirror" | "custom" | null
+  color_category: string | null
   mat_allowed: boolean
   sort_order: number
   metadata: Record<string, unknown> | null
@@ -17,6 +23,7 @@ export interface GlobalProductConfig {
   materials: GlobalConfigOption[]
   led: GlobalConfigOption[]
   finishes: GlobalConfigOption[]
+  colorCategories: ColorCategoryDefinition[]
 }
 
 /**
@@ -30,12 +37,8 @@ export const EMPTY_GLOBAL_CONFIG: GlobalProductConfig = {
   materials: [],
   led: [],
   finishes: [],
+  colorCategories: DEFAULT_COLOR_CATEGORIES,
 }
-
-const BACKEND_URL =
-  process.env.MEDUSA_BACKEND_URL?.trim() ||
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim() ||
-  "http://localhost:9000"
 
 /** Store API wymaga klucza; lokalnie możesz ustawić tylko MEDUSA_PUBLISHABLE_KEY (serwer, bez NEXT_PUBLIC). */
 function getPublishableKey(): string {
@@ -67,7 +70,8 @@ async function fetchStoreProductConfig(search: string): Promise<Response> {
   const headers: Record<string, string> = {}
   if (key) headers["x-publishable-api-key"] = key
 
-  const directUrl = `${BACKEND_URL}/store/product-config${search}`
+  const backendUrl = await resolveMedusaBackendUrl()
+  const directUrl = `${backendUrl}/store/product-config${search}`
 
   // Najpierw bezpośrednio do Medusy — unika self-fetch na Vercel (RSC → /api/medusa → backend),
   // co często kończy się timeoutem „Application failed to respond”.
@@ -118,7 +122,10 @@ async function _fetchGlobalConfig(productId?: string): Promise<GlobalProductConf
     )
   }
 
-  const data = (await res.json()) as { config_options: GlobalConfigOption[] }
+  const data = (await res.json()) as {
+    config_options: GlobalConfigOption[]
+    color_categories?: unknown
+  }
   const all = data.config_options ?? []
 
   return {
@@ -127,6 +134,7 @@ async function _fetchGlobalConfig(productId?: string): Promise<GlobalProductConf
     materials: all.filter((o) => o.type === "material"),
     led: all.filter((o) => o.type === "led"),
     finishes: all.filter((o) => o.type === "finish"),
+    colorCategories: parseColorCategories(data.color_categories),
   }
 }
 

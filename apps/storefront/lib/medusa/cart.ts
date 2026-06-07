@@ -1,27 +1,43 @@
 import { medusa } from "./client";
-import { resolveMedusaFetchBase } from "./resolve-fetch-base";
 import { getPolishRegionId } from "./region";
+import {
+  cartFieldsSearchParams,
+  CART_FIELDS_QUERY,
+  storeApiFetch,
+} from "./store-fetch";
+import { resolveMedusaFetchBase } from "./resolve-fetch-base";
 
 /**
  * Medusa 2 domyślnie nie zwraca `items.total` w koszyku — bez tego UI pokazuje „NaN zł”.
  * `*items` rozszerza pola pozycji (w tym sumy), `+` dokłada brakujące do domyślnego zestawu.
  */
 const CART_RETRIEVE_QUERY = {
-  fields:
-    "+items.total,+items.subtotal,+items.unit_price,+items.quantity,+subtotal,+total,+tax_total,+shipping_total,+shipping_methods",
+  fields: CART_FIELDS_QUERY,
 };
 
+async function parseCartResponse(res: Response): Promise<Record<string, unknown>> {
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message ?? `cart API HTTP ${res.status}`);
+  }
+  const data = (await res.json()) as { cart: Record<string, unknown> };
+  return data.cart;
+}
+
 export async function createCart() {
-  const response = await medusa.store.cart.create(
-    { region_id: await getPolishRegionId() },
-    CART_RETRIEVE_QUERY,
-  );
-  return response.cart;
+  const params = cartFieldsSearchParams();
+  const res = await storeApiFetch(`/store/carts?${params}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ region_id: await getPolishRegionId() }),
+  });
+  return parseCartResponse(res);
 }
 
 export async function getCart(cartId: string) {
-  const response = await medusa.store.cart.retrieve(cartId, CART_RETRIEVE_QUERY);
-  return response.cart;
+  const params = cartFieldsSearchParams();
+  const res = await storeApiFetch(`/store/carts/${cartId}?${params}`);
+  return parseCartResponse(res);
 }
 
 export async function addLineItem(

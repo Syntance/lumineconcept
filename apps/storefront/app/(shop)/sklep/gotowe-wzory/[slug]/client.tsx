@@ -25,9 +25,11 @@ import {
   parseAllowCustomColor,
   type GlobalConfigOption,
 } from "@/lib/products/global-config";
+import type { ColorCategoryDefinition } from "@/lib/products/color-categories";
 import {
   flattenProductColorsForSlot,
   parseAllowCustomColorBySlot,
+  parseDisabledColorCategoriesBySlot,
   parseDisabledConfigIds,
   parseDisabledConfigIdsBySlot,
   parseProductColorsBySlot,
@@ -68,6 +70,7 @@ interface ProductPageClientProps {
   };
   checkoutCallout?: CheckoutCallout | null;
   globalColors?: GlobalConfigOption[];
+  colorCategories?: ColorCategoryDefinition[];
   schemaImageUrl?: string | null;
   certificateStandAvailable?: boolean;
   isVoucher?: boolean;
@@ -83,6 +86,7 @@ export function ProductPageClient({
   product,
   checkoutCallout,
   globalColors = [],
+  colorCategories = [],
   schemaImageUrl,
   certificateStandAvailable = false,
   isVoucher = false,
@@ -138,6 +142,10 @@ export function ProductPageClient({
         legacyColorDisabledIds,
       ),
     [product.metadata, colorOptionTitles, legacyColorDisabledIds],
+  );
+  const disabledColorCategoriesBySlot = useMemo(
+    () => parseDisabledColorCategoriesBySlot(product.metadata, colorOptionTitles),
+    [product.metadata, colorOptionTitles],
   );
   const allowCustomColorBySlot = useMemo(
     () =>
@@ -467,8 +475,10 @@ export function ProductPageClient({
             matDisabledSet={matDisabledSet}
             allowCustomColor={allowCustomColor}
             disabledConfigIdsBySlot={disabledConfigIdsBySlot}
+            disabledColorCategoriesBySlot={disabledColorCategoriesBySlot}
             allowCustomColorBySlot={allowCustomColorBySlot}
             productColorsBySlot={productColorsBySlotFlat}
+            colorCategories={colorCategories}
             schemaImageUrl={schemaImageUrl}
           />
         </div>

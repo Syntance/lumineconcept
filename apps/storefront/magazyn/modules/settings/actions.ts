@@ -6,12 +6,18 @@ import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
 import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
-import type { ColorCategoryId } from "@magazyn/modules/products/color-categories";
+import type { ColorCategoryDefinition, ColorCategoryId } from "@magazyn/modules/products/color-categories";
 import {
 	createGlobalColorOption,
 	deleteGlobalColorOption,
+	listGlobalConfigOptions,
 	type ConfigOption,
 } from "@magazyn/modules/products/store";
+import {
+	addColorCategory,
+	deleteColorCategory,
+	getColorCategories,
+} from "./color-category-store";
 import {
 	getActivePanelThemePresetId,
 	getPanelTheme,
@@ -26,7 +32,7 @@ import {
 
 const SETTINGS_COLORS_PATH = `${magazynConfig.basePath}/panel/ustawienia/kolory`;
 const SETTINGS_THEME_PATH = `${magazynConfig.basePath}/panel/ustawienia/motywy`;
-const colorCategorySchema = z.enum(["standard", "color", "mirror", "custom"]);
+const colorCategorySchema = z.string().trim().min(1);
 
 export type CreateColorState = {
 	ok: boolean;
@@ -43,6 +49,13 @@ export type PanelThemeActionState = {
 	ok: boolean;
 	error: string | null;
 	theme?: PanelTheme;
+};
+
+export type ColorCategoryActionState = {
+	ok: boolean;
+	error: string | null;
+	category?: ColorCategoryDefinition;
+	categories?: ColorCategoryDefinition[];
 };
 
 async function revalidateGlobalColors() {
@@ -121,6 +134,59 @@ export async function loadPanelThemeAction(): Promise<PanelTheme> {
 
 export async function loadActivePanelThemePresetIdAction(): Promise<PanelThemePresetId> {
 	return getActivePanelThemePresetId();
+}
+
+export async function loadColorCategoriesAction(): Promise<ColorCategoryDefinition[]> {
+	return getColorCategories();
+}
+
+export async function createColorCategoryAction(label: string): Promise<ColorCategoryActionState> {
+	const parsed = z.string().trim().min(2, "Nazwa kategorii musi mieć min. 2 znaki.").safeParse(label);
+	if (!parsed.success) {
+		return { ok: false, error: parsed.error.issues[0]?.message ?? "Błędne dane." };
+	}
+
+	try {
+		const category = await addColorCategory(parsed.data);
+		await revalidateGlobalColors();
+		return { ok: true, error: null, category };
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminApiError) return { ok: false, error: error.message };
+		if (error instanceof Error) return { ok: false, error: error.message };
+		return { ok: false, error: "Nie udało się dodać kategorii." };
+	}
+}
+
+export async function deleteColorCategoryAction(categoryId: string): Promise<ColorCategoryActionState> {
+	const parsed = z.string().trim().min(1).safeParse(categoryId);
+	if (!parsed.success) {
+		return { ok: false, error: "Nieprawidłowy identyfikator kategorii." };
+	}
+
+	try {
+		const options = await listGlobalConfigOptions();
+		const colorsInCategory = options.filter(
+			(option) =>
+				option.type === "color" && (option.color_category ?? "standard") === parsed.data,
+		);
+		if (colorsInCategory.length > 0) {
+			return {
+				ok: false,
+				error: "Usuń najpierw wszystkie kolory z tej kategorii.",
+			};
+		}
+
+		await deleteColorCategory(parsed.data);
+		await revalidateGlobalColors();
+		const categories = await getColorCategories();
+		return { ok: true, error: null, categories };
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminApiError) return { ok: false, error: error.message };
+		if (error instanceof Error) return { ok: false, error: error.message };
+		return { ok: false, error: "Nie udało się usunąć kategorii." };
+	}
 }
 
 export async function deleteColorOptionAction(id: string): Promise<DeleteColorState> {

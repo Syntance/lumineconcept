@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { loadAdmin } from "@magazyn/core/auth/load";
+import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
 import { getAdminProduct, listCategoryOptions, listGlobalConfigOptions } from "./store";
 import { ProductForm } from "./product-form";
 
@@ -11,8 +12,13 @@ export const dynamic = "force-dynamic";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
-	const [product, categories, configOptions] = await loadAdmin(() =>
-		Promise.all([getAdminProduct(id), listCategoryOptions(), listGlobalConfigOptions()]),
+	const [product, categories, configOptions, colorCategories] = await loadAdmin(() =>
+		Promise.all([
+			getAdminProduct(id),
+			listCategoryOptions(),
+			listGlobalConfigOptions(),
+			getColorCategories(),
+		]),
 	);
 	if (!product) notFound();
 
@@ -22,7 +28,12 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 				<h1 className="font-serif text-2xl text-foreground">Edytuj produkt</h1>
 				<p className="mt-1 text-sm text-muted-foreground">/{product.handle}</p>
 			</header>
-			<ProductForm product={product} categories={categories} configOptions={configOptions} />
+			<ProductForm
+				product={product}
+				categories={categories}
+				configOptions={configOptions}
+				colorCategories={colorCategories}
+			/>
 		</div>
 	);
 }
