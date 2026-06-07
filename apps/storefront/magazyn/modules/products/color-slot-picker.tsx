@@ -151,9 +151,19 @@ export function ColorSlotPicker({
 								const isEditing = editingSlot === title;
 								
 								return (
-									<li key={title} role="presentation">
+									<li
+										key={title}
+										role="presentation"
+										className={cn(
+											"group flex items-center gap-1 transition-colors",
+											!isEditing &&
+												(active
+													? "bg-primary/12"
+													: "hover:bg-muted"),
+										)}
+									>
 										{isEditing ? (
-											<div className="flex items-center gap-1.5 px-3 py-2">
+											<div className="flex flex-1 items-center gap-1.5 px-3 py-2">
 												<input
 													ref={editInputRef}
 													type="text"
@@ -164,31 +174,33 @@ export function ColorSlotPicker({
 														if (e.key === "Escape") cancelEditing();
 													}}
 													onBlur={finishEditing}
-													className="flex-1 h-7 rounded border border-input bg-background px-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+													className="h-7 flex-1 rounded border border-input bg-background px-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
 													placeholder="Nazwa pola"
 												/>
 											</div>
 										) : (
-											<button
-												type="button"
-												role="option"
-												aria-selected={active}
-												onClick={() => selectSlot(title)}
-												className={cn(
-													"group flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors outline-none focus-visible:bg-muted",
-													active
-														? "bg-primary/12 font-medium text-foreground"
-														: "text-muted-foreground hover:bg-muted hover:text-foreground",
-												)}
-											>
-												<span className="flex-1 truncate">{formatColorSlotLabel(title)}</span>
-												<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+											<>
+												<button
+													type="button"
+													role="option"
+													aria-selected={active}
+													onClick={() => selectSlot(title)}
+													className={cn(
+														"min-w-0 flex-1 truncate px-3 py-2 text-left text-sm transition-colors outline-none focus-visible:bg-muted",
+														active
+															? "font-medium text-foreground"
+															: "text-muted-foreground group-hover:text-foreground",
+													)}
+												>
+													{formatColorSlotLabel(title)}
+												</button>
+												<div className="flex shrink-0 items-center gap-1 pr-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
 													{onRenameSlot ? (
 														<button
 															type="button"
 															onClick={(e) => startEditing(title, e)}
-															className="p-1 rounded hover:bg-muted-foreground/10 text-muted-foreground hover:text-foreground transition-colors"
-															aria-label="Zmień nazwę"
+															className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted-foreground/10 hover:text-foreground"
+															aria-label={`Zmień nazwę: ${formatColorSlotLabel(title)}`}
 														>
 															<Pencil className="size-3.5" aria-hidden />
 														</button>
@@ -197,14 +209,14 @@ export function ColorSlotPicker({
 														<button
 															type="button"
 															onClick={(e) => handleRemoveSlot(title, e)}
-															className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-															aria-label="Usuń pole"
+															className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+															aria-label={`Usuń pole: ${formatColorSlotLabel(title)}`}
 														>
 															<Trash2 className="size-3.5" aria-hidden />
 														</button>
 													) : null}
 												</div>
-											</button>
+											</>
 										)}
 									</li>
 								);
