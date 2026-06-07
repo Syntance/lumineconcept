@@ -140,7 +140,7 @@ export function ProductConfigSection({
 														"flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors",
 														enabled
 															? "border-border bg-background text-foreground"
-															: "border-border/60 bg-muted/40 text-muted-foreground line-through",
+															: "border-border/60 bg-muted/40 text-muted-foreground",
 													)}
 												>
 													<CheckboxInput
@@ -229,7 +229,7 @@ export function ProductConfigSection({
 										"flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors",
 										enabled
 											? "border-border bg-background text-foreground"
-											: "border-border/60 bg-muted/40 text-muted-foreground line-through",
+											: "border-border/60 bg-muted/40 text-muted-foreground",
 									)}
 								>
 									<CheckboxInput
