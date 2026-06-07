@@ -21,8 +21,7 @@ export function AddProductColorForm({ category, slotLabel, onAdd }: Props) {
 	const [error, setError] = useState<string | null>(null);
 	const [pending, setPending] = useState(false);
 
-	function onSubmit(event: React.FormEvent) {
-		event.preventDefault();
+	function handleAdd() {
 		setError(null);
 		const trimmedName = name.trim();
 		const normalizedHex = normalizeHexInput(hex);
@@ -46,11 +45,18 @@ export function AddProductColorForm({ category, slotLabel, onAdd }: Props) {
 		}
 	}
 
+	function onFieldKeyDown(event: React.KeyboardEvent) {
+		if (event.key !== "Enter") return;
+		event.preventDefault();
+		handleAdd();
+	}
+
 	const previewHex = normalizeHexInput(hex);
 
 	return (
-		<form
-			onSubmit={onSubmit}
+		<div
+			role="group"
+			aria-label={`Dodaj kolor tylko dla tego produktu (${slotLabel})`}
 			className="mt-3 flex flex-col gap-2 rounded-lg border border-dashed border-border/80 bg-muted/20 p-3"
 		>
 			<p className="text-xs font-medium text-muted-foreground">
@@ -65,9 +71,9 @@ export function AddProductColorForm({ category, slotLabel, onAdd }: Props) {
 						id={`product-color-name-${category}`}
 						value={name}
 						onChange={(e) => setName(e.target.value)}
+						onKeyDown={onFieldKeyDown}
 						placeholder="np. grafitowy"
 						className="h-9"
-						required
 						minLength={2}
 					/>
 				</div>
@@ -91,13 +97,13 @@ export function AddProductColorForm({ category, slotLabel, onAdd }: Props) {
 							id={`product-color-hex-${category}`}
 							value={hex}
 							onChange={(e) => setHex(e.target.value)}
+							onKeyDown={onFieldKeyDown}
 							placeholder="#AF7C61"
 							className="h-9 w-28 font-mono text-sm"
-							required
 						/>
 					</div>
 				</div>
-				<Button type="submit" size="sm" disabled={pending} className="h-9 gap-1">
+				<Button type="button" size="sm" disabled={pending} onClick={handleAdd} className="h-9 gap-1">
 					{pending ? (
 						<Loader2 className="size-3.5 animate-spin" aria-hidden />
 					) : (
@@ -111,6 +117,6 @@ export function AddProductColorForm({ category, slotLabel, onAdd }: Props) {
 					{error}
 				</p>
 			) : null}
-		</form>
+		</div>
 	);
 }
