@@ -128,6 +128,34 @@ function parseJsonRecord(raw: unknown): Record<string, unknown> | null {
 	return null;
 }
 
+export function countColorSlotsFromProductOptions(
+	options: ReadonlyArray<{ title: string }>,
+): number {
+	const fromOptions = options.filter((o) => isColorSlotTitle(o.title)).length;
+	return fromOptions > 0 ? fromOptions : 1;
+}
+
+/** Kanoniczne tytuły pól koloru — zgodne z kluczami w metadata.disabled_config_ids_by_slot. */
+export function resolveColorSlotTitles(
+	options: ReadonlyArray<{ title: string }>,
+	metadata: Record<string, unknown> | null | undefined,
+): string[] {
+	const count = countColorSlotsFromProductOptions(options);
+	const customNames = parseCustomSlotNames(metadata);
+	if (customNames && customNames.length === count) {
+		return customNames;
+	}
+
+	const fromOptions = options
+		.filter((o) => isColorSlotTitle(o.title))
+		.map((o) => o.title);
+	if (fromOptions.length > 0) {
+		return fromOptions;
+	}
+
+	return buildColorOptionTitles(count, customNames);
+}
+
 export function parseDisabledConfigIdsBySlot(
 	meta: Record<string, unknown> | null | undefined,
 	slotTitles: readonly string[],
@@ -140,8 +168,17 @@ export function parseDisabledConfigIdsBySlot(
 
 	const obj = parseJsonRecord(meta?.disabled_config_ids_by_slot);
 	if (obj) {
-		for (const title of slotTitles) {
-			const arr = obj[title];
+		const metadataKeys = Object.keys(obj);
+		for (let i = 0; i < slotTitles.length; i++) {
+			const title = slotTitles[i];
+			if (!title) continue;
+			let arr = obj[title];
+			if (!Array.isArray(arr)) {
+				const fallbackKey = metadataKeys[i];
+				if (fallbackKey && fallbackKey !== title) {
+					arr = obj[fallbackKey];
+				}
+			}
 			result[title] = Array.isArray(arr)
 				? arr.filter((x): x is string => typeof x === "string")
 				: [...legacyColorDisabled];
@@ -153,6 +190,19 @@ export function parseDisabledConfigIdsBySlot(
 		result[title] = [...legacyColorDisabled];
 	}
 	return result;
+}
+
+export function getEnabledColorNamesForSlot(
+	slotTitle: string,
+	globalColors: ReadonlyArray<{ id: string; name: string }>,
+	productColors: ReadonlyArray<{ name: string }>,
+	disabledConfigIdsBySlot: Record<string, string[]>,
+): string[] {
+	const slotDisabled = new Set(disabledConfigIdsBySlot[slotTitle] ?? []);
+	return [
+		...globalColors.filter((c) => !slotDisabled.has(c.id)).map((c) => c.name),
+		...productColors.map((c) => c.name),
+	];
 }
 
 export function parseAllowCustomColorBySlot(

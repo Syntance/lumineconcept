@@ -2,20 +2,40 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { cn } from "@/lib/utils";
 import { PriceDisplay } from "./PriceDisplay";
 import { formatColorOptionLabel } from "./ColorStepPanel";
 import {
+  ColorSelectDropdown,
+  type ColorSelectGroup,
+} from "./ColorSelectDropdown";
+import {
   CUSTOM_COLOR_VALUE,
   isEveryColorOptionChosen,
   isMatAllowed,
   isMirrorColor,
-  isColorOption,
 } from "./ProductVariantSelector";
 import { parseTextFieldsFromMetadata } from "@/lib/products/text-fields";
-import type { GlobalConfigOption } from "@/lib/products/global-config";
+import {
+  buildColorMap,
+  buildColoredSet,
+  buildCustomSet,
+  buildMirrorSet,
+  mergeGlobalAndProductColors,
+  parseAllowCustomColor,
+  type GlobalConfigOption,
+} from "@/lib/products/global-config";
+import {
+  flattenProductColorsForSlot,
+  getEnabledColorNamesForSlot,
+  parseAllowCustomColorBySlot,
+  parseDisabledConfigIds,
+  parseDisabledConfigIdsBySlot,
+  parseProductColorsBySlot,
+  resolveColorSlotTitles,
+} from "@/lib/products/color-slot-config";
 
 interface MiniConfiguratorModalProps {
   open: boolean;
@@ -47,10 +67,12 @@ function ColorPicker({
   values,
   state,
   onChange,
-  colorMap: _colorMap,
+  colorMap,
   coloredSet,
   mirrorSet,
+  customSet,
   matDisabledSet,
+  allowCustomColor = true,
 }: {
   label: string;
   values: string[];
@@ -59,7 +81,9 @@ function ColorPicker({
   colorMap: Record<string, string>;
   coloredSet: Set<string>;
   mirrorSet: Set<string>;
+  customSet: Set<string>;
   matDisabledSet: Set<string>;
+  allowCustomColor?: boolean;
 }) {
   const uniqueId = useId();
   const colorInputRef = useRef<HTMLInputElement>(null);
@@ -70,14 +94,44 @@ function ColorPicker({
   }, [state.customHex]);
 
   const standard = values.filter(
-    (v) => !isMirrorColor(v, mirrorSet) && !coloredSet.has(v.toLowerCase()),
+    (v) =>
+      !isMirrorColor(v, mirrorSet) &&
+      !coloredSet.has(v.toLowerCase()) &&
+      !customSet.has(v.toLowerCase()),
   );
   const colored = values.filter((v) => coloredSet.has(v.toLowerCase()));
   const mirror = values.filter((v) => isMirrorColor(v, mirrorSet));
+  const customNamed = values.filter((v) => customSet.has(v.toLowerCase()));
+  const showIndividualGroup = customNamed.length > 0 || allowCustomColor;
   const isCustom = state.selected === CUSTOM_COLOR_VALUE;
   const matAllowed = isCustom || isMatAllowed(state.selected, matDisabledSet);
 
   const selectId = `mini-color-${label}-${uniqueId.replace(/:/g, "")}`;
+
+  const colorGroups: ColorSelectGroup[] = [
+    ...(standard.length > 0
+      ? [{ label: "Standardowe", options: standard.map((c) => ({ value: c, label: c })) }]
+      : []),
+    ...(colored.length > 0
+      ? [{ label: "Kolorowe", options: colored.map((c) => ({ value: c, label: c })) }]
+      : []),
+    ...(mirror.length > 0
+      ? [{ label: "Lustrzane", options: mirror.map((c) => ({ value: c, label: c })) }]
+      : []),
+    ...(showIndividualGroup
+      ? [
+          {
+            label: "Indywidualny",
+            options: [
+              ...customNamed.map((c) => ({ value: c, label: c })),
+              ...(allowCustomColor
+                ? [{ value: CUSTOM_COLOR_VALUE, label: "Własny kolor (HEX)" }]
+                : []),
+            ],
+          },
+        ]
+      : []),
+  ];
 
   const applySelect = (raw: string) => {
     if (raw === "") {
@@ -100,60 +154,22 @@ function ColorPicker({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <label
           htmlFor={selectId}
           className="shrink-0 text-xs font-bold uppercase leading-none tracking-[0.08em] text-brand-800"
         >
           {formatColorOptionLabel(label)}
         </label>
-        <div className="relative w-[min(100%,12rem)] shrink-0">
-          <select
-            id={selectId}
-            value={state.selected === "" ? "" : state.selected}
-            onChange={(e) => applySelect(e.target.value)}
-            className={cn(
-              "w-full cursor-pointer appearance-none border-0 border-b border-brand-300 bg-transparent py-0 pl-0 pr-7 pb-1.5 text-xs font-normal leading-none focus:border-brand-600 focus:outline-none focus:ring-0",
-              state.selected === "" ? "text-brand-400" : "text-brand-800",
-            )}
-          >
-        <option value="">Wybierz opcję</option>
-        {standard.length > 0 && (
-          <optgroup label="Standardowe">
-            {standard.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </optgroup>
-        )}
-        {colored.length > 0 && (
-          <optgroup label="Kolorowe">
-            {colored.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </optgroup>
-        )}
-        {mirror.length > 0 && (
-          <optgroup label="Lustrzane">
-            {mirror.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </optgroup>
-        )}
-        <optgroup label="Indywidualny">
-          <option value={CUSTOM_COLOR_VALUE}>Własny kolor (HEX)</option>
-        </optgroup>
-          </select>
-          <ChevronDown
-            className="pointer-events-none absolute right-0 bottom-1 h-3.5 w-3.5 translate-y-px text-brand-400"
-            aria-hidden
-          />
-        </div>
+        <ColorSelectDropdown
+          id={selectId}
+          value={state.selected === "" ? "" : state.selected}
+          onChange={applySelect}
+          groups={colorGroups}
+          colorMap={colorMap}
+          className="w-[min(100%,14rem)] shrink-0"
+          triggerClassName="py-2 text-xs"
+        />
       </div>
 
       {isCustom && (
@@ -271,21 +287,89 @@ export function MiniConfiguratorModal({
       .every((f) => (textFieldValues[f.key] ?? "").trim().length > 0);
   }, [textFields, textFieldValues]);
 
-  const globalColorNames = useMemo(
-    () => globalColors.map((c) => c.name),
-    [globalColors],
+  const optionTitles = useMemo(
+    () => Object.keys(options).map((title) => ({ title })),
+    [options],
   );
 
+  const colorOptionTitles = useMemo(
+    () => resolveColorSlotTitles(optionTitles, metadata),
+    [optionTitles, metadata],
+  );
+
+  const productColorsBySlot = useMemo(
+    () => parseProductColorsBySlot(metadata, colorOptionTitles),
+    [metadata, colorOptionTitles],
+  );
+
+  const legacyDisabledIds = useMemo(
+    () => parseDisabledConfigIds(metadata),
+    [metadata],
+  );
+
+  const legacyColorDisabledIds = useMemo(() => {
+    const colorIds = new Set(globalColors.map((c) => c.id));
+    return legacyDisabledIds.filter((id) => colorIds.has(id));
+  }, [legacyDisabledIds, globalColors]);
+
+  const disabledConfigIdsBySlot = useMemo(
+    () =>
+      parseDisabledConfigIdsBySlot(
+        metadata,
+        colorOptionTitles,
+        legacyColorDisabledIds,
+      ),
+    [metadata, colorOptionTitles, legacyColorDisabledIds],
+  );
+
+  const allowCustomColorBySlot = useMemo(
+    () =>
+      parseAllowCustomColorBySlot(
+        metadata,
+        colorOptionTitles,
+        parseAllowCustomColor(metadata),
+      ),
+    [metadata, colorOptionTitles],
+  );
+
+  const mergedColors = useMemo(() => {
+    const allProductColors = colorOptionTitles.flatMap((title) =>
+      flattenProductColorsForSlot(productColorsBySlot[title]),
+    );
+    return mergeGlobalAndProductColors(globalColors, allProductColors);
+  }, [globalColors, colorOptionTitles, productColorsBySlot]);
+
+  const resolvedColorMap = useMemo(
+    () => (Object.keys(colorMap).length > 0 ? colorMap : buildColorMap(mergedColors)),
+    [colorMap, mergedColors],
+  );
+
+  const resolvedColoredSet = useMemo(
+    () => (coloredSet.size > 0 ? coloredSet : buildColoredSet(mergedColors)),
+    [coloredSet, mergedColors],
+  );
+
+  const resolvedMirrorSet = useMemo(
+    () => (mirrorSet.size > 0 ? mirrorSet : buildMirrorSet(mergedColors)),
+    [mirrorSet, mergedColors],
+  );
+
+  const resolvedCustomSet = useMemo(() => buildCustomSet(mergedColors), [mergedColors]);
+
   const colorOptionEntries = useMemo(() => {
-    const fromOptions = Object.entries(options).filter(([key]) => isColorOption(key));
-    if (fromOptions.length > 0) {
-      return fromOptions.map(([key, vals]) => [key, globalColors.length > 0 ? globalColorNames : vals] as [string, string[]]);
-    }
-    if (globalColors.length > 0) {
-      return [["Kolor", globalColorNames] as [string, string[]]];
-    }
-    return [];
-  }, [options, globalColors, globalColorNames]);
+    return colorOptionTitles.map(
+      (title) =>
+        [
+          title,
+          getEnabledColorNamesForSlot(
+            title,
+            globalColors,
+            flattenProductColorsForSlot(productColorsBySlot[title]),
+            disabledConfigIdsBySlot,
+          ),
+        ] as [string, string[]],
+    );
+  }, [colorOptionTitles, globalColors, productColorsBySlot, disabledConfigIdsBySlot]);
 
   const initialColors: Record<string, ColorState> = {};
   for (const [key] of colorOptionEntries) {
@@ -335,7 +419,7 @@ export function MiniConfiguratorModal({
       if (url) meta[`link_${i + 1}`] = url;
     }
     return meta;
-  }, [colorStates, textFields, textFieldValues, links, linksCount, colorMap]);
+  }, [colorStates, textFields, textFieldValues, links, linksCount, resolvedColorMap]);
 
   const handleAdd = async () => {
     setIsAdding(true);
@@ -411,10 +495,12 @@ export function MiniConfiguratorModal({
                 }
               }
               onChange={(s) => updateColor(optionTitle, s)}
-              colorMap={colorMap}
-              coloredSet={coloredSet}
-              mirrorSet={mirrorSet}
+              colorMap={resolvedColorMap}
+              coloredSet={resolvedColoredSet}
+              mirrorSet={resolvedMirrorSet}
+              customSet={resolvedCustomSet}
               matDisabledSet={matDisabledSet}
+              allowCustomColor={allowCustomColorBySlot[optionTitle] ?? true}
             />
           ))}
 

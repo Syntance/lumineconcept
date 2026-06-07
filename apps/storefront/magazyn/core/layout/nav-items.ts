@@ -13,7 +13,7 @@ const MODULE_NAV: Record<keyof ModulesToggle, { segment: string; label: string; 
 	orders: { segment: "zamowienia", label: "Zamówienia", icon: ShoppingBag },
 	products: { segment: "produkty", label: "Produkty", icon: Package },
 	categories: { segment: "kategorie", label: "Kategorie", icon: Tags },
-	emails: { segment: "maile", label: "Maile", icon: Mail },
+	emails: { segment: "maile", label: "E-maile", icon: Mail },
 	settings: { segment: "ustawienia", label: "Ustawienia sklepu", icon: Settings },
 };
 

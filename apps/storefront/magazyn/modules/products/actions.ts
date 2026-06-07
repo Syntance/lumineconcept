@@ -115,6 +115,12 @@ export async function saveProductAction(payload: ProductPayload): Promise<SavePr
 		revalidatePath(`/sklep/certyfikaty/${productHandle}`);
 	}
 	revalidatePath(PRODUCTS_PATH);
+
+	if (data.id) {
+		revalidatePath(`${magazynConfig.basePath}/panel/produkty/${data.id}`);
+		return { ok: true, error: null };
+	}
+
 	redirect(PRODUCTS_PATH);
 }
 

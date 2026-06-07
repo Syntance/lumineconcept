@@ -48,6 +48,7 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 	);
 
 	const [error, setError] = useState<string | null>(null);
+	const [saved, setSaved] = useState(false);
 	const [uploading, setUploading] = useState(false);
 	const [saving, startSave] = useTransition();
 
@@ -160,6 +161,7 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 	function onSubmit(event: React.FormEvent) {
 		event.preventDefault();
 		setError(null);
+		setSaved(false);
 		const priceNumber = priceMajor.trim() === "" ? null : Math.round(Number(priceMajor) * 100);
 		const colorConfig = serializeColorSlotState(colorSlotState);
 
@@ -183,7 +185,14 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 				colorSlotNames: colorConfig.colorSlotNames,
 				allowCustomColor: colorConfig.allowCustomColor,
 			});
-			if (result && !result.ok) setError(result.error);
+			if (result && !result.ok) {
+				setError(result.error);
+				return;
+			}
+			if (product?.id) {
+				setSaved(true);
+				router.refresh();
+			}
 		});
 	}
 
@@ -274,6 +283,7 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 				</div>
 
 				{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+				{saved ? <p role="status" className="text-sm text-emerald-600">Zapisano.</p> : null}
 
 				<div className="flex flex-col gap-2">
 					<Button type="submit" size="lg" disabled={saving || uploading} className="h-10 gap-1.5">

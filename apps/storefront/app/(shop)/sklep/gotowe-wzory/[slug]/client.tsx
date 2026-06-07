@@ -31,6 +31,7 @@ import {
   parseDisabledConfigIds,
   parseDisabledConfigIdsBySlot,
   parseProductColorsBySlot,
+  resolveColorSlotTitles,
 } from "@/lib/products/color-slot-config";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
@@ -87,8 +88,8 @@ export function ProductPageClient({
   isVoucher = false,
 }: ProductPageClientProps) {
   const colorOptionTitles = useMemo(
-    () => product.options.filter((o) => isColorOption(o.title)).map((o) => o.title),
-    [product.options],
+    () => resolveColorSlotTitles(product.options, product.metadata),
+    [product.options, product.metadata],
   );
 
   const productColorsBySlot = useMemo(

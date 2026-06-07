@@ -13,6 +13,7 @@ import {
 } from "./ProductVariantSelector";
 import type { TextFieldDef } from "@/lib/products/text-fields";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
+import { getEnabledColorNamesForSlot } from "@/lib/products/color-slot-config";
 
 export interface ColorCustomization {
   customColor: string | null;
@@ -103,34 +104,31 @@ export function ProductConfigurator({
 
   const colorOptions: ColorOptionFromConfig[] =
     colorOptionTitles.length > 0
-      ? colorOptionTitles.map((title, idx) => {
-          const slotDisabled = new Set(disabledConfigIdsBySlot[title] ?? []);
-          const slotProductColors = productColorsBySlot[title] ?? [];
-          const slotColorNames = [
-            ...globalColors.filter((c) => !slotDisabled.has(c.id)).map((c) => c.name),
-            ...slotProductColors.map((c) => c.name),
-          ];
-          return {
-            id: `global-color-${idx}`,
+      ? colorOptionTitles.map((title, idx) => ({
+          id: `global-color-${idx}`,
+          title,
+          values: getEnabledColorNamesForSlot(
             title,
-            values: slotColorNames,
-          };
-        })
+            globalColors,
+            productColorsBySlot[title] ?? [],
+            disabledConfigIdsBySlot,
+          ),
+        }))
       : options
           .filter((o) => isColorOption(o.title))
-          .map((o) => {
-            const slotDisabled = new Set(disabledConfigIdsBySlot[o.title] ?? []);
-            const slotProductColors = productColorsBySlot[o.title] ?? [];
-            const slotColorNames = [
-              ...globalColors.filter((c) => !slotDisabled.has(c.id)).map((c) => c.name),
-              ...slotProductColors.map((c) => c.name),
-            ];
-            return {
-              id: o.id,
-              title: o.title,
-              values: globalColors.length > 0 ? slotColorNames : o.values,
-            };
-          });
+          .map((o) => ({
+            id: o.id,
+            title: o.title,
+            values:
+              globalColors.length > 0
+                ? getEnabledColorNamesForSlot(
+                    o.title,
+                    globalColors,
+                    productColorsBySlot[o.title] ?? [],
+                    disabledConfigIdsBySlot,
+                  )
+                : o.values,
+          }));
 
   const hasEditableContent =
     textFields.length > 0 || (linksCount > 0 && !!onLinksChange);

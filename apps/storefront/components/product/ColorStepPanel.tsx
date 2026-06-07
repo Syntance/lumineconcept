@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   CUSTOM_COLOR_VALUE,
   isMatAllowed,
   isMirrorColor,
 } from "./ProductVariantSelector";
+import {
+  ColorSelectDropdown,
+  type ColorSelectGroup,
+} from "./ColorSelectDropdown";
 
 /** Etykieta jak na makiecie: „KOLOR TABLICZKI :” */
 export function formatColorOptionLabel(title: string): string {
@@ -41,7 +44,7 @@ export function ColorStepPanel({
   onCustomColorChange,
   matFinish,
   onMatFinishChange,
-  colorMap: _colorMap,
+  colorMap,
   coloredSet,
   mirrorSet,
   customSet = new Set(),
@@ -67,6 +70,31 @@ export function ColorStepPanel({
 
   const selectId = `color-select-${option.id}-${uniqueId.replace(/:/g, "")}`;
 
+  const colorGroups: ColorSelectGroup[] = [
+    ...(standardColors.length > 0
+      ? [{ label: "Standardowe", options: standardColors.map((c) => ({ value: c, label: c })) }]
+      : []),
+    ...(coloredColors.length > 0
+      ? [{ label: "Kolorowe", options: coloredColors.map((c) => ({ value: c, label: c })) }]
+      : []),
+    ...(mirrorColors.length > 0
+      ? [{ label: "Lustrzane", options: mirrorColors.map((c) => ({ value: c, label: c })) }]
+      : []),
+    ...(showIndividualGroup
+      ? [
+          {
+            label: "Indywidualny",
+            options: [
+              ...customNamedColors.map((c) => ({ value: c, label: c })),
+              ...(allowCustomColor
+                ? [{ value: CUSTOM_COLOR_VALUE, label: "Własny kolor (HEX)" }]
+                : []),
+            ],
+          },
+        ]
+      : []),
+  ];
+
   useEffect(() => {
     setHexInput(customColor ?? "#000000");
   }, [customColor]);
@@ -91,73 +119,21 @@ export function ColorStepPanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         <label
           htmlFor={selectId}
           className="shrink-0 text-sm font-bold uppercase leading-none tracking-[0.08em] text-brand-800"
         >
           {formatColorOptionLabel(option.title)}
         </label>
-        <div className="relative w-[min(100%,13.5rem)] shrink-0">
-          <select
-            id={selectId}
-            value={selectedColor === "" ? "" : selectedColor}
-            onChange={(e) => handleSelectChange(e.target.value)}
-            className={cn(
-              "w-full cursor-pointer appearance-none border-0 border-b border-brand-300 bg-transparent py-0 pl-0 pr-8 pb-1.5 text-sm font-normal leading-none focus:border-brand-600 focus:outline-none focus:ring-0",
-              selectedColor === "" ? "text-brand-400" : "text-brand-800",
-            )}
-          >
-            <option value="" className="text-brand-600">
-              Wybierz opcję
-            </option>
-            {standardColors.length > 0 && (
-              <optgroup label="Standardowe">
-                {standardColors.map((c) => (
-                  <option key={c} value={c} className="text-brand-800">
-                    {c}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {coloredColors.length > 0 && (
-              <optgroup label="Kolorowe">
-                {coloredColors.map((c) => (
-                  <option key={c} value={c} className="text-brand-800">
-                    {c}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {mirrorColors.length > 0 && (
-              <optgroup label="Lustrzane">
-                {mirrorColors.map((c) => (
-                  <option key={c} value={c} className="text-brand-800">
-                    {c}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {showIndividualGroup ? (
-              <optgroup label="Indywidualny">
-                {customNamedColors.map((c) => (
-                  <option key={c} value={c} className="text-brand-800">
-                    {c}
-                  </option>
-                ))}
-                {allowCustomColor ? (
-                  <option value={CUSTOM_COLOR_VALUE} className="text-brand-800">
-                    Własny kolor (HEX)
-                  </option>
-                ) : null}
-              </optgroup>
-            ) : null}
-          </select>
-          <ChevronDown
-            className="pointer-events-none absolute right-0 bottom-1.5 h-4 w-4 translate-y-px text-brand-400"
-            aria-hidden
-          />
-        </div>
+        <ColorSelectDropdown
+          id={selectId}
+          value={selectedColor === "" ? "" : selectedColor}
+          onChange={handleSelectChange}
+          groups={colorGroups}
+          colorMap={colorMap}
+          className="w-[min(100%,16rem)] shrink-0"
+        />
       </div>
 
       {isCustomSelected && (
@@ -165,7 +141,7 @@ export function ColorStepPanel({
           <p className="w-full text-xs text-brand-500">
             Wybierz odcień lub wpisz kod HEX.
           </p>
-          <div className="flex items-center gap-3 rounded-lg bg-brand-50/80 px-2 py-2">
+          <div className="flex items-center gap-3 rounded-lg border border-brand-200/80 bg-brand-50/60 px-3 py-2.5 shadow-sm">
             <button
               type="button"
               onClick={() => colorInputRef.current?.click()}

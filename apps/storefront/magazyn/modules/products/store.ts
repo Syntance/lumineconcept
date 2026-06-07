@@ -7,6 +7,7 @@ import {
 	buildColorOptionTitles,
 	isColorSlotTitle,
 	parseAllowCustomColorBySlot,
+	parseCustomSlotNames,
 	parseDisabledConfigIdsBySlot,
 	parseProductColorsBySlot,
 	type ProductCustomColor,
@@ -248,9 +249,10 @@ async function syncProductColorOptions(
 	productId: string,
 	colorSlotCount: number,
 	existingOptions: MedusaProductOption[],
+	colorSlotNames?: string[],
 ): Promise<void> {
 	const nonColorOptions = existingOptions.filter((o) => !isColorOptionTitle(o.title));
-	const colorTitles = buildColorOptionTitles(colorSlotCount);
+	const colorTitles = buildColorOptionTitles(colorSlotCount, colorSlotNames);
 
 	const colorOptions = colorTitles.map((title) => {
 		const existing = existingOptions.find((o) => o.title === title);
@@ -335,8 +337,9 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 	const variant = product.variants?.[0];
 	const options = product.options ?? [];
 	const colorSlotCount = countColorSlotsFromOptions(options);
-	const slotTitles = buildColorOptionTitles(colorSlotCount);
 	const metadata = (product.metadata ?? {}) as Record<string, unknown>;
+	const customNames = parseCustomSlotNames(metadata);
+	const slotTitles = buildColorOptionTitles(colorSlotCount, customNames);
 	const legacyDisabled = parseDisabledConfigIds(metadata);
 	const defaultAllowCustom = parseAllowCustomColor(metadata);
 
@@ -356,6 +359,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		allowCustomColorBySlot: parseAllowCustomColorBySlot(metadata, slotTitles, defaultAllowCustom),
 		productColorsBySlot: parseProductColorsBySlot(metadata, slotTitles),
 		colorSlotCount,
+		colorSlotNames: customNames ?? slotTitles,
 		allowCustomColor: defaultAllowCustom,
 		metadata,
 	};
@@ -383,7 +387,7 @@ async function syncProductBasePrice(productId: string, priceMinor: number): Prom
 
 export async function createAdminProduct(values: ProductFormValues): Promise<string> {
 	const { salesChannelId, shippingProfileId } = await getStoreConfig();
-	const colorTitles = buildColorOptionTitles(values.colorSlotCount);
+	const colorTitles = buildColorOptionTitles(values.colorSlotCount, values.colorSlotNames);
 	const colorOptionsRecord = Object.fromEntries(colorTitles.map((t) => [t, "Standard"]));
 
 	const body: Record<string, unknown> = {
@@ -448,7 +452,12 @@ export async function updateAdminProduct(
 	const current = await adminFetch<{ product: MedusaProduct }>(
 		`/admin/products/${id}?fields=options.id,options.title,options.values.value`,
 	);
-	await syncProductColorOptions(id, values.colorSlotCount, current.product.options ?? []);
+	await syncProductColorOptions(
+		id,
+		values.colorSlotCount,
+		current.product.options ?? [],
+		values.colorSlotNames,
+	);
 	await syncProductConfiguratorSettings(id, values);
 
 	if (values.price != null) {
