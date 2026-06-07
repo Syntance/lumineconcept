@@ -3,23 +3,36 @@
 import { ImagePlus, Loader2, Save, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { useId, useMemo, useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import { cn } from "@magazyn/core/lib/cn";
 import { magazynConfig } from "@magazyn/magazyn.config";
-import type { AdminProductDetail, CategoryOption } from "./store";
+import type { ColorCategoryId } from "./color-categories";
+import type { AdminProductDetail, CategoryOption, ConfigOption } from "./store";
 import { saveProductAction, uploadImagesAction } from "./actions";
+import { ProductConfigSection } from "./product-config-section";
+import {
+	addColorSlot,
+	addProductColor,
+	createInitialColorSlotState,
+	removeColorSlot,
+	removeProductColor,
+	renameColorSlot,
+	serializeColorSlotState,
+	type ColorSlotFormState,
+} from "./product-color-config-state";
 
 type Props = {
 	product?: AdminProductDetail;
 	categories: CategoryOption[];
+	configOptions: ConfigOption[];
 };
 
 const inputClass =
 	"w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export function ProductForm({ product, categories }: Props) {
+export function ProductForm({ product, categories, configOptions }: Props) {
 	const router = useRouter();
 	const titleId = useId();
 	const fileId = useId();
@@ -30,10 +43,36 @@ export function ProductForm({ product, categories }: Props) {
 	const [description, setDescription] = useState(product?.description ?? "");
 	const [priceMajor, setPriceMajor] = useState<string>(product?.price != null ? String(product.price / 100) : "");
 	const [images, setImages] = useState<string[]>(product?.images ?? []);
+	const [colorSlotState, setColorSlotState] = useState<ColorSlotFormState>(() =>
+		createInitialColorSlotState(product, configOptions),
+	);
 
 	const [error, setError] = useState<string | null>(null);
 	const [uploading, setUploading] = useState(false);
 	const [saving, startSave] = useTransition();
+
+	const disabledColorIdsForActiveSlot = useMemo(
+		() => colorSlotState.disabledBySlot[colorSlotState.activeSlot] ?? new Set<string>(),
+		[colorSlotState.activeSlot, colorSlotState.disabledBySlot],
+	);
+
+	const allowCustomForActiveSlot =
+		colorSlotState.allowCustomBySlot[colorSlotState.activeSlot] ?? true;
+
+	const productColorsForActiveSlot =
+		colorSlotState.productColorsBySlot[colorSlotState.activeSlot] ?? {
+			standard: [],
+			color: [],
+			mirror: [],
+			custom: [],
+		};
+
+	const hasAnyDisabled = useMemo(() => {
+		if (colorSlotState.nonColorDisabledIds.size > 0) return true;
+		return colorSlotState.slotTitles.some(
+			(title) => (colorSlotState.disabledBySlot[title]?.size ?? 0) > 0,
+		);
+	}, [colorSlotState]);
 
 	async function onUpload(files: FileList | null) {
 		if (!files || files.length === 0) return;
@@ -50,10 +89,79 @@ export function ProductForm({ product, categories }: Props) {
 		setImages((prev) => [...prev, ...result.urls]);
 	}
 
+	function toggleColorForActiveSlot(id: string, enabled: boolean) {
+		setColorSlotState((prev) => {
+			const slot = prev.activeSlot;
+			const current = new Set(prev.disabledBySlot[slot] ?? []);
+			if (enabled) current.delete(id);
+			else current.add(id);
+			return {
+				...prev,
+				disabledBySlot: { ...prev.disabledBySlot, [slot]: current },
+			};
+		});
+	}
+
+	function toggleNonColorOption(id: string, enabled: boolean) {
+		setColorSlotState((prev) => {
+			const next = new Set(prev.nonColorDisabledIds);
+			if (enabled) next.delete(id);
+			else next.add(id);
+			return { ...prev, nonColorDisabledIds: next };
+		});
+	}
+
+	function enableAllConfigOptions() {
+		setColorSlotState((prev) => {
+			const clearedSlots = Object.fromEntries(
+				prev.slotTitles.map((title) => [title, new Set<string>()]),
+			) as Record<string, Set<string>>;
+			return {
+				...prev,
+				nonColorDisabledIds: new Set(),
+				disabledBySlot: clearedSlots,
+			};
+		});
+	}
+
+	function disableAllColorsForActiveSlot() {
+		setColorSlotState((prev) => {
+			const slot = prev.activeSlot;
+			const colorIds = configOptions.filter((o) => o.type === "color").map((o) => o.id);
+			return {
+				...prev,
+				disabledBySlot: { ...prev.disabledBySlot, [slot]: new Set(colorIds) },
+			};
+		});
+	}
+
+	function setAllowCustomForActiveSlot(enabled: boolean) {
+		setColorSlotState((prev) => ({
+			...prev,
+			allowCustomBySlot: { ...prev.allowCustomBySlot, [prev.activeSlot]: enabled },
+		}));
+	}
+
+	function handleAddProductColor(
+		category: ColorCategoryId,
+		input: { name: string; hex_color: string },
+	) {
+		setColorSlotState((prev) =>
+			addProductColor(prev, prev.activeSlot, category, input),
+		);
+	}
+
+	function handleRemoveProductColor(category: ColorCategoryId, colorId: string) {
+		setColorSlotState((prev) =>
+			removeProductColor(prev, prev.activeSlot, category, colorId),
+		);
+	}
+
 	function onSubmit(event: React.FormEvent) {
 		event.preventDefault();
 		setError(null);
 		const priceNumber = priceMajor.trim() === "" ? null : Math.round(Number(priceMajor) * 100);
+		const colorConfig = serializeColorSlotState(colorSlotState);
 
 		startSave(async () => {
 			const result = await saveProductAction({
@@ -67,6 +175,13 @@ export function ProductForm({ product, categories }: Props) {
 				description,
 				price: priceNumber,
 				images,
+				disabledConfigIds: colorConfig.disabledConfigIds,
+				disabledConfigIdsBySlot: colorConfig.disabledConfigIdsBySlot,
+				allowCustomColorBySlot: colorConfig.allowCustomColorBySlot,
+				productColorsBySlot: colorConfig.productColorsBySlot,
+				colorSlotCount: colorConfig.colorSlotCount,
+				colorSlotNames: colorConfig.colorSlotNames,
+				allowCustomColor: colorConfig.allowCustomColor,
 			});
 			if (result && !result.ok) setError(result.error);
 		});
@@ -110,6 +225,28 @@ export function ProductForm({ product, categories }: Props) {
 						<input id={fileId} type="file" accept="image/*" multiple className="sr-only" disabled={uploading} onChange={(e) => onUpload(e.target.files)} />
 					</div>
 				</div>
+
+				<ProductConfigSection
+					configOptions={configOptions}
+					slotTitles={colorSlotState.slotTitles}
+					activeSlot={colorSlotState.activeSlot}
+					onActiveSlotChange={(slot) => setColorSlotState((prev) => ({ ...prev, activeSlot: slot }))}
+				onAddSlot={() => setColorSlotState((prev) => addColorSlot(prev))}
+				onRemoveSlot={(title) => setColorSlotState((prev) => removeColorSlot(prev, title))}
+				onRenameSlot={(oldTitle, newTitle) => setColorSlotState((prev) => renameColorSlot(prev, oldTitle, newTitle))}
+					disabledConfigIds={colorSlotState.nonColorDisabledIds}
+					disabledColorIdsForActiveSlot={disabledColorIdsForActiveSlot}
+					onToggleColor={toggleColorForActiveSlot}
+					onToggleNonColor={toggleNonColorOption}
+					onEnableAll={enableAllConfigOptions}
+					onDisableAllColorsForActiveSlot={disableAllColorsForActiveSlot}
+					productColorsForActiveSlot={productColorsForActiveSlot}
+					onAddProductColor={handleAddProductColor}
+					onRemoveProductColor={handleRemoveProductColor}
+					allowCustomColor={allowCustomForActiveSlot}
+					onAllowCustomColorChange={setAllowCustomForActiveSlot}
+					hasAnyDisabled={hasAnyDisabled}
+				/>
 			</div>
 
 			<aside className="flex h-fit flex-col gap-5 rounded-xl border border-border bg-card p-5">

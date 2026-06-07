@@ -27,6 +27,7 @@ export type ModulesToggle = {
 	products: boolean;
 	categories: boolean;
 	emails: boolean;
+	settings: boolean;
 };
 
 export type BrandingConfig = {

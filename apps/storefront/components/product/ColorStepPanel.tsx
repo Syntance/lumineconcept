@@ -28,7 +28,9 @@ interface ColorStepPanelProps {
   colorMap: Record<string, string>;
   coloredSet: Set<string>;
   mirrorSet: Set<string>;
+  customSet?: Set<string>;
   matDisabledSet: Set<string>;
+  allowCustomColor?: boolean;
 }
 
 export function ColorStepPanel({
@@ -42,7 +44,9 @@ export function ColorStepPanel({
   colorMap: _colorMap,
   coloredSet,
   mirrorSet,
+  customSet = new Set(),
   matDisabledSet,
+  allowCustomColor = true,
 }: ColorStepPanelProps) {
   const [hexInput, setHexInput] = useState(customColor ?? "#000000");
   const colorInputRef = useRef<HTMLInputElement>(null);
@@ -50,10 +54,15 @@ export function ColorStepPanel({
 
   const isCustomSelected = selectedColor === CUSTOM_COLOR_VALUE;
   const standardColors = option.values.filter(
-    (v) => !isMirrorColor(v, mirrorSet) && !coloredSet.has(v.toLowerCase()),
+    (v) =>
+      !isMirrorColor(v, mirrorSet) &&
+      !coloredSet.has(v.toLowerCase()) &&
+      !customSet.has(v.toLowerCase()),
   );
   const coloredColors = option.values.filter((v) => coloredSet.has(v.toLowerCase()));
   const mirrorColors = option.values.filter((v) => isMirrorColor(v, mirrorSet));
+  const customNamedColors = option.values.filter((v) => customSet.has(v.toLowerCase()));
+  const showIndividualGroup = customNamedColors.length > 0 || allowCustomColor;
   const matAllowed = isCustomSelected || isMatAllowed(selectedColor, matDisabledSet);
 
   const selectId = `color-select-${option.id}-${uniqueId.replace(/:/g, "")}`;
@@ -129,11 +138,20 @@ export function ColorStepPanel({
                 ))}
               </optgroup>
             )}
-            <optgroup label="Indywidualny">
-              <option value={CUSTOM_COLOR_VALUE} className="text-brand-800">
-                Własny kolor (HEX)
-              </option>
-            </optgroup>
+            {showIndividualGroup ? (
+              <optgroup label="Indywidualny">
+                {customNamedColors.map((c) => (
+                  <option key={c} value={c} className="text-brand-800">
+                    {c}
+                  </option>
+                ))}
+                {allowCustomColor ? (
+                  <option value={CUSTOM_COLOR_VALUE} className="text-brand-800">
+                    Własny kolor (HEX)
+                  </option>
+                ) : null}
+              </optgroup>
+            ) : null}
           </select>
           <ChevronDown
             className="pointer-events-none absolute right-0 bottom-1.5 h-4 w-4 translate-y-px text-brand-400"

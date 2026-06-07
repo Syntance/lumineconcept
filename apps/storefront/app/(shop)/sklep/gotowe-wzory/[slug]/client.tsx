@@ -18,10 +18,20 @@ import {
 import {
   buildColorMap,
   buildColoredSet,
+  buildCustomSet,
   buildMirrorSet,
   buildMatDisabledSet,
+  mergeGlobalAndProductColors,
+  parseAllowCustomColor,
   type GlobalConfigOption,
 } from "@/lib/products/global-config";
+import {
+  flattenProductColorsForSlot,
+  parseAllowCustomColorBySlot,
+  parseDisabledConfigIds,
+  parseDisabledConfigIdsBySlot,
+  parseProductColorsBySlot,
+} from "@/lib/products/color-slot-config";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { trackProductViewed } from "@/lib/analytics/events";
@@ -76,17 +86,67 @@ export function ProductPageClient({
   certificateStandAvailable = false,
   isVoucher = false,
 }: ProductPageClientProps) {
-
-  const colorMap = useMemo(() => buildColorMap(globalColors), [globalColors]);
-  const coloredSet = useMemo(() => buildColoredSet(globalColors), [globalColors]);
-  const mirrorSet = useMemo(() => buildMirrorSet(globalColors), [globalColors]);
-  const matDisabledSet = useMemo(() => buildMatDisabledSet(globalColors), [globalColors]);
-
   const colorOptionTitles = useMemo(
     () => product.options.filter((o) => isColorOption(o.title)).map((o) => o.title),
     [product.options],
   );
 
+  const productColorsBySlot = useMemo(
+    () => parseProductColorsBySlot(product.metadata, colorOptionTitles),
+    [product.metadata, colorOptionTitles],
+  );
+
+  const productColorsBySlotFlat = useMemo(() => {
+    const result: Record<string, ReturnType<typeof flattenProductColorsForSlot>> = {};
+    for (const title of colorOptionTitles) {
+      result[title] = flattenProductColorsForSlot(productColorsBySlot[title]);
+    }
+    return result;
+  }, [productColorsBySlot, colorOptionTitles]);
+
+  const mergedColors = useMemo(() => {
+    const allProductColors = colorOptionTitles.flatMap(
+      (title) => productColorsBySlotFlat[title] ?? [],
+    );
+    return mergeGlobalAndProductColors(globalColors, allProductColors);
+  }, [globalColors, colorOptionTitles, productColorsBySlotFlat]);
+
+  const colorMap = useMemo(() => buildColorMap(mergedColors), [mergedColors]);
+  const coloredSet = useMemo(() => buildColoredSet(mergedColors), [mergedColors]);
+  const mirrorSet = useMemo(() => buildMirrorSet(mergedColors), [mergedColors]);
+  const customSet = useMemo(() => buildCustomSet(mergedColors), [mergedColors]);
+  const matDisabledSet = useMemo(() => buildMatDisabledSet(mergedColors), [mergedColors]);
+
+  const allowCustomColor = useMemo(
+    () => parseAllowCustomColor(product.metadata),
+    [product.metadata],
+  );
+  const legacyDisabledIds = useMemo(
+    () => parseDisabledConfigIds(product.metadata),
+    [product.metadata],
+  );
+  const legacyColorDisabledIds = useMemo(() => {
+    const colorIds = new Set(globalColors.map((c) => c.id));
+    return legacyDisabledIds.filter((id) => colorIds.has(id));
+  }, [legacyDisabledIds, globalColors]);
+  const disabledConfigIdsBySlot = useMemo(
+    () =>
+      parseDisabledConfigIdsBySlot(
+        product.metadata,
+        colorOptionTitles,
+        legacyColorDisabledIds,
+      ),
+    [product.metadata, colorOptionTitles, legacyColorDisabledIds],
+  );
+  const allowCustomColorBySlot = useMemo(
+    () =>
+      parseAllowCustomColorBySlot(
+        product.metadata,
+        colorOptionTitles,
+        allowCustomColor,
+      ),
+    [product.metadata, colorOptionTitles, allowCustomColor],
+  );
   const nonColorOptions = useMemo(
     () => product.options.filter((o) => !isColorOption(o.title)),
     [product.options],
@@ -402,7 +462,12 @@ export function ProductPageClient({
             colorMap={colorMap}
             coloredSet={coloredSet}
             mirrorSet={mirrorSet}
+            customSet={customSet}
             matDisabledSet={matDisabledSet}
+            allowCustomColor={allowCustomColor}
+            disabledConfigIdsBySlot={disabledConfigIdsBySlot}
+            allowCustomColorBySlot={allowCustomColorBySlot}
+            productColorsBySlot={productColorsBySlotFlat}
             schemaImageUrl={schemaImageUrl}
           />
         </div>

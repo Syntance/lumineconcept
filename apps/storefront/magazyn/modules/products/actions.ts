@@ -31,6 +31,29 @@ const productSchema = z.object({
 	description: z.string(),
 	price: z.number().nonnegative().nullable(),
 	images: z.array(z.string().url()),
+	disabledConfigIds: z.array(z.string().trim()).default([]),
+	disabledConfigIdsBySlot: z.record(z.string(), z.array(z.string().trim())).default({}),
+	allowCustomColorBySlot: z.record(z.string(), z.boolean()).default({}),
+	productColorsBySlot: z
+		.record(
+			z.string(),
+			z.record(
+				z.enum(["standard", "color", "mirror", "custom"]),
+				z.array(
+					z.object({
+						id: z.string().trim(),
+						name: z.string().trim().min(2),
+						hex_color: z.string().trim(),
+						color_category: z.enum(["standard", "color", "mirror", "custom"]),
+						mat_allowed: z.boolean(),
+					}),
+				),
+			),
+		)
+		.default({}),
+	colorSlotCount: z.number().int().min(1).max(5).default(1),
+	colorSlotNames: z.array(z.string().trim()).optional(),
+	allowCustomColor: z.boolean().default(true),
 });
 
 export type ProductPayload = z.input<typeof productSchema>;
@@ -49,6 +72,13 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 		description: data.description,
 		price: data.price,
 		images: data.images,
+		disabledConfigIds: data.disabledConfigIds ?? [],
+		disabledConfigIdsBySlot: data.disabledConfigIdsBySlot ?? {},
+		allowCustomColorBySlot: data.allowCustomColorBySlot ?? {},
+		productColorsBySlot: data.productColorsBySlot ?? {},
+		colorSlotCount: data.colorSlotCount ?? 1,
+		colorSlotNames: data.colorSlotNames,
+		allowCustomColor: data.allowCustomColor ?? true,
 	};
 }
 

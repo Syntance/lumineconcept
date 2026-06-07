@@ -5,7 +5,7 @@ export interface GlobalConfigOption {
   type: "color" | "size" | "material" | "led" | "finish"
   name: string
   hex_color: string | null
-  color_category: "standard" | "color" | "mirror" | null
+  color_category: "standard" | "color" | "mirror" | "custom" | null
   mat_allowed: boolean
   sort_order: number
   metadata: Record<string, unknown> | null
@@ -103,8 +103,9 @@ async function fetchStoreProductConfig(search: string): Promise<Response> {
  * następne 60s konfigurator miał pusty kolor/rozmiary i psuł PDP. Rzut
  * propaguje się do `error.tsx` i jest retryowany przy następnym request.
  */
-async function _fetchGlobalConfig(): Promise<GlobalProductConfig> {
-  const res = await fetchStoreProductConfig("")
+async function _fetchGlobalConfig(productId?: string): Promise<GlobalProductConfig> {
+  const search = productId ? `?product_id=${encodeURIComponent(productId)}` : ""
+  const res = await fetchStoreProductConfig(search)
 
   if (!res.ok) {
     if (process.env.NODE_ENV === "development" && !getPublishableKey()) {
@@ -135,6 +136,14 @@ export const getGlobalProductConfig = unstable_cache(
   { revalidate: 60, tags: ["global-product-config"] },
 )
 
+export function getGlobalProductConfigForProduct(productId: string) {
+  return unstable_cache(
+    () => _fetchGlobalConfig(productId),
+    ["global-product-config", productId],
+    { revalidate: 60, tags: ["global-product-config", `product-config-${productId}`] },
+  )()
+}
+
 export function buildColorMap(
   colors: GlobalConfigOption[],
 ): Record<string, string> {
@@ -163,6 +172,20 @@ export function buildMirrorSet(colors: GlobalConfigOption[]): Set<string> {
   )
 }
 
+export function buildCustomSet(colors: GlobalConfigOption[]): Set<string> {
+  return new Set(
+    colors
+      .filter((c) => c.color_category === "custom")
+      .map((c) => c.name.toLowerCase()),
+  )
+}
+
+export function parseAllowCustomColor(
+  meta: Record<string, unknown> | null | undefined,
+): boolean {
+  return meta?.allow_custom_color !== "false"
+}
+
 export function buildMatDisabledSet(colors: GlobalConfigOption[]): Set<string> {
   return new Set(
     colors
@@ -173,4 +196,28 @@ export function buildMatDisabledSet(colors: GlobalConfigOption[]): Set<string> {
 
 export function getColorNames(colors: GlobalConfigOption[]): string[] {
   return colors.map((c) => c.name)
+}
+
+/** Łączy globalną paletę z kolorami zdefiniowanymi tylko dla produktu. */
+export function mergeGlobalAndProductColors(
+  globalColors: GlobalConfigOption[],
+  productColors: Array<{
+    id: string
+    name: string
+    hex_color: string
+    color_category: GlobalConfigOption["color_category"]
+    mat_allowed: boolean
+  }>,
+): GlobalConfigOption[] {
+  const productAsGlobal: GlobalConfigOption[] = productColors.map((c, index) => ({
+    id: c.id,
+    type: "color",
+    name: c.name,
+    hex_color: c.hex_color,
+    color_category: c.color_category,
+    mat_allowed: c.mat_allowed,
+    sort_order: 10_000 + index,
+    metadata: { product_only: true },
+  }))
+  return [...globalColors, ...productAsGlobal]
 }

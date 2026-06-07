@@ -52,7 +52,21 @@ interface ProductConfiguratorProps {
   colorMap?: Record<string, string>;
   coloredSet?: Set<string>;
   mirrorSet?: Set<string>;
+  customSet?: Set<string>;
   matDisabledSet?: Set<string>;
+  allowCustomColor?: boolean;
+  disabledConfigIdsBySlot?: Record<string, string[]>;
+  allowCustomColorBySlot?: Record<string, boolean>;
+  productColorsBySlot?: Record<
+    string,
+    Array<{
+      id: string;
+      name: string;
+      hex_color: string;
+      color_category: "standard" | "color" | "mirror" | "custom";
+      mat_allowed: boolean;
+    }>
+  >;
   schemaImageUrl?: string | null;
 }
 
@@ -77,26 +91,46 @@ export function ProductConfigurator({
   colorMap = {},
   coloredSet = new Set(),
   mirrorSet = new Set(),
+  customSet = new Set(),
   matDisabledSet = new Set(),
+  allowCustomColor = true,
+  disabledConfigIdsBySlot = {},
+  allowCustomColorBySlot = {},
+  productColorsBySlot = {},
   schemaImageUrl,
 }: ProductConfiguratorProps) {
   const nonColorOptions = options.filter((o) => !isColorOption(o.title));
-  const colorNames = globalColors.map((c) => c.name);
 
   const colorOptions: ColorOptionFromConfig[] =
     colorOptionTitles.length > 0
-      ? colorOptionTitles.map((title, idx) => ({
-          id: `global-color-${idx}`,
-          title,
-          values: colorNames,
-        }))
+      ? colorOptionTitles.map((title, idx) => {
+          const slotDisabled = new Set(disabledConfigIdsBySlot[title] ?? []);
+          const slotProductColors = productColorsBySlot[title] ?? [];
+          const slotColorNames = [
+            ...globalColors.filter((c) => !slotDisabled.has(c.id)).map((c) => c.name),
+            ...slotProductColors.map((c) => c.name),
+          ];
+          return {
+            id: `global-color-${idx}`,
+            title,
+            values: slotColorNames,
+          };
+        })
       : options
           .filter((o) => isColorOption(o.title))
-          .map((o) => ({
-            id: o.id,
-            title: o.title,
-            values: globalColors.length > 0 ? colorNames : o.values,
-          }));
+          .map((o) => {
+            const slotDisabled = new Set(disabledConfigIdsBySlot[o.title] ?? []);
+            const slotProductColors = productColorsBySlot[o.title] ?? [];
+            const slotColorNames = [
+              ...globalColors.filter((c) => !slotDisabled.has(c.id)).map((c) => c.name),
+              ...slotProductColors.map((c) => c.name),
+            ];
+            return {
+              id: o.id,
+              title: o.title,
+              values: globalColors.length > 0 ? slotColorNames : o.values,
+            };
+          });
 
   const hasEditableContent =
     textFields.length > 0 || (linksCount > 0 && !!onLinksChange);
@@ -150,7 +184,11 @@ export function ProductConfigurator({
                 colorMap={colorMap}
                 coloredSet={coloredSet}
                 mirrorSet={mirrorSet}
+                customSet={customSet}
                 matDisabledSet={matDisabledSet}
+                allowCustomColor={
+                  allowCustomColorBySlot[option.title] ?? allowCustomColor
+                }
               />
             </div>
           ))}

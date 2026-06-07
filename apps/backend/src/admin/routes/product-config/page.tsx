@@ -110,6 +110,7 @@ function OptionRow({
                 <option value="standard">Standardowy</option>
                 <option value="color">Kolorowy</option>
                 <option value="mirror">Lustrzany</option>
+                <option value="custom">Indywidualny</option>
               </select>
               <div className="flex items-center gap-1">
                 <Switch
@@ -323,11 +324,12 @@ function OptionTypePanel({ type }: { type: OptionType }) {
         </div>
       ) : isColor ? (
         (() => {
-          const CATEGORY_ORDER = ["standard", "color", "mirror"] as const
+          const CATEGORY_ORDER = ["standard", "color", "mirror", "custom"] as const
           const CATEGORY_LABELS: Record<string, string> = {
             standard: "Standardowe",
             color: "Kolorowe",
             mirror: "Lustrzane",
+            custom: "Indywidualny",
           }
           const grouped = new Map<string, ConfigOption[]>()
           for (const cat of CATEGORY_ORDER) grouped.set(cat, [])

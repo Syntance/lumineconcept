@@ -16,5 +16,7 @@ export {
 	type AdminProductDetail,
 	type ProductFormValues,
 	type CategoryOption,
+	type ConfigOption,
+	listGlobalConfigOptions,
 } from "./store";
 export { saveProductAction, deleteProductAction, uploadImagesAction } from "./actions";

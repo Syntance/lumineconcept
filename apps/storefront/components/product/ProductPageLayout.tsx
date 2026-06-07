@@ -21,7 +21,8 @@ import {
 } from "@/lib/products/dimensions";
 import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
 import {
-  getGlobalProductConfig,
+  getGlobalProductConfigForProduct,
+  EMPTY_GLOBAL_CONFIG,
   type GlobalConfigOption,
 } from "@/lib/products/global-config";
 
@@ -168,18 +169,13 @@ export async function ProductPageLayout({
    * wyglądało jak stały 404 przez cały czas życia cache'a.
    * Sanity i globalny config są opcjonalne → fallback OK.
    */
-  const [product, siteSettings, productConfig] = await Promise.all([
-    getProductData(slug),
-    getSiteSettings(),
-    getGlobalProductConfig().catch(() => ({
-      colors: [] as GlobalConfigOption[],
-      sizes: [],
-      materials: [],
-      led: [],
-      finishes: [],
-    })),
-  ]);
+  const product = await getProductData(slug);
   if (!product) notFound();
+
+  const [siteSettings, productConfig] = await Promise.all([
+    getSiteSettings(),
+    getGlobalProductConfigForProduct(product.id).catch(() => EMPTY_GLOBAL_CONFIG),
+  ]);
 
   if (requiredTag) {
     const normalised = requiredTag.toLowerCase();

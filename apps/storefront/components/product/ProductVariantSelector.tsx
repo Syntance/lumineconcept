@@ -1,5 +1,7 @@
 "use client";
 
+import { isColorSlotTitle } from "@/lib/products/color-slot-config";
+
 export interface ProductOption {
   id: string;
   title: string;
@@ -30,7 +32,7 @@ export function isEveryColorOptionChosen(
 }
 
 export function isColorOption(title: string): boolean {
-  return title.toLowerCase().startsWith("kolor");
+  return isColorSlotTitle(title);
 }
 
 export function isSizeOption(title: string): boolean {
