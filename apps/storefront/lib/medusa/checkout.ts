@@ -403,7 +403,6 @@ export async function prepareCheckout(
       provider_id: providerId,
     }),
   });
-
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as {
       message?: string;
