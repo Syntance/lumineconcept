@@ -119,7 +119,7 @@ export function ColorStepPanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
         <label
           htmlFor={selectId}
           className="shrink-0 text-sm font-bold uppercase leading-none tracking-[0.08em] text-brand-800"
@@ -132,7 +132,7 @@ export function ColorStepPanel({
           onChange={handleSelectChange}
           groups={colorGroups}
           colorMap={colorMap}
-          className="w-[min(100%,16rem)] shrink-0"
+          className="w-[min(100%,13.5rem)]"
         />
       </div>
 

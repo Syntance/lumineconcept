@@ -18,7 +18,8 @@ interface ColorSelectDropdownProps {
   placeholder?: string;
   colorMap?: Record<string, string>;
   className?: string;
-  triggerClassName?: string;
+  /** sm = mini-konfigurator (karta produktu), md = PDP */
+  size?: "sm" | "md";
 }
 
 function ColorSwatchDot({
@@ -71,18 +72,15 @@ export function ColorSelectDropdown({
   placeholder = "Wybierz opcję",
   colorMap = {},
   className,
-  triggerClassName,
+  size = "md",
 }: ColorSelectDropdownProps) {
+  const isSm = size === "sm";
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
 
   const flatOptions = groups.flatMap((g) => g.options);
   const selected = flatOptions.find((o) => o.value === value);
-  const selectedHex =
-    value && value !== ""
-      ? getColorHex(selected?.label ?? value, colorMap)
-      : null;
 
   useEffect(() => {
     if (!open) return;
@@ -108,7 +106,7 @@ export function ColorSelectDropdown({
   };
 
   return (
-    <div ref={rootRef} className={cn("relative", className)}>
+    <div ref={rootRef} className={cn("relative shrink-0", className)}>
       <button
         id={id}
         type="button"
@@ -117,39 +115,45 @@ export function ColorSelectDropdown({
         aria-controls={listId}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          "flex w-full min-w-[13.5rem] items-center gap-2.5 rounded-lg border bg-white px-3 py-2.5 text-left text-sm shadow-sm transition-[border-color,box-shadow]",
-          open
-            ? "border-brand-500 ring-2 ring-brand-500/15"
-            : "border-brand-200 hover:border-brand-300",
-          triggerClassName,
+          "w-full cursor-pointer appearance-none border-0 border-b bg-transparent py-0 pl-0 text-left font-normal leading-none transition-colors focus:outline-none focus:ring-0",
+          isSm
+            ? "pr-7 pb-1.5 text-xs"
+            : "pr-8 pb-1.5 text-sm",
+          open ? "border-brand-600" : "border-brand-300",
+          selected ? "text-brand-800" : "text-brand-400",
         )}
       >
-        {selected ? (
-          <>
-            <ColorSwatchDot hex={selectedHex} />
-            <span className="min-w-0 flex-1 truncate font-medium text-brand-800">
-              {selected.label}
-            </span>
-          </>
-        ) : (
-          <span className="min-w-0 flex-1 truncate text-brand-400">{placeholder}</span>
-        )}
-        <ChevronDown
-          className={cn(
-            "size-4 shrink-0 text-brand-400 transition-transform duration-200 motion-reduce:transition-none",
-            open && "rotate-180",
-          )}
-          aria-hidden
-        />
+        <span className="block truncate">
+          {selected ? selected.label : placeholder}
+        </span>
       </button>
+      <ChevronDown
+        className={cn(
+          "pointer-events-none absolute right-0 text-brand-400 transition-transform duration-200 motion-reduce:transition-none",
+          isSm
+            ? "bottom-1 h-3.5 w-3.5 translate-y-px"
+            : "bottom-1.5 h-4 w-4 translate-y-px",
+          open && "rotate-180",
+        )}
+        aria-hidden
+      />
 
       {open ? (
-        <ul
-          id={listId}
-          role="listbox"
-          aria-labelledby={id}
-          className="absolute left-0 right-0 z-50 mt-1.5 max-h-72 overflow-y-auto rounded-lg border border-brand-200 bg-white py-1 shadow-lg shadow-brand-900/8"
+        <div
+          className="absolute left-0 right-0 z-50 mt-1.5 overflow-hidden rounded-lg border border-brand-200 bg-white shadow-lg shadow-brand-900/8"
         >
+          <ul
+            id={listId}
+            role="listbox"
+            aria-labelledby={id}
+            className={cn(
+              "max-h-72 w-full overflow-y-auto overscroll-contain py-1",
+              "[scrollbar-width:thin] [scrollbar-color:var(--color-brand-300)_transparent]",
+              "[&::-webkit-scrollbar]:w-1.5",
+              "[&::-webkit-scrollbar-track]:bg-transparent",
+              "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-brand-300",
+            )}
+          >
           <li role="presentation">
             <button
               type="button"
@@ -172,7 +176,7 @@ export function ColorSelectDropdown({
                 <p className="px-3 pb-1 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-400">
                   {group.label}
                 </p>
-                <ul role="group" aria-label={group.label}>
+                <ul role="group" aria-label={group.label} className="w-full">
                   {group.options.map((opt) => {
                     const isSelected = value === opt.value;
                     const hex = getColorHex(opt.label, colorMap);
@@ -205,7 +209,8 @@ export function ColorSelectDropdown({
               </li>
             ) : null,
           )}
-        </ul>
+          </ul>
+        </div>
       ) : null}
     </div>
   );

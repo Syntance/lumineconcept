@@ -154,7 +154,7 @@ function ColorPicker({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
         <label
           htmlFor={selectId}
           className="shrink-0 text-xs font-bold uppercase leading-none tracking-[0.08em] text-brand-800"
@@ -167,8 +167,8 @@ function ColorPicker({
           onChange={applySelect}
           groups={colorGroups}
           colorMap={colorMap}
-          className="w-[min(100%,14rem)] shrink-0"
-          triggerClassName="py-2 text-xs"
+          size="sm"
+          className="w-[min(100%,12rem)]"
         />
       </div>
 

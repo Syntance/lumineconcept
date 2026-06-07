@@ -112,15 +112,12 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 		});
 	}
 
-	function enableAllConfigOptions() {
+	function enableAllColorsForActiveSlot() {
 		setColorSlotState((prev) => {
-			const clearedSlots = Object.fromEntries(
-				prev.slotTitles.map((title) => [title, new Set<string>()]),
-			) as Record<string, Set<string>>;
+			const slot = prev.activeSlot;
 			return {
 				...prev,
-				nonColorDisabledIds: new Set(),
-				disabledBySlot: clearedSlots,
+				disabledBySlot: { ...prev.disabledBySlot, [slot]: new Set<string>() },
 			};
 		});
 	}
@@ -247,7 +244,7 @@ export function ProductForm({ product, categories, configOptions }: Props) {
 					disabledColorIdsForActiveSlot={disabledColorIdsForActiveSlot}
 					onToggleColor={toggleColorForActiveSlot}
 					onToggleNonColor={toggleNonColorOption}
-					onEnableAll={enableAllConfigOptions}
+					onEnableAllColorsForActiveSlot={enableAllColorsForActiveSlot}
 					onDisableAllColorsForActiveSlot={disableAllColorsForActiveSlot}
 					productColorsForActiveSlot={productColorsForActiveSlot}
 					onAddProductColor={handleAddProductColor}

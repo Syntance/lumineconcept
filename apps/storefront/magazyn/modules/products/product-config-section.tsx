@@ -37,7 +37,7 @@ type Props = {
 	productColorsForActiveSlot: Record<ColorCategoryId, ProductCustomColor[]>;
 	onToggleColor: (id: string, enabled: boolean) => void;
 	onToggleNonColor: (id: string, enabled: boolean) => void;
-	onEnableAll: () => void;
+	onEnableAllColorsForActiveSlot: () => void;
 	onDisableAllColorsForActiveSlot: () => void;
 	onAddProductColor: (category: ColorCategoryId, input: { name: string; hex_color: string }) => void;
 	onRemoveProductColor: (category: ColorCategoryId, colorId: string) => void;
@@ -59,7 +59,7 @@ export function ProductConfigSection({
 	productColorsForActiveSlot,
 	onToggleColor,
 	onToggleNonColor,
-	onEnableAll,
+	onEnableAllColorsForActiveSlot,
 	onDisableAllColorsForActiveSlot,
 	onAddProductColor,
 	onRemoveProductColor,
@@ -108,7 +108,11 @@ export function ProductConfigSection({
 						type="button"
 						variant="outline"
 						size="sm"
-						onClick={allColorsDisabledForSlot ? onEnableAll : onDisableAllColorsForActiveSlot}
+						onClick={
+							allColorsDisabledForSlot
+								? onEnableAllColorsForActiveSlot
+								: onDisableAllColorsForActiveSlot
+						}
 						className="h-8"
 					>
 						{allColorsDisabledForSlot ? "Włącz wszystkie kolory" : "Wyłącz wszystkie kolory"}
