@@ -45,19 +45,21 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           }}
         />
 
-        {/* Tekst — przesunięty w prawo; CTA wyśrodkowany względem szerokości portalu */}
+        {/* Tekst + CTA — jedna kolumna, ten sam inset względem portalu */}
         <div
-          className="absolute z-10 flex flex-col"
+          className="absolute z-10"
           style={{
             left: "16.18%",
             width: "19%",
             top: "clamp(72px, 11vw, 148px)",
-            gap: "clamp(16px, 1.6vw, 28px)",
           }}
         >
           <div
             className="flex flex-col items-start"
-            style={{ marginLeft: "18%" }}
+            style={{
+              marginLeft: "18%",
+              gap: "clamp(16px, 1.6vw, 28px)",
+            }}
           >
             <div className="flex flex-col items-start gap-4">
               <h1
@@ -90,16 +92,17 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* CTA — środek szerokości portalu (bez przesunięcia tekstu) */}
-          <div className="flex w-full justify-center">
             <Link
               href="/sklep"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-0 bg-white px-7 py-3 font-gilroy font-semibold uppercase tracking-[0.2em] text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-0 bg-white font-gilroy font-semibold uppercase tracking-[0.2em] text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
               style={{
                 fontSize: "clamp(11px, 0.85vw, 15px)",
                 lineHeight: 1.15,
+                paddingLeft: "clamp(20px, 1.8vw, 28px)",
+                paddingRight: "clamp(20px, 1.8vw, 28px)",
+                paddingTop: "clamp(10px, 0.9vw, 14px)",
+                paddingBottom: "clamp(10px, 0.9vw, 14px)",
               }}
             >
               Zobacz produkty
