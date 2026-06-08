@@ -7,8 +7,12 @@ const DESKTOP_MQ = "(min-width: 1024px)";
 
 /** Szerokość hero, przy której blok ma skalę 1 (idealny desktop). */
 const REF_HERO_WIDTH = 1440;
+/** Skala 1 przy 1440px; powyżej rośnie do +20% (cap 1.2 przy ~1728px). Poniżej 1440px bez zmian. */
+const SCALE_MAX = 1.2;
 
 const CONTENT_LEFT = "21.18%";
+/** Przesunięcie treści w dół względem portalu (% wysokości hero). */
+const CONTENT_DROP_RATIO = 0.05;
 /** Wartości px przy skali 1 — skaluje się razem z całym blokiem. */
 const CONTENT_TOP_PX = 96;
 const CONTENT_GAP_PX = 22;
@@ -39,6 +43,7 @@ export function HeroPortalDesktop() {
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const ctaRef = useRef<HTMLAnchorElement>(null);
   const [scale, setScale] = useState(1);
+  const [contentDropPx, setContentDropPx] = useState(0);
   const [portalLayout, setPortalLayout] = useState<PortalLayout | null>(null);
 
   useLayoutEffect(() => {
@@ -59,8 +64,10 @@ export function HeroPortalDesktop() {
       }
 
       const heroWidth = hero.getBoundingClientRect().width;
-      const nextScale = Math.min(1, heroWidth / REF_HERO_WIDTH);
+      const heroHeight = hero.getBoundingClientRect().height;
+      const nextScale = Math.min(SCALE_MAX, heroWidth / REF_HERO_WIDTH);
       setScale(nextScale);
+      setContentDropPx((heroHeight * CONTENT_DROP_RATIO) / nextScale);
 
       const contentWidth = content.offsetWidth;
       const contentHeight = content.offsetHeight;
@@ -141,7 +148,7 @@ export function HeroPortalDesktop() {
           <div
             ref={contentRef}
             className="relative z-10 flex w-max flex-col items-start"
-            style={{ gap: CONTENT_GAP_PX }}
+            style={{ gap: CONTENT_GAP_PX, transform: `translateY(${contentDropPx}px)` }}
           >
             <div className="flex flex-col items-start gap-4">
               <h1
