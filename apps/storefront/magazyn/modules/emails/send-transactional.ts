@@ -40,7 +40,15 @@ export async function sendTransactionalEmail(input: SendEmailInput): Promise<Sen
 
 	try {
 		const { data, error } = await Promise.race([sendPromise, timeoutPromise]);
-		if (error || !data?.id) return { ok: false, message: "Nie udało się wysłać wiadomości e-mail." };
+		if (error || !data?.id) {
+			const detail = error?.message?.trim();
+			return {
+				ok: false,
+				message: detail
+					? `Resend: ${detail}`
+					: "Nie udało się wysłać wiadomości e-mail.",
+			};
+		}
 		return { ok: true };
 	} catch {
 		return { ok: false, message: "Przekroczono czas oczekiwania na wysyłkę e-maila." };

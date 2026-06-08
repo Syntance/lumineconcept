@@ -8,11 +8,14 @@ const HERO_BG_HEIGHT = 966;
 
 /**
  * Hero — desktop: portal + overlay z lewej; mobile: kadrowany obraz + treść na środku.
+ * Desktop: max. wysokość = wysokość pliku źródłowego (ultrawide nie rozciąga hero w nieskończoność).
  */
 export function HeroSection({ children }: { children?: React.ReactNode }) {
   return (
     <section className="relative flex w-full flex-col overflow-x-hidden">
-      <div className="relative w-full overflow-x-hidden max-lg:aspect-[5/6] max-lg:max-h-[min(72vh,34rem)] max-lg:min-h-[22rem]">
+      <div
+        className="relative w-full overflow-x-hidden max-lg:aspect-[5/6] max-lg:max-h-[min(72vh,34rem)] max-lg:min-h-[22rem] lg:aspect-[2560/966] lg:max-h-[966px]"
+      >
         <Image
           src="/images/hero-main-wall.png"
           alt=""
@@ -21,7 +24,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           priority
           sizes="100vw"
           unoptimized
-          className="block h-auto w-full select-none max-lg:absolute max-lg:inset-0 max-lg:h-full max-lg:w-full max-lg:object-cover max-lg:object-[42%_center]"
+          className="block h-auto w-full select-none max-lg:absolute max-lg:inset-0 max-lg:h-full max-lg:w-full max-lg:object-cover max-lg:object-[42%_center] lg:absolute lg:inset-0 lg:h-full lg:w-full lg:object-cover lg:object-[38%_center]"
         />
 
         {/* Desktop — czytelność tekstu z lewej */}

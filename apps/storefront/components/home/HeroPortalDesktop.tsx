@@ -8,7 +8,7 @@ const DESKTOP_MQ = "(min-width: 1024px)";
 /** Szerokość hero, przy której blok ma skalę 1 (idealny desktop). */
 const REF_HERO_WIDTH = 1440;
 
-const CONTENT_LEFT = "16.18%";
+const CONTENT_LEFT = "21.18%";
 /** Wartości px przy skali 1 — skaluje się razem z całym blokiem. */
 const CONTENT_TOP_PX = 96;
 const CONTENT_GAP_PX = 22;
@@ -18,7 +18,7 @@ const PORTAL_PAD_X_MIN = 18;
 const PORTAL_BOTTOM_PAD_RATIO = 0.36;
 const PORTAL_BOTTOM_PAD_MIN = 72;
 /** Delikatna korekta proporcji portalu względem treści. */
-const PORTAL_WIDTH_NUDGE = 0.94;
+const PORTAL_WIDTH_NUDGE = 0.90;
 const PORTAL_HEIGHT_NUDGE = 1.06;
 /** W SVG proste boki kończą się na y=733 / 1134 wysokości. */
 const PORTAL_STRAIGHT_END = 733 / 1134;
