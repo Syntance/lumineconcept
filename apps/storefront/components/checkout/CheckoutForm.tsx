@@ -18,6 +18,7 @@ import { useCart } from "@/hooks/useCart";
 import {
   completeCart,
   describeMedusaError,
+  initPaymentSession,
   initPrzelewy24Redirect,
   isCartAlreadyCompletedError,
   notifyOrderPlaced,
@@ -216,6 +217,9 @@ export function CheckoutForm() {
   const [formData, setFormData] = useState<CheckoutFormData>(() =>
     getDefaultCheckoutFormData(),
   );
+  /** Aktualny formularz w submit — unika stale closure (np. P24 mimo wyboru przelewu). */
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
 
   // Snapshot do `checkout_abandon` (Notion) — nie chcemy rejestrować nowego
   // listenera na każdy keystroke, więc trzymamy w refie.
@@ -373,11 +377,13 @@ export function CheckoutForm() {
     submitSlowTimerRef.current = setTimeout(() => setSubmitSlow(true), 3000);
     trackFormSubmit({ formName: "checkout_payment" });
 
+    const payment = formDataRef.current;
+
     try {
       // Przelewy24 = płatność z przekierowaniem. Inicjujemy sesję P24,
       // a finalizację koszyka (utworzenie zamówienia) robi strona powrotu
       // /checkout/przelewy24/return po potwierdzeniu płatności przez webhook.
-      if (formData.paymentProviderId === PRZELEWY24_PROVIDER_ID) {
+      if (payment.paymentProviderId === PRZELEWY24_PROVIDER_ID) {
         const redirectUrl = await initPrzelewy24Redirect(cartId);
         trackCheckoutStep({ stepNumber: 3, cartValue: total });
         if (typeof window !== "undefined") {
@@ -386,8 +392,10 @@ export function CheckoutForm() {
         }
       }
 
-      // System payment provider (testowy) — finalizacja inline bez bramki.
-      // W produkcji ten provider powinien być niedostępny (tylko P24).
+      // Przelew tradycyjny (pp_system_default) — sesja z kroku 2 mogła być
+      // na P24 (pickPreferredProvider); przed completeCart przełączamy provider.
+      await initPaymentSession(cartId, payment.paymentProviderId);
+
       const result = await completeCart(cartId);
 
       if (result.type !== "order") {
@@ -412,12 +420,12 @@ export function CheckoutForm() {
           price: i.unit_price,
           quantity: i.quantity,
         })),
-        paymentMethod: formData.paymentProviderId,
-        shippingMethod: formData.shippingOptionId,
+        paymentMethod: payment.paymentProviderId,
+        shippingMethod: payment.shippingOptionId,
       });
       // Notion: po `purchase` aktualizujemy profil PostHog (`firstOrderId`, `totalSpent`).
       markPurchaseCustomer({
-        email: formData.email,
+        email: payment.email,
         orderId: result.order.id,
         value: total,
       });
