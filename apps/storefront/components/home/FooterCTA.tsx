@@ -11,7 +11,8 @@ const IG_PROFILE = "https://instagram.com/lumineconcept";
 
 /** Wymiary `public/images/monia-branding-cta-bg.png` — przy podmianie zdjęcia zaktualizuj. */
 const BRANDING_BG_WIDTH = 1024;
-const BRANDING_BG_HEIGHT = 406;
+const BRANDING_BG_HEIGHT = 682;
+/** Max. wysokość kadru desktop: 477px (−30% względem 682px). */
 
 const SHOP_CTA_CLASS =
   "inline-flex items-center justify-center rounded-none border font-gilroy font-medium uppercase tracking-[0.2em] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
@@ -132,7 +133,7 @@ function InstagramGrid({
 
 /**
  * Footer CTA + sekcja „Jesteśmy na Instagramie”.
- * Desktop: tło + overlay w % kadru; mobile: sam blok treści bez zdjęcia.
+ * Desktop: tło jak hero (aspect + max-h + object-cover); mobile: sam blok treści.
  */
 export async function FooterCTA() {
   const settings = await getSiteSettings();
@@ -154,8 +155,8 @@ export async function FooterCTA() {
           </div>
         </div>
 
-        {/* Desktop — zdjęcie + overlay */}
-        <div className="relative hidden w-full overflow-hidden lg:block">
+        {/* Desktop — tło jak hero + overlay */}
+        <div className="relative hidden w-full overflow-x-hidden lg:block lg:aspect-[1024/477] lg:max-h-[477px]">
           <Image
             src="/images/monia-branding-cta-bg.png"
             alt=""
@@ -164,7 +165,7 @@ export async function FooterCTA() {
             sizes="100vw"
             unoptimized
             priority={false}
-            className="block h-auto w-full select-none"
+            className="absolute inset-0 h-full w-full select-none object-cover object-[55%_center]"
           />
 
           <div
