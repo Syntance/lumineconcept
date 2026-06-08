@@ -33,49 +33,55 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
     grandTotal,
   } = useCart();
 
-  const [pendingShippingPrice, setPendingShippingPrice] = useState<
-    number | null
-  >(null);
+  /** id → cena z prefetchu; lookup synchroniczny przy zmianie wyboru w Step 2. */
+  const [shippingOptionPrices, setShippingOptionPrices] = useState<
+    Record<string, number>
+  >({});
 
   useEffect(() => {
-    if (!cartId || !selectedShippingOptionId || hasShippingMethodSelection) {
-      setPendingShippingPrice(null);
+    if (!cartId) {
+      setShippingOptionPrices({});
       return;
     }
     let cancelled = false;
     void prefetchShippingOptions(cartId)
       .then((raw) => {
         if (cancelled) return;
-        const option = normalizeShippingOptionsForDisplay(
+        const opts = normalizeShippingOptionsForDisplay(
           raw as unknown as Array<Record<string, unknown>>,
-        ).find((o) => o.id === selectedShippingOptionId);
-        setPendingShippingPrice(option?.price ?? null);
+        );
+        setShippingOptionPrices(
+          Object.fromEntries(opts.map((o) => [o.id, o.price])),
+        );
       })
       .catch(() => {
-        if (!cancelled) setPendingShippingPrice(null);
+        if (!cancelled) setShippingOptionPrices({});
       });
     return () => {
       cancelled = true;
     };
-  }, [cartId, selectedShippingOptionId, hasShippingMethodSelection]);
+  }, [cartId]);
+
+  const selectedShippingPrice =
+    selectedShippingOptionId &&
+    selectedShippingOptionId in shippingOptionPrices
+      ? shippingOptionPrices[selectedShippingOptionId]
+      : undefined;
 
   const shippingDisplay = useMemo(() => {
+    // Wybór w checkout ma pierwszeństwo — user może przełączyć kurier ↔ odbiór
+    // zanim ponownie kliknie „Przejdź do płatności”.
+    if (selectedShippingPrice !== undefined) {
+      return selectedShippingPrice;
+    }
     if (hasShippingMethodSelection) {
       return shipping_total > 0 ? shipping_total : 0;
     }
-    if (
-      selectedShippingOptionId &&
-      pendingShippingPrice !== null &&
-      pendingShippingPrice !== undefined
-    ) {
-      return pendingShippingPrice;
-    }
     return shippingEstimate;
   }, [
+    selectedShippingPrice,
     hasShippingMethodSelection,
     shipping_total,
-    selectedShippingOptionId,
-    pendingShippingPrice,
     shippingEstimate,
   ]);
 
@@ -87,21 +93,29 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
         : formatPrice(shippingDisplay);
 
   const displayGrandTotal = useMemo(() => {
+    if (selectedShippingPrice !== undefined) {
+      const baseWithoutCommittedShipping = hasShippingMethodSelection
+        ? total - shipping_total
+        : total;
+      return (
+        Math.round(
+          (baseWithoutCommittedShipping +
+            expressSurcharge +
+            selectedShippingPrice) *
+            100,
+        ) / 100
+      );
+    }
     if (hasShippingMethodSelection) return grandTotal;
-    const shippingAddon =
-      selectedShippingOptionId &&
-      pendingShippingPrice !== null &&
-      pendingShippingPrice !== undefined
-        ? pendingShippingPrice
-        : (shippingEstimate ?? 0);
+    const shippingAddon = shippingEstimate ?? 0;
     return Math.round((total + expressSurcharge + shippingAddon) * 100) / 100;
   }, [
+    selectedShippingPrice,
     hasShippingMethodSelection,
     grandTotal,
-    selectedShippingOptionId,
-    pendingShippingPrice,
     shippingEstimate,
     total,
+    shipping_total,
     expressSurcharge,
   ]);
 
