@@ -1,36 +1,109 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { CartConfiguratorDetails } from "@/components/cart/CartConfiguratorDetails";
 import { formatPrice } from "@/lib/utils";
+import {
+  normalizeShippingOptionsForDisplay,
+  prefetchShippingOptions,
+} from "@/lib/medusa/checkout";
 
-export function OrderSummary() {
+type OrderSummaryProps = {
+  /**
+   * Wybrana opcja dostawy w checkout (Step 2+) — zanim trafi do koszyka Medusy,
+   * podsumowanie musi pokazywać jej cenę (np. odbiór osobisty = gratis).
+   */
+  selectedShippingOptionId?: string;
+};
+
+export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
   const {
+    id: cartId,
     items,
     productsSubtotal,
     shipping_total,
     shippingEstimate,
     hasShippingMethodSelection,
     tax_total,
+    total,
     expressDelivery,
     expressSurcharge,
     grandTotal,
   } = useCart();
 
-  const shippingDisplay =
-    shipping_total > 0
-      ? shipping_total
-      : hasShippingMethodSelection
-        ? 0
-        : shippingEstimate;
+  const [pendingShippingPrice, setPendingShippingPrice] = useState<
+    number | null
+  >(null);
+
+  useEffect(() => {
+    if (!cartId || !selectedShippingOptionId || hasShippingMethodSelection) {
+      setPendingShippingPrice(null);
+      return;
+    }
+    let cancelled = false;
+    void prefetchShippingOptions(cartId)
+      .then((raw) => {
+        if (cancelled) return;
+        const option = normalizeShippingOptionsForDisplay(
+          raw as unknown as Array<Record<string, unknown>>,
+        ).find((o) => o.id === selectedShippingOptionId);
+        setPendingShippingPrice(option?.price ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setPendingShippingPrice(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cartId, selectedShippingOptionId, hasShippingMethodSelection]);
+
+  const shippingDisplay = useMemo(() => {
+    if (hasShippingMethodSelection) {
+      return shipping_total > 0 ? shipping_total : 0;
+    }
+    if (
+      selectedShippingOptionId &&
+      pendingShippingPrice !== null &&
+      pendingShippingPrice !== undefined
+    ) {
+      return pendingShippingPrice;
+    }
+    return shippingEstimate;
+  }, [
+    hasShippingMethodSelection,
+    shipping_total,
+    selectedShippingOptionId,
+    pendingShippingPrice,
+    shippingEstimate,
+  ]);
 
   const shippingLabel =
     shippingDisplay === null || shippingDisplay === undefined
       ? "—"
-      : hasShippingMethodSelection && shipping_total === 0
+      : shippingDisplay === 0
         ? "gratis"
         : formatPrice(shippingDisplay);
+
+  const displayGrandTotal = useMemo(() => {
+    if (hasShippingMethodSelection) return grandTotal;
+    const shippingAddon =
+      selectedShippingOptionId &&
+      pendingShippingPrice !== null &&
+      pendingShippingPrice !== undefined
+        ? pendingShippingPrice
+        : (shippingEstimate ?? 0);
+    return Math.round((total + expressSurcharge + shippingAddon) * 100) / 100;
+  }, [
+    hasShippingMethodSelection,
+    grandTotal,
+    selectedShippingOptionId,
+    pendingShippingPrice,
+    shippingEstimate,
+    total,
+    expressSurcharge,
+  ]);
 
   return (
     <div className="rounded-lg border border-brand-200 bg-brand-50/50 p-6">
@@ -111,7 +184,7 @@ export function OrderSummary() {
         )}
         <div className="flex justify-between border-t border-brand-200 pt-2 text-base font-semibold text-brand-800">
           <span>Do zapłaty</span>
-          <span className="tabular-nums">{formatPrice(grandTotal)}</span>
+          <span className="tabular-nums">{formatPrice(displayGrandTotal)}</span>
         </div>
       </div>
     </div>

@@ -49,7 +49,7 @@ foreach ($entry in $vars.GetEnumerator()) {
   Write-Host "Ustawiam $($entry.Key)..."
   railway variables set "$($entry.Key)=$($entry.Value)" --service "Medusa Backend"
   if ($LASTEXITCODE -ne 0) {
-    Write-Error "Nie udało się ustawić $($entry.Key). Sprawdź railway link."
+    Write-Error "Failed to set $($entry.Key). Check railway link."
   }
 }
 

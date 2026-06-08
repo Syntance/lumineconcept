@@ -916,7 +916,9 @@ export function CheckoutForm() {
 
       <div className="lg:col-span-1">
         <div className="sticky top-24">
-          <OrderSummary />
+          <OrderSummary
+            selectedShippingOptionId={formData.shippingOptionId}
+          />
         </div>
       </div>
     </div>
