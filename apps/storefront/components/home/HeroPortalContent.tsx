@@ -3,17 +3,23 @@
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState } from "react";
 
-const PORTAL_ASPECT = 900 / 1134;
+/** Kotwica bloku treści na stronie — portal tego nie używa do skali. */
 const CONTENT_LEFT = "16.18%";
 const CONTENT_TOP = "clamp(72px, 11vw, 148px)";
 const CONTENT_GAP = "clamp(16px, 1.6vw, 28px)";
-/** Minimalna szerokość portalu względem hero (z PDF). */
-const PORTAL_MIN_WIDTH_RATIO = 0.19;
+/** Odstęp portalu od krawędzi bloku tekst + CTA (skaluje się z treścią, cap na ultrawide). */
+const PORTAL_PAD_X = "clamp(20px, 2.4vw, 36px)";
 
 type PortalLayout = {
   left: number;
   width: number;
 };
+
+function readPortalPadPx(root: HTMLElement): number {
+  const probe = root.querySelector<HTMLElement>("[data-hero-portal-pad-probe]");
+  if (!probe) return 28;
+  return probe.getBoundingClientRect().width;
+}
 
 export function HeroPortalContent() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -28,19 +34,13 @@ export function HeroPortalContent() {
     if (!root || !content || !cta) return;
 
     const update = () => {
-      const hero = root.parentElement;
-      if (!hero) return;
-
       const rootRect = root.getBoundingClientRect();
       const contentRect = content.getBoundingClientRect();
       const ctaRect = cta.getBoundingClientRect();
-      const heroWidth = hero.getBoundingClientRect().width;
+      const padX = readPortalPadPx(root);
 
       const ctaCenterX = ctaRect.left + ctaRect.width / 2 - rootRect.left;
-      const portalWidth = Math.max(
-        contentRect.width + 24,
-        heroWidth * PORTAL_MIN_WIDTH_RATIO,
-      );
+      const portalWidth = contentRect.width + padX * 2;
 
       setPortalLayout({
         left: ctaCenterX - portalWidth / 2,
@@ -54,7 +54,6 @@ export function HeroPortalContent() {
     observer.observe(root);
     observer.observe(content);
     observer.observe(cta);
-    observer.observe(root.parentElement);
 
     window.addEventListener("resize", update);
     return () => {
@@ -65,13 +64,19 @@ export function HeroPortalContent() {
 
   return (
     <div ref={rootRef} className="absolute inset-0">
+      <div
+        data-hero-portal-pad-probe
+        aria-hidden
+        className="pointer-events-none absolute left-0 top-0 h-0 overflow-hidden opacity-0"
+        style={{ width: PORTAL_PAD_X }}
+      />
+
       {portalLayout ? (
         <div
-          className="pointer-events-none absolute z-[3] select-none"
+          className="pointer-events-none absolute top-0 z-[3] select-none"
           aria-hidden
           style={{
             left: portalLayout.left,
-            top: 0,
             width: portalLayout.width,
             aspectRatio: "900 / 1134",
             backgroundImage: "url(/images/hero-portal.svg)",
