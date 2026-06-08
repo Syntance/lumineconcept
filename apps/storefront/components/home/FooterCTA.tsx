@@ -23,11 +23,11 @@ function BrandingHeading({ className = "" }: { className?: string }) {
   return (
     <>
       <h2
-        className={`m-0 font-binerka font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800 ${className}`}
+        className={`m-0 font-binerka text-3xl font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800 lg:text-4xl ${className}`}
       >
         Gotowa na branding,
       </h2>
-      <p className="m-0 font-gilroy text-lg font-light leading-snug text-brand-800 sm:text-xl">
+      <p className="m-0 font-gilroy text-base font-light leading-snug text-brand-800 lg:text-lg">
         który wyróżni Twój salon?
       </p>
     </>
@@ -38,7 +38,7 @@ function BrandingShopLink({ className = "" }: { className?: string }) {
   return (
     <Link
       href="/sklep"
-      className={`${SHOP_CTA_CLASS} border-brand-800 bg-transparent text-brand-800 hover:bg-brand-800 hover:text-white ${className}`}
+      className={`${SHOP_CTA_CLASS} border-brand-800 bg-transparent text-[11px] leading-[1.15] text-brand-800 hover:bg-brand-800 hover:text-white lg:text-[13px] ${className}`}
     >
       Zobacz sklep &rarr;
     </Link>
@@ -146,10 +146,10 @@ export async function FooterCTA() {
         <div className="bg-brand-50 px-4 py-12 lg:hidden">
           <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 text-center">
             <div className="flex flex-col gap-3">
-              <BrandingHeading className="text-[1.65rem] sm:text-[1.85rem]" />
+              <BrandingHeading />
             </div>
 
-            <BrandingShopLink className="w-full max-w-[17.5rem] whitespace-nowrap px-6 py-3.5 text-[11px] leading-none" />
+            <BrandingShopLink className="w-full max-w-[17.5rem] whitespace-nowrap px-6 py-3.5" />
 
             <BrandingContact layout="stack" />
           </div>
@@ -169,56 +169,24 @@ export async function FooterCTA() {
           />
 
           <div
-            className="absolute z-10 flex flex-col items-center text-center"
+            className="absolute z-10 flex flex-col items-center gap-4 text-center"
             style={{
-              left: "14%",
-              top: "26%",
-              width: "34%",
-              gap: "clamp(14px, 1.4vw, 24px)",
+              left: "12%",
+              top: "28%",
+              width: "36%",
             }}
           >
-            <h2
-              className="m-0 font-binerka font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800"
-              style={{
-                fontSize: "clamp(22px, 2.2vw, 40px)",
-              }}
-            >
-              Gotowa na branding,
-            </h2>
-            <p
-              className="m-0 font-gilroy font-light leading-snug text-brand-800"
-              style={{
-                fontSize: "clamp(18px, 1.85vw, 34px)",
-                letterSpacing: "0.05em",
-              }}
-            >
-              który wyróżni Twój salon?
-            </p>
+            <BrandingHeading />
 
-            <Link
-              href="/sklep"
-              className={`${SHOP_CTA_CLASS} whitespace-nowrap border-brand-800 bg-transparent text-brand-800 hover:bg-brand-800 hover:text-white`}
-              style={{
-                fontSize: "clamp(10px, 0.85vw, 14px)",
-                lineHeight: 1.15,
-                paddingLeft: "clamp(20px, 1.8vw, 32px)",
-                paddingRight: "clamp(20px, 1.8vw, 32px)",
-                paddingTop: "clamp(10px, 0.9vw, 14px)",
-                paddingBottom: "clamp(10px, 0.9vw, 14px)",
-                marginTop: "clamp(8px, 0.8vw, 16px)",
-              }}
-            >
-              Zobacz sklep &rarr;
-            </Link>
+            <BrandingShopLink className="mt-1 whitespace-nowrap px-7 py-3" />
           </div>
 
           <div
-            className="absolute z-10"
+            className="absolute z-10 text-sm text-brand-600"
             style={{
-              left: "14%",
-              width: "34%",
+              left: "12%",
+              width: "36%",
               bottom: "10%",
-              fontSize: "clamp(11px, 0.75vw, 16px)",
             }}
           >
             <BrandingContact layout="inline" />
