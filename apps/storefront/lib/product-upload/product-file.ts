@@ -1,6 +1,7 @@
 import "server-only";
 import { put } from "@vercel/blob";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { resolveMedusaAdminEmail } from "@/magazyn/core/medusa/client";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
@@ -53,10 +54,11 @@ function inferMimeType(file: File): string | null {
 }
 
 async function getMedusaServiceToken(): Promise<string | null> {
-  const email = process.env.MEDUSA_ADMIN_EMAIL?.trim();
+  const rawEmail = process.env.MEDUSA_ADMIN_EMAIL?.trim();
   const password = process.env.MEDUSA_ADMIN_PASSWORD;
   const base = medusaBackendUrl();
-  if (!email || !password || !base) return null;
+  if (!rawEmail || !password || !base) return null;
+  const email = resolveMedusaAdminEmail(rawEmail);
 
   const res = await fetch(`${base}/auth/user/emailpass`, {
     method: "POST",

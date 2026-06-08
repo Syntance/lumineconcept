@@ -5,12 +5,25 @@ import { getSessionToken } from "./session";
 
 type AdminFetchInit = Omit<RequestInit, "body"> & { body?: string };
 
+/**
+ * Konto admina w produkcyjnej Medusie zostało utworzone z literówką (lumie).
+ * Do czasu migracji w bazie akceptujemy poprawny adres i logujemy na istniejące konto.
+ */
+export function resolveMedusaAdminEmail(email: string): string {
+	const normalized = email.trim().toLowerCase();
+	if (normalized === "lumine.strona@gmail.com") {
+		return "lumie.strona@gmail.com";
+	}
+	return email.trim();
+}
+
 /** Logowanie email/hasło → token JWT admina Medusa. */
 export async function loginWithEmailPassword(email: string, password: string): Promise<string> {
+	const resolvedEmail = resolveMedusaAdminEmail(email);
 	const res = await fetch(`${serverEnv.medusaBackendUrl}/auth/user/emailpass`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ email, password }),
+		body: JSON.stringify({ email: resolvedEmail, password }),
 		signal: AbortSignal.timeout(10_000),
 	});
 
@@ -31,7 +44,7 @@ let cachedServiceToken: { token: string; at: number } | null = null;
 
 /** Token z konta serwisowego (MEDUSA_ADMIN_*) — odczyt bez sesji panelu. Opcjonalny. */
 async function getServiceToken(): Promise<string | null> {
-	const email = serverEnv.adminEmail;
+	const email = serverEnv.adminEmail ? resolveMedusaAdminEmail(serverEnv.adminEmail) : undefined;
 	const password = serverEnv.adminPassword;
 	if (!email || !password) return null;
 

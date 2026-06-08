@@ -42,7 +42,7 @@ RESEND_REPLY_TO=kontakt@lumineconcept.pl
 ```bash
 RESEND_API_KEY=re_...                    # Ten sam klucz (wysyłka z Magazynu)
 RESEND_FROM_EMAIL=kontakt@lumineconcept.pl
-MEDUSA_ADMIN_EMAIL=lumie.strona@gmail.com
+MEDUSA_ADMIN_EMAIL=lumine.strona@gmail.com
 MEDUSA_ADMIN_PASSWORD=lumine.strona123
 ```
 
@@ -72,7 +72,7 @@ MEDUSA_ADMIN_PASSWORD=lumine.strona123
 ### Dostosowanie
 
 Aby edytować szablony:
-1. Zaloguj się do `/magazyn` (email: `lumie.strona@gmail.com`)
+1. Zaloguj się do `/magazyn` (email: `lumine.strona@gmail.com`)
 2. Przejdź do `/magazyn/panel/maile`
 3. Wybierz zakładkę (Złożone / Wysłane / Anulowane)
 4. Edytuj bloki, kolory, teksty

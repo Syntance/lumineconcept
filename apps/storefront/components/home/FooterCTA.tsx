@@ -14,9 +14,74 @@ const BRANDING_BG_WIDTH = 1024;
 const BRANDING_BG_HEIGHT = 406;
 
 const SHOP_CTA_CLASS =
-  "inline-flex items-center justify-center whitespace-nowrap rounded-none border font-gilroy font-medium uppercase tracking-[0.2em] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+  "inline-flex items-center justify-center rounded-none border font-gilroy font-medium uppercase tracking-[0.2em] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
 const IG_GRID_SLOTS = 6;
+
+function BrandingHeading({ className = "" }: { className?: string }) {
+  return (
+    <>
+      <h2
+        className={`m-0 font-binerka font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800 ${className}`}
+      >
+        Gotowa na branding,
+      </h2>
+      <p className="m-0 font-gilroy text-lg font-light leading-snug text-brand-800 sm:text-xl">
+        który wyróżni Twój salon?
+      </p>
+    </>
+  );
+}
+
+function BrandingShopLink({ className = "" }: { className?: string }) {
+  return (
+    <Link
+      href="/sklep"
+      className={`${SHOP_CTA_CLASS} border-brand-800 bg-transparent text-brand-800 hover:bg-brand-800 hover:text-white ${className}`}
+    >
+      Zobacz sklep &rarr;
+    </Link>
+  );
+}
+
+function BrandingContact({ layout }: { layout: "stack" | "inline" }) {
+  const email = (
+    <a
+      href="mailto:kontakt@lumineconcept.pl"
+      className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
+    >
+      kontakt@lumineconcept.pl
+    </a>
+  );
+  const ig = (
+    <a
+      href="https://ig.me/m/lumineconcept"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
+    >
+      @lumineconcept
+    </a>
+  );
+
+  if (layout === "stack") {
+    return (
+      <div className="flex flex-col items-center gap-2 text-sm text-brand-600">
+        <span>Wolisz napisać?</span>
+        {email}
+        {ig}
+      </div>
+    );
+  }
+
+  return (
+    <p className="m-0 text-center text-brand-600">
+      Wolisz napisać? {email}
+      <span className="mx-1.5 text-brand-400">&middot;</span>
+      {ig}
+    </p>
+  );
+}
 
 function InstagramGrid({
   posts,
@@ -67,7 +132,7 @@ function InstagramGrid({
 
 /**
  * Footer CTA + sekcja „Jesteśmy na Instagramie”.
- * Układ jak hero: tło = obraz, treść w % względem kadru, rozmiary w clamp (nie rosną na ultrawide).
+ * Desktop: tło + overlay w % kadru; mobile: sam blok treści bez zdjęcia.
  */
 export async function FooterCTA() {
   const settings = await getSiteSettings();
@@ -76,7 +141,21 @@ export async function FooterCTA() {
   return (
     <>
       <section id="footer-cta" className="relative isolate overflow-x-hidden">
-        <div className="relative w-full overflow-x-hidden">
+        {/* Mobile — bez zdjęcia tła */}
+        <div className="bg-brand-50 px-4 py-12 lg:hidden">
+          <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 text-center">
+            <div className="flex flex-col gap-3">
+              <BrandingHeading className="text-[1.65rem] sm:text-[1.85rem]" />
+            </div>
+
+            <BrandingShopLink className="w-full max-w-[17.5rem] whitespace-nowrap px-6 py-3.5 text-[11px] leading-none" />
+
+            <BrandingContact layout="stack" />
+          </div>
+        </div>
+
+        {/* Desktop — zdjęcie + overlay */}
+        <div className="relative hidden w-full overflow-hidden lg:block">
           <Image
             src="/images/monia-branding-cta-bg.png"
             alt=""
@@ -88,7 +167,6 @@ export async function FooterCTA() {
             className="block h-auto w-full select-none"
           />
 
-          {/* Blok nagłówka + CTA — lewa połowa kadru, pozycja w % od obrazu */}
           <div
             className="absolute z-10 flex flex-col items-center text-center"
             style={{
@@ -118,7 +196,7 @@ export async function FooterCTA() {
 
             <Link
               href="/sklep"
-              className={`${SHOP_CTA_CLASS} border-brand-800 bg-transparent text-brand-800 hover:bg-brand-800 hover:text-white`}
+              className={`${SHOP_CTA_CLASS} whitespace-nowrap border-brand-800 bg-transparent text-brand-800 hover:bg-brand-800 hover:text-white`}
               style={{
                 fontSize: "clamp(10px, 0.85vw, 14px)",
                 lineHeight: 1.15,
@@ -133,9 +211,8 @@ export async function FooterCTA() {
             </Link>
           </div>
 
-          {/* Linia kontaktowa — dół kadru, wyrównana z blokiem tekstu */}
-          <p
-            className="absolute z-10 m-0 text-center text-brand-600"
+          <div
+            className="absolute z-10"
             style={{
               left: "14%",
               width: "34%",
@@ -143,23 +220,8 @@ export async function FooterCTA() {
               fontSize: "clamp(11px, 0.75vw, 16px)",
             }}
           >
-            Wolisz napisać?{" "}
-            <a
-              href="mailto:kontakt@lumineconcept.pl"
-              className="wrap-break-word text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
-            >
-              kontakt@lumineconcept.pl
-            </a>
-            <span className="mx-1.5 text-brand-400">&middot;</span>
-            <a
-              href="https://ig.me/m/lumineconcept"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
-            >
-              @lumineconcept
-            </a>
-          </p>
+            <BrandingContact layout="inline" />
+          </div>
         </div>
       </section>
 
