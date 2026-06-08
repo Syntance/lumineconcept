@@ -1,8 +1,9 @@
 import Image from "next/image";
 
-import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { Breadcrumbs, BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
 import { HeroPortalContent } from "@/components/home/HeroPortalContent";
 import { LOGO_HERO_PORTAL } from "@/components/home/hero-portal-config";
+import { cn } from "@/lib/utils";
 
 /** Wymiary `public/images/categories/logo-hero-bg.png` — przy podmianie grafiki zaktualizuj. */
 const LOGO_HERO_BG_WIDTH = 1024;
@@ -36,7 +37,7 @@ export function LogoCategoryHeroSection() {
           aria-hidden
         />
 
-        <div className="absolute inset-x-0 top-0 z-20 px-5 pt-5 sm:px-8 lg:px-8 lg:pt-6">
+        <div className={cn("absolute inset-x-0 top-0 z-20 pt-5 lg:pt-6", BREADCRUMBS_ALIGN_CLASS)}>
           <Breadcrumbs
             className="mb-0 text-sm [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white"
             items={[

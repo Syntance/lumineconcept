@@ -2,7 +2,7 @@ export default function ProductLoading() {
   return (
     <div className="animate-pulse">
       {/* Breadcrumbs */}
-      <div className="container mx-auto max-w-4xl px-4 pt-10 pb-5 lg:pt-12 lg:pb-6">
+      <div className="container mx-auto px-4 pt-10 pb-5 lg:pt-12 lg:pb-6">
         <div className="flex gap-2">
           <div className="h-3 w-16 rounded bg-brand-200" />
           <div className="h-3 w-3 rounded bg-brand-200" />

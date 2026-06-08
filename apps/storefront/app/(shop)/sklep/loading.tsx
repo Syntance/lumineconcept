@@ -3,7 +3,7 @@ export default function SklepLoading() {
     <div className="animate-pulse">
       {/* Hero skeleton */}
       <section className="bg-brand-50 pt-10 pb-14 lg:pt-12 lg:pb-20">
-        <div className="container mx-auto max-w-4xl px-4">
+        <div className="container mx-auto px-4">
           <div className="flex gap-2 mb-6">
             <div className="h-3 w-20 rounded bg-brand-200" />
             <div className="h-3 w-3 rounded bg-brand-200" />

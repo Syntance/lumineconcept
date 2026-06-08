@@ -101,7 +101,7 @@ export default async function GotoweWzoryPage({
     <>
       {/* Hero */}
       <section className="bg-brand-50 pt-10 pb-14 lg:pt-12 lg:pb-20">
-        <div className="container mx-auto max-w-4xl px-4">
+        <div className="container mx-auto px-4">
           <Breadcrumbs
             className="mb-0"
             items={[

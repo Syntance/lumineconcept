@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface BreadcrumbItem {
@@ -9,6 +10,19 @@ interface BreadcrumbItem {
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];
   className?: string;
+}
+
+/** Lewa krawędź jak siatka Bestsellery na stronie głównej. */
+export const BREADCRUMBS_ALIGN_CLASS = "container mx-auto px-4";
+
+export function BreadcrumbsShell({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={cn(BREADCRUMBS_ALIGN_CLASS, className)}>{children}</div>;
 }
 
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
