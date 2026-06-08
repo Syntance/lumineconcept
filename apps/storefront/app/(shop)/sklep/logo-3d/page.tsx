@@ -1,10 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import {
-  HeroShadowPanel,
-  heroPanelScale,
-} from "@/components/home/hero-shadow-panel";
+import { LogoCategoryHeroSection } from "@/components/category/LogoCategoryHeroSection";
 
 import { SITE_URL } from "@/lib/utils";
 import { sanityClient } from "@/lib/sanity/client";
@@ -14,11 +9,6 @@ import type { RealizationPhoto, SanityImage } from "@/lib/sanity/types";
 import { TablicaZLogoFormClient } from "./client";
 import { QuoteTitleBandMeasure } from "./QuoteTitleBandMeasure";
 import { LogoBoardRealizations } from "./LogoBoardRealizations";
-
-/** Wymiary `public/images/categories/logo-hero-bg.png` — przy podmianie grafiki zaktualizuj. */
-const LOGO_HERO_BG_WIDTH = 1024;
-const LOGO_HERO_BG_HEIGHT = 384;
-
 
 export const metadata: Metadata = {
   title: "Tablice z logo — wycena indywidualna | Lumine Concept",
@@ -62,93 +52,6 @@ export default async function TablicaZLogoPage() {
       <CustomQuoteSection />
       <LogoBoardRealizations items={realizations} />
     </div>
-  );
-}
-
-/* ── Hero ───────────────────────────────────────────────────────── */
-
-function LogoCategoryHeroSection() {
-  const scale = heroPanelScale;
-
-  return (
-    <section className="relative isolate w-full overflow-x-hidden bg-brand-900 text-white">
-      {/* Ten sam `@container` + ten sam zestaw `--cta-fs` / `HeroShadowPanel` co strona główna */}
-      <div className="relative w-full isolation-isolate @container overflow-x-hidden">
-        <Image
-          src="/images/categories/logo-hero-bg.png"
-          alt=""
-          width={LOGO_HERO_BG_WIDTH}
-          height={LOGO_HERO_BG_HEIGHT}
-          priority
-          sizes="100vw"
-          className="block h-auto w-full select-none"
-        />
-
-        {/* Okruszki: jak wcześniej `pl`/`pr` jak na HP; panel hero osobny `pl` w `cqw`. */}
-        <div className="absolute inset-0 z-10 flex flex-col pb-[3.24cqw] pr-[2.16cqw] pt-[3.78cqw]">
-          <div className="w-full shrink-0 pl-[2.16cqw]" style={{ fontSize: "1cqw" }}>
-            <Breadcrumbs
-              className="mb-0 text-[1em] [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white [&_ol]:text-[1em]"
-              items={[
-                { label: "Strona główna", href: "/" },
-                { label: "Sklep", href: "/sklep" },
-                { label: "Tablice z logo" },
-              ]}
-            />
-          </div>
-
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-start pl-[10cqw]">
-            <HeroShadowPanel align="center">
-              <div className="flex flex-col items-center text-center">
-                <h1
-                  className="m-0 max-w-none font-binerka uppercase tracking-[0.06em] !font-normal !text-white"
-                  style={{
-                    fontSize: `calc(var(--cta-fs) * ${scale.title})`,
-                    lineHeight: 1,
-                    fontWeight: 400,
-                  }}
-                >
-                  Tablica z logo
-                </h1>
-                <p
-                  className="m-0 max-w-none font-gilroy font-light leading-tight tracking-[0.06em] !text-white/90"
-                  style={{
-                    fontSize: `calc(var(--cta-fs) * ${scale.body})`,
-                    marginTop: `calc(var(--cta-fs) * ${scale.gapAfterTitle})`,
-                    fontWeight: 300,
-                  }}
-                >
-                  Logo Twojej marki zrealizowane w postaci kreatywnej ozdobnej tablicy,
-                  którą możesz zamieścić na ścianie
-                </p>
-                <div
-                  style={{
-                    marginTop: `calc(var(--cta-fs) * ${scale.gapBeforeCta})`,
-                  }}
-                >
-                  <a
-                    href="#formularz"
-                    className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-none border-0 bg-white font-gilroy font-semibold uppercase tracking-[0.2em] !text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-                    style={{
-                      fontSize: "var(--cta-fs)",
-                      lineHeight: 1.15,
-                      paddingLeft: `${scale.ctaPadX}em`,
-                      paddingRight: `${scale.ctaPadX}em`,
-                      paddingTop: `${scale.ctaPadY}em`,
-                      paddingBottom: `${scale.ctaPadY}em`,
-                      borderRadius: 0,
-                    }}
-                    aria-label="Przewiń do formularza — zamów tablicę z logo"
-                  >
-                    Uzyskaj wycenę
-                  </a>
-                </div>
-              </div>
-            </HeroShadowPanel>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 

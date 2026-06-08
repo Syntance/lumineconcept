@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
+
+import {
+  HOME_HERO_PORTAL,
+  type HeroPortalAlign,
+  type HeroPortalContentConfig,
+  type HeroPortalSize,
+} from "./hero-portal-config";
 
 const DESKTOP_MQ = "(min-width: 1024px)";
 
@@ -28,30 +35,141 @@ const PORTAL_HEIGHT_NUDGE = 1.06;
 const PORTAL_STRAIGHT_END = 733 / 1134;
 const PORTAL_WIDTH_RATIO = 900 / 1134;
 
+const CTA_CLASS =
+  "inline-flex items-center justify-center whitespace-nowrap rounded-none border-0 bg-white px-7 py-3 font-gilroy text-[13px] font-semibold uppercase leading-[1.15] tracking-[0.2em] text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+
 type PortalLayout = {
   left: number;
   width: number;
   height: number;
 };
 
+type HeroPortalDesktopProps = {
+  align?: HeroPortalAlign;
+  content?: HeroPortalContentConfig;
+  portalSize?: HeroPortalSize;
+};
+
+function computePortalLayout(
+  contentEl: HTMLElement,
+  headline: HTMLElement,
+  cta: HTMLElement,
+): PortalLayout {
+  const contentWidth = contentEl.offsetWidth;
+  const contentHeight = contentEl.offsetHeight;
+  const ctaCenter = cta.offsetLeft + cta.offsetWidth / 2;
+
+  const padX = Math.max(PORTAL_PAD_X_MIN, Math.round(contentWidth * PORTAL_PAD_X_RATIO));
+  const padBottom = Math.max(
+    PORTAL_BOTTOM_PAD_MIN,
+    Math.round(contentHeight * PORTAL_BOTTOM_PAD_RATIO),
+  );
+  const contentBottom = CONTENT_TOP_PX + contentHeight;
+
+  const portalHeight =
+    ((contentBottom + padBottom) / PORTAL_STRAIGHT_END) * PORTAL_HEIGHT_NUDGE;
+  const widthFromHeight = portalHeight * PORTAL_WIDTH_RATIO * PORTAL_WIDTH_NUDGE;
+  const coreWidth =
+    (Math.max(headline.offsetWidth, cta.offsetWidth) + padX * 2) * PORTAL_WIDTH_NUDGE;
+  const maxWidth = (contentWidth + padX * 2) * PORTAL_WIDTH_NUDGE;
+  const portalWidth = Math.min(maxWidth, Math.max(widthFromHeight, coreWidth));
+
+  return {
+    left: ctaCenter - portalWidth / 2,
+    width: portalWidth,
+    height: portalHeight,
+  };
+}
+
+type PortalContentBlockProps = {
+  align: HeroPortalAlign;
+  content: HeroPortalContentConfig;
+  contentDropPx: number;
+  contentRef: RefObject<HTMLDivElement | null>;
+  headlineRef: RefObject<HTMLHeadingElement | null>;
+  ctaRef: RefObject<HTMLAnchorElement | null>;
+};
+
+function PortalContentBlock({
+  align,
+  content,
+  contentDropPx,
+  contentRef,
+  headlineRef,
+  ctaRef,
+}: PortalContentBlockProps) {
+  const isCenter = align === "center";
+
+  return (
+    <div
+      ref={contentRef}
+      className={`relative z-10 flex w-max flex-col ${isCenter ? "items-center" : "items-start"}`}
+      style={{ gap: CONTENT_GAP_PX, transform: `translateY(${contentDropPx}px)` }}
+    >
+      <div className={`flex flex-col gap-4 ${isCenter ? "items-center" : "items-start"}`}>
+        <h1
+          ref={headlineRef}
+          className={`m-0 font-binerka text-[58px] leading-none tracking-[0.06em] font-normal text-white ${isCenter ? "text-center" : "whitespace-nowrap text-left"} ${content.headlineUppercase ? "uppercase" : ""}`}
+        >
+          {content.headline}
+        </h1>
+
+        <div className={`flex flex-col gap-2 ${isCenter ? "items-center" : "items-start"}`}>
+          {content.subtitle ? (
+            <p
+              className={`m-0 font-gilroy text-xl font-medium uppercase leading-none tracking-[0.08em] text-white ${isCenter ? "text-center" : "whitespace-nowrap text-left"}`}
+            >
+              {content.subtitle}
+            </p>
+          ) : null}
+
+          <p
+            className={`m-0 font-gilroy text-base font-light leading-tight tracking-[0.06em] text-white/90 ${isCenter ? "max-w-[32rem] text-center" : "whitespace-nowrap text-left"}`}
+          >
+            {content.description}
+          </p>
+        </div>
+      </div>
+
+      <Link
+        ref={ctaRef}
+        href={content.ctaHref}
+        aria-label={content.ctaAriaLabel}
+        className={CTA_CLASS}
+      >
+        {content.ctaLabel}
+      </Link>
+    </div>
+  );
+}
+
 /**
  * Hero desktop (≥ lg): portal + treść w jednym bloku ze wspólnym scale().
  */
-export function HeroPortalDesktop() {
+export function HeroPortalDesktop({
+  align = "left",
+  content = HOME_HERO_PORTAL,
+  portalSize = "content",
+}: HeroPortalDesktopProps) {
+  const isCenter = align === "center";
+  const useHomePortalSize = portalSize === "home";
   const rootRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const ctaRef = useRef<HTMLAnchorElement>(null);
+  const homeContentRef = useRef<HTMLDivElement>(null);
+  const homeHeadlineRef = useRef<HTMLHeadingElement>(null);
+  const homeCtaRef = useRef<HTMLAnchorElement>(null);
   const [scale, setScale] = useState(1);
   const [contentDropPx, setContentDropPx] = useState(0);
   const [portalLayout, setPortalLayout] = useState<PortalLayout | null>(null);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
-    const content = contentRef.current;
+    const contentEl = contentRef.current;
     const headline = headlineRef.current;
     const cta = ctaRef.current;
-    if (!root || !content || !headline || !cta) return;
+    if (!root || !contentEl || !headline || !cta) return;
 
     const media = window.matchMedia(DESKTOP_MQ);
     const hero = root.parentElement;
@@ -69,45 +187,43 @@ export function HeroPortalDesktop() {
       setScale(nextScale);
       setContentDropPx((heroHeight * CONTENT_DROP_RATIO) / nextScale);
 
-      const contentWidth = content.offsetWidth;
-      const contentHeight = content.offsetHeight;
-      const ctaCenter = cta.offsetLeft + cta.offsetWidth / 2;
+      const sizeContent = useHomePortalSize ? homeContentRef.current : contentEl;
+      const sizeHeadline = useHomePortalSize ? homeHeadlineRef.current : headline;
+      const sizeCta = useHomePortalSize ? homeCtaRef.current : cta;
 
-      const padX = Math.max(PORTAL_PAD_X_MIN, Math.round(contentWidth * PORTAL_PAD_X_RATIO));
-      const padBottom = Math.max(
-        PORTAL_BOTTOM_PAD_MIN,
-        Math.round(contentHeight * PORTAL_BOTTOM_PAD_RATIO),
-      );
-      const contentBottom = CONTENT_TOP_PX + contentHeight;
+      if (!sizeContent || !sizeHeadline || !sizeCta) return;
 
-      /** Wysokość do początku łuku — wtedy portal jest wyższy, nie szerszy. */
-      const portalHeight =
-        ((contentBottom + padBottom) / PORTAL_STRAIGHT_END) * PORTAL_HEIGHT_NUDGE;
-      const widthFromHeight =
-        portalHeight * PORTAL_WIDTH_RATIO * PORTAL_WIDTH_NUDGE;
-      /** Min. szerokość: CONCEPT + CTA (bez najdłuższej linii opisu). */
-      const coreWidth =
-        (Math.max(headline.offsetWidth, cta.offsetWidth) + padX * 2) *
-        PORTAL_WIDTH_NUDGE;
-      /** Nie szerszy niż blok treści — opis musi się zmieścić. */
-      const maxWidth = (contentWidth + padX * 2) * PORTAL_WIDTH_NUDGE;
-      const portalWidth = Math.min(maxWidth, Math.max(widthFromHeight, coreWidth));
+      const sized = computePortalLayout(sizeContent, sizeHeadline, sizeCta);
 
-      setPortalLayout({
-        left: ctaCenter - portalWidth / 2,
-        width: portalWidth,
-        height: portalHeight,
-      });
+      if (useHomePortalSize) {
+        const ctaCenter = cta.offsetLeft + cta.offsetWidth / 2;
+        setPortalLayout({
+          left: ctaCenter - sized.width / 2,
+          width: sized.width,
+          height: sized.height,
+        });
+      } else {
+        setPortalLayout(sized);
+      }
     };
 
     update();
 
     const observer = new ResizeObserver(update);
     observer.observe(root);
-    observer.observe(content);
+    observer.observe(contentEl);
     observer.observe(headline);
     observer.observe(cta);
     observer.observe(hero);
+
+    if (useHomePortalSize) {
+      const homeContent = homeContentRef.current;
+      const homeHeadline = homeHeadlineRef.current;
+      const homeCta = homeCtaRef.current;
+      if (homeContent) observer.observe(homeContent);
+      if (homeHeadline) observer.observe(homeHeadline);
+      if (homeCta) observer.observe(homeCta);
+    }
 
     media.addEventListener("change", update);
     window.addEventListener("resize", update);
@@ -117,18 +233,37 @@ export function HeroPortalDesktop() {
       media.removeEventListener("change", update);
       window.removeEventListener("resize", update);
     };
-  }, []);
+  }, [useHomePortalSize]);
 
   return (
     <div ref={rootRef} className="absolute inset-0">
       <div
-        className="absolute top-0 origin-top-left"
+        className={isCenter ? "absolute top-0 left-1/2" : "absolute top-0"}
         style={{
-          left: CONTENT_LEFT,
-          transform: `scale(${scale})`,
+          ...(isCenter ? {} : { left: CONTENT_LEFT }),
+          transform: isCenter
+            ? `translateX(-50%) scale(${scale})`
+            : `scale(${scale})`,
+          transformOrigin: isCenter ? "top center" : "top left",
         }}
       >
         <div className="relative" style={{ paddingTop: CONTENT_TOP_PX }}>
+          {useHomePortalSize ? (
+            <div
+              aria-hidden
+              className="pointer-events-none invisible absolute left-0 top-0 -z-50 w-max"
+            >
+              <PortalContentBlock
+                align="left"
+                content={HOME_HERO_PORTAL}
+                contentDropPx={0}
+                contentRef={homeContentRef}
+                headlineRef={homeHeadlineRef}
+                ctaRef={homeCtaRef}
+              />
+            </div>
+          ) : null}
+
           {portalLayout ? (
             <div
               className="pointer-events-none absolute z-[3] select-none"
@@ -145,38 +280,14 @@ export function HeroPortalDesktop() {
             />
           ) : null}
 
-          <div
-            ref={contentRef}
-            className="relative z-10 flex w-max flex-col items-start"
-            style={{ gap: CONTENT_GAP_PX, transform: `translateY(${contentDropPx}px)` }}
-          >
-            <div className="flex flex-col items-start gap-4">
-              <h1
-                ref={headlineRef}
-                className="m-0 whitespace-nowrap text-left font-binerka text-[58px] leading-none tracking-[0.06em] font-normal text-white"
-              >
-                CONCEPT
-              </h1>
-
-              <div className="flex flex-col items-start gap-2">
-                <p className="m-0 whitespace-nowrap text-left font-gilroy text-xl font-medium uppercase leading-none tracking-[0.08em] text-white">
-                  Wyróżnij swój salon
-                </p>
-
-                <p className="m-0 whitespace-nowrap text-left font-gilroy text-base font-light leading-tight tracking-[0.06em] text-white/90">
-                  Tablice z logo, cenniki i oznaczenia z plexi
-                </p>
-              </div>
-            </div>
-
-            <Link
-              ref={ctaRef}
-              href="/sklep"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-none border-0 bg-white px-7 py-3 font-gilroy text-[13px] font-semibold uppercase leading-[1.15] tracking-[0.2em] text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-            >
-              Zobacz produkty
-            </Link>
-          </div>
+          <PortalContentBlock
+            align={align}
+            content={content}
+            contentDropPx={contentDropPx}
+            contentRef={contentRef}
+            headlineRef={headlineRef}
+            ctaRef={ctaRef}
+          />
         </div>
       </div>
     </div>
