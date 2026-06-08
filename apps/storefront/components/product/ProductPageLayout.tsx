@@ -165,10 +165,9 @@ export async function ProductPageLayout({
   ProductPageClient,
 }: ProductPageLayoutProps) {
   /**
-   * Nie łapiemy tu błędów z Medusy — niech propagują do `error.tsx`.
-   * W przeciwnym razie timeout Railway → `catch(() => null)` → `notFound()`
-   * wyglądało jak stały 404 przez cały czas życia cache'a.
-   * Sanity i globalny config są opcjonalne → fallback OK.
+   * Nie łapiemy błędów runtime — propagują do `error.tsx` (cold start Railway).
+   * Przy `next build` Medusa może być niedostępna → `getProductByHandle` zwraca
+   * null i ISR (`revalidate`) odświeży stronę po starcie backendu.
    */
   const product = await getProductData(slug);
   if (!product) notFound();

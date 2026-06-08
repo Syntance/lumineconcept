@@ -31,3 +31,8 @@ export function isTransientMedusaError(e: unknown): boolean {
 export function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
+
+/** `next build` — przy 502 nie przerywamy deployu; strony ISR odświeżą się po starcie Medusy. */
+export function isProductionBuild(): boolean {
+  return process.env.NEXT_PHASE === "phase-production-build";
+}

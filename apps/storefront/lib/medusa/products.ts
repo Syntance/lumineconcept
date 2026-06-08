@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { medusa } from "./client";
 import { getPolishRegionId } from "./region";
-import { isTransientMedusaError, sleep } from "./transient-error";
+import { isProductionBuild, isTransientMedusaError, sleep } from "./transient-error";
 
 /** Łańcuch `parent_category` jak w backendzie `certificate-line-item` (max głębokość). */
 function medusaCategoryAncestorFields(depth: number): string {
@@ -50,6 +50,9 @@ async function _getProducts(params?: {
     });
   } catch (e) {
     logMedusaFailure("getProducts", e);
+    if (isProductionBuild() && isTransientMedusaError(e)) {
+      return { products: [], count: 0, offset, limit };
+    }
     throw e instanceof Error ? e : new Error("getProducts failed");
   }
 }
@@ -103,6 +106,9 @@ async function _getProductByHandle(handle: string) {
   }
 
   logMedusaFailure(`getProductByHandle(${handle})`, lastErr);
+  if (isProductionBuild() && isTransientMedusaError(lastErr)) {
+    return null;
+  }
   throw lastErr instanceof Error
     ? lastErr
     : new Error(`getProductByHandle(${handle}) failed`);
