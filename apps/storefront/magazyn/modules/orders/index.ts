@@ -6,6 +6,7 @@ export { OrderActions } from "./order-actions";
 export { runOrderAction, type OrderActionType, type OrderActionState } from "./actions";
 export {
 	listAdminOrders,
+	getAdminOrdersOverviewSummary,
 	getAdminOrder,
 	getAdminOrderForEmail,
 	orderToEmailSource,
@@ -16,4 +17,4 @@ export {
 	cancelOrder,
 	archiveOrder,
 } from "./store";
-export type { AdminOrderRow, AdminOrderDetail } from "./order-types";
+export type { AdminOrderRow, AdminOrderDetail, AdminOrdersOverviewSummary } from "./order-types";

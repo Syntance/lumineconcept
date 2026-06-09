@@ -7,7 +7,7 @@ import {
 } from "./render-template";
 import { sendTransactionalEmail, type SendEmailResult } from "./send-transactional";
 import { buildDefaultTemplate, type EmailTemplateType } from "./template-types";
-import { getEmailTemplateForSend } from "./store";
+import { getEmailTemplateForSend, isEmailTemplateEnabledForSend } from "./store";
 
 /**
  * Wysyła mail danego etapu dla zamówienia.
@@ -20,6 +20,10 @@ export async function sendOrderStageEmail(
 	type: EmailTemplateType,
 	order: OrderRenderSource,
 ): Promise<SendEmailResult> {
+	if (!(await isEmailTemplateEnabledForSend(type).catch(() => true))) {
+		return { ok: true, skipped: true };
+	}
+
 	const template = (await getEmailTemplateForSend(type)) ?? buildDefaultTemplate(type);
 	const ctx = buildOrderRenderContext(order);
 	const { html, text } = renderTemplate(template, ctx);

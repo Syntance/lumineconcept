@@ -6,13 +6,18 @@ export {
 	saveEmailTemplate,
 	resetEmailTemplate,
 	getEmailTemplateForSend,
+	isEmailTemplateEnabledForSend,
+	setEmailTemplateEnabled,
 } from "./store";
 export { sendOrderStageEmail } from "./send-order-email";
+export { sendContactConfirmationEmail } from "./send-contact-confirmation";
+export { createContactCaseNumber } from "./contact-email-context";
 export { sendTransactionalEmail } from "./send-transactional";
 export {
 	renderTemplate,
 	buildOrderRenderContext,
 	sampleRenderContext,
+	sampleRenderContextForTemplate,
 	mergeSubject,
 	type OrderRenderSource,
 	type EmailRenderContext,
@@ -21,6 +26,8 @@ export {
 export {
 	buildDefaultTemplate,
 	EMAIL_TEMPLATE_TYPES,
+	EMAIL_TEMPLATE_CATEGORIES,
+	getMergeVariablesForTemplate,
 	MERGE_VARIABLES,
 	type EmailTemplate,
 	type EmailTemplateType,

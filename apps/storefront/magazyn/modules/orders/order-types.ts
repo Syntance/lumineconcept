@@ -86,6 +86,18 @@ export type AdminOrderRow = {
 	createdAt: string;
 };
 
+/** Agregaty zamówień na pulpicie „Przegląd”. Kwoty w groszach. */
+export type AdminOrdersOverviewSummary = {
+	orderCount: number;
+	totalMinor: number;
+	paidCount: number;
+	paidTotalMinor: number;
+	unpaidCount: number;
+	unpaidTotalMinor: number;
+	canceledCount: number;
+	currencyCode: string;
+};
+
 export type AdminOrderDetail = {
 	id: string;
 	displayId: number;

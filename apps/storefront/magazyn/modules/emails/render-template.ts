@@ -4,13 +4,16 @@ import {
 	type BlockStyle,
 	type ButtonBlock,
 	type ColumnsBlock,
+	CONTACT_MERGE_VARIABLES,
 	type DividerBlock,
 	type EmailTemplate,
+	type EmailTemplateType,
 	type EmailTheme,
 	FONT_STACKS,
 	type FooterBlock,
 	type HeadingBlock,
 	type ImageBlock,
+	isContactEmailTemplateType,
 	type LeafBlock,
 	type OrderItemsBlock,
 	type SpacerBlock,
@@ -304,4 +307,16 @@ export function sampleRenderContext(): EmailRenderContext {
 			{ title: "Produkt przykładowy B", quantity: 1, total: "170 zł", thumbnail: null },
 		],
 	};
+}
+
+/** Kontekst przykładowy — podgląd / test (zamówienia lub formularz). */
+export function sampleRenderContextForTemplate(type: EmailTemplateType): EmailRenderContext {
+	if (isContactEmailTemplateType(type)) {
+		const vars: Record<string, string> = {};
+		for (const v of CONTACT_MERGE_VARIABLES) {
+			vars[v.token] = v.sample;
+		}
+		return { vars, items: [] };
+	}
+	return sampleRenderContext();
 }

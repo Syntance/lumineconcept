@@ -1,21 +1,32 @@
 import Link from "next/link";
+import { loadAdmin } from "@magazyn/core/auth/load";
 import { magazynConfig } from "../../magazyn.config";
+import { getAdminOrdersOverviewSummary } from "@magazyn/modules/orders/store";
+import { OverviewOrdersSummary } from "@magazyn/modules/orders/overview-summary";
 import { buildNavItems } from "./nav-items";
+
+export const dynamic = "force-dynamic";
 
 /**
  * Prosty pulpit panelu (kafle do włączonych modułów).
  * Re-eksportuj w `app{basePath}/(panel)/page.tsx`:
  *   export { default } from "@magazyn/core/layout/overview-page";
  */
-export default function OverviewPage() {
+export default async function OverviewPage() {
 	const tiles = buildNavItems().filter((item) => item.href !== magazynConfig.basePath);
+	const ordersSummary =
+		magazynConfig.modules.orders === true
+			? await loadAdmin(getAdminOrdersOverviewSummary)
+			: null;
 
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="flex flex-col gap-8">
 			<header>
 				<h1 className="font-serif text-2xl text-foreground">Przegląd</h1>
 				<p className="mt-1 text-sm text-muted-foreground">Wybierz moduł, którym chcesz zarządzać.</p>
 			</header>
+
+			{ordersSummary ? <OverviewOrdersSummary summary={ordersSummary} /> : null}
 
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{tiles.map(({ href, label, icon: Icon }) => (

@@ -104,7 +104,7 @@ export type Block = LeafBlock | OrderItemsBlock | FooterBlock | ColumnsBlock;
 
 export type BlockType = Block["type"];
 
-export type EmailTemplateType =
+export type OrderEmailTemplateType =
 	| "placed"
 	| "realization_started"
 	| "shipped"
@@ -112,13 +112,32 @@ export type EmailTemplateType =
 	| "cancelled"
 	| "confirmation";
 
+/** Potwierdzenie dla klienta po wysłaniu formularza kontaktowego. */
+export type ContactEmailTemplateType = "contact_confirmation";
+
+export type EmailTemplateType = OrderEmailTemplateType | ContactEmailTemplateType;
+
+const CONTACT_EMAIL_TEMPLATE_TYPES: ContactEmailTemplateType[] = ["contact_confirmation"];
+
+export function isContactEmailTemplateType(
+	type: EmailTemplateType,
+): type is ContactEmailTemplateType {
+	return (CONTACT_EMAIL_TEMPLATE_TYPES as EmailTemplateType[]).includes(type);
+}
+
 export type EmailTemplate = {
 	type: EmailTemplateType;
 	subject: string;
 	preheader: string;
 	theme: EmailTheme;
 	blocks: Block[];
+	/** Domyślnie włączone; `false` wyłącza automatyczną wysyłkę tego etapu. */
+	enabled?: boolean;
 };
+
+export function isEmailTemplateEnabled(template: EmailTemplate | null | undefined): boolean {
+	return template?.enabled !== false;
+}
 
 /** Kolejność + etykiety zakładek szablonów w edytorze. */
 export const EMAIL_TEMPLATE_TYPES: Array<{
@@ -136,7 +155,32 @@ export const EMAIL_TEMPLATE_TYPES: Array<{
 	{ type: "completed", label: "Zakończone", description: "Po zakończeniu zamówienia." },
 	{ type: "cancelled", label: "Anulowane", description: "Po anulowaniu zamówienia (event: order.canceled)." },
 	{ type: "confirmation", label: "Potwierdzenie", description: "Dodatkowe potwierdzenie zamówienia." },
+	{
+		type: "contact_confirmation",
+		label: "Formularz kontaktowy · potwierdzenie",
+		description: "Potwierdzenie odbioru wiadomości z formularza kontaktowego.",
+	},
 ];
+
+export type EmailTemplateCategoryId = "order" | "contact";
+
+/** Grupy szablonów w edytorze magazynu. */
+export const EMAIL_TEMPLATE_CATEGORIES: Array<{
+	id: EmailTemplateCategoryId;
+	title: string;
+}> = [
+	{ id: "order", title: "Zamówienie" },
+	{ id: "contact", title: "Formularze" },
+];
+
+export function getEmailTemplatesByCategory(
+	category: EmailTemplateCategoryId,
+): typeof EMAIL_TEMPLATE_TYPES {
+	return EMAIL_TEMPLATE_TYPES.filter((entry) => {
+		if (category === "contact") return isContactEmailTemplateType(entry.type);
+		return !isContactEmailTemplateType(entry.type);
+	});
+}
 
 /** Zmienne danych zamówienia dostępne w treści jako {{token}}. */
 export const MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
@@ -151,6 +195,25 @@ export const MERGE_VARIABLES: Array<{ token: string; label: string; sample: stri
 	{ token: "adres", label: "Adres dostawy", sample: "ul. Przykładowa 1, 00-000 Miasto" },
 ];
 
+/** Zmienne formularza kontaktowego ({{token}}) — szablon contact_confirmation. */
+export const CONTACT_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
+	{ token: "imie", label: "Imię nadawcy", sample: "Anna" },
+	{ token: "email", label: "E-mail nadawcy", sample: "anna@przyklad.pl" },
+	{ token: "temat", label: "Temat wiadomości", sample: "Formularz kontaktowy" },
+	{ token: "numerSprawy", label: "Numer sprawy (FK-…)", sample: "FK-2026-00042" },
+	{ token: "numerFormularza", label: "Numer formularza (alias numerSprawy)", sample: "FK-2026-00042" },
+	{
+		token: "wiadomosc",
+		label: "Treść wiadomości (skrót)",
+		sample: "Interesuje mnie projekt oświetlenia do salonu…",
+	},
+];
+
+export function getMergeVariablesForTemplate(type: EmailTemplateType) {
+	if (isContactEmailTemplateType(type)) return CONTACT_MERGE_VARIABLES;
+	return MERGE_VARIABLES;
+}
+
 export const MERGE_TOKENS = MERGE_VARIABLES.map((v) => v.token);
 
 /* ────────────────────────────────────────────── */
@@ -160,9 +223,9 @@ export const MERGE_TOKENS = MERGE_VARIABLES.map((v) => v.token);
 export const DEFAULT_THEME: EmailTheme = { ...magazynConfig.emailTheme };
 
 const BRAND = magazynConfig.branding.name;
+const SUBJECT_PREFIX = `[${BRAND}]`;
 const FOOTER_TEXT = magazynConfig.email.footerText;
 const CONTACT = magazynConfig.email.contactEmail;
-const SITE = magazynConfig.email.siteUrl;
 
 type StageContent = {
 	subject: string;
@@ -175,7 +238,7 @@ type StageContent = {
 
 const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 	placed: {
-		subject: `Dziękujemy za zamówienie #{{nrZamowienia}}`,
+		subject: `${SUBJECT_PREFIX} Dziękujemy za zamówienie #{{nrZamowienia}}`,
 		preheader: "Otrzymaliśmy zamówienie #{{nrZamowienia}}. Zabieramy się do pracy.",
 		headline: "Dziękujemy za zamówienie #{{nrZamowienia}}",
 		paragraphs: [
@@ -184,7 +247,7 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 		withItems: true,
 	},
 	realization_started: {
-		subject: `Rozpoczęliśmy realizację zamówienia #{{nrZamowienia}}`,
+		subject: `${SUBJECT_PREFIX} Rozpoczęliśmy realizację zamówienia #{{nrZamowienia}}`,
 		preheader: "Twoje zamówienie trafiło do realizacji.",
 		headline: "Rozpoczęcie realizacji",
 		paragraphs: [
@@ -194,7 +257,7 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 		withItems: true,
 	},
 	shipped: {
-		subject: `Zamówienie #{{nrZamowienia}} zostało wysłane`,
+		subject: `${SUBJECT_PREFIX} Zamówienie #{{nrZamowienia}} zostało wysłane`,
 		preheader: "Twoje zamówienie #{{nrZamowienia}} jest w drodze.",
 		headline: "Zamówienie #{{nrZamowienia}} jest w drodze",
 		paragraphs: [
@@ -203,7 +266,7 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 		withItems: false,
 	},
 	completed: {
-		subject: `Zamówienie #{{nrZamowienia}} zakończone`,
+		subject: `${SUBJECT_PREFIX} Zamówienie #{{nrZamowienia}} zakończone`,
 		preheader: `Dziękujemy za zakupy w ${BRAND}.`,
 		headline: "Zamówienie zakończone",
 		paragraphs: [
@@ -213,7 +276,7 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 		withItems: false,
 	},
 	cancelled: {
-		subject: `Zamówienie #{{nrZamowienia}} zostało anulowane`,
+		subject: `${SUBJECT_PREFIX} Zamówienie #{{nrZamowienia}} zostało anulowane`,
 		preheader: "Anulowaliśmy zamówienie #{{nrZamowienia}}.",
 		headline: "Zamówienie #{{nrZamowienia}} zostało anulowane",
 		paragraphs: [
@@ -222,11 +285,22 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 		withItems: true,
 	},
 	confirmation: {
-		subject: `Potwierdzenie zamówienia #{{nrZamowienia}}`,
+		subject: `${SUBJECT_PREFIX} Potwierdzenie zamówienia #{{nrZamowienia}}`,
 		preheader: "Potwierdzenie Twojego zamówienia.",
 		headline: "Dziękujemy za zamówienie!",
 		paragraphs: ["Otrzymaliśmy Twoje zamówienie #{{nrZamowienia}} i właśnie je przetwarzamy. Poniżej szczegóły zakupu."],
 		withItems: true,
+	},
+	contact_confirmation: {
+		subject: `${SUBJECT_PREFIX} Otrzymaliśmy wiadomość — {{numerSprawy}}`,
+		preheader: "Potwierdzenie odbioru formularza kontaktowego.",
+		headline: "Dziękujemy za wiadomość",
+		paragraphs: [
+			"Cześć {{imie}}, potwierdzamy odbiór formularza kontaktowego.",
+			"Numer sprawy: {{numerSprawy}}. Temat: {{temat}}.",
+			"Odpowiemy możliwie szybko — zwykle w ciągu 1–2 dni roboczych.",
+		],
+		withItems: false,
 	},
 };
 
@@ -289,6 +363,7 @@ export function buildDefaultTemplate(type: EmailTemplateType): EmailTemplate {
 		preheader: content.preheader,
 		theme: { ...DEFAULT_THEME },
 		blocks: buildDefaultBlocks(type),
+		enabled: true,
 	};
 }
 
@@ -418,6 +493,7 @@ export const emailTemplateTypeSchema = z.enum([
 	"completed",
 	"cancelled",
 	"confirmation",
+	"contact_confirmation",
 ]);
 
 export const emailTemplateSchema = z.object({
@@ -426,6 +502,7 @@ export const emailTemplateSchema = z.object({
 	preheader: z.string().max(200),
 	theme: themeSchema,
 	blocks: z.array(blockSchema).max(200),
+	enabled: z.boolean().optional(),
 });
 
 /** Bezpieczny parse jednego szablonu z nieznanego JSON (fallback = null). */

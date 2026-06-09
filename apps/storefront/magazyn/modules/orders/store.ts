@@ -4,9 +4,11 @@ import { getSessionToken } from "@magazyn/core/medusa/session";
 import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
 import { thumbnailFromMedusaProduct, resolveLineItemThumbnail } from "@/lib/medusa/product-thumbnail";
 import { formatPrice } from "@magazyn/core/lib/format";
+import { magazynConfig } from "@magazyn/magazyn.config";
 import type {
 	AdminOrderDetail,
 	AdminOrderRow,
+	AdminOrdersOverviewSummary,
 	OrderAddress,
 	OrderFulfillment,
 	OrderFulfillmentStatus,
@@ -18,6 +20,7 @@ import type {
 export type {
 	AdminOrderDetail,
 	AdminOrderRow,
+	AdminOrdersOverviewSummary,
 	OrderAddress,
 	OrderFulfillment,
 	OrderFulfillmentStatus,
@@ -237,6 +240,71 @@ const DETAIL_FIELDS = [
 	"fulfillments.items.quantity",
 	"fulfillments.items.line_item_id",
 ].join(",");
+
+const SUMMARY_LIST_FIELDS = ["id", "status", "payment_status", "total", "currency_code"].join(",");
+
+const SUMMARY_PAGE_SIZE = 100;
+
+function isPaidPaymentStatus(status: OrderPaymentStatus): boolean {
+	return (
+		status === "captured" ||
+		status === "partially_captured" ||
+		status === "authorized" ||
+		status === "partially_authorized"
+	);
+}
+
+export async function getAdminOrdersOverviewSummary(): Promise<AdminOrdersOverviewSummary> {
+	const summary: AdminOrdersOverviewSummary = {
+		orderCount: 0,
+		totalMinor: 0,
+		paidCount: 0,
+		paidTotalMinor: 0,
+		unpaidCount: 0,
+		unpaidTotalMinor: 0,
+		canceledCount: 0,
+		currencyCode: magazynConfig.currency.toUpperCase(),
+	};
+
+	let offset = 0;
+	let total = Infinity;
+
+	while (offset < total) {
+		const data = await adminFetch<{ orders: MedusaOrder[]; count: number }>(
+			`/admin/orders?limit=${SUMMARY_PAGE_SIZE}&offset=${offset}&order=-created_at&fields=${SUMMARY_LIST_FIELDS}`,
+		);
+
+		total = data.count ?? 0;
+
+		for (const order of data.orders ?? []) {
+			const status = order.status ?? "pending";
+			const paymentStatus = order.payment_status ?? "not_paid";
+			const totalMinor = toMinorUnits(order.total);
+
+			if (status === "canceled" || status === "archived") {
+				summary.canceledCount += 1;
+				continue;
+			}
+			if (status === "draft") continue;
+
+			summary.orderCount += 1;
+			summary.totalMinor += totalMinor;
+
+			if (isPaidPaymentStatus(paymentStatus)) {
+				summary.paidCount += 1;
+				summary.paidTotalMinor += totalMinor;
+			} else {
+				summary.unpaidCount += 1;
+				summary.unpaidTotalMinor += totalMinor;
+			}
+		}
+
+		offset += data.orders?.length ?? 0;
+		if ((data.orders?.length ?? 0) === 0) break;
+	}
+
+	return summary;
+}
 
 export async function listAdminOrders(): Promise<AdminOrderRow[]> {
 	const data = await adminFetch<{ orders: MedusaOrder[] }>(

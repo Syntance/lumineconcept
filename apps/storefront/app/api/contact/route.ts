@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getResendConfig } from "@/lib/resend/config";
+import {
+	createContactCaseNumber,
+	sendContactConfirmationEmail,
+} from "@magazyn/modules/emails";
 
 export const maxDuration = 30;
 
@@ -238,6 +242,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(send.body, { status: send.status });
       }
 
+      const caseNumber = createContactCaseNumber();
+      const confirmation = await sendContactConfirmationEmail(
+        { name, email, phone, message },
+        caseNumber,
+      );
+      if (!confirmation.ok) {
+        return NextResponse.json(
+          { success: false, message: confirmation.message },
+          { status: 502 },
+        );
+      }
+
       return NextResponse.json({
         success: true,
         message: "Dziękujemy — odezwiemy się możliwie szybko.",
@@ -267,6 +283,18 @@ export async function POST(request: NextRequest) {
     const send = await sendContactEmail({ name, email, phone, message });
     if (!send.ok) {
       return NextResponse.json(send.body, { status: send.status });
+    }
+
+    const caseNumber = createContactCaseNumber();
+    const confirmation = await sendContactConfirmationEmail(
+      { name, email, phone, message },
+      caseNumber,
+    );
+    if (!confirmation.ok) {
+      return NextResponse.json(
+        { success: false, message: confirmation.message },
+        { status: 502 },
+      );
     }
 
     return NextResponse.json({
