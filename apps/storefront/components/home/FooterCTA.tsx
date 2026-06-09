@@ -12,6 +12,7 @@ const IG_PROFILE = "https://instagram.com/lumineconcept";
 /** Wymiary `public/images/monia-branding-cta-bg.png` — przy podmianie zdjęcia zaktualizuj. */
 const BRANDING_BG_WIDTH = 2560;
 const BRANDING_BG_HEIGHT = 922;
+/** Desktop: max-h 645px (= 70% wysokości pliku 922px). */
 
 const SHOP_CTA_CLASS =
   "inline-flex items-center justify-center rounded-none border font-gilroy font-medium uppercase tracking-[0.2em] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
@@ -20,16 +21,16 @@ const IG_GRID_SLOTS = 6;
 
 function BrandingHeading({ className = "" }: { className?: string }) {
   return (
-    <>
+    <div className="flex flex-col items-center gap-2 text-center">
       <h2
-        className={`m-0 font-binerka text-3xl font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800 lg:text-4xl ${className}`}
+        className={`m-0 w-fit font-binerka text-3xl font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800 lg:text-4xl ${className}`}
       >
         Gotowa na branding,
       </h2>
-      <p className="m-0 font-gilroy text-base font-light leading-snug text-brand-800 lg:text-lg">
+      <p className="m-0 font-gilroy text-[2rem] font-light leading-snug text-brand-800 lg:text-[2.5rem]">
         który wyróżni Twój salon?
       </p>
-    </>
+    </div>
   );
 }
 
@@ -44,7 +45,13 @@ function BrandingShopLink({ className = "" }: { className?: string }) {
   );
 }
 
-function BrandingContact({ layout }: { layout: "stack" | "inline" }) {
+function BrandingContact({
+  layout,
+  className = "",
+}: {
+  layout: "stack" | "inline";
+  className?: string;
+}) {
   const email = (
     <a
       href="mailto:kontakt@lumineconcept.pl"
@@ -75,7 +82,7 @@ function BrandingContact({ layout }: { layout: "stack" | "inline" }) {
   }
 
   return (
-    <p className="m-0 text-center text-brand-600">
+    <p className={`m-0 w-fit text-center text-brand-600 ${className}`}>
       Wolisz napisać? {email}
       <span className="mx-1.5 text-brand-400">&middot;</span>
       {ig}
@@ -144,18 +151,16 @@ export async function FooterCTA() {
         {/* Mobile — bez zdjęcia tła */}
         <div className="bg-brand-50 px-4 py-12 lg:hidden">
           <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 text-center">
-            <div className="flex flex-col gap-3">
-              <BrandingHeading />
-            </div>
+            <BrandingHeading />
 
-            <BrandingShopLink className="w-full max-w-[17.5rem] whitespace-nowrap px-6 py-3.5" />
+            <BrandingShopLink className="mt-10 w-full max-w-[17.5rem] whitespace-nowrap px-6 py-3.5" />
 
             <BrandingContact layout="stack" />
           </div>
         </div>
 
         {/* Desktop — tło jak hero + overlay */}
-        <div className="relative hidden w-full overflow-x-hidden lg:block lg:aspect-[2560/922] lg:max-h-[922px]">
+        <div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/645] lg:max-h-[645px]">
           <Image
             src="/images/monia-branding-cta-bg.png"
             alt=""
@@ -164,31 +169,15 @@ export async function FooterCTA() {
             sizes="100vw"
             unoptimized
             priority={false}
-            className="absolute inset-0 h-full w-full select-none object-cover object-right"
+            className="absolute inset-0 h-full w-full origin-[52%_70%] scale-[1.2] select-none object-cover object-[52%_70%]"
           />
 
-          <div
-            className="absolute z-10 flex flex-col items-center gap-4 text-center"
-            style={{
-              left: "12%",
-              top: "28%",
-              width: "36%",
-            }}
-          >
-            <BrandingHeading />
-
-            <BrandingShopLink className="mt-1 whitespace-nowrap px-7 py-3" />
-          </div>
-
-          <div
-            className="absolute z-10 text-sm text-brand-600"
-            style={{
-              left: "12%",
-              width: "36%",
-              bottom: "10%",
-            }}
-          >
-            <BrandingContact layout="inline" />
+          <div className="absolute inset-0 z-10 flex items-center pl-[14%]">
+            <div className="flex w-[36%] flex-col items-center text-center">
+              <BrandingHeading />
+              <BrandingShopLink className="mt-10 whitespace-nowrap px-7 py-3" />
+              <BrandingContact layout="inline" className="mt-8 text-sm" />
+            </div>
           </div>
         </div>
       </section>

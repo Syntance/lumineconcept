@@ -1,8 +1,7 @@
 import "server-only";
 
 import { Resend } from "resend";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { serverEnv } from "@magazyn/core/env";
+import { getResendConfig } from "@/lib/resend/config";
 
 const RESEND_TIMEOUT_MS = 10_000;
 
@@ -15,19 +14,15 @@ export type SendEmailResult = { ok: true; skipped?: boolean } | { ok: false; mes
  * Bez RESEND_API_KEY zwraca { ok: true, skipped: true } — wygodne w dev/CI.
  */
 export async function sendTransactionalEmail(input: SendEmailInput): Promise<SendEmailResult> {
-	const apiKey = serverEnv.resendApiKey;
-	if (!apiKey) return { ok: true, skipped: true };
+	const { apiKey, from, replyTo, configured } = getResendConfig();
+	if (!configured || !apiKey) return { ok: true, skipped: true };
 	if (!input.to.trim()) return { ok: true, skipped: true };
-
-	const fromEmail = serverEnv.resendFromEmail;
-	if (!fromEmail) return { ok: false, message: "Brak RESEND_FROM_EMAIL — skonfiguruj nadawcę." };
-	const from = `${magazynConfig.email.fromName} <${fromEmail}>`;
 
 	const resend = new Resend(apiKey);
 	const sendPromise = resend.emails.send({
 		from,
 		to: [input.to.trim()],
-		replyTo: magazynConfig.email.contactEmail,
+		replyTo,
 		subject: input.subject,
 		text: input.text,
 		html: input.html,

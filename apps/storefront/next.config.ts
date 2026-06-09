@@ -24,6 +24,14 @@ const medusaUrl = new URL(MEDUSA_BACKEND_URL);
  * dostępnego przy buildzie. Brak = pomijamy.
  */
 const r2PublicUrl = process.env.S3_FILE_URL?.trim();
+const r2CspOrigin = (() => {
+  if (!r2PublicUrl) return "";
+  try {
+    return ` ${new URL(r2PublicUrl).origin}`;
+  } catch {
+    return "";
+  }
+})();
 const r2RemotePattern = (() => {
   if (!r2PublicUrl) return null;
   try {
@@ -129,7 +137,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://connect.facebook.net https://eu.posthog.com https://eu.i.posthog.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com https://images.unsplash.com " + MEDUSA_BACKEND_URL,
+              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com https://images.unsplash.com " + MEDUSA_BACKEND_URL + r2CspOrigin,
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://eu.posthog.com https://eu.i.posthog.com https://connect.facebook.net https://api.mailerlite.com " + MEDUSA_BACKEND_URL + " " + MEILISEARCH_HOST + SENTRY_CSP_HOSTS,
               "frame-src 'self' https://www.facebook.com",

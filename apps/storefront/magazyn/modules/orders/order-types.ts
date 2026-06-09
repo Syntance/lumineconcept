@@ -47,11 +47,12 @@ export type OrderAddress = {
 export type OrderLineItem = {
 	id: string;
 	title: string;
-	subtitle: string;
 	quantity: number;
 	unitPrice: number;
 	total: number;
 	thumbnail: string | null;
+	/** Pola tekstowe, pliki, kolory konfiguratora itd. z koszyka. */
+	metadata: Record<string, string>;
 };
 
 export type OrderPayment = {

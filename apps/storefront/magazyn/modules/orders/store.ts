@@ -2,6 +2,7 @@ import "server-only";
 import { adminFetch, serviceAdminFetch } from "@magazyn/core/medusa/client";
 import { getSessionToken } from "@magazyn/core/medusa/session";
 import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
+import { thumbnailFromMedusaProduct, resolveLineItemThumbnail } from "@/lib/medusa/product-thumbnail";
 import { formatPrice } from "@magazyn/core/lib/format";
 import type {
 	AdminOrderDetail,
@@ -45,10 +46,12 @@ type MedusaOrderItem = {
 	subtitle?: string | null;
 	product_title?: string | null;
 	variant_title?: string | null;
+	product_id?: string | null;
 	quantity?: number | null;
 	unit_price?: number | null;
 	total?: number | null;
 	thumbnail?: string | null;
+	metadata?: Record<string, unknown> | null;
 };
 
 type MedusaPayment = {
@@ -217,6 +220,9 @@ const DETAIL_FIELDS = [
 	"discount_total",
 	"metadata",
 	"*items",
+	"items.thumbnail",
+	"items.product_id",
+	"items.metadata",
 	"*shipping_address",
 	"*billing_address",
 	"shipping_methods.name",
@@ -252,7 +258,10 @@ export async function listAdminOrders(): Promise<AdminOrderRow[]> {
 	}));
 }
 
-function mapMedusaOrderToDetail(order: MedusaOrder): AdminOrderDetail {
+function mapMedusaOrderToDetail(
+	order: MedusaOrder,
+	productThumbnails: Map<string, string | null>,
+): AdminOrderDetail {
 	const payments: OrderPayment[] = (order.payment_collections ?? []).flatMap((collection) =>
 		(collection.payments ?? []).map((payment) => ({
 			id: payment.id,
@@ -289,11 +298,14 @@ function mapMedusaOrderToDetail(order: MedusaOrder): AdminOrderDetail {
 		items: (order.items ?? []).map((item) => ({
 			id: item.id,
 			title: item.title ?? item.product_title ?? "Produkt",
-			subtitle: item.variant_title ?? item.subtitle ?? "",
 			quantity: item.quantity ?? 0,
 			unitPrice: toMinorUnits(item.unit_price),
 			total: toMinorUnits(item.total),
-			thumbnail: resolveMedusaMediaUrl(item.thumbnail) ?? null,
+			thumbnail: resolveLineItemThumbnail(
+				item.thumbnail,
+				item.product_id ? productThumbnails.get(item.product_id) : null,
+			),
+			metadata: normalizeMetadata(item.metadata),
 		})),
 		itemTotal: toMinorUnits(order.item_total),
 		shippingTotal: resolveShippingTotal(order),
@@ -309,10 +321,43 @@ function mapMedusaOrderToDetail(order: MedusaOrder): AdminOrderDetail {
 	};
 }
 
+async function loadProductThumbnailsForOrderItems(items: MedusaOrderItem[]): Promise<Map<string, string | null>> {
+	const productIds = [
+		...new Set(
+			items
+				.filter((item) => !resolveMedusaMediaUrl(item.thumbnail) && item.product_id)
+				.map((item) => item.product_id as string),
+		),
+	];
+
+	const map = new Map<string, string | null>();
+	if (productIds.length === 0) return map;
+
+	await Promise.all(
+		productIds.map(async (productId) => {
+			try {
+				const data = await adminFetch<{
+					product: { thumbnail?: string | null; images?: Array<{ url?: string | null }> | null };
+				}>(`/admin/products/${productId}?fields=id,thumbnail,images.url`);
+				map.set(productId, thumbnailFromMedusaProduct(data.product));
+			} catch {
+				map.set(productId, null);
+			}
+		}),
+	);
+
+	return map;
+}
+
+async function mapMedusaOrderToDetailResolved(order: MedusaOrder): Promise<AdminOrderDetail> {
+	const productThumbnails = await loadProductThumbnailsForOrderItems(order.items ?? []);
+	return mapMedusaOrderToDetail(order, productThumbnails);
+}
+
 export async function getAdminOrder(id: string): Promise<AdminOrderDetail | null> {
 	const data = await adminFetch<{ order: MedusaOrder }>(`/admin/orders/${id}?fields=${DETAIL_FIELDS}`);
 	if (!data.order) return null;
-	return mapMedusaOrderToDetail(data.order);
+	return mapMedusaOrderToDetailResolved(data.order);
 }
 
 /** Pobiera zamówienie do maili — sesja panelu lub konto serwisowe (MEDUSA_ADMIN_*). */
@@ -329,7 +374,7 @@ export async function getAdminOrderForEmail(id: string): Promise<AdminOrderDetai
 		}
 
 		const data = await serviceAdminFetch<{ order: MedusaOrder }>(`/admin/orders/${id}?fields=${DETAIL_FIELDS}`);
-		if (data?.order) return mapMedusaOrderToDetail(data.order);
+		if (data?.order) return mapMedusaOrderToDetailResolved(data.order);
 
 		if (attempt < 2) await new Promise((r) => setTimeout(r, 400));
 	}
@@ -365,7 +410,6 @@ export function orderToEmailSource(order: AdminOrderDetail) {
 		address,
 		items: order.items.map((item) => ({
 			title: item.title,
-			subtitle: item.subtitle,
 			quantity: item.quantity,
 			total: formatPrice(item.total, order.currencyCode),
 			thumbnail: item.thumbnail,

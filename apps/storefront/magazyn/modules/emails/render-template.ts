@@ -20,7 +20,6 @@ import {
 
 export type EmailRenderItem = {
 	title: string;
-	subtitle: string;
 	quantity: number;
 	total: string;
 	thumbnail: string | null;
@@ -140,7 +139,7 @@ function renderSpacer(block: SpacerBlock): string {
 function renderOrderItems(block: OrderItemsBlock, theme: EmailTheme, ctx: EmailRenderContext): string {
 	const rows = ctx.items
 		.map((item) => {
-			const titleCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text}">${esc(item.title)}${item.quantity > 1 ? ` × ${item.quantity}` : ""}${item.subtitle ? `<br><span style="font-size:12px;color:${theme.muted}">${esc(item.subtitle)}</span>` : ""}</td>`;
+			const titleCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text}">${esc(item.title)}${item.quantity > 1 ? ` × ${item.quantity}` : ""}</td>`;
 			const thumb =
 				block.showThumbnails && item.thumbnail
 					? `<td width="56" style="padding:10px 12px 10px 0;border-bottom:1px solid #e8dcc0"><img src="${esc(item.thumbnail)}" alt="" width="48" style="display:block;border-radius:6px" /></td>`
@@ -301,8 +300,8 @@ export function sampleRenderContext(): EmailRenderContext {
 			adres: "ul. Przykładowa 1, 00-000 Miasto",
 		},
 		items: [
-			{ title: "Produkt przykładowy A", subtitle: "Wariant", quantity: 1, total: "420 zł", thumbnail: null },
-			{ title: "Produkt przykładowy B", subtitle: "", quantity: 1, total: "170 zł", thumbnail: null },
+			{ title: "Produkt przykładowy A", quantity: 1, total: "420 zł", thumbnail: null },
+			{ title: "Produkt przykładowy B", quantity: 1, total: "170 zł", thumbnail: null },
 		],
 	};
 }

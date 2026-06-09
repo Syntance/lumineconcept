@@ -1,5 +1,5 @@
 import { defineConfig, loadEnv } from "@medusajs/framework/utils";
-import { RESEND_DEFAULT_FROM } from "./src/lib/resend-defaults";
+import { getResendConfig } from "./src/lib/resend-defaults";
 import { initSentry } from "./src/lib/sentry";
 
 loadEnv(process.env.NODE_ENV ?? "development", process.cwd());
@@ -21,6 +21,12 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production";
 const IS_BUILD_PHASE =
   process.argv.some((arg) => arg === "build") ||
   /placeholder/i.test(process.env.DATABASE_URL ?? "");
+
+if (IS_PRODUCTION && !IS_BUILD_PHASE && !getResendConfig().configured) {
+  console.warn(
+    "[medusa-config] RESEND_API_KEY brak — maile transakcyjne (potwierdzenie zamówienia itd.) nie będą wysyłane.",
+  );
+}
 
 const BACKEND_URL =
   process.env.MEDUSA_BACKEND_URL ??
@@ -390,7 +396,7 @@ export default defineConfig({
      * za darmo). Jeśli brakuje RESEND_API_KEY — moduł nie jest ładowany
      * (w dev nie wymuszamy, żeby nie blokować startu).
      */
-    ...(process.env.RESEND_API_KEY
+    ...(getResendConfig().configured
       ? [
           {
             resolve: "@medusajs/medusa/notification",
@@ -405,9 +411,9 @@ export default defineConfig({
                     // — musimy zadeklarować `email`, żeby `send({ channel: "email" })`
                     // trafiło do Resenda.
                     channels: ["email"],
-                    apiKey: process.env.RESEND_API_KEY,
-                    from: process.env.RESEND_FROM ?? RESEND_DEFAULT_FROM,
-                    replyTo: process.env.RESEND_REPLY_TO,
+                    apiKey: getResendConfig().apiKey,
+                    from: getResendConfig().from,
+                    replyTo: getResendConfig().replyTo,
                   },
                 },
               ],

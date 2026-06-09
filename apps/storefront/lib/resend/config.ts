@@ -1,9 +1,7 @@
-/** Domyślny nadawca Resend — domena musi być zweryfikowana w panelu Resend. */
+import { magazynConfig } from "@magazyn/magazyn.config";
+
 export const RESEND_DEFAULT_FROM = "Lumine Concept <kontakt@lumineconcept.pl>";
-
 export const RESEND_DEFAULT_REPLY_TO = "kontakt@lumineconcept.pl";
-
-export const RESEND_DEFAULT_CONTACT_EMAIL = "kontakt@lumineconcept.pl";
 
 function trimEnv(value: string | undefined): string | undefined {
 	const trimmed = value?.replace(/\r\n/g, "").trim();
@@ -17,32 +15,33 @@ export type ResendRuntimeConfig = {
 	configured: boolean;
 };
 
-/** Normalizuje `RESEND_FROM` / sam adres e-mail → pełny nagłówek From. */
 export function resolveResendFromAddress(
 	fromRaw?: string,
 	emailRaw?: string,
-	fromName = "Lumine Concept",
+	fromName = magazynConfig.email.fromName,
 ): string {
 	const from = trimEnv(fromRaw);
 	if (from) {
 		if (from.includes("<")) return from;
 		return `${fromName} <${from}>`;
 	}
-	const email = trimEnv(emailRaw) ?? RESEND_DEFAULT_CONTACT_EMAIL;
+	const email =
+		trimEnv(emailRaw) ??
+		trimEnv(magazynConfig.email.contactEmail) ??
+		"kontakt@lumineconcept.pl";
 	return `${fromName} <${email}>`;
 }
 
-export function getResendConfig(fromName = "Lumine Concept"): ResendRuntimeConfig {
+export function getResendConfig(): ResendRuntimeConfig {
 	const apiKey = trimEnv(process.env.RESEND_API_KEY);
 	const from = resolveResendFromAddress(
 		process.env.RESEND_FROM,
 		process.env.RESEND_FROM_EMAIL,
-		fromName,
 	);
 	const replyTo =
 		trimEnv(process.env.RESEND_REPLY_TO) ??
 		trimEnv(process.env.CONTACT_INBOX_EMAIL) ??
-		RESEND_DEFAULT_REPLY_TO;
+		magazynConfig.email.contactEmail;
 
 	return {
 		apiKey,

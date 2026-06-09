@@ -1,5 +1,7 @@
 import "server-only";
 
+import { getResendConfig } from "@/lib/resend/config";
+
 /**
  * Dostęp do zmiennych środowiskowych po stronie serwera. Lekka warstwa bez
  * dodatkowych zależności — waliduje obecność wymaganych wartości w miejscu użycia.
@@ -22,10 +24,17 @@ export const serverEnv = {
 		return process.env.MEDUSA_ADMIN_PASSWORD || undefined;
 	},
 	get resendApiKey(): string | undefined {
-		return process.env.RESEND_API_KEY || undefined;
+		return getResendConfig().apiKey;
 	},
-	get resendFromEmail(): string | undefined {
-		return process.env.RESEND_FROM_EMAIL || undefined;
+	/** Pełny nagłówek From, np. `Lumine Concept <kontakt@lumineconcept.pl>`. */
+	get resendFrom(): string {
+		return getResendConfig().from;
+	},
+	get resendReplyTo(): string {
+		return getResendConfig().replyTo;
+	},
+	get resendConfigured(): boolean {
+		return getResendConfig().configured;
 	},
 	get siteUrl(): string {
 		return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");

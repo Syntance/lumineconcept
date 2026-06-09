@@ -25,15 +25,6 @@ interface CartItemData {
 }
 
 /** Szczegóły konfiguratora poza kolorami — w `CartConfiguratorDetails`. */
-function hasExtraConfiguratorDetail(meta: Record<string, string>): boolean {
-  if (meta.custom_text?.trim()) return true;
-  if (Object.keys(meta).some((k) => k.startsWith("text_") && meta[k]?.trim())) return true;
-  if (Object.keys(meta).some((k) => k.startsWith("link_") && meta[k]?.trim())) return true;
-  if (Object.keys(meta).some((k) => k.startsWith("file_") && meta[k]?.trim())) return true;
-  if (meta.mat_finish === "true") return true;
-  return false;
-}
-
 function hasPerElementColors(meta: Record<string, string>): boolean {
   return Object.keys(meta).some((k) => k.startsWith("color_"));
 }
@@ -95,34 +86,20 @@ export function CartItem({ item }: { item: CartItemData }) {
                 {item.title}
               </h3>
               <CartConfiguratorDetails metadata={item.metadata} />
-              {item.metadata && hasExtraConfiguratorDetail(item.metadata) && (
+              {item.metadata &&
+              (item.metadata.custom_text ||
+                (item.metadata.mat_finish === "true" && !hasPerElementColors(item.metadata))) ? (
                 <div className="mt-1 space-y-0.5">
-                  {item.metadata.custom_text && (
+                  {item.metadata.custom_text ? (
                     <p className="text-[13px] text-brand-400 truncate">
                       Treść: &ldquo;{item.metadata.custom_text}&rdquo;
                     </p>
-                  )}
-                  {Object.entries(item.metadata)
-                    .filter(([k, v]) => k.startsWith("text_") && v)
-                    .map(([key, value]) => (
-                      <p key={key} className="text-[13px] text-brand-400 truncate">
-                        {key.replace("text_", "").replace(/_/g, " ")}: &ldquo;{value}&rdquo;
-                      </p>
-                    ))}
-                  {item.metadata.mat_finish === "true" && !hasPerElementColors(item.metadata) && (
+                  ) : null}
+                  {item.metadata.mat_finish === "true" && !hasPerElementColors(item.metadata) ? (
                     <p className="text-[13px] text-brand-400">Wykończenie: mat</p>
-                  )}
-                  {/* Links */}
-                  {Object.entries(item.metadata)
-                    .filter(([k]) => k.startsWith("link_"))
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([key, url]) => (
-                      <p key={key} className="text-[13px] text-brand-400 truncate">
-                        QR {key.replace("link_", "#")}: {url}
-                      </p>
-                    ))}
+                  ) : null}
                 </div>
-              )}
+              ) : null}
             </div>
             <button
               type="button"

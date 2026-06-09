@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getResendConfig } from "@/lib/resend/config";
 
 export const maxDuration = 30;
 
@@ -66,12 +67,11 @@ async function sendContactEmail(
 ): Promise<{ ok: true } | { ok: false; status: number; body: object }> {
   const { name, email, phone, message, attachment } = payload;
 
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.RESEND_FROM?.trim();
-  const to = process.env.CONTACT_INBOX_EMAIL?.trim() ?? "kontakt@lumineconcept.pl";
+  const { apiKey, from, configured } = getResendConfig();
+  const to = process.env.CONTACT_INBOX_EMAIL?.replace(/\r\n/g, "").trim() ?? "kontakt@lumineconcept.pl";
 
-  if (!apiKey || !from) {
-    console.error("[api/contact] Brak RESEND_API_KEY lub RESEND_FROM");
+  if (!configured || !apiKey) {
+    console.error("[api/contact] Brak RESEND_API_KEY");
     return {
       ok: false,
       status: 503,

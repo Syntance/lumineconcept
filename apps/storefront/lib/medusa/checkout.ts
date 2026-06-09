@@ -378,15 +378,9 @@ export async function ensureLuminePaymentBootstrap(): Promise<{ ok: boolean }> {
  * `/store/custom/notify-order-placed`). Backend ma `idempotency_key` więc
  * wielokrotne wywołanie nie wyśle duplikatów.
  *
- * Strategia „fire-and-forget" (po migracji do jednego regionu backend jest
- * szybki < 1 s, więc długi await był szkodliwy — opóźniał nawigację do
- * strony potwierdzenia o 500-700 ms bez żadnej korzyści).
- *
- *  1) `sendBeacon` — gwarantowana dostawa nawet po `window.location.assign`.
- *     To jest nasz główny kanał.
- *  2) `fetch(..., keepalive: true)` — kanał zapasowy, gdyby beacon był
- *     zablokowany przez ad-blocker / stare przeglądarki. Odpalamy bez
- *     awaita; `keepalive` dba o dokończenie mimo nawigacji.
+ * Fire-and-forget: `fetch(..., { keepalive: true })` z nagłówkiem
+ * `x-publishable-api-key` — `sendBeacon` nie obsługuje custom headers,
+ * więc Medusa zwracała 401 i mail nigdy nie wychodził.
  *
  * NIGDY nie rzuca — błąd providera maila nie może zablokować checkoutu.
  */
@@ -405,26 +399,14 @@ export function notifyOrderPlaced(orderId: string): void {
       : {}),
   };
 
-  let beaconDelivered = false;
-  if (typeof navigator !== "undefined" && "sendBeacon" in navigator) {
-    try {
-      const blob = new Blob([payload], { type: "application/json" });
-      beaconDelivered = navigator.sendBeacon(url, blob);
-    } catch {
-      beaconDelivered = false;
-    }
-  }
-
-  if (!beaconDelivered) {
-    void fetch(url, {
-      method: "POST",
-      headers,
-      body: payload,
-      keepalive: true,
-    }).catch((e) => {
-      console.warn("[mail] notify-order-placed fire-and-forget error", e);
-    });
-  }
+  void fetch(url, {
+    method: "POST",
+    headers,
+    body: payload,
+    keepalive: true,
+  }).catch((e) => {
+    console.warn("[mail] notify-order-placed fire-and-forget error", e);
+  });
 }
 
 export async function selectShippingOption(cartId: string, optionId: string) {

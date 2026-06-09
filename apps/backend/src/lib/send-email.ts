@@ -5,7 +5,7 @@ import type {
 import { Modules } from "@medusajs/framework/utils";
 import { Resend } from "resend";
 import type { OrderEmailPayload } from "./email-templates";
-import { RESEND_DEFAULT_FROM } from "./resend-defaults";
+import { getResendConfig } from "./resend-defaults";
 import { captureError } from "./sentry";
 
 /**
@@ -21,15 +21,13 @@ async function sendViaResendApi(params: {
   text?: string;
   context: string;
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const { apiKey, from, replyTo } = getResendConfig();
   if (!apiKey) {
     console.warn(
       `[mail:${params.context}] Resend API — brak RESEND_API_KEY, nie wysłano`,
     );
     return false;
   }
-  const from = process.env.RESEND_FROM?.trim() ?? RESEND_DEFAULT_FROM;
-  const replyTo = process.env.RESEND_REPLY_TO?.trim();
 
   try {
     const resend = new Resend(apiKey);
@@ -39,7 +37,7 @@ async function sendViaResendApi(params: {
       subject: params.subject,
       html: params.html,
       ...(params.text ? { text: params.text } : {}),
-      ...(replyTo ? { replyTo } : {}),
+      replyTo,
     });
     if (error) {
       console.error(

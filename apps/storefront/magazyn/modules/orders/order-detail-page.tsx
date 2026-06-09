@@ -1,11 +1,11 @@
 import { ArrowLeft, Mail, MapPin, Phone, Receipt } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { loadAdmin } from "@magazyn/core/auth/load";
 import { formatPrice } from "@magazyn/core/lib/format";
 import { cn } from "@magazyn/core/lib/cn";
+import { OrderLineItemRow } from "./order-line-item-row";
 import { type AdminOrderDetail, getAdminOrder, type OrderAddress } from "./store";
 import { BADGE_TONE_CLASS, fulfillmentStatusBadge, orderStatusBadge, paymentStatusBadge } from "./order-status";
 import { isP24PaymentConfirmed } from "./order-payment-provider";
@@ -113,19 +113,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 						</div>
 						<ul className="divide-y divide-border">
 							{order.items.map((item) => (
-								<li key={item.id} className="flex items-center gap-3 py-3">
-									<span className="relative size-12 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
-										{item.thumbnail ? <Image src={item.thumbnail} alt="" fill sizes="48px" className="object-cover" /> : null}
-									</span>
-									<div className="min-w-0 flex-1">
-										<p className="truncate text-sm font-medium text-foreground">{item.title}</p>
-										{item.subtitle ? <p className="truncate text-xs text-muted-foreground">{item.subtitle}</p> : null}
-									</div>
-									<div className="text-right text-sm">
-										<p className="text-muted-foreground">{item.quantity} × {formatPrice(item.unitPrice, order.currencyCode)}</p>
-										<p className="font-medium text-foreground">{formatPrice(item.total, order.currencyCode)}</p>
-									</div>
-								</li>
+								<OrderLineItemRow key={item.id} item={item} currencyCode={order.currencyCode} />
 							))}
 						</ul>
 

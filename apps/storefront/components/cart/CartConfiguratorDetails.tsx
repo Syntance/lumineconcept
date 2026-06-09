@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { useGlobalColorMap } from "@/hooks/useGlobalColorMap";
+import { parseLineItemExtraRows } from "@/lib/cart/line-item-extras";
 
 const COLOR_ELEMENT_LABELS: Record<string, string> = {
   kolor: "Kolor",
@@ -78,6 +79,68 @@ const STAND_CLASS: Record<CartConfiguratorDensity, string> = {
   default: "mt-0.5 text-sm leading-snug text-brand-600",
   compact: "mt-0.5 text-[11px] leading-snug text-brand-500",
 };
+
+const EXTRA_TEXT_CLASS: Record<CartConfiguratorDensity, string> = {
+  default: "text-sm leading-snug text-brand-600",
+  compact: "text-[11px] leading-snug text-brand-500",
+};
+
+const EXTRA_LINK_CLASS: Record<CartConfiguratorDensity, string> = {
+  default: "text-sm leading-snug text-brand-600 underline-offset-2 hover:underline",
+  compact: "text-[11px] leading-snug text-brand-500 underline-offset-2 hover:underline",
+};
+
+function LineItemExtraRows({
+  meta,
+  density,
+}: {
+  meta: Record<string, string>;
+  density: CartConfiguratorDensity;
+}) {
+  const rows = parseLineItemExtraRows(meta);
+  if (rows.length === 0) return null;
+
+  const textCls = EXTRA_TEXT_CLASS[density];
+  const linkCls = EXTRA_LINK_CLASS[density];
+
+  return (
+    <div className="mt-0.5 space-y-0.5">
+      {rows.map((row) => {
+        if (row.kind === "text") {
+          return (
+            <p key={`text-${row.label}-${row.value}`} className={textCls}>
+              <span className="font-medium text-brand-700">{row.label}:</span>{" "}
+              <span className="break-words">&ldquo;{row.value}&rdquo;</span>
+            </p>
+          );
+        }
+        if (row.kind === "file") {
+          return (
+            <p key={`file-${row.url}`} className={textCls}>
+              <span className="font-medium text-brand-700">{row.label}:</span>{" "}
+              <a
+                href={row.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={linkCls}
+              >
+                {row.filename}
+              </a>
+            </p>
+          );
+        }
+        return (
+          <p key={`link-${row.url}`} className={textCls}>
+            <span className="font-medium text-brand-700">{row.label}:</span>{" "}
+            <a href={row.url} target="_blank" rel="noopener noreferrer" className={linkCls}>
+              {row.url}
+            </a>
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 function CartSelectedColorRows({
   meta,
@@ -170,19 +233,28 @@ function CartSelectedColorRows({
 }
 
 /**
- * Kolory z konfiguratora + linia podstawki certyfikatu (jak w pozycji koszyka).
+ * Kolory z konfiguratora, pola tekstowe, pliki, linki QR i podstawka certyfikatu.
  */
 export function CartConfiguratorDetails({
   metadata,
   density = "default",
+  showExtras = true,
 }: {
   metadata?: Record<string, string>;
   density?: CartConfiguratorDensity;
+  /** Pola tekstowe, pliki i linki — w magazynie renderowane osobno. */
+  showExtras?: boolean;
 }) {
   const paletteMap = useGlobalColorMap();
   if (!metadata) return null;
 
   const stand = certificateStandLine(metadata);
+  const extras = showExtras ? parseLineItemExtraRows(metadata) : [];
+  const hasColors =
+    metadata.custom_color?.trim() ||
+    Object.keys(metadata).some((k) => k.startsWith("color_") && metadata[k]?.trim());
+
+  if (!hasColors && !stand && extras.length === 0) return null;
 
   return (
     <>
@@ -192,6 +264,7 @@ export function CartConfiguratorDetails({
         density={density}
       />
       {stand && <p className={STAND_CLASS[density]}>{stand}</p>}
+      {showExtras ? <LineItemExtraRows meta={metadata} density={density} /> : null}
     </>
   );
 }
