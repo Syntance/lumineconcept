@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
+import { cn } from "@/lib/utils";
+
 const IMAGE = {
   src: "/images/categories/logo-kategoria-beauty-sisters.png",
   width: 693,
@@ -22,9 +24,11 @@ function archBorderRadius(width: number, height: number): string {
 
 /**
  * Zdjęcie w formularzu wyceny — łuk z border-radius (gładki AA), nie alfa PNG.
+ * Wymiary z CSS vars ustawianych w QuoteImageCtaAlign (po hydracji).
  */
 export function LogoQuoteArchImage() {
   const ref = useRef<HTMLDivElement>(null);
+  const lastSizeRef = useRef({ w: 0, h: 0 });
   const [frameStyle, setFrameStyle] = useState<CSSProperties>(() => ({
     borderRadius: archBorderRadius(IMAGE.width, IMAGE.height),
   }));
@@ -34,8 +38,17 @@ export function LogoQuoteArchImage() {
     if (!el) return;
 
     const sync = () => {
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      const last = lastSizeRef.current;
+
+      if (Math.abs(w - last.w) < 2 && Math.abs(h - last.h) < 2) {
+        return;
+      }
+
+      lastSizeRef.current = { w, h };
       setFrameStyle({
-        borderRadius: archBorderRadius(el.clientWidth, el.clientHeight),
+        borderRadius: archBorderRadius(w, h),
       });
     };
 
@@ -48,7 +61,10 @@ export function LogoQuoteArchImage() {
   return (
     <div
       ref={ref}
-      className="logo-quote-arch relative shrink-0 overflow-hidden max-lg:mx-auto max-lg:aspect-[693/915] max-lg:h-auto max-lg:w-full max-lg:max-h-[min(55svh,915px)] lg:h-(--logo3d-image-h,auto) lg:w-(--logo3d-image-w,auto)"
+      className={cn(
+        "logo-quote-arch relative min-h-0 shrink-0 overflow-hidden",
+        "lg:h-(--logo3d-image-h,auto) lg:w-(--logo3d-image-w,auto)",
+      )}
       style={frameStyle}
     >
       <Image
@@ -57,7 +73,7 @@ export function LogoQuoteArchImage() {
         fill
         sizes="(max-width: 1024px) 90vw, min(50vw, 42rem)"
         quality={92}
-        className="origin-[50%_100%] scale-[1.045] object-cover object-bottom"
+        className="object-cover object-bottom"
         draggable={false}
       />
     </div>
