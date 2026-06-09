@@ -11,6 +11,8 @@ export interface ActiveFilters {
   category?: string;
   pill?: string;
   sort: string;
+  /** Fraza wyszukiwania (min. 2 znaki — patrz `MIN_PRODUCT_SEARCH_LENGTH`). */
+  search?: string;
   led?: boolean;
   priceMin?: number;
   priceMax?: number;
@@ -149,6 +151,37 @@ export function priceRangeActiveTrackStyle(args: {
   };
 }
 
+export function clampPriceRange(
+  min: number,
+  max: number,
+  sliderMin: number,
+  sliderMax: number,
+): { min: number; max: number } {
+  const safeMin = Number.isFinite(min) ? min : sliderMin;
+  const safeMax = Number.isFinite(max) ? max : sliderMax;
+  let clampedMin = Math.min(Math.max(safeMin, sliderMin), sliderMax);
+  let clampedMax = Math.min(Math.max(safeMax, sliderMin), sliderMax);
+  if (clampedMin > clampedMax) {
+    [clampedMin, clampedMax] = [clampedMax, clampedMin];
+  }
+  clampedMin = Math.round(clampedMin / PRICE_STEP) * PRICE_STEP;
+  clampedMax = Math.round(clampedMax / PRICE_STEP) * PRICE_STEP;
+  if (clampedMax < clampedMin) clampedMax = clampedMin;
+  return { min: clampedMin, max: clampedMax };
+}
+
+export function priceFilterPatch(
+  min: number,
+  max: number,
+  sliderMin: number,
+  sliderMax: number,
+): Pick<ActiveFilters, "priceMin" | "priceMax"> {
+  return {
+    priceMin: min <= sliderMin ? undefined : min,
+    priceMax: max >= sliderMax ? undefined : max,
+  };
+}
+
 /**
  * Czyści wyłącznie filtry atrybutów (rozmiar, materiał, wykończenie, LED, cena).
  * **Nie zmienia** zakresu listingu: `category` (Medusa) i `pill` (np. Cenniki / Wszystkie)
@@ -158,6 +191,7 @@ export function priceRangeActiveTrackStyle(args: {
 export function clearNonCategoryFilters(f: ActiveFilters): ActiveFilters {
   return {
     ...f,
+    search: undefined,
     sizes: [],
     materials: [],
     finishes: [],
@@ -173,6 +207,16 @@ export function resultCountLabel(count: number): string {
   return `${count} produktów`;
 }
 
+/** Etykieta obok „Filtry” na desktopie, np. „- 59 wyników”. */
+export function searchResultCountLabel(count: number): string {
+  const n = Math.max(0, count);
+  let word: string;
+  if (n === 1) word = "wynik";
+  else if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) word = "wyniki";
+  else word = "wyników";
+  return `- ${n} ${word}`;
+}
+
 /**
  * Medusa v2: parametr to już dziesiętne PLN (nie grosze). Nazwę funkcji
  * zachowujemy dla zgodności wywołań.
@@ -184,6 +228,7 @@ export function formatPricePLN(amount: number): string {
 /** Czy przycisk „Wyczyść” ma sens — tylko filtry usuwane przez `clearNonCategoryFilters`. */
 export function hasClearableNonCategoryFilters(f: ActiveFilters): boolean {
   return (
+    (f.search?.trim().length ?? 0) >= 2 ||
     f.sizes.length > 0 ||
     f.materials.length > 0 ||
     f.finishes.length > 0 ||

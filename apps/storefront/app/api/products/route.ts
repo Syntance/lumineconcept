@@ -2,6 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isPriceSort } from "@/components/product/filter-types";
 import { getProducts } from "@/lib/medusa/products";
 import {
+  filterProductsBySearch,
+  isSearchQueryActive,
+  resolveSearchProductIds,
+} from "@/lib/products/product-search";
+import {
   extractFilterConfig,
   medusaProductToSimple,
   type SimpleProduct,
@@ -58,6 +63,39 @@ function needsFullCatalogScan(f: ProductFilterParams, priceSort: boolean): boole
   return false;
 }
 
+function sortCollectedProducts(
+  collected: SimpleProduct[],
+  sort: string,
+  priceSort: boolean,
+  searchActive: boolean,
+): void {
+  if (priceSort) {
+    collected.sort((a, b) =>
+      sort === "price_asc" ? a.price - b.price : b.price - a.price,
+    );
+    return;
+  }
+
+  if (searchActive) {
+    if (sort === "created_at") collected.reverse();
+    if (sort === "title") {
+      collected.sort((a, b) => a.title.localeCompare(b.title, "pl"));
+    }
+    if (sort === "-title") {
+      collected.sort((a, b) => b.title.localeCompare(a.title, "pl"));
+    }
+    return;
+  }
+
+  if (sort === "title" || sort === "-title") {
+    collected.sort((a, b) =>
+      sort === "title"
+        ? a.title.localeCompare(b.title, "pl")
+        : b.title.localeCompare(a.title, "pl"),
+    );
+  }
+}
+
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
   const rawLimit = Number(sp.get("_limit") ?? "12");
@@ -68,9 +106,24 @@ export async function GET(request: NextRequest) {
   const sort = sp.get("sort") ?? "-created_at";
   const priceSort = isPriceSort(sort);
   const filters = parseFilters(sp);
+  const searchQuery = sp.get("q")?.trim() ?? "";
+  const searchActive = isSearchQueryActive(searchQuery);
 
   try {
-    if (!needsFullCatalogScan(filters, priceSort)) {
+    let searchIds: string[] | "fallback" | null = null;
+    if (searchActive) {
+      searchIds = await resolveSearchProductIds(searchQuery);
+      if (Array.isArray(searchIds) && searchIds.length === 0) {
+        return NextResponse.json(
+          { products: [], count: 0 },
+          { headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=30" } },
+        );
+      }
+    }
+
+    const mustScan = needsFullCatalogScan(filters, priceSort) || searchActive;
+
+    if (!mustScan) {
       const response = await getProducts({
         limit,
         offset,
@@ -114,15 +167,15 @@ export async function GET(request: NextRequest) {
 
     const facets = extractFilterConfig(allInCategory);
     const effectiveFilters = normalizeProductFilterParams(filters, facets);
-    const collected = allInCategory.filter((p) =>
+    let collected = allInCategory.filter((p) =>
       productPassesFilters(p, effectiveFilters),
     );
 
-    if (priceSort) {
-      collected.sort((a, b) =>
-        sort === "price_asc" ? a.price - b.price : b.price - a.price,
-      );
+    if (searchActive && searchIds) {
+      collected = filterProductsBySearch(collected, searchQuery, searchIds);
     }
+
+    sortCollectedProducts(collected, sort, priceSort, searchActive);
 
     const products = collected.slice(offset, offset + limit);
 

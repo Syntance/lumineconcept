@@ -1,23 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { X } from "lucide-react";
 import type { ActiveFilters, FilterConfig } from "./filter-types";
 import {
-  PRICE_RANGE_INPUT_CLASS,
-  PRICE_RANGE_INNER_CLASS,
-  PRICE_RANGE_ROW_CLASS,
-  PRICE_RANGE_TRACK_ACTIVE_CLASS,
-  PRICE_RANGE_TRACK_IDLE_CLASS,
-  priceRangeActiveTrackStyle,
-  PRICE_SLIDER_MIN,
-  PRICE_SLIDER_MAX,
-  PRICE_STEP,
   clearNonCategoryFilters,
-  formatPricePLN,
   hasClearableNonCategoryFilters,
   resultCountLabel,
 } from "./filter-types";
+import { PriceRangeFilter } from "./PriceRangeFilter";
 
 interface FilterDrawerProps {
   isOpen: boolean;
@@ -94,23 +85,6 @@ export function FilterDrawer({
     [activeFilters, onFiltersChange],
   );
 
-  const sliderMin = PRICE_SLIDER_MIN;
-  const sliderMax = Math.max(filterConfig.maxPrice || 0, PRICE_SLIDER_MAX);
-  const [localMin, setLocalMin] = useState(activeFilters.priceMin ?? sliderMin);
-  const [localMax, setLocalMax] = useState(activeFilters.priceMax ?? sliderMax);
-
-  useEffect(() => {
-    setLocalMin(activeFilters.priceMin ?? sliderMin);
-    setLocalMax(activeFilters.priceMax ?? sliderMax);
-  }, [activeFilters.priceMin, activeFilters.priceMax, sliderMin, sliderMax]);
-
-  const commitPrice = () => {
-    update({
-      priceMin: localMin <= sliderMin ? undefined : localMin,
-      priceMax: localMax >= sliderMax ? undefined : localMax,
-    });
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -183,59 +157,14 @@ export function FilterDrawer({
             </div>
           </section>
 
-          {/* Cena — suwak */}
+          {/* Cena */}
           <section>
             <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Cena</p>
-            <div className="grid w-full min-w-0 grid-cols-1 gap-3">
-              <div className="flex min-w-0 w-full items-center justify-between text-sm font-medium tabular-nums text-brand-500">
-                <span>{formatPricePLN(localMin)}</span>
-                <span>{formatPricePLN(localMax)}</span>
-              </div>
-              <div className={PRICE_RANGE_ROW_CLASS}>
-                <div className={PRICE_RANGE_INNER_CLASS}>
-                  <input
-                    type="range"
-                    min={sliderMin}
-                    max={sliderMax}
-                    step={PRICE_STEP}
-                    value={localMin}
-                    onChange={(e) => {
-                      const v = Number(e.target.value);
-                      if (v <= localMax - PRICE_STEP) setLocalMin(v);
-                    }}
-                    onMouseUp={commitPrice}
-                    onTouchEnd={commitPrice}
-                    className={PRICE_RANGE_INPUT_CLASS}
-                    aria-label="Cena minimalna"
-                  />
-                  <input
-                    type="range"
-                    min={sliderMin}
-                    max={sliderMax}
-                    step={PRICE_STEP}
-                    value={localMax}
-                    onChange={(e) => {
-                      const v = Number(e.target.value);
-                      if (v >= localMin + PRICE_STEP) setLocalMax(v);
-                    }}
-                    onMouseUp={commitPrice}
-                    onTouchEnd={commitPrice}
-                    className={PRICE_RANGE_INPUT_CLASS}
-                    aria-label="Cena maksymalna"
-                  />
-                  <div className={PRICE_RANGE_TRACK_IDLE_CLASS} />
-                  <div
-                    className={PRICE_RANGE_TRACK_ACTIVE_CLASS}
-                    style={priceRangeActiveTrackStyle({
-                      localMin,
-                      localMax,
-                      sliderMin,
-                      sliderMax,
-                    })}
-                  />
-                </div>
-              </div>
-            </div>
+            <PriceRangeFilter
+              activeFilters={activeFilters}
+              catalogMaxPrice={filterConfig.maxPrice}
+              onFiltersChange={(patch) => update(patch)}
+            />
           </section>
 
           {/* Materiał */}

@@ -4,14 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { FilterSidebar } from "@/components/product/FilterSidebar";
 import { FilterDrawer } from "@/components/product/FilterDrawer";
+import { ShopProductSearch } from "@/components/product/ShopProductSearch";
 import { SortBarDesktopChips, SortBarMobile } from "@/components/product/SortBar";
+import { SortSelect } from "@/components/product/SortSelect";
 import type { ActiveFilters, FilterConfig } from "@/components/product/filter-types";
 import {
   clearNonCategoryFilters,
-  resultCountLabel,
-  SORT_OPTIONS,
 } from "@/components/product/filter-types";
-import { trackCategoryViewed, trackProductFiltered } from "@/lib/analytics/events";
+import { trackCategoryViewed, trackProductFiltered, trackSearchQuery } from "@/lib/analytics/events";
+import { MIN_PRODUCT_SEARCH_LENGTH } from "@/lib/products/product-search";
 import { medusaCategoryIdsForScope } from "@/lib/medusa/category-tree";
 import { extractFilterConfig, type SimpleProduct } from "@/lib/products/simple-product";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
@@ -43,6 +44,9 @@ function buildProductsUrl(
   if (f.priceMin !== undefined) params.set("priceMin", String(f.priceMin));
   if (f.priceMax !== undefined) params.set("priceMax", String(f.priceMax));
   if (f.pill && f.pill !== "all") params.set("pill", f.pill);
+  if (f.search && f.search.trim().length >= MIN_PRODUCT_SEARCH_LENGTH) {
+    params.set("q", f.search.trim());
+  }
   return `/api/products?${params.toString()}`;
 }
 
@@ -99,6 +103,7 @@ export function ShopGridClient({
   const [listLoading, setListLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
   const [filterConfig, setFilterConfig] = useState<FilterConfig>(() =>
     extractFilterConfig(initialProducts),
   );
@@ -129,6 +134,7 @@ export function ShopGridClient({
         priceMin: filters.priceMin ?? null,
         priceMax: filters.priceMax ?? null,
         pill: filters.pill ?? "",
+        search: filters.search ?? "",
       }),
     [
       filters.sort,
@@ -140,8 +146,21 @@ export function ShopGridClient({
       filters.priceMin,
       filters.priceMax,
       filters.pill,
+      filters.search,
     ],
   );
+
+  useEffect(() => {
+    const trimmed = searchInput.trim();
+    const timer = setTimeout(() => {
+      const nextSearch =
+        trimmed.length >= MIN_PRODUCT_SEARCH_LENGTH ? trimmed : undefined;
+      setFilters((prev) =>
+        prev.search === nextSearch ? prev : { ...prev, search: nextSearch },
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     trackCategoryViewed(productBasePath.split("/").pop() ?? "all", productBasePath);
@@ -180,6 +199,9 @@ export function ShopGridClient({
         if (!cancelled && res.ok) {
           setProducts(data.products);
           setTotalFiltered(data.count);
+          if (f.search && f.search.trim().length >= MIN_PRODUCT_SEARCH_LENGTH) {
+            trackSearchQuery(f.search.trim(), data.count);
+          }
         }
       })
       .finally(() => {
@@ -208,6 +230,9 @@ export function ShopGridClient({
   }, [filters, products.length, totalFiltered, loadingMore, listLoading, medusaScopeKey]);
 
   const handleFiltersChange = useCallback((next: ActiveFilters) => {
+    if (!next.search && searchInput) {
+      setSearchInput("");
+    }
     setFilters(next);
     trackProductFiltered({
       category: next.category,
@@ -218,21 +243,9 @@ export function ShopGridClient({
       priceMin: next.priceMin,
       priceMax: next.priceMax,
       sort: next.sort,
+      search: next.search,
     });
-  }, []);
-
-  const countBlock = (
-    <>
-      {listLoading ? (
-        <span className="text-brand-500">Ładowanie…</span>
-      ) : (
-        <>
-          <span className="font-medium text-brand-800">{resultCountLabel(totalFiltered)}</span>
-          <span className="text-brand-500"> — dopasowanych do wybranych filtrów</span>
-        </>
-      )}
-    </>
-  );
+  }, [searchInput]);
 
   const showLoadMore = !listLoading && products.length > 0 && products.length < totalFiltered;
 
@@ -244,6 +257,8 @@ export function ShopGridClient({
         activeFilters={filters}
         filterConfig={filterConfig}
         onFiltersChange={handleFiltersChange}
+        matchCount={totalFiltered}
+        catalogLoading={listLoading}
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -252,26 +267,20 @@ export function ShopGridClient({
           activeFilters={filters}
           onFiltersChange={handleFiltersChange}
           onOpenDrawer={() => setDrawerOpen(true)}
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
         />
 
+        {/* Desktop: wyszukiwanie + sortowanie */}
         <div className="hidden lg:flex lg:flex-col">
-          {/* min-h-10 + mt-3 jak w FilterSidebar — jedna linia z kreską pod „Filtry”. */}
-          <div className="flex min-h-10 w-full items-center justify-between gap-4">
-            <p className="min-w-0 flex-1 text-base leading-snug text-brand-800" aria-live="polite">
-              {countBlock}
-            </p>
-            <select
+          <div className="flex min-h-10 w-full items-center gap-4">
+            <div className="min-w-0 flex-1">
+              <ShopProductSearch value={searchInput} onChange={setSearchInput} />
+            </div>
+            <SortSelect
               value={filters.sort}
-              onChange={(e) => handleFiltersChange({ ...filters, sort: e.target.value })}
-              className="h-9 shrink-0 self-center rounded-md border border-brand-200 bg-white px-3 py-1.5 text-sm text-brand-800"
-              aria-label="Sortowanie"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              onChange={(sort) => handleFiltersChange({ ...filters, sort })}
+            />
           </div>
           <div className="mt-3 h-px bg-brand-100" aria-hidden />
           <div className="mt-5 space-y-3">
@@ -294,10 +303,6 @@ export function ShopGridClient({
           catalogLoading={listLoading}
           onFiltersChange={handleFiltersChange}
         />
-
-        <p className="mt-4 text-base text-brand-800 lg:hidden" aria-live="polite">
-          {countBlock}
-        </p>
 
         {listLoading && products.length === 0 ? (
           <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:mt-4 lg:grid-cols-3">
@@ -349,10 +354,17 @@ export function ShopGridClient({
           </>
         ) : (
           <div className="py-16 text-center">
-            <p className="text-brand-500">Brak produktów spełniających kryteria.</p>
+            <p className="text-brand-500">
+              {filters.search && filters.search.trim().length >= MIN_PRODUCT_SEARCH_LENGTH
+                ? `Brak produktów dla „${filters.search.trim()}”.`
+                : "Brak produktów spełniających kryteria."}
+            </p>
             <button
               type="button"
-              onClick={() => setFilters(clearNonCategoryFilters(filters))}
+              onClick={() => {
+                setSearchInput("");
+                setFilters(clearNonCategoryFilters(filters));
+              }}
               className="mt-3 text-base text-accent underline underline-offset-2 hover:text-accent-dark"
             >
               Wyczyść filtry

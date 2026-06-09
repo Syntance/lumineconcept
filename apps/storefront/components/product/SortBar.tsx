@@ -2,7 +2,9 @@
 
 import { useCallback } from "react";
 import type { ActiveFilters } from "./filter-types";
-import { SORT_OPTIONS, clearNonCategoryFilters, formatPricePLN } from "./filter-types";
+import { ShopProductSearch } from "./ShopProductSearch";
+import { SortSelect } from "./SortSelect";
+import { clearNonCategoryFilters, formatPricePLN } from "./filter-types";
 
 interface SortBarProps {
   /**
@@ -13,6 +15,8 @@ interface SortBarProps {
   activeFilters: ActiveFilters;
   onFiltersChange: (filters: ActiveFilters) => void;
   onOpenDrawer: () => void;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 type SortBarDesktopChipsProps = Omit<SortBarProps, "onOpenDrawer">;
@@ -87,6 +91,8 @@ export function SortBarMobile({
   activeFilters,
   onFiltersChange,
   onOpenDrawer,
+  searchValue = "",
+  onSearchChange,
 }: SortBarProps) {
   const update = useCallback(
     (patch: Partial<ActiveFilters>) => {
@@ -106,21 +112,21 @@ export function SortBarMobile({
 
   return (
     <div className="sticky top-16 z-30 -mx-4 border-b border-brand-100 bg-white/95 px-4 py-2.5 backdrop-blur-sm lg:hidden">
+      {onSearchChange ? (
+        <div className="mb-2.5">
+          <ShopProductSearch value={searchValue} onChange={onSearchChange} compact />
+        </div>
+      ) : null}
       <div className="flex items-center gap-3">
-        <select
+        <SortSelect
+          size="sm"
+          className="min-w-[9.5rem]"
           value={activeFilters.sort}
-          onChange={(e) => update({ sort: e.target.value })}
-          className="rounded-md border border-brand-200 bg-white px-3 py-1.5 text-sm text-brand-800"
-          aria-label="Sortowanie"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onChange={(sort) => update({ sort })}
+        />
 
         <span className="flex-1" />
+
         <button
           type="button"
           onClick={onOpenDrawer}

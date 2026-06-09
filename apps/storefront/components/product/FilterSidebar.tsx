@@ -3,19 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ActiveFilters, FilterConfig } from "./filter-types";
 import {
-  PRICE_RANGE_INPUT_CLASS,
-  PRICE_RANGE_INNER_CLASS,
-  PRICE_RANGE_ROW_CLASS,
-  PRICE_RANGE_TRACK_ACTIVE_CLASS,
-  PRICE_RANGE_TRACK_IDLE_CLASS,
-  priceRangeActiveTrackStyle,
-  PRICE_SLIDER_MIN,
-  PRICE_SLIDER_MAX,
-  PRICE_STEP,
   clearNonCategoryFilters,
-  formatPricePLN,
   hasClearableNonCategoryFilters,
+  searchResultCountLabel,
 } from "./filter-types";
+import { PriceRangeFilter } from "./PriceRangeFilter";
 
 interface FilterSidebarProps {
   /**
@@ -27,6 +19,9 @@ interface FilterSidebarProps {
   activeFilters: ActiveFilters;
   filterConfig: FilterConfig;
   onFiltersChange: (filters: ActiveFilters) => void;
+  /** Liczba dopasowań — obok nagłówka „Filtry”. */
+  matchCount: number;
+  catalogLoading?: boolean;
 }
 
 function toggle(arr: string[], val: string): string[] {
@@ -39,6 +34,8 @@ export function FilterSidebar({
   activeFilters,
   filterConfig,
   onFiltersChange,
+  matchCount,
+  catalogLoading = false,
 }: FilterSidebarProps) {
   /** Po hydratacji — unikamy mismatchu gdy warunek „Wyczyść” różni się między SSR a 1. klientem. */
   const [mounted, setMounted] = useState(false);
@@ -51,31 +48,27 @@ export function FilterSidebar({
     [activeFilters, onFiltersChange],
   );
 
-  const sliderMin = PRICE_SLIDER_MIN;
-  const sliderMax = Math.max(filterConfig.maxPrice || 0, PRICE_SLIDER_MAX);
-  const [localMin, setLocalMin] = useState(activeFilters.priceMin ?? sliderMin);
-  const [localMax, setLocalMax] = useState(activeFilters.priceMax ?? sliderMax);
-
-  useEffect(() => {
-    setLocalMin(activeFilters.priceMin ?? sliderMin);
-    setLocalMax(activeFilters.priceMax ?? sliderMax);
-  }, [activeFilters.priceMin, activeFilters.priceMax, sliderMin, sliderMax]);
-
-  const commitPrice = () => {
-    update({
-      priceMin: localMin <= sliderMin ? undefined : localMin,
-      priceMax: localMax >= sliderMax ? undefined : localMax,
-    });
-  };
-
   return (
     <aside className="hidden w-60 shrink-0 self-start lg:z-10 lg:block lg:sticky lg:top-24">
       <div className="max-h-[calc(100vh-6rem)] overflow-y-auto pr-4 pb-8">
-        {/* Header — min-h-10 + mt-3 jak kolumna z licznikiem (ShopGridClient), żeby kreski były w jednej linii. */}
+        {/* Header — min-h-10 + mt-3 jak kolumna sortowania (ShopGridClient), żeby kreski były w jednej linii. */}
         <div className="flex min-h-10 items-center justify-between gap-2">
-          <h2 className="font-display text-xl font-semibold tracking-wide text-brand-800">
-            Filtry
-          </h2>
+          <div className="flex min-w-0 items-baseline gap-2">
+            <h2 className="font-display text-xl font-semibold tracking-wide text-brand-800">
+              Filtry
+            </h2>
+            <span
+              className="text-sm tabular-nums text-brand-500"
+              aria-live="polite"
+              aria-label={
+                catalogLoading
+                  ? "Ładowanie liczby wyników"
+                  : searchResultCountLabel(matchCount).slice(2)
+              }
+            >
+              {catalogLoading ? "…" : searchResultCountLabel(matchCount)}
+            </span>
+          </div>
           <div className="flex min-h-10 min-w-[3.25rem] shrink-0 items-center justify-end">
             {mounted && hasClearableNonCategoryFilters(activeFilters) ? (
               <button
@@ -140,61 +133,16 @@ export function FilterSidebar({
           </div>
         </details>
 
-        {/* Cena — suwak */}
+        {/* Cena */}
         <details open>
           <summary className="cursor-pointer pb-2 text-sm font-semibold uppercase tracking-wider text-brand-800 select-none">
             Cena
           </summary>
-          <div className="grid w-full min-w-0 grid-cols-1 gap-3 pt-1">
-            <div className="flex min-w-0 w-full items-center justify-between text-sm font-medium tabular-nums text-brand-500">
-              <span>{formatPricePLN(localMin)}</span>
-              <span>{formatPricePLN(localMax)}</span>
-            </div>
-            <div className={PRICE_RANGE_ROW_CLASS}>
-              <div className={PRICE_RANGE_INNER_CLASS}>
-                <input
-                  type="range"
-                  min={sliderMin}
-                  max={sliderMax}
-                  step={PRICE_STEP}
-                  value={localMin}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    if (v <= localMax - PRICE_STEP) setLocalMin(v);
-                  }}
-                  onMouseUp={commitPrice}
-                  onTouchEnd={commitPrice}
-                  className={PRICE_RANGE_INPUT_CLASS}
-                  aria-label="Cena minimalna"
-                />
-                <input
-                  type="range"
-                  min={sliderMin}
-                  max={sliderMax}
-                  step={PRICE_STEP}
-                  value={localMax}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    if (v >= localMin + PRICE_STEP) setLocalMax(v);
-                  }}
-                  onMouseUp={commitPrice}
-                  onTouchEnd={commitPrice}
-                  className={PRICE_RANGE_INPUT_CLASS}
-                  aria-label="Cena maksymalna"
-                />
-                <div className={PRICE_RANGE_TRACK_IDLE_CLASS} />
-                <div
-                  className={PRICE_RANGE_TRACK_ACTIVE_CLASS}
-                  style={priceRangeActiveTrackStyle({
-                    localMin,
-                    localMax,
-                    sliderMin,
-                    sliderMax,
-                  })}
-                />
-              </div>
-            </div>
-          </div>
+          <PriceRangeFilter
+            activeFilters={activeFilters}
+            catalogMaxPrice={filterConfig.maxPrice}
+            onFiltersChange={(patch) => update(patch)}
+          />
         </details>
 
         {/* Materiał */}
