@@ -84,6 +84,8 @@ export type AdminOrderRow = {
 	total: number;
 	itemCount: number;
 	createdAt: string;
+	/** Realizacja express (+50% produktów) — z metadata zamówienia. */
+	expressDelivery: boolean;
 };
 
 /** Agregaty zamówień na pulpicie „Przegląd”. Kwoty w groszach. */

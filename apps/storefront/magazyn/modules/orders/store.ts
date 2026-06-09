@@ -5,6 +5,7 @@ import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
 import { thumbnailFromMedusaProduct, resolveLineItemThumbnail } from "@/lib/medusa/product-thumbnail";
 import { formatPrice } from "@magazyn/core/lib/format";
 import { magazynConfig } from "@magazyn/magazyn.config";
+import { isExpressDelivery } from "./order-express";
 import type {
 	AdminOrderDetail,
 	AdminOrderRow,
@@ -199,6 +200,7 @@ const LIST_FIELDS = [
 	"currency_code",
 	"total",
 	"created_at",
+	"metadata",
 	"items.quantity",
 	"shipping_address.first_name",
 	"shipping_address.last_name",
@@ -311,19 +313,23 @@ export async function listAdminOrders(): Promise<AdminOrderRow[]> {
 		`/admin/orders?limit=100&order=-created_at&fields=${LIST_FIELDS}`,
 	);
 
-	return data.orders.map((order) => ({
-		id: order.id,
-		displayId: order.display_id ?? 0,
-		status: order.status ?? "pending",
-		paymentStatus: order.payment_status ?? "not_paid",
-		fulfillmentStatus: order.fulfillment_status ?? "not_fulfilled",
-		email: order.email ?? "",
-		customerName: customerNameFrom(order),
-		currencyCode: (order.currency_code ?? "pln").toUpperCase(),
-		total: toMinorUnits(order.total),
-		itemCount: (order.items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0),
-		createdAt: order.created_at ?? "",
-	}));
+	return data.orders.map((order) => {
+		const metadata = normalizeMetadata(order.metadata);
+		return {
+			id: order.id,
+			displayId: order.display_id ?? 0,
+			status: order.status ?? "pending",
+			paymentStatus: order.payment_status ?? "not_paid",
+			fulfillmentStatus: order.fulfillment_status ?? "not_fulfilled",
+			email: order.email ?? "",
+			customerName: customerNameFrom(order),
+			currencyCode: (order.currency_code ?? "pln").toUpperCase(),
+			total: toMinorUnits(order.total),
+			itemCount: (order.items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0),
+			createdAt: order.created_at ?? "",
+			expressDelivery: isExpressDelivery(metadata),
+		};
+	});
 }
 
 function mapMedusaOrderToDetail(

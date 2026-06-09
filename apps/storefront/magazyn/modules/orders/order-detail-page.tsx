@@ -10,6 +10,7 @@ import { type AdminOrderDetail, getAdminOrder, type OrderAddress } from "./store
 import { BADGE_TONE_CLASS, fulfillmentStatusBadge, orderStatusBadge, paymentStatusBadge } from "./order-status";
 import { isP24PaymentConfirmed } from "./order-payment-provider";
 import { OrderActions } from "./order-actions";
+import { EXPRESS_DELIVERY_LABEL, expressFeeMinor, isExpressDelivery } from "./order-express";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -83,6 +84,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 	const fulfillment = fulfillmentStatusBadge(order.fulfillmentStatus, order.status);
 	const flags = actionFlags(order);
 	const metaEntries = Object.entries(order.metadata).filter(([key]) => key in META_LABELS);
+	const express = isExpressDelivery(order.metadata);
+	const expressFee = expressFeeMinor(order.metadata, order.itemTotal);
 	const ordersHref = `${magazynConfig.basePath}/panel/zamowienia`;
 
 	return (
@@ -95,6 +98,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 				<div className="mt-2 flex flex-wrap items-center gap-3">
 					<h1 className="font-serif text-2xl text-foreground">Zamówienie #{order.displayId || "—"}</h1>
 					<Badge label={status.label} tone={status.tone} />
+					{express ? <Badge label={EXPRESS_DELIVERY_LABEL} tone="warning" /> : null}
 				</div>
 				<p className="mt-1 text-sm text-muted-foreground">
 					Złożone {order.createdAt ? DATE_TIME.format(new Date(order.createdAt)) : "—"}
@@ -126,6 +130,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 								<dt className="text-muted-foreground">Dostawa</dt>
 								<dd>{formatPrice(order.shippingTotal, order.currencyCode)}</dd>
 							</div>
+							{express && expressFee > 0 ? (
+								<div className="flex justify-between">
+									<dt className="text-muted-foreground">Express (+50% produktów)</dt>
+									<dd>{formatPrice(expressFee, order.currencyCode)}</dd>
+								</div>
+							) : null}
 							{order.discountTotal > 0 ? (
 								<div className="flex justify-between text-emerald-600 dark:text-emerald-400">
 									<dt>Rabat</dt>
@@ -156,6 +166,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 									{order.phone ? <a href={`tel:${order.phone}`} className="hover:underline">{order.phone}</a> : "—"}
 								</span>
 								{order.shippingMethodName ? <span className="text-muted-foreground">Dostawa: {order.shippingMethodName}</span> : null}
+								{express ? (
+									<span className="inline-flex w-fit items-center rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-900 dark:text-amber-100">
+										{EXPRESS_DELIVERY_LABEL}
+									</span>
+								) : null}
 							</div>
 						</div>
 
