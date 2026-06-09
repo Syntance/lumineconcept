@@ -6,6 +6,7 @@ import {
   buildOrderEmailPayload,
   sendTransactionalEmail,
 } from "../../../../lib/send-email";
+import { orderAwaitingBankTransfer } from "../../../../lib/order-payment-method";
 
 /**
  * POST /store/custom/notify-order-placed
@@ -47,7 +48,13 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   let order: Record<string, unknown>;
   try {
     order = (await orderService.retrieveOrder(orderId, {
-      relations: ["items", "shipping_address", "shipping_methods"],
+      relations: [
+        "items",
+        "shipping_address",
+        "shipping_methods",
+        "payment_collections",
+        "payment_collections.payments",
+      ],
     })) as unknown as Record<string, unknown>;
   } catch (e) {
     return res.status(404).json({
@@ -64,6 +71,15 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
   const payload = buildOrderEmailPayload(order);
   const { subject, html, text } = renderOrderPlacedEmail(payload);
+
+  if (orderAwaitingBankTransfer(order as Parameters<typeof orderAwaitingBankTransfer>[0])) {
+    return res.status(200).json({
+      ok: true,
+      orderId,
+      email,
+      skipped: "bank_transfer_pending",
+    });
+  }
 
   const ok = await sendTransactionalEmail(req.scope, {
     to: email,

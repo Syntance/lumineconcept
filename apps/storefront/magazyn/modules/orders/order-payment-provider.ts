@@ -3,7 +3,7 @@ import type { AdminOrderDetail } from "./order-types";
 /** Pełny id providera Przelewy24 w Medusie. */
 export const PRZELEWY24_PROVIDER_ID = "pp_przelewy24_przelewy24";
 
-/** Provider przelewu tradycyjnego (manual / testowy). */
+/** Provider przelewu tradycyjnego (manual). */
 export const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
 
 function activePayments(order: AdminOrderDetail) {

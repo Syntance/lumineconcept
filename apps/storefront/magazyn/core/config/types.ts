@@ -57,6 +57,17 @@ export type AuthConfig = {
 	google: boolean;
 };
 
+export type BankTransferConfig = {
+	/** Nazwa odbiorcy przelewu (firma / właściciel rachunku). */
+	recipientName: string;
+	/** Numer IBAN (bez spacji). Można nadpisać przez NEXT_PUBLIC_BANK_TRANSFER_IBAN. */
+	iban: string;
+	/** Ile dni roboczych klient ma na opłacenie zamówienia. */
+	paymentDays: number;
+	/** Prefix tytułu przelewu, np. „Zamówienie" → „Zamówienie #1042". */
+	transferTitlePrefix: string;
+};
+
 export type MagazynConfig = {
 	/** Bazowa ścieżka panelu, np. „/magazyn", „/panel", „/admin". */
 	basePath: string;
@@ -64,6 +75,8 @@ export type MagazynConfig = {
 	auth: AuthConfig;
 	modules: ModulesToggle;
 	email: EmailConfig;
+	/** Dane do przelewu tradycyjnego (checkout + mail). */
+	bankTransfer: BankTransferConfig;
 	/** Domyślny motyw maili (punkt startowy edytora dla nowych szablonów). */
 	emailTheme: EmailThemeConfig;
 	/** Waluta używana w cenach produktów (kod ISO, np. „pln", „eur"). */

@@ -30,6 +30,15 @@ export function markCheckoutCompleted(orderId: string, displayId?: number): void
   }
 }
 
+export function clearCheckoutCompleted(): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(CHECKOUT_COMPLETED_STORAGE_KEY);
+  } catch {
+    /* prywatny tryb */
+  }
+}
+
 export function readCheckoutCompleted(): CheckoutCompletedPayload | null {
   if (typeof window === "undefined") return null;
   try {
@@ -47,15 +56,30 @@ export function readCheckoutCompleted(): CheckoutCompletedPayload | null {
   }
 }
 
+export type OrderConfirmationOptions = {
+  payment?: "bank_transfer";
+  /** Kwota w PLN (dziesiętna, jak w koszyku Medusa v2). */
+  amount?: number;
+};
+
 export function redirectToOrderConfirmation(
   orderId: string,
   displayId?: number,
+  options?: OrderConfirmationOptions,
 ): void {
   if (typeof window === "undefined") return;
   const qs = new URLSearchParams({ order_id: orderId });
   if (displayId) qs.set("display_id", String(displayId));
+  if (options?.payment === "bank_transfer") {
+    qs.set("payment", "bank_transfer");
+    if (options.amount != null && Number.isFinite(options.amount)) {
+      qs.set("amount", String(options.amount));
+    }
+  }
   window.location.replace(`/checkout/potwierdzenie?${qs.toString()}`);
 }
+
+export const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
 
 /** Nie pozwalamy finalizować pustego lub już zamkniętego koszyka. */
 export async function assertCartReadyForCheckout(cartId: string): Promise<void> {
@@ -249,27 +273,17 @@ type PaymentReadiness = {
 /** Pełny id providera Przelewy24 w Medusie: `pp_{provider.id}_{service.identifier}`. */
 export const PRZELEWY24_PROVIDER_ID = "pp_przelewy24_przelewy24";
 
+/** Providery widoczne w checkoutcie (reszta ukryta do czasu włączenia). */
+export const CHECKOUT_VISIBLE_PROVIDER_IDS = [PRZELEWY24_PROVIDER_ID] as const;
+
 let paymentReadinessPromise: Promise<PaymentReadiness> | null = null;
 
-const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
-
 /**
- * Wybiera preferowanego payment providera z listy dostępnych w regionie.
- * Priorytet: P24 (produkcyjny) > system default (testowy) > pierwszy z listy.
- * System provider to fallback dla testów — nigdy nie powinien być domyślny
- * gdy P24 jest skonfigurowany.
+ * Wybiera providera płatności w checkoutcie — wyłącznie Przelewy24.
  */
 function pickPreferredProvider(list: Array<{ id: string }>): string | undefined {
-  // Preferuj P24 (produkcyjny) nad system (testowy)
   const p24 = list.find((p) => p.id === PRZELEWY24_PROVIDER_ID);
-  if (p24) return p24.id;
-  
-  // Fallback: system default dla testów
-  const system = list.find((p) => p.id === SYSTEM_PAYMENT_PROVIDER_ID);
-  if (system) return system.id;
-  
-  // Ostatnia deska ratunku: pierwszy z listy
-  return list[0]?.id;
+  return p24?.id;
 }
 
 export function prefetchPaymentReadiness(
@@ -287,7 +301,7 @@ export function prefetchPaymentReadiness(
     }
     if (!providerId) {
       throw new Error(
-        "Brak skonfigurowanych metod płatności. Skontaktuj się z obsługą.",
+        "Przelewy24 nie jest skonfigurowane dla tego sklepu. Napisz na kontakt@lumineconcept.pl.",
       );
     }
     return { regionId, providerId, providerIds: providers.map((p) => p.id) };
@@ -406,6 +420,21 @@ export function notifyOrderPlaced(orderId: string): void {
     keepalive: true,
   }).catch((e) => {
     console.warn("[mail] notify-order-placed fire-and-forget error", e);
+  });
+}
+
+/** Mail z danymi do przelewu tradycyjnego (szablon z magazynu). */
+export function notifyBankTransferPending(orderId: string): void {
+  if (!orderId) return;
+  if (typeof window === "undefined") return;
+
+  void fetch("/api/checkout/notify-bank-transfer", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ order_id: orderId }),
+    keepalive: true,
+  }).catch((e) => {
+    console.warn("[mail] notify-bank-transfer fire-and-forget error", e);
   });
 }
 

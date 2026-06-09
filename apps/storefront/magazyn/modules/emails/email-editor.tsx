@@ -372,7 +372,12 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 					<div className="flex items-center justify-between">
 						<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 							Podgląd (
-							{isContactEmailTemplateType(activeType) ? "przykładowy formularz" : "przykładowe zamówienie"})
+							{isContactEmailTemplateType(activeType)
+								? "przykładowy formularz"
+								: activeType === "bank_transfer_pending"
+									? "przelew tradycyjny"
+									: "przykładowe zamówienie"}
+							)
 						</h3>
 						<div className={segmentTrack}>
 							<button

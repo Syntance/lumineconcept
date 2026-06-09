@@ -8,6 +8,7 @@ import {
   buildOrderEmailPayload,
   sendTransactionalEmail,
 } from "../lib/send-email";
+import { orderAwaitingBankTransfer } from "../lib/order-payment-method";
 
 /**
  * Subscriber „order.placed" — pierwszorzędny kanał wysyłki maila potwierdzającego.
@@ -69,7 +70,13 @@ export default async function orderPlacedHandler({
     // Wystarczą pola z samego `items` do renderu maila; Meta CAPI i PostHog
     // poniżej mają własną ścieżkę fallbacku na brak `variant`.
     order = await orderService.retrieveOrder(event.data.id, {
-      relations: ["items", "shipping_address", "shipping_methods"],
+      relations: [
+        "items",
+        "shipping_address",
+        "shipping_methods",
+        "payment_collections",
+        "payment_collections.payments",
+      ],
     });
   } catch (e) {
     console.error("[order-placed] retrieveOrder failed", e);
@@ -86,6 +93,13 @@ export default async function orderPlacedHandler({
   // (/store/custom/notify-order-placed) dośle w razie timeoutu — a jeśli
   // zdąży tu, idempotency w `sendTransactionalEmail` zablokuje duplikat.
   if (order?.email) {
+    if (
+      orderAwaitingBankTransfer(order as unknown as Record<string, unknown>)
+    ) {
+      logger.info(
+        `[order-placed] bank transfer pending — pomijam generic placed email (${order.id})`,
+      );
+    } else {
     try {
       const payload = buildOrderEmailPayload(
         order as unknown as Record<string, unknown>,
@@ -108,6 +122,7 @@ export default async function orderPlacedHandler({
         step: "email",
         orderId: order.id,
       });
+    }
     }
   } else {
     console.warn(

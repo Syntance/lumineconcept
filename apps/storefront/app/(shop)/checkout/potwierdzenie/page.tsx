@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
 import { CheckoutConfirmationGuard } from "@/components/checkout/CheckoutConfirmationGuard";
+import { BankTransferInstructions } from "@/components/checkout/BankTransferInstructions";
 
 export const metadata: Metadata = {
   title: "Potwierdzenie zamówienia",
@@ -9,22 +10,32 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  searchParams: Promise<{ order_id?: string; display_id?: string }>;
+  searchParams: Promise<{
+    order_id?: string;
+    display_id?: string;
+    payment?: string;
+    amount?: string;
+  }>;
 }
 
 export default async function OrderConfirmationPage({ searchParams }: PageProps) {
-  const { order_id: orderId, display_id: displayId } = await searchParams;
+  const { order_id: orderId, display_id: displayId, payment, amount: amountRaw } =
+    await searchParams;
+  const isBankTransfer = payment === "bank_transfer";
+  const amount = amountRaw ? Number(amountRaw) : undefined;
+  const parsedAmount = amount != null && Number.isFinite(amount) ? amount : undefined;
 
   return (
     <div className="container mx-auto px-4 py-16 text-center">
       <CheckoutConfirmationGuard orderId={orderId} displayId={displayId} />
       <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
       <h1 className="mt-6 font-display text-3xl font-bold text-brand-800">
-        Dziękujemy za zamówienie!
+        {isBankTransfer ? "Zamówienie przyjęte — opłać przelewem" : "Dziękujemy za zamówienie!"}
       </h1>
       <p className="mx-auto mt-4 max-w-md text-brand-600">
-        Twoje zamówienie zostało przyjęte. Szczegóły i potwierdzenie prześlemy na podany
-        adres e-mail.
+        {isBankTransfer
+          ? "Twoje zamówienie czeka na wpłatę. Po zaksięgowaniu przelewu wyślemy potwierdzenie e-mailem i rozpoczniemy realizację."
+          : "Twoje zamówienie zostało przyjęte. Szczegóły i potwierdzenie prześlemy na podany adres e-mail."}
       </p>
 
       {(orderId || displayId) && (
@@ -42,6 +53,10 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps)
           )}
         </div>
       )}
+
+      {isBankTransfer ? (
+        <BankTransferInstructions displayId={displayId} amount={parsedAmount} />
+      ) : null}
 
       <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         <Link

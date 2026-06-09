@@ -11,6 +11,7 @@ export {
 } from "./store";
 export { sendOrderStageEmail } from "./send-order-email";
 export { sendContactConfirmationEmail } from "./send-contact-confirmation";
+export { sendBankTransferPendingEmail } from "./send-bank-transfer-email";
 export { createContactCaseNumber } from "./contact-email-context";
 export { sendTransactionalEmail } from "./send-transactional";
 export {

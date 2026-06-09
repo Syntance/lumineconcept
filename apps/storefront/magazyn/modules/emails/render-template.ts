@@ -4,6 +4,7 @@ import {
 	type BlockStyle,
 	type ButtonBlock,
 	type ColumnsBlock,
+	BANK_TRANSFER_MERGE_VARIABLES,
 	CONTACT_MERGE_VARIABLES,
 	type DividerBlock,
 	type EmailTemplate,
@@ -317,6 +318,14 @@ export function sampleRenderContextForTemplate(type: EmailTemplateType): EmailRe
 			vars[v.token] = v.sample;
 		}
 		return { vars, items: [] };
+	}
+	if (type === "bank_transfer_pending") {
+		const base = sampleRenderContext();
+		const vars: Record<string, string> = { ...base.vars };
+		for (const v of BANK_TRANSFER_MERGE_VARIABLES) {
+			if (!(v.token in vars)) vars[v.token] = v.sample;
+		}
+		return { vars, items: base.items };
 	}
 	return sampleRenderContext();
 }

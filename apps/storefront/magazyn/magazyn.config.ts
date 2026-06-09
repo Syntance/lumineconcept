@@ -37,6 +37,13 @@ export const magazynConfig: MagazynConfig = {
 		siteUrl: "https://lumineconcept.pl",
 	},
 
+	bankTransfer: {
+		recipientName: "KATARZYNA KNAPIK LUMINE CONCEPT",
+		iban: "",
+		paymentDays: 5,
+		transferTitlePrefix: "Zamówienie",
+	},
+
 	emailTheme: {
 		bg: "#EEE8E0",
 		contentBg: "#FFFDF8",

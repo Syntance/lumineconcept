@@ -5,17 +5,13 @@
  *  - Medusa backend działa i ma co najmniej 1 opublikowany produkt
  *    z wariantem w regionie PL (cena > 0),
  *  - Jest skonfigurowana przynajmniej jedna opcja dostawy (DPD lub manual),
- *  - Jest aktywny payment provider (domyślnie `pp_system_default`
- *    po `pnpm --filter @lumine/backend setup-payment`),
+ *  - Przelewy24 podpięte do regionu (pp_przelewy24_przelewy24),
  *  - Storefront dostępny pod `PLAYWRIGHT_BASE_URL` (domyślnie :3000).
  *
- * Test płaci providerem `system` (ręczny, bez operatora) — Medusa
- * domyka zamówienie i storefront redirectuje na stronę podziękowania.
+ * Test kończy się na przekierowaniu do bramki P24 (nie domykamy płatności w sandbox).
  */
 import { test, expect } from "@playwright/test";
 
-// Dane kontaktowe — bezpieczne, fikcyjne. NIE używamy prawdziwych emaili,
-// bo CAPI/MailerLite wychwyciłyby test w produkcji.
 const CONTACT = {
   email: "playwright+qa@lumineconcept.test",
   firstName: "Jan",
@@ -27,36 +23,29 @@ const CONTACT = {
 };
 
 test.describe("Checkout — happy path", () => {
-  test("od shopu do potwierdzenia zamówienia", async ({ page }) => {
+  test("od shopu do bramki Przelewy24", async ({ page }) => {
     test.setTimeout(120_000);
 
-    // 1) Lista produktów.
     await page.goto("/sklep/gotowe-wzory");
     await expect(
       page.getByRole("heading", { name: /gotowe wzory/i }).first(),
     ).toBeVisible();
 
-    // Wchodzimy w pierwszą kartę produktu widoczną na liście.
     const firstCard = page.locator("a[href^='/sklep/gotowe-wzory/']").first();
     await expect(firstCard).toBeVisible();
     await firstCard.click();
 
-    // 2) PDP — dodanie do koszyka. Niektóre produkty wymagają konfiguratora,
-    //    bierzemy pierwszy „akcyjny" CTA, który prowadzi do koszyka.
     await page.waitForLoadState("networkidle");
     const addToCart = page.getByRole("button", { name: /dodaj do koszyka/i }).first();
     if (await addToCart.isVisible()) {
       await addToCart.click();
     } else {
-      // Fallback: „Kup teraz" → automatycznie przejdzie na /checkout
       await page.getByRole("button", { name: /kup teraz/i }).first().click();
     }
 
-    // 3) /checkout
     await page.goto("/checkout");
     await expect(page.getByRole("heading", { level: 2 })).toBeVisible();
 
-    // Krok 1 — dane kontaktowe + adres
     await page.getByLabel(/adres e-mail|email/i).fill(CONTACT.email);
     await page.getByLabel(/imi[eę]/i).fill(CONTACT.firstName);
     await page.getByLabel(/nazwisko/i).fill(CONTACT.lastName);
@@ -67,8 +56,6 @@ test.describe("Checkout — happy path", () => {
 
     await page.getByRole("button", { name: /przejd[źz] do dostawy/i }).click();
 
-    // Krok 2 — dostawa. Formularz sam auto-selectuje pierwszą opcję, więc
-    // nie musimy niczego klikać — czekamy aż CTA kroku 2 się pojawi.
     await expect(
       page.getByRole("heading", { name: /sposób dostawy/i }),
     ).toBeVisible();
@@ -76,36 +63,23 @@ test.describe("Checkout — happy path", () => {
       .getByRole("button", { name: /przejd[źz] do p[łl]atno[sś]ci/i })
       .click();
 
-    // Krok 3 — płatność. Wybieramy explicite "Przelew tradycyjny (tryb testowy)"
-    // żeby test działał niezależnie od tego czy P24 jest skonfigurowane.
     await expect(
       page.getByRole("heading", { name: /p[łl]atno[sś][ćc]/i }),
     ).toBeVisible();
-    
-    // Wybierz system payment provider (testowy, bez bramki)
-    const systemProviderButton = page.getByRole("button", {
-      name: /przelew tradycyjny.*tryb testowy/i,
-    });
-    if (await systemProviderButton.isVisible()) {
-      await systemProviderButton.click();
-    }
 
-    // Zgoda na regulamin + RODO (dwie kontrolki checkbox)
+    await expect(page.getByRole("button", { name: /^Przelewy24$/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /przelew tradycyjny/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /paypo/i })).toHaveCount(0);
+
     await page.getByRole("checkbox").first().check();
     await page.getByRole("checkbox").last().check();
 
-    // 4) Finalizacja
     const submit = page.getByRole("button", { name: /zamawiam i p[łl]ac[eę]/i });
     await expect(submit).toBeEnabled();
     await submit.click();
 
-    // Po `completeCart` storefront kieruje na stronę potwierdzenia zamówienia.
-    await page.waitForURL(/\/checkout\/(sukces|success|dziekujemy|potwierdzenie)/i, {
+    await page.waitForURL(/przelewy24|secure\.przelewy24|sandbox\.przelewy24/i, {
       timeout: 60_000,
-    });
-
-    await expect(page.getByText(/dziękujemy|zamówienie zostało|potwierdzenie/i)).toBeVisible({
-      timeout: 15_000,
     });
   });
 });

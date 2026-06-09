@@ -1,20 +1,10 @@
 "use client";
 
-import { CreditCard, Clock, ReceiptText } from "lucide-react";
-import { useCart } from "@/hooks/useCart";
-import { formatPrice } from "@/lib/utils";
-
-/**
- * Medusa v2: kwoty w PLN (dziesiętne). PayPo działa w zakresie 40–3000 zł
- * (limity z dokumentacji). Wcześniej trzymaliśmy grosze, stąd × 100.
- */
-const PAYPO_MIN_AMOUNT = 40;
-const PAYPO_MAX_AMOUNT = 3000;
-
-/** ID providera `@medusajs/payment/providers/system` (manual). */
-const SYSTEM_PAYMENT_PROVIDER_ID = "pp_system_default";
-/** Pełny id providera Przelewy24 w Medusie. */
-const PRZELEWY24_PROVIDER_ID = "pp_przelewy24_przelewy24";
+import { CreditCard } from "lucide-react";
+import {
+  CHECKOUT_VISIBLE_PROVIDER_IDS,
+  PRZELEWY24_PROVIDER_ID,
+} from "@/lib/medusa/checkout";
 
 interface PaymentOption {
   id: string;
@@ -22,8 +12,6 @@ interface PaymentOption {
   description: string;
   icon: typeof CreditCard;
   methods?: string[];
-  /** `true` → opcja jest w pełni obsługiwana w bieżącej iteracji. */
-  enabled: boolean;
 }
 
 const PAYMENT_OPTIONS: PaymentOption[] = [
@@ -33,33 +21,13 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     description: "BLIK, przelew bankowy, karta płatnicza — szybka płatność online",
     icon: CreditCard,
     methods: ["BLIK", "Przelew", "Karta"],
-    enabled: true,
-  },
-  {
-    id: SYSTEM_PAYMENT_PROVIDER_ID,
-    name: "Przelew tradycyjny (tryb testowy)",
-    description:
-      "Zamówienie trafia do Admina Medusy bez rzeczywistego pobrania środków.",
-    icon: ReceiptText,
-    enabled: true,
-  },
-  {
-    id: "paypo",
-    name: "PayPo — Kup teraz, zapłać za 30 dni",
-    description: "Płatność odroczona bez dodatkowych kosztów (wkrótce)",
-    icon: Clock,
-    enabled: false,
   },
 ];
 
 interface PaymentSelectorProps {
   selectedProviderId: string;
   onSelect: (providerId: string) => void;
-  /**
-   * Aktywne providery zarejestrowane dla regionu. Gdy podane, opcja jest
-   * dostępna tylko, jeśli jej provider faktycznie istnieje w backendzie
-   * (np. P24 pokazujemy dopiero po podpięciu do regionu).
-   */
+  /** Aktywne providery w regionie — filtrujemy do widocznych w checkoutcie. */
   availableProviderIds?: string[];
 }
 
@@ -68,36 +36,41 @@ export function PaymentSelector({
   onSelect,
   availableProviderIds,
 }: PaymentSelectorProps) {
-  const { grandTotal } = useCart();
-  const isPayPoEligible =
-    grandTotal >= PAYPO_MIN_AMOUNT && grandTotal <= PAYPO_MAX_AMOUNT;
+  const visibleIds = new Set<string>(CHECKOUT_VISIBLE_PROVIDER_IDS);
   const isRegistered = (id: string) =>
     !availableProviderIds || availableProviderIds.includes(id);
 
+  const options = PAYMENT_OPTIONS.filter(
+    (option) => visibleIds.has(option.id) && isRegistered(option.id),
+  );
+
+  if (options.length === 0) {
+    return (
+      <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-brand-800">
+        Płatność online jest chwilowo niedostępna. Napisz na{" "}
+        <a href="mailto:kontakt@lumineconcept.pl" className="font-semibold underline">
+          kontakt@lumineconcept.pl
+        </a>
+        .
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-3">
-      {PAYMENT_OPTIONS.filter(
-        (option) => option.enabled === false || isRegistered(option.id),
-      ).map((option) => {
+      {options.map((option) => {
         const Icon = option.icon;
         const isSelected = selectedProviderId === option.id;
-        const isDisabled =
-          !option.enabled ||
-          !isRegistered(option.id) ||
-          (option.id === "paypo" && !isPayPoEligible);
 
         return (
           <button
             key={option.id}
             type="button"
-            onClick={() => !isDisabled && onSelect(option.id)}
-            disabled={isDisabled}
-            className={`w-full flex items-start gap-4 rounded-lg border-2 p-4 text-left transition-colors ${
+            onClick={() => onSelect(option.id)}
+            className={`flex w-full items-start gap-4 rounded-lg border-2 p-4 text-left transition-colors ${
               isSelected
                 ? "border-brand-800 bg-accent/15 shadow-sm"
-                : isDisabled
-                  ? "border-brand-100 bg-brand-50 opacity-60 cursor-not-allowed"
-                  : "border-brand-200 hover:border-brand-400 hover:bg-brand-50"
+                : "border-brand-200 hover:border-brand-400 hover:bg-brand-50"
             }`}
           >
             <div
@@ -105,20 +78,14 @@ export function PaymentSelector({
                 isSelected ? "border-brand-800" : "border-brand-300"
               }`}
             >
-              {isSelected && (
-                <div className="h-2.5 w-2.5 rounded-full bg-brand-800" />
-              )}
+              {isSelected ? <div className="h-2.5 w-2.5 rounded-full bg-brand-800" /> : null}
             </div>
             <Icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-brand-600" />
             <div className="flex-1">
-              <span className="text-sm font-medium text-brand-900">
-                {option.name}
-              </span>
-              <p className="text-xs text-brand-500 mt-0.5">
-                {option.description}
-              </p>
+              <span className="text-sm font-medium text-brand-900">{option.name}</span>
+              <p className="mt-0.5 text-xs text-brand-500">{option.description}</p>
 
-              {option.methods && (
+              {option.methods ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {option.methods.map((method) => (
                     <span
@@ -129,32 +96,7 @@ export function PaymentSelector({
                     </span>
                   ))}
                 </div>
-              )}
-
-              {option.id === "paypo" && (
-                <div className="mt-2 rounded bg-purple-50 px-3 py-2">
-                  {isPayPoEligible ? (
-                    <p className="text-xs text-purple-700">
-                      Zapłać{" "}
-                      <span className="font-medium text-brand-800 tabular-nums">
-                        {formatPrice(grandTotal)}
-                      </span>{" "}
-                      za 30 dni — 0 zł odsetek
-                    </p>
-                  ) : (
-                    <p className="text-xs text-purple-500">
-                      PayPo dostępne dla zamówień{" "}
-                      <span className="font-medium text-brand-800 tabular-nums">
-                        {formatPrice(PAYPO_MIN_AMOUNT)}
-                      </span>
-                      {" – "}
-                      <span className="font-medium text-brand-800 tabular-nums">
-                        {formatPrice(PAYPO_MAX_AMOUNT)}
-                      </span>
-                    </p>
-                  )}
-                </div>
-              )}
+              ) : null}
             </div>
           </button>
         );

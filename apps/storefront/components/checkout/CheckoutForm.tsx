@@ -22,15 +22,18 @@ import {
   initPrzelewy24Redirect,
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
+  notifyBankTransferPending,
   notifyOrderPlaced,
   prefetchPaymentReadiness,
   prefetchShippingOptions,
   prepareCheckout,
   PRZELEWY24_PROVIDER_ID,
   readCheckoutCompleted,
+  clearCheckoutCompleted,
   redirectToOrderConfirmation,
   assertCartReadyForCheckout,
   saveContactDetails,
+  SYSTEM_PAYMENT_PROVIDER_ID,
 } from "@/lib/medusa/checkout";
 import { getPolishRegionId } from "@/lib/medusa/region";
 
@@ -143,14 +146,18 @@ export function CheckoutForm() {
   const staleResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const beginCheckoutFiredRef = useRef(false);
 
-  /** Po udanym zamówieniu — nie wracaj na checkout (przycisk Wstecz). */
+  /** Po udanym zamówieniu — nie wracaj na checkout (przycisk Wstecz). Aktywny koszyk = nowe zamówienie. */
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (cartId && items.length > 0) {
+      clearCheckoutCompleted();
+      return;
+    }
     const completed = readCheckoutCompleted();
     if (completed) {
       redirectToOrderConfirmation(completed.orderId, completed.displayId);
     }
-  }, []);
+  }, [cartId, items.length]);
 
   /** Pusty koszyk nie może iść do płatności — wróć do koszyka. */
   useEffect(() => {
@@ -473,10 +480,13 @@ export function CheckoutForm() {
       });
       purchaseSentRef.current = true;
 
-      // Niezawodny kanał wysyłki maila potwierdzającego — fire-and-forget
-      // (sendBeacon + keepalive fetch). Nie blokuje nawigacji do strony
-      // potwierdzenia. Backend dba o idempotencję.
-      notifyOrderPlaced(result.order.id);
+      const isBankTransfer = payment.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID;
+
+      if (isBankTransfer) {
+        notifyBankTransferPending(result.order.id);
+      } else {
+        notifyOrderPlaced(result.order.id);
+      }
 
       markCheckoutCompleted(
         result.order.id,
@@ -496,6 +506,7 @@ export function CheckoutForm() {
         redirectToOrderConfirmation(
           result.order.id,
           result.order.display_id ?? undefined,
+          isBankTransfer ? { payment: "bank_transfer", amount: total } : undefined,
         );
         return;
       }
@@ -958,12 +969,7 @@ export function CheckoutForm() {
                 Po kliknięciu przejdziesz do bezpiecznego panelu Przelewy24,
                 gdzie dokończysz płatność (BLIK, przelew, karta).
               </p>
-            ) : (
-              <p className="text-center text-[11px] text-brand-400">
-                Tryb testowy — zamówienie trafia do Medusy bez rzeczywistej
-                płatności.
-              </p>
-            )}
+            ) : null}
           </section>
         )}
       </div>

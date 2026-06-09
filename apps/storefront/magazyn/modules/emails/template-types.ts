@@ -110,7 +110,8 @@ export type OrderEmailTemplateType =
 	| "shipped"
 	| "completed"
 	| "cancelled"
-	| "confirmation";
+	| "confirmation"
+	| "bank_transfer_pending";
 
 /** Potwierdzenie dla klienta po wysłaniu formularza kontaktowego. */
 export type ContactEmailTemplateType = "contact_confirmation";
@@ -156,6 +157,11 @@ export const EMAIL_TEMPLATE_TYPES: Array<{
 	{ type: "cancelled", label: "Anulowane", description: "Po anulowaniu zamówienia (event: order.canceled)." },
 	{ type: "confirmation", label: "Potwierdzenie", description: "Dodatkowe potwierdzenie zamówienia." },
 	{
+		type: "bank_transfer_pending",
+		label: "Przelew tradycyjny · dane do wpłaty",
+		description: "Po złożeniu zamówienia z płatnością przelewem — dane konta i tytuł.",
+	},
+	{
 		type: "contact_confirmation",
 		label: "Formularz kontaktowy · potwierdzenie",
 		description: "Potwierdzenie odbioru wiadomości z formularza kontaktowego.",
@@ -195,6 +201,15 @@ export const MERGE_VARIABLES: Array<{ token: string; label: string; sample: stri
 	{ token: "adres", label: "Adres dostawy", sample: "ul. Przykładowa 1, 00-000 Miasto" },
 ];
 
+/** Zmienne dla maila z danymi do przelewu ({{token}}). */
+export const BANK_TRANSFER_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
+	...MERGE_VARIABLES,
+	{ token: "odbiorca", label: "Odbiorca przelewu", sample: "KATARZYNA KNAPIK LUMINE CONCEPT" },
+	{ token: "nrKonta", label: "Numer konta (IBAN)", sample: "PL61 1020 2892 0000 5302 0959 1234" },
+	{ token: "tytulPrzelewu", label: "Tytuł przelewu", sample: "Zamówienie #1042" },
+	{ token: "terminPlatnosci", label: "Termin płatności", sample: "5 dni roboczych" },
+];
+
 /** Zmienne formularza kontaktowego ({{token}}) — szablon contact_confirmation. */
 export const CONTACT_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
 	{ token: "imie", label: "Imię nadawcy", sample: "Anna" },
@@ -211,6 +226,7 @@ export const CONTACT_MERGE_VARIABLES: Array<{ token: string; label: string; samp
 
 export function getMergeVariablesForTemplate(type: EmailTemplateType) {
 	if (isContactEmailTemplateType(type)) return CONTACT_MERGE_VARIABLES;
+	if (type === "bank_transfer_pending") return BANK_TRANSFER_MERGE_VARIABLES;
 	return MERGE_VARIABLES;
 }
 
@@ -289,6 +305,22 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 		preheader: "Potwierdzenie Twojego zamówienia.",
 		headline: "Dziękujemy za zamówienie!",
 		paragraphs: ["Otrzymaliśmy Twoje zamówienie #{{nrZamowienia}} i właśnie je przetwarzamy. Poniżej szczegóły zakupu."],
+		withItems: true,
+	},
+	bank_transfer_pending: {
+		subject: `${SUBJECT_PREFIX} Dane do przelewu — zamówienie #{{nrZamowienia}}`,
+		preheader: "Opłać zamówienie przelewem w ciągu {{terminPlatnosci}}.",
+		headline: "Dokończ płatność przelewem",
+		paragraphs: [
+			"Cześć {{imie}}, dziękujemy za złożenie zamówienia #{{nrZamowienia}}.",
+			"Opłać je przelewem na konto:",
+			"Odbiorca: {{odbiorca}}",
+			"Numer konta: {{nrKonta}}",
+			"Tytuł przelewu: {{tytulPrzelewu}}",
+			"Kwota: {{suma}}",
+			"Termin płatności: {{terminPlatnosci}}.",
+			"Po zaksięgowaniu wpłaty wyślemy Ci potwierdzenie i rozpoczniemy realizację zamówienia.",
+		],
 		withItems: true,
 	},
 	contact_confirmation: {
@@ -493,6 +525,7 @@ export const emailTemplateTypeSchema = z.enum([
 	"completed",
 	"cancelled",
 	"confirmation",
+	"bank_transfer_pending",
 	"contact_confirmation",
 ]);
 
