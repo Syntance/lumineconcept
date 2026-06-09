@@ -10,9 +10,8 @@ import {
 const IG_PROFILE = "https://instagram.com/lumineconcept";
 
 /** Wymiary `public/images/monia-branding-cta-bg.png` — przy podmianie zdjęcia zaktualizuj. */
-const BRANDING_BG_WIDTH = 1024;
-const BRANDING_BG_HEIGHT = 682;
-/** Max. wysokość kadru desktop: 477px (−30% względem 682px). */
+const BRANDING_BG_WIDTH = 2560;
+const BRANDING_BG_HEIGHT = 922;
 
 const SHOP_CTA_CLASS =
   "inline-flex items-center justify-center rounded-none border font-gilroy font-medium uppercase tracking-[0.2em] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
@@ -156,7 +155,7 @@ export async function FooterCTA() {
         </div>
 
         {/* Desktop — tło jak hero + overlay */}
-        <div className="relative hidden w-full overflow-x-hidden lg:block lg:aspect-[1024/477] lg:max-h-[477px]">
+        <div className="relative hidden w-full overflow-x-hidden lg:block lg:aspect-[2560/922] lg:max-h-[922px]">
           <Image
             src="/images/monia-branding-cta-bg.png"
             alt=""
@@ -165,7 +164,7 @@ export async function FooterCTA() {
             sizes="100vw"
             unoptimized
             priority={false}
-            className="absolute inset-0 h-full w-full select-none object-cover object-[55%_center]"
+            className="absolute inset-0 h-full w-full select-none object-cover object-right"
           />
 
           <div

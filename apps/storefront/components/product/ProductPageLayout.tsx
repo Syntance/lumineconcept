@@ -296,7 +296,7 @@ export async function ProductPageLayout({
           </div>
 
           <div className="space-y-4">
-            <h1 className="font-display text-2xl font-normal uppercase tracking-wider text-brand-800 sm:text-3xl lg:text-4xl lg:leading-tight">
+            <h1 className="font-display text-2xl font-bold uppercase tracking-wider text-brand-800 sm:text-3xl lg:text-4xl lg:leading-tight">
               {product.title}
             </h1>
 
