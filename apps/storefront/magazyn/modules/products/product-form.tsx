@@ -68,7 +68,8 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 		createInitialTextFieldState(product),
 	);
 	const [uploadSettings, setUploadSettings] = useState<ProductUploadSettings>(
-		() => product?.uploadSettings ?? { enabled: false, count: 1, label: "" },
+		() =>
+			product?.uploadSettings ?? { enabled: false, required: true, count: 1, label: "" },
 	);
 
 	const [error, setError] = useState<string | null>(null);
@@ -241,6 +242,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				allowCustomColor: colorConfig.allowCustomColor,
 				textFields,
 				uploadsEnabled: uploadSettings.enabled,
+				uploadsRequired: uploadSettings.required,
 				uploadsCount: uploadSettings.count,
 				uploadsLabel: uploadSettings.label,
 			});
@@ -355,6 +357,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 							<ProductUploadSettingsSection
 								embedded
 								enabled={uploadSettings.enabled}
+								required={uploadSettings.required}
 								count={uploadSettings.count}
 								label={uploadSettings.label}
 								onEnabledChange={(enabled) =>
@@ -363,6 +366,9 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 										enabled,
 										count: enabled && prev.count < 1 ? 1 : prev.count,
 									}))
+								}
+								onRequiredChange={(required) =>
+									setUploadSettings((prev) => ({ ...prev, required }))
 								}
 								onCountChange={(count) =>
 									setUploadSettings((prev) => ({ ...prev, count }))

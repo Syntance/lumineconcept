@@ -50,6 +50,7 @@ interface ProductConfiguratorProps {
   links?: string[];
   onLinksChange?: (links: string[]) => void;
   uploadsCount?: number;
+  uploadsRequired?: boolean;
   uploadsLabel?: string;
   uploadedFiles?: UploadedFile[];
   onUploadedFilesChange?: (files: UploadedFile[]) => void;
@@ -92,6 +93,7 @@ export function ProductConfigurator({
   links = [],
   onLinksChange,
   uploadsCount = 0,
+  uploadsRequired = true,
   uploadsLabel,
   uploadedFiles = [],
   onUploadedFilesChange,
@@ -438,6 +440,7 @@ export function ProductConfigurator({
         <FileUploadSection
           maxFiles={Math.min(uploadsCount, 5)}
           label={uploadsLabel}
+          required={uploadsRequired}
           files={uploadedFiles}
           onFilesChange={onUploadedFilesChange}
         />

@@ -11,6 +11,11 @@ import {
   parseTextFieldsFromMetadata,
 } from "@/lib/products/text-fields";
 import {
+  getStorefrontUploadCount,
+  isProductUploadComplete,
+  parseUploadSettingsFromMetadata,
+} from "@/lib/products/upload-settings";
+import {
   CUSTOM_COLOR_VALUE,
   isColorOption,
   isEveryColorOptionChosen,
@@ -266,23 +271,24 @@ export function ProductPageClient({
 
   const allLinksProvided = linksCount === 0 || links.slice(0, linksCount).every((l) => l.trim().length > 0);
 
-  const uploadsCount = useMemo(() => {
-    const enabledRaw = product.metadata?.uploads_enabled;
-    if (enabledRaw !== "true" && enabledRaw !== true) return 0;
-    const raw = product.metadata?.uploads_count;
-    const n = Number(raw);
-    if (Number.isFinite(n) && n > 0) return Math.min(n, 5);
-    return 5;
-  }, [product.metadata]);
+  const uploadSettings = useMemo(
+    () => parseUploadSettingsFromMetadata(product.metadata as Record<string, unknown>),
+    [product.metadata],
+  );
 
-  const uploadsLabel = useMemo(() => {
-    const raw = product.metadata?.uploads_label;
-    return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
-  }, [product.metadata]);
+  const uploadsCount = useMemo(
+    () => getStorefrontUploadCount(uploadSettings),
+    [uploadSettings],
+  );
+
+  const uploadsLabel = useMemo(
+    () => (uploadSettings.label ? uploadSettings.label : undefined),
+    [uploadSettings.label],
+  );
 
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
-  const uploadsComplete = uploadsCount === 0 || uploadedFiles.length > 0;
+  const uploadsComplete = isProductUploadComplete(uploadSettings, uploadedFiles.length);
 
   const ctaRef = useRef<HTMLDivElement>(null);
   const configuratorRef = useRef<HTMLDivElement>(null);
@@ -489,6 +495,7 @@ export function ProductPageClient({
             links={links}
             onLinksChange={setLinks}
             uploadsCount={uploadsCount}
+            uploadsRequired={uploadSettings.required}
             uploadsLabel={uploadsLabel}
             uploadedFiles={uploadedFiles}
             onUploadedFilesChange={setUploadedFiles}

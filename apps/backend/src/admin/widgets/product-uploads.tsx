@@ -16,6 +16,7 @@ const ProductUploadsWidget = ({
   data: product,
 }: DetailWidgetProps<AdminProduct>) => {
   const [enabled, setEnabled] = useState(false)
+  const [required, setRequired] = useState(true)
   const [maxFiles, setMaxFiles] = useState(5)
   const [label, setLabel] = useState("")
   const [loading, setLoading] = useState(true)
@@ -24,12 +25,18 @@ const ProductUploadsWidget = ({
 
   useEffect(() => {
     sdk.client
-      .fetch<{ uploads_enabled: boolean; uploads_count: number; uploads_label: string }>(
+      .fetch<{
+        uploads_enabled: boolean
+        uploads_required: boolean
+        uploads_count: number
+        uploads_label: string
+      }>(
         `/admin/products/${product.id}/uploads`,
         { method: "GET" },
       )
       .then((res) => {
         setEnabled(res.uploads_enabled)
+        setRequired(res.uploads_required)
         setMaxFiles(res.uploads_count)
         setLabel(res.uploads_label)
       })
@@ -38,22 +45,25 @@ const ProductUploadsWidget = ({
   }, [product.id])
 
   const save = useCallback(
-    async (newEnabled: boolean, newCount: number, newLabel: string) => {
+    async (newEnabled: boolean, newRequired: boolean, newCount: number, newLabel: string) => {
       setSaving(true)
       try {
         const res = await sdk.client.fetch<{
           uploads_enabled: boolean
+          uploads_required: boolean
           uploads_count: number
           uploads_label: string
         }>(`/admin/products/${product.id}/uploads`, {
           method: "POST",
           body: {
             uploads_enabled: newEnabled,
+            uploads_required: newRequired,
             uploads_count: newCount,
             uploads_label: newLabel,
           },
         })
         setEnabled(res.uploads_enabled)
+        setRequired(res.uploads_required)
         setMaxFiles(res.uploads_count)
         setLabel(res.uploads_label)
         setToast("Zapisano!")
@@ -70,7 +80,12 @@ const ProductUploadsWidget = ({
 
   const handleToggle = (checked: boolean) => {
     setEnabled(checked)
-    save(checked, maxFiles, label)
+    save(checked, required, maxFiles, label)
+  }
+
+  const handleRequiredToggle = (checked: boolean) => {
+    setRequired(checked)
+    save(enabled, checked, maxFiles, label)
   }
 
   const handleCountChange = (value: string) => {
@@ -79,11 +94,11 @@ const ProductUploadsWidget = ({
   }
 
   const handleCountBlur = () => {
-    save(enabled, maxFiles, label)
+    save(enabled, required, maxFiles, label)
   }
 
   const handleLabelBlur = () => {
-    save(enabled, maxFiles, label)
+    save(enabled, required, maxFiles, label)
   }
 
   if (loading) {
@@ -136,6 +151,16 @@ const ProductUploadsWidget = ({
 
         {enabled && (
           <div className="mt-3 space-y-3">
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={required}
+                onCheckedChange={handleRequiredToggle}
+                disabled={saving}
+              />
+              <Label size="small">
+                {required ? "Wymagane do koszyka" : "Opcjonalne"}
+              </Label>
+            </div>
             <div>
               <Label size="xsmall" className="mb-1">Nagłówek sekcji (opcjonalnie):</Label>
               <Input

@@ -72,6 +72,7 @@ const productSchema = z.object({
 		)
 		.default([]),
 	uploadsEnabled: z.boolean().default(false),
+	uploadsRequired: z.boolean().default(true),
 	uploadsCount: z.number().int().min(1).max(5).default(1),
 	uploadsLabel: z.string().default(""),
 });
@@ -104,6 +105,7 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 		textFields: data.textFields ?? [],
 		uploadSettings: {
 			enabled: data.uploadsEnabled ?? false,
+			required: data.uploadsRequired ?? true,
 			count: data.uploadsCount ?? 1,
 			label: data.uploadsLabel ?? "",
 		},

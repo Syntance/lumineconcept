@@ -18,6 +18,7 @@ function isImageFilename(name: string): boolean {
 interface FileUploadSectionProps {
   maxFiles?: number;
   label?: string;
+  required?: boolean;
   files: UploadedFile[];
   onFilesChange: (files: UploadedFile[]) => void;
 }
@@ -25,6 +26,7 @@ interface FileUploadSectionProps {
 export function FileUploadSection({
   maxFiles = MAX_FILES,
   label,
+  required = true,
   files,
   onFilesChange,
 }: FileUploadSectionProps) {
@@ -100,6 +102,11 @@ export function FileUploadSection({
     <div className="space-y-3">
       <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-brand-700">
         {label || "Wgraj swoje logo"}
+        {!required ? (
+          <span className="ml-2 font-normal normal-case tracking-normal text-brand-500">
+            (opcjonalnie)
+          </span>
+        ) : null}
       </p>
 
       <div className="flex flex-wrap items-center gap-3">
