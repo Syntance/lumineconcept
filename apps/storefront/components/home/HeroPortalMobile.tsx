@@ -22,29 +22,31 @@ export function HeroPortalMobile({
   return (
     <div className="absolute inset-0 flex items-center justify-center">
       <div className="relative z-10 w-full px-5 text-center sm:px-8">
-        <div className="mx-auto flex max-w-md flex-col items-center gap-4">
-          <h1
-            className={`m-0 font-binerka text-[2.35rem] leading-none tracking-[0.06em] text-white sm:text-[2.65rem] ${content.headlineUppercase ? "uppercase" : ""}`}
-          >
-            {content.headline}
-          </h1>
+        <div className="mx-auto flex max-w-md flex-col items-center">
+          <div className="flex w-full flex-col items-center gap-4">
+            <h1
+              className={`m-0 font-binerka text-[2.35rem] leading-none tracking-[0.06em] text-white sm:text-[2.65rem] ${content.headlineUppercase ? "uppercase" : ""}`}
+            >
+              {content.headline}
+            </h1>
 
-          <div className="flex flex-col items-center gap-2">
-            {content.subtitle ? (
-              <p className="m-0 font-gilroy text-[13px] font-medium uppercase leading-snug tracking-[0.08em] text-white sm:text-sm">
-                {content.subtitle}
+            <div className="flex flex-col items-center gap-3">
+              {content.subtitle ? (
+                <p className="m-0 font-gilroy text-[13px] font-medium uppercase leading-snug tracking-[0.08em] text-white sm:text-sm">
+                  {content.subtitle}
+                </p>
+              ) : null}
+
+              <p className="m-0 max-w-md font-gilroy text-xs font-light leading-snug tracking-[0.04em] text-white/90 sm:text-[13px]">
+                {content.description}
               </p>
-            ) : null}
-
-            <p className="m-0 max-w-md font-gilroy text-xs font-light leading-snug tracking-[0.04em] text-white/90 sm:text-[13px]">
-              {content.description}
-            </p>
+            </div>
           </div>
 
           <Link
             href={content.ctaHref}
             aria-label={content.ctaAriaLabel}
-            className={`${SHOP_CTA_CLASS} mt-1`}
+            className={`${SHOP_CTA_CLASS} mt-[32px]`}
           >
             {content.ctaLabel}
           </Link>

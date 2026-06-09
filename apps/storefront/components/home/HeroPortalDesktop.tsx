@@ -14,23 +14,23 @@ const DESKTOP_MQ = "(min-width: 1024px)";
 
 /** Szerokość hero, przy której blok ma skalę 1 (idealny desktop). */
 const REF_HERO_WIDTH = 1440;
-/** Skala 1 przy 1440px; powyżej rośnie do +20% (cap 1.2 przy ~1728px). Poniżej 1440px bez zmian. */
-const SCALE_MAX = 1.2;
+/** Skala 1 przy 1440px; powyżej rośnie do +30% (cap 1.3 przy ~1872px). Poniżej 1440px bez zmian. */
+const SCALE_MAX = 1.3;
 
 const CONTENT_LEFT = "21.18%";
 /** Przesunięcie treści w dół względem portalu (% wysokości hero). */
-const CONTENT_DROP_RATIO = 0.05;
+const CONTENT_DROP_RATIO = 0.075;
 /** Wartości px przy skali 1 — skaluje się razem z całym blokiem. */
 const CONTENT_TOP_PX = 96;
-const CONTENT_GAP_PX = 22;
+const CONTENT_GAP_PX = 32;
 /** Padding portalu — proporcjonalnie do treści, przy skali 1. */
 const PORTAL_PAD_X_RATIO = 0.035;
 const PORTAL_PAD_X_MIN = 18;
-const PORTAL_BOTTOM_PAD_RATIO = 0.36;
-const PORTAL_BOTTOM_PAD_MIN = 72;
+const PORTAL_BOTTOM_PAD_RATIO = 0.28;
+const PORTAL_BOTTOM_PAD_MIN = 56;
 /** Delikatna korekta proporcji portalu względem treści. */
 const PORTAL_WIDTH_NUDGE = 0.90;
-const PORTAL_HEIGHT_NUDGE = 1.06;
+const PORTAL_HEIGHT_NUDGE = 0.98;
 /** W SVG proste boki kończą się na y=733 / 1134 wysokości. */
 const PORTAL_STRAIGHT_END = 733 / 1134;
 const PORTAL_WIDTH_RATIO = 900 / 1134;
@@ -114,7 +114,7 @@ function PortalContentBlock({
           {content.headline}
         </h1>
 
-        <div className={`flex flex-col gap-2 ${isCenter ? "items-center" : "items-start"}`}>
+        <div className={`flex flex-col gap-3 ${isCenter ? "items-center" : "items-start"}`}>
           {content.subtitle ? (
             <p
               className={`m-0 font-gilroy text-xl font-medium uppercase leading-none tracking-[0.08em] text-white ${isCenter ? "text-center" : "whitespace-nowrap text-left"}`}
