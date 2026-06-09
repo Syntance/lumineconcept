@@ -128,19 +128,19 @@ export default async function ShopHubPage() {
               <Link
                 key={cat.href}
                 href={cat.href}
-                className="shop-category-card relative flex aspect-4/5 h-full w-full flex-col overflow-hidden border border-brand-200 bg-white px-11 pb-12 pt-12"
+                className="shop-category-card group relative flex aspect-4/5 h-full w-full flex-col overflow-hidden border border-brand-200 bg-white px-11 pb-12 pt-12 transition-shadow duration-300 hover:border-brand-400 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
-                <div className="pointer-events-none absolute inset-0 z-0">
+                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
                   <div className="relative h-full w-full">
                     <Image
                       src={cat.image}
                       alt={cat.title}
                       fill
                       className={cn(
-                        "object-cover",
+                        "object-cover transition-transform duration-300",
                         index === 0
-                          ? "origin-bottom -translate-x-[1%] translate-y-[3.5%] scale-[1.05] object-bottom"
-                          : "object-center",
+                          ? "origin-bottom -translate-x-[1%] translate-y-[3.5%] scale-[1.05] object-bottom group-hover:scale-[1.1]"
+                          : "object-center group-hover:scale-105",
                       )}
                       sizes="(max-width: 640px) 90vw, 33vw"
                     />
