@@ -72,7 +72,7 @@ async function main() {
     merchantId: Number(merchantId),
     amount,
     currency,
-    crc,
+    crc: crc as string,
   });
 
   console.log("[test-p24] Tryb:", sandbox ? "SANDBOX" : "PRODUKCJA");

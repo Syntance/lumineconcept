@@ -235,15 +235,103 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
     return { id: sessionId, data };
   }
 
+  /**
+   * Pull-based potwierdzenie płatności — NIE polega na webhooku P24.
+   *
+   * Odpytuje P24 o stan transakcji po `sessionId`. Gdy środki dotarły, a
+   * transakcja nie jest jeszcze potwierdzona (status 1), wykonujemy
+   * `transaction/verify` (wymagane, inaczej P24 nie rozliczy środków) i dopiero
+   * po jego sukcesie uznajemy płatność za opłaconą. Dzięki temu finalizacja
+   * koszyka (`completeCart` ze storefrontu) działa nawet gdy notyfikacja P24
+   * (urlStatus) dotrze z opóźnieniem albo wcale.
+   */
+  private async confirmFromP24(
+    data: Przelewy24SessionData,
+  ): Promise<{ paid: boolean; data: Przelewy24SessionData }> {
+    const sessionId = data.p24_session_id;
+    if (!sessionId) return { paid: false, data };
+
+    let info:
+      | { status?: number; orderId?: number; amount?: number; currency?: string }
+      | undefined;
+    try {
+      const result = await this.api<{
+        data: {
+          status: number;
+          orderId: number;
+          amount: number;
+          currency: string;
+        };
+      }>(`/transaction/by/sessionId/${encodeURIComponent(sessionId)}`, "GET");
+      info = result.data;
+    } catch (e) {
+      this.logger_.warn(
+        `[przelewy24] confirmFromP24 by sessionId nieudany: ${(e as Error).message}`,
+      );
+      return { paid: false, data };
+    }
+    if (!info) return { paid: false, data };
+
+    const status = Number(info.status);
+    const orderId = Number(info.orderId);
+
+    // 2 = transakcja potwierdzona (środki rozliczone) → gotowe.
+    if (status === P24_STATUS_PAID) {
+      return {
+        paid: true,
+        data: { ...data, status: "verified", order_id: orderId },
+      };
+    }
+
+    // 1 = płatność dotarła, ale niepotwierdzona — wykonujemy verify i dopiero
+    // po jego sukcesie uznajemy płatność za opłaconą.
+    if (status === 1 && orderId) {
+      const amount = Number(info.amount);
+      const currency = String(info.currency ?? data.currency);
+      const verifySign = this.sign({
+        sessionId,
+        orderId,
+        amount,
+        currency,
+        crc: this.options_.crc,
+      });
+      try {
+        await this.api("/transaction/verify", "PUT", {
+          merchantId: Number(this.options_.merchantId),
+          posId: Number(this.options_.posId),
+          sessionId,
+          amount,
+          currency,
+          orderId,
+          sign: verifySign,
+        });
+        return {
+          paid: true,
+          data: { ...data, status: "verified", order_id: orderId },
+        };
+      } catch (e) {
+        this.logger_.warn(
+          `[przelewy24] confirmFromP24 verify nieudany dla sessionId=${sessionId}: ${(e as Error).message}`,
+        );
+        return { paid: false, data };
+      }
+    }
+
+    return { paid: false, data };
+  }
+
   async authorizePayment(
     input: AuthorizePaymentInput,
   ): Promise<AuthorizePaymentOutput> {
     const data = (input.data ?? {}) as Przelewy24SessionData;
-    // Płatność jest potwierdzona dopiero po notyfikacji + verify (webhook).
-    // Dopóki nie ma `status: verified`, trzymamy „pending" — Medusa nie
-    // utworzy zamówienia, dopóki webhook nie oznaczy płatności jako opłaconej.
+    // Szybka ścieżka: webhook już oznaczył płatność jako potwierdzoną.
     if (data.status === "verified") {
       return { status: "captured", data };
+    }
+    // W przeciwnym razie sami dopytujemy P24 (niezależnie od webhooka).
+    const confirmed = await this.confirmFromP24(data);
+    if (confirmed.paid) {
+      return { status: "captured", data: confirmed.data };
     }
     return { status: "pending", data };
   }
@@ -262,26 +350,10 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
     if (data.status === "verified") {
       return { status: "captured", data };
     }
-
-    // Fallback: odpytaj P24 o stan transakcji po sessionId.
-    const sessionId = data.p24_session_id;
-    if (!sessionId) {
-      return { status: "pending", data };
-    }
-    try {
-      const result = await this.api<{
-        data: { status: number; orderId: number };
-      }>(`/transaction/by/sessionId/${encodeURIComponent(sessionId)}`, "GET");
-      if (result.data?.status === P24_STATUS_PAID) {
-        return {
-          status: "captured",
-          data: { ...data, status: "verified", order_id: result.data.orderId },
-        };
-      }
-    } catch (e) {
-      this.logger_.warn(
-        `[przelewy24] getPaymentStatus by sessionId nieudany: ${(e as Error).message}`,
-      );
+    // Pull-based potwierdzenie (z verify) — niezależne od webhooka.
+    const confirmed = await this.confirmFromP24(data);
+    if (confirmed.paid) {
+      return { status: "captured", data: confirmed.data };
     }
     return { status: "pending", data };
   }
