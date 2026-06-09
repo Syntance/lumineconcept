@@ -55,6 +55,19 @@ const productSchema = z.object({
 	colorSlotCount: z.number().int().min(1).max(5).default(1),
 	colorSlotNames: z.array(z.string().trim()).optional(),
 	allowCustomColor: z.boolean().default(true),
+	textFields: z
+		.array(
+			z.object({
+				key: z.string().trim().min(1),
+				label: z.string().trim().min(1),
+				hint: z.string().trim().optional(),
+				placeholder: z.string().trim().optional(),
+				required: z.boolean().optional(),
+				maxLength: z.number().int().min(1).max(1000).optional(),
+				multiline: z.boolean().optional(),
+			}),
+		)
+		.default([]),
 });
 
 export type ProductPayload = z.input<typeof productSchema>;
@@ -81,6 +94,7 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 		colorSlotCount: data.colorSlotCount ?? 1,
 		colorSlotNames: data.colorSlotNames,
 		allowCustomColor: data.allowCustomColor ?? true,
+		textFields: data.textFields ?? [],
 	};
 }
 

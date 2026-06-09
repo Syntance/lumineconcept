@@ -159,12 +159,7 @@ export default async function ShopHubPage() {
                   {/* Title zone – slides up; blur tylko wokół wiersza tytułu */}
                   <div className="shop-category-title flex min-h-18 shrink-0 items-center justify-center transition-transform duration-700 ease-in-out group-hover:-translate-y-6">
                     <div className="inline-block max-w-[min(100%,13rem)] transition-all duration-300 group-hover:rounded-md group-hover:px-1.5 group-hover:py-0.5 group-hover:bg-white/25 group-hover:backdrop-blur-sm">
-                      <h2
-                        className={cn(
-                          "text-center font-display text-2xl tracking-wide text-brand-800 transition-colors duration-300 lg:text-3xl",
-                          index === 0 && "group-hover:text-black",
-                        )}
-                      >
+                      <h2 className="text-center font-display text-2xl tracking-wide text-brand-800 transition-colors duration-300 lg:text-3xl">
                         {cat.title}
                       </h2>
                     </div>
@@ -177,10 +172,12 @@ export default async function ShopHubPage() {
                     <p className="w-full max-w-[min(100%,13rem)] shrink-0 text-base leading-relaxed text-brand-400 transition-opacity duration-300 group-hover:opacity-0">
                       {cat.description}
                     </p>
-                    <span className="mt-auto inline-flex w-fit max-w-full items-center justify-center gap-2 self-center whitespace-nowrap pt-4 text-sm font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:rounded-md group-hover:px-1 group-hover:py-0.5 group-hover:bg-white/25 group-hover:backdrop-blur-sm group-hover:text-brand-900">
-                      {cat.cta}
-                      <span aria-hidden="true" className="shrink-0">
-                        &rarr;
+                    <span className="mt-auto self-center pt-4 text-sm font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:text-brand-900">
+                      <span className="inline-flex w-max max-w-full items-center gap-2 rounded-md px-0 py-0 transition-all duration-300 group-hover:px-2 group-hover:py-1 group-hover:bg-white/25 group-hover:backdrop-blur-sm">
+                        <span className="whitespace-nowrap">{cat.cta}</span>
+                        <span aria-hidden="true" className="shrink-0">
+                          &rarr;
+                        </span>
                       </span>
                     </span>
                   </div>

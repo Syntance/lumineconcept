@@ -509,15 +509,10 @@ export function ProductPageClient({
                 type="checkbox"
                 checked={includeCertificateStand}
                 onChange={(e) => setIncludeCertificateStand(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-brand-300 text-brand-800 focus:ring-brand-500"
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-brand-300 accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
               />
-              <span>
-                <span className="font-semibold">
-                  Podstawka w kolorze certyfikatu (+{CERTIFICATE_STAND_PRICE_PLN.toFixed(2).replace(".", ",")} zł)
-                </span>
-                <span className="mt-1 block text-brand-700 leading-snug">
-                  Ten sam odcień co wybrany certyfikat — dopłata za sztukę.
-                </span>
+              <span className="font-semibold">
+                Podstawka w kolorze certyfikatu (+{CERTIFICATE_STAND_PRICE_PLN.toFixed(2).replace(".", ",")} zł)
               </span>
             </label>
           )}

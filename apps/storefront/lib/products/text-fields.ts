@@ -15,6 +15,52 @@ export function isValidTextField(f: unknown): f is TextFieldDef {
   return typeof obj.key === "string" && typeof obj.label === "string";
 }
 
+export const MAX_TEXT_FIELDS = 10;
+
+export function generateTextFieldKey(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/[ąàáâãä]/g, "a")
+    .replace(/[ćçč]/g, "c")
+    .replace(/[ęèéêë]/g, "e")
+    .replace(/[łℓ]/g, "l")
+    .replace(/[ńñ]/g, "n")
+    .replace(/[óòôõö]/g, "o")
+    .replace(/[śšş]/g, "s")
+    .replace(/[żźž]/g, "z")
+    .replace(/[ůüúùû]/g, "u")
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+export function createDefaultTextField(index: number): TextFieldDef {
+  const label = index === 0 ? "Tekst" : `Tekst ${index + 1}`;
+  return {
+    key: generateTextFieldKey(label) || `tekst_${index + 1}`,
+    label,
+    placeholder: "",
+    required: false,
+    maxLength: 200,
+    multiline: false,
+  };
+}
+
+export function serializeTextFieldsForMetadata(fields: TextFieldDef[]): TextFieldDef[] {
+  return fields
+    .filter((f) => f.key.trim() && f.label.trim())
+    .map((f) => ({
+      key: f.key.trim(),
+      label: f.label.trim(),
+      ...(f.hint?.trim() ? { hint: f.hint.trim() } : {}),
+      ...(f.placeholder?.trim() ? { placeholder: f.placeholder.trim() } : {}),
+      ...(f.required ? { required: true } : {}),
+      ...(f.maxLength && f.maxLength !== 200 ? { maxLength: f.maxLength } : {}),
+      ...(f.multiline ? { multiline: true } : {}),
+    }));
+}
+
 /** Pola z Medusa Admin → metadata `text_fields` (JSON string lub tablica). */
 export function parseTextFieldsFromMetadata(
   metadata?: Record<string, unknown> | null,

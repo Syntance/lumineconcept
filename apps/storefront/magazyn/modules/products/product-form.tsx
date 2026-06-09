@@ -23,6 +23,16 @@ import {
 	toggleColorCategoryForSlot,
 	type ColorSlotFormState,
 } from "./product-color-config-state";
+import {
+	addTextField,
+	createInitialTextFieldState,
+	removeTextField,
+	renameTextFieldLabel,
+	serializeTextFieldState,
+	updateTextField,
+	type TextFieldFormState,
+} from "./product-text-field-state";
+import { TextFieldsSection } from "./text-fields-section";
 
 type Props = {
 	product?: AdminProductDetail;
@@ -47,6 +57,9 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 	const [images, setImages] = useState<string[]>(product?.images ?? []);
 	const [colorSlotState, setColorSlotState] = useState<ColorSlotFormState>(() =>
 		createInitialColorSlotState(product, configOptions, colorCategories),
+	);
+	const [textFieldState, setTextFieldState] = useState<TextFieldFormState>(() =>
+		createInitialTextFieldState(product),
 	);
 
 	const [error, setError] = useState<string | null>(null);
@@ -174,6 +187,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 		setSaved(false);
 		const priceNumber = priceMajor.trim() === "" ? null : Math.round(Number(priceMajor) * 100);
 		const colorConfig = serializeColorSlotState(colorSlotState);
+		const textFields = serializeTextFieldState(textFieldState);
 
 		startSave(async () => {
 			const result = await saveProductAction({
@@ -195,6 +209,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				colorSlotCount: colorConfig.colorSlotCount,
 				colorSlotNames: colorConfig.colorSlotNames,
 				allowCustomColor: colorConfig.allowCustomColor,
+				textFields,
 			});
 			if (result && !result.ok) {
 				setError(result.error);
@@ -269,6 +284,22 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 					allowCustomColor={allowCustomForActiveSlot}
 					onAllowCustomColorChange={setAllowCustomForActiveSlot}
 					hasAnyDisabled={hasAnyDisabled}
+				/>
+
+				<TextFieldsSection
+					fields={textFieldState.fields}
+					activeFieldKey={textFieldState.activeFieldKey}
+					onActiveFieldChange={(key) =>
+						setTextFieldState((prev) => ({ ...prev, activeFieldKey: key }))
+					}
+					onAddField={() => setTextFieldState((prev) => addTextField(prev))}
+					onRemoveField={(key) => setTextFieldState((prev) => removeTextField(prev, key))}
+					onRenameField={(key, label) =>
+						setTextFieldState((prev) => renameTextFieldLabel(prev, key, label))
+					}
+					onUpdateField={(key, patch) =>
+						setTextFieldState((prev) => updateTextField(prev, key, patch))
+					}
 				/>
 			</div>
 

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { cn } from "@/lib/utils";
+import { CustomHexColorPicker } from "./CustomHexColorPicker";
+import { isValidHex } from "@/lib/color/hex";
 import {
   CUSTOM_COLOR_VALUE,
   isMatAllowed,
@@ -94,7 +96,6 @@ export function ColorStepPanel({
   categoryByColorName,
 }: ColorStepPanelProps) {
   const [hexInput, setHexInput] = useState(customColor ?? "#000000");
-  const colorInputRef = useRef<HTMLInputElement>(null);
   const uniqueId = useId();
 
   const isCustomSelected = selectedColor === CUSTOM_COLOR_VALUE;
@@ -187,48 +188,14 @@ export function ColorStepPanel({
       </div>
 
       {isCustomSelected && (
-        <div className="flex flex-wrap items-center gap-3 pl-0 sm:pl-0">
-          <p className="w-full text-xs text-brand-500">
-            Wybierz odcień lub wpisz kod HEX.
-          </p>
-          <div className="flex items-center gap-3 rounded-lg border border-brand-200/80 bg-brand-50/60 px-3 py-2.5 shadow-sm">
-            <button
-              type="button"
-              onClick={() => colorInputRef.current?.click()}
-              className="h-9 w-9 shrink-0 cursor-pointer rounded-full border border-brand-300 shadow-sm ring-1 ring-inset ring-black/5"
-              style={{ backgroundColor: customColor ?? hexInput }}
-              aria-label="Wybierz kolor"
-            >
-              <input
-                ref={colorInputRef}
-                type="color"
-                value={customColor ?? hexInput}
-                onChange={(e) => {
-                  const hex = e.target.value;
-                  setHexInput(hex);
-                  onCustomColorChange(hex);
-                }}
-                className="sr-only"
-                tabIndex={-1}
-              />
-            </button>
-            <input
-              type="text"
-              value={hexInput}
-              onChange={(e) => {
-                const val = e.target.value;
-                setHexInput(val);
-                if (/^#[0-9a-fA-F]{6}$/.test(val)) {
-                  onCustomColorChange(val);
-                }
-              }}
-              placeholder="#000000"
-              className="w-24 border-0 border-b border-brand-300 bg-transparent px-1 py-1 font-mono text-sm text-brand-800 focus:border-brand-600 focus:outline-none"
-              maxLength={7}
-            />
-            <span className="text-xs text-brand-400">HEX</span>
-          </div>
-        </div>
+        <CustomHexColorPicker
+          value={customColor ?? (isValidHex(hexInput) ? hexInput : "#000000")}
+          onChange={(hex) => {
+            setHexInput(hex);
+            onCustomColorChange(hex);
+          }}
+          size="md"
+        />
       )}
 
       <div>

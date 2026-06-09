@@ -15,6 +15,8 @@ import {
 } from "@/lib/products/color-slot-config";
 import { LISTING_CATEGORY_HANDLE } from "@/lib/medusa/category-tree";
 import { compareCategoriesBySortOrder } from "@/lib/medusa/category-sort";
+import type { TextFieldDef } from "@/lib/products/text-fields";
+import { parseTextFieldsFromMetadata, serializeTextFieldsForMetadata } from "@/lib/products/text-fields";
 import {
 	findCategoryDefinition,
 	type ColorCategoryId,
@@ -62,6 +64,8 @@ export type ProductFormValues = {
 	colorSlotNames?: string[];
 	/** Legacy fallback — metadata.allow_custom_color. */
 	allowCustomColor: boolean;
+	/** Pola tekstowe konfiguratora (metadata.text_fields). */
+	textFields: TextFieldDef[];
 };
 
 export type AdminProductRow = {
@@ -251,6 +255,7 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 					: "false",
 				product_colors_by_slot: JSON.stringify(values.productColorsBySlot),
 				color_slot_names: values.colorSlotNames ? JSON.stringify(values.colorSlotNames) : undefined,
+				text_fields: JSON.stringify(serializeTextFieldsForMetadata(values.textFields)),
 			},
 		}),
 	});
@@ -384,6 +389,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		colorSlotCount,
 		colorSlotNames: customNames ?? slotTitles,
 		allowCustomColor: defaultAllowCustom,
+		textFields: parseTextFieldsFromMetadata(metadata),
 		metadata,
 	};
 }

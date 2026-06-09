@@ -13,6 +13,7 @@ import {
 } from "./ProductVariantSelector";
 import type { TextFieldDef } from "@/lib/products/text-fields";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
+import { AutoGrowTextarea } from "./AutoGrowTextarea";
 import type { ColorCategoryDefinition } from "@/lib/products/color-categories";
 import {
   buildColorNameCategoryMap,
@@ -341,7 +342,7 @@ export function ProductConfigurator({
                   </p>
                 )}
                 {field.multiline ? (
-                  <textarea
+                  <AutoGrowTextarea
                     id={inputId}
                     value={value}
                     onChange={(e) => onTextFieldChange(field.key, e.target.value)}
@@ -349,22 +350,22 @@ export function ProductConfigurator({
                       field.placeholder ??
                       "W uwagach prosimy o wpisanie treści, która ma być zawarta na przedmiocie"
                     }
-                    rows={5}
+                    minRows={2}
                     maxLength={max}
                     required={field.required}
-                    className={`w-full resize-none border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                    className={`w-full border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
                       field.required && !value.trim()
                         ? "border-red-300 focus:border-red-400"
                         : "border-brand-300 focus:border-brand-500"
                     } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
                   />
                 ) : (
-                  <input
+                  <AutoGrowTextarea
                     id={inputId}
-                    type="text"
                     value={value}
                     onChange={(e) => onTextFieldChange(field.key, e.target.value)}
                     placeholder={field.placeholder ?? ""}
+                    minRows={1}
                     maxLength={max}
                     required={field.required}
                     className={`w-full border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
