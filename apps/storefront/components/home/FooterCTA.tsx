@@ -6,6 +6,8 @@ import {
   homepageInstagramTilesFromSettings,
   type HomepageInstagramTile,
 } from "@/lib/homepage-instagram-tiles";
+import { BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
+import { cn } from "@/lib/utils";
 
 const IG_PROFILE = "https://instagram.com/lumineconcept";
 
@@ -169,11 +171,16 @@ export async function FooterCTA() {
             sizes="100vw"
             unoptimized
             priority={false}
-            className="absolute inset-0 h-full w-full origin-[52%_70%] scale-[1.2] select-none object-cover object-[52%_70%]"
+            className="absolute inset-0 h-full w-full origin-[30%_80%] scale-[1.2] select-none object-cover object-[30%_80%]"
           />
 
-          <div className="absolute inset-0 z-10 flex items-center pl-[14%]">
-            <div className="flex w-[36%] flex-col items-center text-center">
+          <div
+            className={cn(
+              "absolute inset-0 z-10 flex items-center",
+              BREADCRUMBS_ALIGN_CLASS,
+            )}
+          >
+            <div className="flex w-fit max-w-full flex-col items-center text-center lg:ml-[16%]">
               <BrandingHeading />
               <BrandingShopLink className="mt-10 whitespace-nowrap px-7 py-3" />
               <BrandingContact layout="inline" className="mt-8 text-sm" />
