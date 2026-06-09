@@ -16,7 +16,7 @@ export default async function CategoriesPage() {
 			<header>
 				<h1 className="font-serif text-2xl text-foreground">Kategorie</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
-					Podkategorie listingu „Gotowe wzory” — te same pozycje co w filtrach sklepu. Produkty przypisujesz przy edycji.
+					Podkategorie listingu „Gotowe wzory” — ta sama kolejność co w filtrach sklepu i przy produkcie.
 				</p>
 			</header>
 

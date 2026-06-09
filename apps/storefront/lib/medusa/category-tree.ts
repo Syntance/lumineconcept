@@ -1,3 +1,5 @@
+import { compareCategoriesBySortOrder } from "@/lib/medusa/category-sort";
+
 /**
  * Taksonomia zsynchronizowana z Medusą (`sync-storefront-categories` w backendzie).
  */
@@ -12,6 +14,7 @@ export type CategoryTreeNode = {
   handle: string;
   name: string;
   is_active?: boolean;
+  metadata?: Record<string, unknown> | null;
   category_children?: CategoryTreeNode[] | null;
 };
 
@@ -29,14 +32,14 @@ export function buildListingCategoryFilters(
   const root = findCategoryNodeByHandle(tree, listingRootHandle);
   if (!root?.category_children?.length) return [];
 
-  return root.category_children
+  return [...root.category_children]
     .filter((node) => node.is_active !== false)
+    .sort(compareCategoriesBySortOrder)
     .map((node) => ({
       id: node.id,
       handle: node.handle,
       name: node.name,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, "pl"));
+    }));
 }
 
 export function flattenCategoryTree(nodes: CategoryTreeNode[]): CategoryTreeNode[] {

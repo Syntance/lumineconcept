@@ -7,7 +7,7 @@ import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
 import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
 import { slugify } from "@magazyn/core/lib/slug";
-import { type CategoryInput, createCategory, deleteCategory, updateCategory } from "./store";
+import { type CategoryInput, createCategory, deleteCategory, reorderCategories, updateCategory } from "./store";
 
 export type CategoryActionState = { error: string | null; ok: boolean };
 
@@ -73,6 +73,29 @@ export async function deleteCategoryAction(id: string): Promise<CategoryActionSt
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się usunąć kategorii." };
+	}
+
+	revalidatePath(PATH);
+	await revalidateCategoryCaches();
+	return { ok: true, error: null };
+}
+
+const reorderSchema = z.object({
+	orderedIds: z.array(z.string().trim().min(1)).min(1),
+});
+
+export async function reorderCategoriesAction(orderedIds: string[]): Promise<CategoryActionState> {
+	const parsed = reorderSchema.safeParse({ orderedIds });
+	if (!parsed.success) {
+		return { ok: false, error: "Nieprawidłowa kolejność kategorii." };
+	}
+
+	try {
+		await reorderCategories(parsed.data.orderedIds);
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminApiError) return { ok: false, error: error.message };
+		return { ok: false, error: "Nie udało się zapisać kolejności." };
 	}
 
 	revalidatePath(PATH);

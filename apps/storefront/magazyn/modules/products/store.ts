@@ -13,6 +13,8 @@ import {
 	parseProductColorsBySlot,
 	type ProductCustomColor,
 } from "@/lib/products/color-slot-config";
+import { LISTING_CATEGORY_HANDLE } from "@/lib/medusa/category-tree";
+import { compareCategoriesBySortOrder } from "@/lib/medusa/category-sort";
 import {
 	findCategoryDefinition,
 	type ColorCategoryId,
@@ -306,19 +308,30 @@ export async function listCategoryOptions(): Promise<CategoryOption[]> {
 		product_categories: Array<{
 			id: string;
 			name: string;
-			parent_category?: { name: string } | null;
+			handle: string;
+			parent_category_id?: string | null;
+			metadata?: Record<string, unknown> | null;
 		}>;
-	}>("/admin/product-categories?limit=100&fields=id,name,parent_category.name");
+	}>("/admin/product-categories?limit=100&fields=id,name,handle,parent_category_id,metadata");
+
+	const gotoweId = data.product_categories.find(
+		(c) => c.handle === LISTING_CATEGORY_HANDLE.gotoweWzory,
+	)?.id;
+
+	const shopRoots = new Set<string>([
+		LISTING_CATEGORY_HANDLE.gotoweWzory,
+		LISTING_CATEGORY_HANDLE.logo3d,
+		LISTING_CATEGORY_HANDLE.certyfikaty,
+	]);
 
 	return data.product_categories
-		.map((c) => {
-			const parent = c.parent_category?.name?.trim();
-			return {
-				id: c.id,
-				name: parent ? `${parent} / ${c.name}` : c.name,
-			};
-		})
-		.sort((a, b) => a.name.localeCompare(b.name, "pl"));
+		.filter((c) => !shopRoots.has(c.handle))
+		.filter((c) => !gotoweId || c.parent_category_id === gotoweId)
+		.sort(compareCategoriesBySortOrder)
+		.map((c) => ({
+			id: c.id,
+			name: c.name,
+		}));
 }
 
 export async function listAdminProducts(): Promise<AdminProductRow[]> {

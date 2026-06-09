@@ -1,15 +1,32 @@
 "use client";
 
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+	closestCenter,
+	DndContext,
+	type DragEndEvent,
+	KeyboardSensor,
+	PointerSensor,
+	useSensor,
+	useSensors,
+} from "@dnd-kit/core";
+import {
+	arrayMove,
+	SortableContext,
+	sortableKeyboardCoordinates,
+	useSortable,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Check, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import { CheckboxInput } from "@magazyn/core/ui/checkbox";
 import { cn } from "@magazyn/core/lib/cn";
 import { slugify } from "@magazyn/core/lib/slug";
 import type { AdminCategory } from "./store";
-import { deleteCategoryAction, saveCategoryAction } from "./actions";
+import { deleteCategoryAction, reorderCategoriesAction, saveCategoryAction } from "./actions";
 
 type FormState = { id?: string; name: string; description: string; isActive: boolean };
 
@@ -18,17 +35,106 @@ const EMPTY: FormState = { name: "", description: "", isActive: true };
 const inputClass =
 	"w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
+function SortableCategoryRow({
+	category,
+	pending,
+	onEdit,
+	onDelete,
+}: {
+	category: AdminCategory;
+	pending: boolean;
+	onEdit: (category: AdminCategory) => void;
+	onDelete: (category: AdminCategory) => void;
+}) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+		id: category.id,
+	});
+
+	return (
+		<li
+			ref={setNodeRef}
+			style={{ transform: CSS.Transform.toString(transform), transition }}
+			className={cn(
+				"flex items-center gap-3 bg-card px-4 py-3 transition-colors hover:bg-muted/30",
+				isDragging && "opacity-60",
+			)}
+		>
+			<button
+				type="button"
+				aria-label={`Zmień kolejność: ${category.name}`}
+				className="inline-flex size-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing"
+				{...attributes}
+				{...listeners}
+			>
+				<GripVertical className="size-4" aria-hidden />
+			</button>
+
+			<div className="min-w-0 flex-1">
+				<div className="flex items-center gap-2">
+					<span className="truncate text-sm font-medium text-foreground">{category.name}</span>
+					{!category.isActive ? (
+						<span className="rounded-full bg-muted px-1.5 py-0.5 text-[0.6rem] font-medium text-muted-foreground">
+							ukryta
+						</span>
+					) : null}
+					{category.needsReparent ? (
+						<span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium text-amber-700 dark:text-amber-400">
+							poza filtrem — zapisz ponownie
+						</span>
+					) : null}
+				</div>
+				<span className="text-xs text-muted-foreground">
+					/{category.handle} · {category.productCount} prod.
+				</span>
+			</div>
+
+			<button
+				type="button"
+				onClick={() => onEdit(category)}
+				aria-label={`Edytuj ${category.name}`}
+				className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+			>
+				<Pencil className="size-4" aria-hidden />
+			</button>
+			<button
+				type="button"
+				onClick={() => onDelete(category)}
+				disabled={pending}
+				aria-label={`Usuń ${category.name}`}
+				className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-destructive/30 disabled:opacity-50"
+			>
+				<Trash2 className="size-4" aria-hidden />
+			</button>
+		</li>
+	);
+}
+
 export function CategoriesManager({ categories }: { categories: AdminCategory[] }) {
 	const router = useRouter();
+	const [items, setItems] = useState(categories);
 	const [form, setForm] = useState<FormState>(EMPTY);
 	const [error, setError] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
 
 	const isEditing = Boolean(form.id);
 
+	useEffect(() => {
+		setItems(categories);
+	}, [categories]);
+
+	const sensors = useSensors(
+		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+	);
+
 	function startEdit(category: AdminCategory) {
 		setError(null);
-		setForm({ id: category.id, name: category.name, description: category.description, isActive: category.isActive });
+		setForm({
+			id: category.id,
+			name: category.name,
+			description: category.description,
+			isActive: category.isActive,
+		});
 	}
 
 	function reset() {
@@ -77,51 +183,55 @@ export function CategoriesManager({ categories }: { categories: AdminCategory[] 
 		});
 	}
 
+	function onDragEnd(event: DragEndEvent) {
+		const { active, over } = event;
+		if (!over || active.id === over.id) return;
+
+		const oldIndex = items.findIndex((item) => item.id === active.id);
+		const newIndex = items.findIndex((item) => item.id === over.id);
+		if (oldIndex < 0 || newIndex < 0) return;
+
+		const next = arrayMove(items, oldIndex, newIndex);
+		setItems(next);
+		setError(null);
+
+		startTransition(async () => {
+			const result = await reorderCategoriesAction(next.map((item) => item.id));
+			if (!result.ok) {
+				setError(result.error);
+				setItems(categories);
+				return;
+			}
+			router.refresh();
+		});
+	}
+
 	return (
 		<div className="grid gap-6 lg:grid-cols-[1fr_340px]">
 			<div className="overflow-hidden rounded-xl border border-border">
 				{categories.length === 0 ? (
 					<p className="p-8 text-center text-sm text-muted-foreground">Brak kategorii. Dodaj pierwszą po prawej.</p>
 				) : (
-					<ul className="divide-y divide-border">
-						{categories.map((category) => (
-							<li key={category.id} className="flex items-center gap-3 bg-card px-4 py-3 transition-colors hover:bg-muted/30">
-								<div className="min-w-0 flex-1">
-									<div className="flex items-center gap-2">
-										<span className="truncate text-sm font-medium text-foreground">{category.name}</span>
-										{!category.isActive ? (
-											<span className="rounded-full bg-muted px-1.5 py-0.5 text-[0.6rem] font-medium text-muted-foreground">ukryta</span>
-										) : null}
-										{category.needsReparent ? (
-											<span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium text-amber-700 dark:text-amber-400">
-												poza filtrem — zapisz ponownie
-											</span>
-										) : null}
-									</div>
-									<span className="text-xs text-muted-foreground">
-										/{category.handle} · {category.productCount} prod.
-									</span>
-								</div>
-								<button
-									type="button"
-									onClick={() => startEdit(category)}
-									aria-label={`Edytuj ${category.name}`}
-									className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-								>
-									<Pencil className="size-4" aria-hidden />
-								</button>
-								<button
-									type="button"
-									onClick={() => onDelete(category)}
-									disabled={pending}
-									aria-label={`Usuń ${category.name}`}
-									className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-destructive/30 disabled:opacity-50"
-								>
-									<Trash2 className="size-4" aria-hidden />
-								</button>
-							</li>
-						))}
-					</ul>
+					<>
+						<p className="border-b border-border bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
+							Przeciągnij kategorie, aby ustawić kolejność w filtrach sklepu i przy produkcie.
+						</p>
+						<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+							<SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+								<ul className="divide-y divide-border">
+									{items.map((category) => (
+										<SortableCategoryRow
+											key={category.id}
+											category={category}
+											pending={pending}
+											onEdit={startEdit}
+											onDelete={onDelete}
+										/>
+									))}
+								</ul>
+							</SortableContext>
+						</DndContext>
+					</>
 				)}
 			</div>
 

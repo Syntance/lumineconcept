@@ -151,6 +151,7 @@ async function _getProductCategories() {
   try {
     const response = await medusa.store.category.list({
       include_descendants_tree: true,
+      fields: "+metadata",
     });
 
     return response.product_categories;
