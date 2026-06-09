@@ -48,7 +48,7 @@ export function LogoQuoteArchImage() {
   return (
     <div
       ref={ref}
-      className="logo-quote-arch relative mx-auto h-full w-full overflow-hidden max-lg:aspect-[693/915] max-lg:h-auto max-lg:max-h-[min(55svh,915px)] lg:w-[88%]"
+      className="logo-quote-arch relative shrink-0 overflow-hidden max-lg:mx-auto max-lg:aspect-[693/915] max-lg:h-auto max-lg:w-full max-lg:max-h-[min(55svh,915px)] lg:h-(--logo3d-image-h,auto) lg:w-(--logo3d-image-w,auto)"
       style={frameStyle}
     >
       <Image
@@ -57,7 +57,7 @@ export function LogoQuoteArchImage() {
         fill
         sizes="(max-width: 1024px) 90vw, min(50vw, 42rem)"
         quality={92}
-        className="origin-bottom scale-[1.045] object-cover object-bottom"
+        className="origin-[50%_100%] scale-[1.045] object-cover object-bottom"
         draggable={false}
       />
     </div>
