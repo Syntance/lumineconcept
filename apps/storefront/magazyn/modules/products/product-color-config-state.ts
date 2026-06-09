@@ -1,6 +1,7 @@
 import {
 	ADD_COLOR_FIELD_VALUE,
 	buildColorOptionTitles,
+	CUSTOM_COLOR_CATEGORY_ID,
 	DEFAULT_FIRST_COLOR_SLOT,
 	defaultColorSlotTitle,
 	type ColorCategoryId,
@@ -255,12 +256,19 @@ export function toggleColorCategoryForSlot(
 	const current = new Set(state.disabledCategoriesBySlot[slot] ?? []);
 	if (enabled) current.delete(categoryId);
 	else current.add(categoryId);
+
+	const nextAllowCustomBySlot = { ...state.allowCustomBySlot };
+	if (!enabled && categoryId === CUSTOM_COLOR_CATEGORY_ID) {
+		nextAllowCustomBySlot[slot] = false;
+	}
+
 	return {
 		...state,
 		disabledCategoriesBySlot: {
 			...state.disabledCategoriesBySlot,
 			[slot]: current,
 		},
+		allowCustomBySlot: nextAllowCustomBySlot,
 	};
 }
 

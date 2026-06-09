@@ -18,6 +18,8 @@ import type { ColorCategoryDefinition } from "@/lib/products/color-categories";
 import {
   buildColorNameCategoryMap,
   getEnabledColorNamesForSlot,
+  resolveAllowCustomColorForSlot,
+  isColorCategoryEnabledForSlot,
 } from "@/lib/products/color-slot-config";
 
 export interface ColorCustomization {
@@ -158,6 +160,17 @@ export function ProductConfigurator({
             const slotMatDisabledSet =
               matDisabledSetBySlot[option.title] ?? matDisabledSet;
 
+            const slotAllowCustomColor = resolveAllowCustomColorForSlot(
+              allowCustomColorBySlot,
+              option.title,
+              allowCustomColor,
+              disabledColorCategoriesBySlot,
+            );
+            const customCategoryEnabled = isColorCategoryEnabledForSlot(
+              disabledColorCategoriesBySlot,
+              option.title,
+            );
+
             return (
             <div key={option.id}>
               <ColorStepPanel
@@ -204,9 +217,8 @@ export function ProductConfigurator({
                 mirrorSet={mirrorSet}
                 customSet={customSet}
                 matDisabledSet={slotMatDisabledSet}
-                allowCustomColor={
-                  allowCustomColorBySlot[option.title] ?? allowCustomColor
-                }
+                allowCustomColor={slotAllowCustomColor}
+                customCategoryEnabled={customCategoryEnabled}
                 colorCategories={colorCategories}
                 categoryByColorName={{
                   ...categoryByColorName,

@@ -39,6 +39,8 @@ import {
   parseDisabledConfigIdsBySlot,
   parseProductColorsBySlot,
   resolveColorSlotTitles,
+  resolveAllowCustomColorForSlot,
+  isColorCategoryEnabledForSlot,
 } from "@/lib/products/color-slot-config";
 
 interface MiniConfiguratorModalProps {
@@ -77,6 +79,7 @@ function ColorPicker({
   customSet,
   matDisabledSet,
   allowCustomColor = true,
+  customCategoryEnabled = true,
 }: {
   label: string;
   values: string[];
@@ -88,6 +91,7 @@ function ColorPicker({
   customSet: Set<string>;
   matDisabledSet: Set<string>;
   allowCustomColor?: boolean;
+  customCategoryEnabled?: boolean;
 }) {
   const uniqueId = useId();
   const [hexInput, setHexInput] = useState(state.customHex ?? "#000000");
@@ -105,7 +109,8 @@ function ColorPicker({
   const colored = values.filter((v) => coloredSet.has(v.toLowerCase()));
   const mirror = values.filter((v) => isMirrorColor(v, mirrorSet));
   const customNamed = values.filter((v) => customSet.has(v.toLowerCase()));
-  const showIndividualGroup = customNamed.length > 0 || allowCustomColor;
+  const showIndividualGroup =
+    customCategoryEnabled && (customNamed.length > 0 || allowCustomColor);
   const isCustom = state.selected === CUSTOM_COLOR_VALUE;
   const matAllowed = isCustom || isMatAllowed(state.selected, matDisabledSet);
 
@@ -490,7 +495,16 @@ export function MiniConfiguratorModal({
               mirrorSet={resolvedMirrorSet}
               customSet={resolvedCustomSet}
               matDisabledSet={matDisabledSet}
-              allowCustomColor={allowCustomColorBySlot[optionTitle] ?? true}
+              allowCustomColor={resolveAllowCustomColorForSlot(
+                allowCustomColorBySlot,
+                optionTitle,
+                parseAllowCustomColor(metadata),
+                disabledColorCategoriesBySlot,
+              )}
+              customCategoryEnabled={isColorCategoryEnabledForSlot(
+                disabledColorCategoriesBySlot,
+                optionTitle,
+              )}
             />
           ))}
 

@@ -71,6 +71,24 @@ export function flattenProductColorsForSlot(
 	return [...keys].flatMap((id) => byCategory[id] ?? []);
 }
 
+export const CUSTOM_COLOR_CATEGORY_ID = "custom";
+
+function resolvePerSlotMetadataValue(
+	obj: Record<string, unknown>,
+	slotTitles: readonly string[],
+	slotTitle: string,
+): unknown {
+	if (slotTitle in obj) return obj[slotTitle];
+	const index = slotTitles.indexOf(slotTitle);
+	if (index < 0) return undefined;
+	const metadataKeys = Object.keys(obj);
+	const fallbackKey = metadataKeys[index];
+	if (fallbackKey && fallbackKey !== slotTitle) {
+		return obj[fallbackKey];
+	}
+	return undefined;
+}
+
 export function parseDisabledColorCategoriesBySlot(
 	meta: Record<string, unknown> | null | undefined,
 	slotTitles: readonly string[],
@@ -84,12 +102,36 @@ export function parseDisabledColorCategoriesBySlot(
 	if (!obj) return result;
 
 	for (const title of slotTitles) {
-		const arr = obj[title];
-		result[title] = Array.isArray(arr)
-			? arr.filter((x): x is string => typeof x === "string")
+		const raw = resolvePerSlotMetadataValue(obj, slotTitles, title);
+		result[title] = Array.isArray(raw)
+			? raw.filter((x): x is string => typeof x === "string")
 			: [];
 	}
 	return result;
+}
+
+export function isColorCategoryEnabledForSlot(
+	disabledColorCategoriesBySlot: Record<string, string[]>,
+	slotTitle: string,
+	categoryId: string = CUSTOM_COLOR_CATEGORY_ID,
+): boolean {
+	const disabled = disabledColorCategoriesBySlot[slotTitle] ?? [];
+	return !disabled.includes(categoryId);
+}
+
+export function resolveAllowCustomColorForSlot(
+	allowCustomColorBySlot: Record<string, boolean>,
+	slotTitle: string,
+	globalAllow: boolean,
+	disabledColorCategoriesBySlot: Record<string, string[]>,
+): boolean {
+	if (!isColorCategoryEnabledForSlot(disabledColorCategoriesBySlot, slotTitle)) {
+		return false;
+	}
+	if (slotTitle in allowCustomColorBySlot) {
+		return allowCustomColorBySlot[slotTitle] ?? false;
+	}
+	return globalAllow;
 }
 
 export const ADD_COLOR_FIELD_VALUE = "__add_color_field__";
@@ -332,12 +374,14 @@ export function parseAllowCustomColorBySlot(
 	const obj = parseJsonRecord(meta?.allow_custom_color_by_slot);
 
 	for (const title of slotTitles) {
-		if (obj && title in obj) {
-			const val = obj[title];
-			result[title] = val !== "false" && val !== false;
-		} else {
-			result[title] = defaultAllow;
+		if (obj) {
+			const raw = resolvePerSlotMetadataValue(obj, slotTitles, title);
+			if (raw !== undefined) {
+				result[title] = raw !== "false" && raw !== false;
+				continue;
+			}
 		}
+		result[title] = defaultAllow;
 	}
 	return result;
 }

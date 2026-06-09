@@ -37,6 +37,7 @@ interface ColorStepPanelProps {
   customSet?: Set<string>;
   matDisabledSet: Set<string>;
   allowCustomColor?: boolean;
+  customCategoryEnabled?: boolean;
   colorCategories?: ColorCategoryDefinition[];
   categoryByColorName?: Record<string, string>;
 }
@@ -46,10 +47,13 @@ function buildDynamicColorGroups(
   categories: ColorCategoryDefinition[],
   categoryByColorName: Record<string, string>,
   allowCustomColor: boolean,
+  customCategoryEnabled: boolean,
 ): ColorSelectGroup[] {
   const groups: ColorSelectGroup[] = [];
 
   for (const category of categories) {
+    if (category.id === "custom" && !customCategoryEnabled) continue;
+
     const categoryValues = values.filter(
       (value) => categoryByColorName[value.toLowerCase()] === category.id,
     );
@@ -92,6 +96,7 @@ export function ColorStepPanel({
   customSet = new Set(),
   matDisabledSet,
   allowCustomColor = true,
+  customCategoryEnabled = true,
   colorCategories,
   categoryByColorName,
 }: ColorStepPanelProps) {
@@ -108,7 +113,8 @@ export function ColorStepPanel({
   const coloredColors = option.values.filter((v) => coloredSet.has(v.toLowerCase()));
   const mirrorColors = option.values.filter((v) => isMirrorColor(v, mirrorSet));
   const customNamedColors = option.values.filter((v) => customSet.has(v.toLowerCase()));
-  const showIndividualGroup = customNamedColors.length > 0 || allowCustomColor;
+  const showIndividualGroup =
+    customCategoryEnabled && (customNamedColors.length > 0 || allowCustomColor);
   const matAllowed = isCustomSelected || isMatAllowed(selectedColor, matDisabledSet);
 
   const selectId = `color-select-${option.id}-${uniqueId.replace(/:/g, "")}`;
@@ -120,6 +126,7 @@ export function ColorStepPanel({
           colorCategories,
           categoryByColorName,
           allowCustomColor,
+          customCategoryEnabled,
         )
       : [
           ...(standardColors.length > 0
