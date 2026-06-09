@@ -58,4 +58,4 @@ export function truncate(text: string, maxLength: number): string {
 }
 
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumine.syntance.dev";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumineconcept.pl";

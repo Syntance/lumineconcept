@@ -29,8 +29,9 @@ const BACKEND_URL =
     : "http://localhost:9000");
 
 const STOREFRONT_URL =
+  process.env.STOREFRONT_URL ??
   process.env.STORE_CORS ??
-  (IS_PRODUCTION ? "https://lumine.syntance.dev" : "http://localhost:3000");
+  (IS_PRODUCTION ? "https://lumineconcept.pl" : "http://localhost:3000");
 
 /**
  * Fail-fast: żaden realny deploy nie ma prawa wystartować z domyślnym,

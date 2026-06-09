@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     follow: false,
   },
   alternates: {
-    canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumine.syntance.dev"}/salony-beauty`,
+    canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumineconcept.pl"}/salony-beauty`,
   },
 };
 

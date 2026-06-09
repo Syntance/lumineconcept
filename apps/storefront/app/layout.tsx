@@ -39,7 +39,7 @@ const binerka = localFont({
 });
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumine.syntance.dev";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumineconcept.pl";
 
 export const viewport: Viewport = {
   width: "device-width",
