@@ -128,13 +128,13 @@ export default async function ShopHubPage() {
               <Link
                 key={cat.href}
                 href={cat.href}
-                className="shop-category-card group relative flex aspect-4/5 h-full w-full flex-col overflow-hidden border border-brand-200 bg-white px-11 pb-12 pt-12 transition-shadow duration-300 hover:border-brand-400 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="shop-category-card group relative flex w-full overflow-hidden border border-brand-200 bg-white transition-shadow duration-300 hover:border-brand-400 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent max-sm:aspect-[3/1] max-sm:flex-row max-sm:items-stretch max-sm:p-0 sm:aspect-4/5 sm:flex-col sm:gap-0 sm:px-11 sm:pb-12 sm:pt-12 sm:h-full"
               >
-                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden max-sm:hidden">
                   <div className="relative h-full w-full">
                     <Image
                       src={cat.image}
-                      alt={cat.title}
+                      alt=""
                       fill
                       className={cn(
                         "object-cover transition-transform duration-300",
@@ -142,23 +142,24 @@ export default async function ShopHubPage() {
                           ? "origin-bottom -translate-x-[1%] translate-y-[3.5%] scale-[1.05] object-bottom group-hover:scale-[1.1]"
                           : "object-center group-hover:scale-105",
                       )}
-                      sizes="(max-width: 640px) 90vw, 33vw"
+                      sizes="33vw"
+                      aria-hidden
                     />
                   </div>
                 </div>
 
-                <div className="relative z-10 flex min-h-0 w-full flex-1 flex-col">
-                  <div className="-translate-y-6 flex min-h-[4.95rem] shrink-0 items-center justify-center">
-                    <div className="inline-block max-w-[min(100%,14.3rem)] rounded-md bg-white/25 px-1.5 py-0.5 backdrop-blur-sm">
-                      <h2 className="text-center font-display text-[1.65rem] tracking-wide text-brand-800 lg:text-[2.0625rem]">
+                <div className="relative z-10 flex w-1/2 min-w-0 flex-col justify-center max-sm:px-3 max-sm:py-2 sm:min-h-0 sm:w-auto sm:flex-1 sm:px-0 sm:py-0">
+                  <div className="-translate-y-6 flex min-h-[4.95rem] shrink-0 items-center justify-center max-sm:min-h-0 max-sm:w-full max-sm:translate-y-0">
+                    <div className="inline-block max-w-[min(100%,14.3rem)] rounded-md bg-white/25 px-1.5 py-0.5 backdrop-blur-sm max-sm:max-w-none max-sm:bg-transparent max-sm:p-0 max-sm:backdrop-blur-none">
+                      <h2 className="text-center font-display text-[1.65rem] tracking-wide text-brand-800 max-sm:text-[1.875rem] max-sm:leading-[1.05] max-sm:tracking-normal sm:text-[1.65rem] lg:text-[2.0625rem]">
                         {cat.title}
                       </h2>
                     </div>
                   </div>
 
-                  <div className="h-[1.65rem] shrink-0" aria-hidden="true" />
+                  <div className="hidden h-[1.65rem] shrink-0 sm:block" aria-hidden="true" />
 
-                  <div className="relative flex min-h-0 flex-1 translate-y-6 flex-col items-center text-center">
+                  <div className="relative hidden min-h-0 flex-1 translate-y-6 flex-col items-center text-center sm:flex">
                     <span className="mt-auto self-center pt-[1.1rem] text-[0.9625rem] font-medium uppercase tracking-[0.18em] text-brand-900">
                       <span className="inline-flex w-max max-w-full items-center gap-2 rounded-md bg-white/25 px-2 py-1 backdrop-blur-sm">
                         <span className="whitespace-nowrap">{cat.cta}</span>
@@ -168,6 +169,16 @@ export default async function ShopHubPage() {
                       </span>
                     </span>
                   </div>
+                </div>
+
+                <div className="absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden max-sm:block">
+                  <Image
+                    src={cat.image}
+                    alt={cat.title}
+                    fill
+                    className="origin-center object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
+                    sizes="(max-width: 640px) 50vw, 0px"
+                  />
                 </div>
               </Link>
             ))}
