@@ -58,9 +58,17 @@ function actionFlags(order: AdminOrderDetail) {
 	const shipped = ["shipped", "partially_shipped", "delivered", "partially_delivered"].includes(order.fulfillmentStatus);
 	const inRealization = ["fulfilled", "partially_fulfilled"].includes(order.fulfillmentStatus);
 
+	const isPaid =
+		order.paymentStatus === "captured" ||
+		order.paymentStatus === "partially_captured" ||
+		order.paymentStatus === "authorized" ||
+		order.paymentStatus === "partially_authorized" ||
+		order.payments.some((p) => p.capturedAt && !p.canceledAt);
+
 	return {
 		canCapture:
 			!closed && !shipped && !inRealization && ["not_fulfilled", "partially_fulfilled"].includes(order.fulfillmentStatus),
+		isPaid,
 		canShip: !closed && !shipped && (inRealization || order.fulfillments.some((f) => !f.canceledAt && !f.shippedAt)),
 		canComplete: !closed && shipped,
 		canCancel: !closed,

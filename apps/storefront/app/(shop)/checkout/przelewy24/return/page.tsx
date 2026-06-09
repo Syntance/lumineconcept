@@ -7,7 +7,9 @@ import { Loader2, AlertCircle } from "lucide-react";
 import {
   completeCart,
   isCartAlreadyCompletedError,
+  markCheckoutCompleted,
   notifyOrderPlaced,
+  redirectToOrderConfirmation,
 } from "@/lib/medusa/checkout";
 
 /**
@@ -60,21 +62,24 @@ function Przelewy24ReturnInner() {
           const result = await completeCart(cartId, { retries: 0 });
           if (result.type === "order") {
             notifyOrderPlaced(result.order.id);
+            markCheckoutCompleted(
+              result.order.id,
+              result.order.display_id ?? undefined,
+            );
             clearLocalCart();
-            const qs = new URLSearchParams({ order_id: result.order.id });
-            if (result.order.display_id) {
-              qs.set("display_id", String(result.order.display_id));
-            }
-            window.location.assign(`/checkout/potwierdzenie?${qs.toString()}`);
+            redirectToOrderConfirmation(
+              result.order.id,
+              result.order.display_id ?? undefined,
+            );
             return;
           }
           // type === "cart" → płatność jeszcze niepotwierdzona, ponawiamy.
         } catch (e) {
           if (isCartAlreadyCompletedError(e)) {
-            // Zamówienie już powstało (np. po odświeżeniu) — czyścimy i
-            // pokazujemy stan sukcesu generyczny.
             clearLocalCart();
-            window.location.assign("/checkout/potwierdzenie");
+            if (typeof window !== "undefined") {
+              window.location.replace("/checkout/potwierdzenie");
+            }
             return;
           }
           // Błąd sieci/serwera — spróbujemy ponownie w kolejnej iteracji.

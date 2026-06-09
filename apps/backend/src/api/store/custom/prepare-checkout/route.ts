@@ -69,6 +69,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
         "id",
         "email",
         "completed_at",
+        "items.id",
         "payment_collection.id",
         "payment_collection.payment_sessions.id",
         "payment_collection.payment_sessions.provider_id",
@@ -78,6 +79,23 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     const [cartSnapshot] = await remoteQuery(pcObject);
     if (!cartSnapshot) {
       return res.status(404).json({ message: `Cart ${cartId} not found` });
+    }
+
+    const snapshot = cartSnapshot as {
+      completed_at?: string | null;
+      items?: Array<{ id?: string }> | null;
+    };
+    if (snapshot.completed_at) {
+      return res.status(400).json({
+        message: "Koszyk został już sfinalizowany — nie można ponownie opłacić.",
+        type: "cart_completed",
+      });
+    }
+    if (!snapshot.items?.length) {
+      return res.status(400).json({
+        message: "Koszyk jest pusty — dodaj produkty przed płatnością.",
+        type: "cart_empty",
+      });
     }
     
     const cartEmail = (cartSnapshot as { email?: string }).email ?? "";

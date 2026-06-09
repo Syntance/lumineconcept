@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
+import { CheckoutConfirmationGuard } from "@/components/checkout/CheckoutConfirmationGuard";
 
 export const metadata: Metadata = {
   title: "Potwierdzenie zamówienia",
@@ -16,6 +17,7 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps)
 
   return (
     <div className="container mx-auto px-4 py-16 text-center">
+      <CheckoutConfirmationGuard orderId={orderId} displayId={displayId} />
       <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
       <h1 className="mt-6 font-display text-3xl font-bold text-brand-800">
         Dziękujemy za zamówienie!

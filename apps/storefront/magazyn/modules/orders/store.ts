@@ -67,6 +67,15 @@ type MedusaFulfillment = {
 	items?: Array<{ id?: string | null; line_item_id?: string | null; quantity?: number | null }> | null;
 };
 
+type MedusaShippingMethod = {
+	name?: string | null;
+	shipping_option_id?: string | null;
+	amount?: number | null;
+	subtotal?: number | null;
+	total?: number | null;
+	raw_amount?: { value?: string | number } | number | null;
+};
+
 type MedusaOrder = {
 	id: string;
 	display_id?: number | null;
@@ -86,7 +95,7 @@ type MedusaOrder = {
 	items?: MedusaOrderItem[] | null;
 	shipping_address?: MedusaAddress | null;
 	billing_address?: MedusaAddress | null;
-	shipping_methods?: Array<{ name?: string | null; shipping_option_id?: string | null }> | null;
+	shipping_methods?: MedusaShippingMethod[] | null;
 	payment_collections?: Array<{ payments?: MedusaPayment[] | null }> | null;
 	fulfillments?: MedusaFulfillment[] | null;
 };
@@ -124,12 +133,53 @@ function normalizeMetadata(metadata: Record<string, unknown> | null | undefined)
 }
 
 /**
- * Konwertuje cenę z Medusa API (decimal w głównej jednostce, np. 100.50 zł)
- * na wartość w groszach (integer, np. 10050).
- * Medusa v2 zwraca ceny jako decimal, ale magazyn oczekuje minor units (grosze).
+ * Medusa v2 zwraca kwoty jako decimal PLN — konwersja na grosze (integer).
  */
 function toMinorUnits(amount: number | null | undefined): number {
 	return Math.round((amount ?? 0) * 100);
+}
+
+function amountFromUnknown(v: unknown): number {
+	if (v === null || v === undefined) return 0;
+	if (typeof v === "number" && Number.isFinite(v)) return v;
+	if (typeof v === "string" && v.trim() !== "") {
+		const n = Number(v);
+		if (Number.isFinite(n)) return n;
+	}
+	if (typeof v === "object" && v !== null && "value" in v) {
+		return amountFromUnknown((v as { value: unknown }).value);
+	}
+	return 0;
+}
+
+/**
+ * `shipping_total` bywa 0 mimo przypiętej metody dostawy — wtedy bierzemy
+ * kwotę z `shipping_methods` albo różnicę total − produkty.
+ */
+function resolveShippingTotal(order: MedusaOrder): number {
+	const header = amountFromUnknown(order.shipping_total);
+	if (header > 0) return toMinorUnits(header);
+
+	const fromMethods = (order.shipping_methods ?? []).reduce((sum, method) => {
+		const raw =
+			method.amount ??
+			method.total ??
+			method.subtotal ??
+			method.raw_amount;
+		return sum + amountFromUnknown(raw);
+	}, 0);
+	if (fromMethods > 0) return toMinorUnits(fromMethods);
+
+	if ((order.shipping_methods?.length ?? 0) > 0) {
+		const total = amountFromUnknown(order.total);
+		const itemTotal = amountFromUnknown(order.item_total);
+		const tax = amountFromUnknown(order.tax_total);
+		const discount = amountFromUnknown(order.discount_total);
+		const derived = total - itemTotal - tax + discount;
+		if (derived > 0) return toMinorUnits(derived);
+	}
+
+	return 0;
 }
 
 const LIST_FIELDS = [
@@ -170,6 +220,9 @@ const DETAIL_FIELDS = [
 	"*billing_address",
 	"shipping_methods.name",
 	"shipping_methods.shipping_option_id",
+	"shipping_methods.amount",
+	"shipping_methods.subtotal",
+	"shipping_methods.total",
 	"*payment_collections.payments",
 	"*fulfillments",
 	"fulfillments.items.id",
@@ -240,7 +293,7 @@ function mapMedusaOrderToDetail(order: MedusaOrder): AdminOrderDetail {
 			thumbnail: resolveMedusaMediaUrl(item.thumbnail) ?? null,
 		})),
 		itemTotal: toMinorUnits(order.item_total),
-		shippingTotal: toMinorUnits(order.shipping_total),
+		shippingTotal: resolveShippingTotal(order),
 		taxTotal: toMinorUnits(order.tax_total),
 		discountTotal: toMinorUnits(order.discount_total),
 		total: toMinorUnits(order.total),

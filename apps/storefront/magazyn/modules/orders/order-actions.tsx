@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, Check, CreditCard, type LucideIcon, Truck } from "lucide-react";
+import { Ban, Check, CreditCard, Package, type LucideIcon, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cn } from "@magazyn/core/lib/cn";
@@ -18,19 +18,27 @@ type ActionDef = {
 type Props = {
 	orderId: string;
 	canCapture: boolean;
+	/** Opłacone online (P24 itd.) — ten sam przycisk uruchamia realizację bez księgowania. */
+	isPaid?: boolean;
 	canShip: boolean;
 	canComplete: boolean;
 	canCancel: boolean;
 };
 
-export function OrderActions({ orderId, canCapture, canShip, canComplete, canCancel }: Props) {
+export function OrderActions({ orderId, canCapture, isPaid = false, canShip, canComplete, canCancel }: Props) {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [activeAction, setActiveAction] = useState<OrderActionType | null>(null);
 	const [pending, startTransition] = useTransition();
 
 	const actions: ActionDef[] = [
-		{ type: "capture", label: "Zaksięguj płatność", icon: CreditCard, variant: "primary", available: canCapture },
+		{
+			type: "capture",
+			label: isPaid ? "Rozpocznij realizację" : "Zaksięguj płatność",
+			icon: isPaid ? Package : CreditCard,
+			variant: "primary",
+			available: canCapture,
+		},
 		{ type: "ship", label: "Przesyłka wysłana", icon: Truck, variant: "neutral", available: canShip },
 		{ type: "complete", label: "Zakończ zamówienie", icon: Check, variant: "neutral", available: canComplete },
 		{

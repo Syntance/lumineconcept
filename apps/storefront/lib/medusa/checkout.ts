@@ -1,7 +1,73 @@
 import type { Address } from "@lumine/types";
 import type { HttpTypes } from "@medusajs/types";
+import { getCart } from "./cart";
 import { medusa } from "./client";
 import { resolveMedusaFetchBase } from "./resolve-fetch-base";
+
+/** Po udanym zamówieniu — blokuje ponowny checkout (wstecz w przeglądarce). */
+export const CHECKOUT_COMPLETED_STORAGE_KEY = "lumine_checkout_completed_v1";
+
+export type CheckoutCompletedPayload = {
+  orderId: string;
+  displayId?: number;
+  at: number;
+};
+
+export function markCheckoutCompleted(orderId: string, displayId?: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    const payload: CheckoutCompletedPayload = {
+      orderId,
+      displayId,
+      at: Date.now(),
+    };
+    sessionStorage.setItem(
+      CHECKOUT_COMPLETED_STORAGE_KEY,
+      JSON.stringify(payload),
+    );
+  } catch {
+    /* prywatny tryb */
+  }
+}
+
+export function readCheckoutCompleted(): CheckoutCompletedPayload | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_COMPLETED_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CheckoutCompletedPayload>;
+    if (!parsed.orderId) return null;
+    return {
+      orderId: parsed.orderId,
+      displayId: parsed.displayId,
+      at: parsed.at ?? 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function redirectToOrderConfirmation(
+  orderId: string,
+  displayId?: number,
+): void {
+  if (typeof window === "undefined") return;
+  const qs = new URLSearchParams({ order_id: orderId });
+  if (displayId) qs.set("display_id", String(displayId));
+  window.location.replace(`/checkout/potwierdzenie?${qs.toString()}`);
+}
+
+/** Nie pozwalamy finalizować pustego lub już zamkniętego koszyka. */
+export async function assertCartReadyForCheckout(cartId: string): Promise<void> {
+  const cart = await getCart(cartId);
+  const items = (cart.items as unknown[] | undefined) ?? [];
+  if (items.length === 0) {
+    throw new Error("Koszyk jest pusty — dodaj produkty i spróbuj ponownie.");
+  }
+  if (cart.completed_at) {
+    throw new Error("Ten koszyk został już sfinalizowany.");
+  }
+}
 
 export async function updateCartAddress(
   cartId: string,

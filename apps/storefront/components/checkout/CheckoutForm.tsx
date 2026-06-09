@@ -21,11 +21,15 @@ import {
   initPaymentSession,
   initPrzelewy24Redirect,
   isCartAlreadyCompletedError,
+  markCheckoutCompleted,
   notifyOrderPlaced,
   prefetchPaymentReadiness,
   prefetchShippingOptions,
   prepareCheckout,
   PRZELEWY24_PROVIDER_ID,
+  readCheckoutCompleted,
+  redirectToOrderConfirmation,
+  assertCartReadyForCheckout,
   saveContactDetails,
 } from "@/lib/medusa/checkout";
 import { getPolishRegionId } from "@/lib/medusa/region";
@@ -138,6 +142,22 @@ export function CheckoutForm() {
   const submitSlowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const staleResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const beginCheckoutFiredRef = useRef(false);
+
+  /** Po udanym zamówieniu — nie wracaj na checkout (przycisk Wstecz). */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const completed = readCheckoutCompleted();
+    if (completed) {
+      redirectToOrderConfirmation(completed.orderId, completed.displayId);
+    }
+  }, []);
+
+  /** Pusty koszyk nie może iść do płatności — wróć do koszyka. */
+  useEffect(() => {
+    if (!cartId || items.length > 0) return;
+    if (typeof window === "undefined") return;
+    window.location.replace("/koszyk");
+  }, [cartId, items.length]);
 
   useEffect(() => {
     return () => {
@@ -365,10 +385,20 @@ export function CheckoutForm() {
     formData.acceptTerms &&
     formData.acceptRodo &&
     !!cartId &&
+    items.length > 0 &&
+    formData.shippingOptionId !== "" &&
     !submitting;
 
   const handleSubmit = useCallback(async () => {
     if (!cartId) return;
+    if (items.length === 0) {
+      setSubmitError("Koszyk jest pusty — dodaj produkty i spróbuj ponownie.");
+      return;
+    }
+    if (!formDataRef.current.shippingOptionId) {
+      setSubmitError("Wybierz sposób dostawy przed płatnością.");
+      return;
+    }
     if (submittingRef.current) return;
     submittingRef.current = true;
     setSubmitError(null);
@@ -380,10 +410,17 @@ export function CheckoutForm() {
     const payment = formDataRef.current;
 
     try {
+      await assertCartReadyForCheckout(cartId);
+
       // Przelewy24 = płatność z przekierowaniem. Inicjujemy sesję P24,
       // a finalizację koszyka (utworzenie zamówienia) robi strona powrotu
       // /checkout/przelewy24/return po potwierdzeniu płatności przez webhook.
       if (payment.paymentProviderId === PRZELEWY24_PROVIDER_ID) {
+        await prepareCheckout(
+          cartId,
+          payment.shippingOptionId,
+          payment.paymentProviderId,
+        );
         const redirectUrl = await initPrzelewy24Redirect(cartId);
         trackCheckoutStep({ stepNumber: 3, cartValue: total });
         if (typeof window !== "undefined") {
@@ -392,8 +429,13 @@ export function CheckoutForm() {
         }
       }
 
-      // Przelew tradycyjny (pp_system_default) — sesja z kroku 2 mogła być
-      // na P24 (pickPreferredProvider); przed completeCart przełączamy provider.
+      // Przelew tradycyjny — ponownie prepare (dostawa + sesja wybranego providera),
+      // bo w kroku 2 sesja mogła powstać dla innego providera (np. P24).
+      await prepareCheckout(
+        cartId,
+        payment.shippingOptionId,
+        payment.paymentProviderId,
+      );
       await initPaymentSession(cartId, payment.paymentProviderId);
 
       const result = await completeCart(cartId);
@@ -436,6 +478,11 @@ export function CheckoutForm() {
       // potwierdzenia. Backend dba o idempotencję.
       notifyOrderPlaced(result.order.id);
 
+      markCheckoutCompleted(
+        result.order.id,
+        result.order.display_id ?? undefined,
+      );
+
       try {
         localStorage.removeItem("lumine_cart_id");
         localStorage.removeItem("lumine_express");
@@ -445,12 +492,11 @@ export function CheckoutForm() {
       clearCheckoutDraft();
       await refreshCart().catch(() => undefined);
 
-      const qs = new URLSearchParams({ order_id: result.order.id });
-      if (result.order.display_id) qs.set("display_id", String(result.order.display_id));
-      // Twarda nawigacja — spójnie z AddToCartButton; unika problemu „przycisk
-      // zostaje w stanie loading" jeśli App Router zatrzyma się na segmencie.
       if (typeof window !== "undefined") {
-        window.location.assign(`/checkout/potwierdzenie?${qs.toString()}`);
+        redirectToOrderConfirmation(
+          result.order.id,
+          result.order.display_id ?? undefined,
+        );
         return;
       }
     } catch (e) {
