@@ -80,6 +80,29 @@ export function findCategoryNodeByHandle(
   return null;
 }
 
+/**
+ * Rooty sekcji sklepu (bez rodzica) — nie pokazujemy ich w magazynie jako filtrów „Gotowe wzory”.
+ * Handle `certyfikaty` to podkategoria gotowe-wzory (sync) — NIE root; musi być edytowalna w magazynie.
+ */
+export function isShopSectionRoot(category: {
+  handle: string;
+  parent_category_id?: string | null;
+}): boolean {
+  if (category.parent_category_id) return false;
+  return (
+    category.handle === LISTING_CATEGORY_HANDLE.gotoweWzory ||
+    category.handle === LISTING_CATEGORY_HANDLE.logo3d
+  );
+}
+
+/** @deprecated Użyj isShopSectionRoot — certyfikaty nie jest rootem listingu. */
+export function isLegacyShopRootHandle(handle: string): boolean {
+  return (
+    handle === LISTING_CATEGORY_HANDLE.gotoweWzory ||
+    handle === LISTING_CATEGORY_HANDLE.logo3d
+  );
+}
+
 /** ID węzła i wszystkich potomków — do `category_id[]` w Medusie (produkt w którejkolwiek). */
 export function collectSubtreeCategoryIds(node: CategoryTreeNode): string[] {
   const ids: string[] = [node.id];

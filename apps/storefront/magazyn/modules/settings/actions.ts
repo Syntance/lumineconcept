@@ -11,6 +11,7 @@ import {
 	createGlobalColorOption,
 	deleteGlobalColorOption,
 	listGlobalConfigOptions,
+	updateGlobalColorOption,
 	type ConfigOption,
 } from "@magazyn/modules/products/store";
 import {
@@ -43,6 +44,12 @@ export type CreateColorState = {
 export type DeleteColorState = {
 	ok: boolean;
 	error: string | null;
+};
+
+export type UpdateColorMatState = {
+	ok: boolean;
+	error: string | null;
+	option: ConfigOption | null;
 };
 
 export type PanelThemeActionState = {
@@ -204,5 +211,34 @@ export async function deleteColorOptionAction(id: string): Promise<DeleteColorSt
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		if (error instanceof Error) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się usunąć koloru." };
+	}
+}
+
+export async function updateColorOptionMatAction(
+	id: string,
+	matAllowed: boolean,
+): Promise<UpdateColorMatState> {
+	const parsed = z
+		.object({
+			id: z.string().trim().min(1),
+			matAllowed: z.boolean(),
+		})
+		.safeParse({ id, matAllowed });
+
+	if (!parsed.success) {
+		return { ok: false, error: "Nieprawidłowe dane.", option: null };
+	}
+
+	try {
+		const option = await updateGlobalColorOption(parsed.data.id, {
+			mat_allowed: parsed.data.matAllowed,
+		});
+		await revalidateGlobalColors();
+		return { ok: true, error: null, option };
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminApiError) return { ok: false, error: error.message, option: null };
+		if (error instanceof Error) return { ok: false, error: error.message, option: null };
+		return { ok: false, error: "Nie udało się zaktualizować koloru.", option: null };
 	}
 }

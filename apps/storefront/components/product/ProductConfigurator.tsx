@@ -60,6 +60,7 @@ interface ProductConfiguratorProps {
   mirrorSet?: Set<string>;
   customSet?: Set<string>;
   matDisabledSet?: Set<string>;
+  matDisabledSetBySlot?: Record<string, Set<string>>;
   allowCustomColor?: boolean;
   disabledConfigIdsBySlot?: Record<string, string[]>;
   disabledColorCategoriesBySlot?: Record<string, string[]>;
@@ -101,6 +102,7 @@ export function ProductConfigurator({
   mirrorSet = new Set(),
   customSet = new Set(),
   matDisabledSet = new Set(),
+  matDisabledSetBySlot = {},
   allowCustomColor = true,
   disabledConfigIdsBySlot = {},
   disabledColorCategoriesBySlot = {},
@@ -150,7 +152,11 @@ export function ProductConfigurator({
     <div className="space-y-8">
       {colorOptions.length > 0 && (
         <div className="flex flex-col gap-8">
-          {colorOptions.map((option) => (
+          {colorOptions.map((option) => {
+            const slotMatDisabledSet =
+              matDisabledSetBySlot[option.title] ?? matDisabledSet;
+
+            return (
             <div key={option.id}>
               <ColorStepPanel
                 option={option}
@@ -166,7 +172,7 @@ export function ProductConfigurator({
                   }
                   if (
                     value !== CUSTOM_COLOR_VALUE &&
-                    !isMatAllowed(value, matDisabledSet)
+                    !isMatAllowed(value, slotMatDisabledSet)
                   ) {
                     onColorCustomizationChange(
                       option.title,
@@ -195,7 +201,7 @@ export function ProductConfigurator({
                 coloredSet={coloredSet}
                 mirrorSet={mirrorSet}
                 customSet={customSet}
-                matDisabledSet={matDisabledSet}
+                matDisabledSet={slotMatDisabledSet}
                 allowCustomColor={
                   allowCustomColorBySlot[option.title] ?? allowCustomColor
                 }
@@ -206,7 +212,8 @@ export function ProductConfigurator({
                 }}
               />
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

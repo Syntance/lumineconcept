@@ -16,7 +16,9 @@ import {
 	createColorOptionAction,
 	deleteColorCategoryAction,
 	deleteColorOptionAction,
+	updateColorOptionMatAction,
 } from "./actions";
+import { Switch } from "@magazyn/core/ui/switch";
 
 function AddColorForm({
 	category,
@@ -123,11 +125,13 @@ export function GlobalColorsManager({ initialOptions, initialCategories }: Props
 	const [options, setOptions] = useState(() => sortConfigOptions(initialOptions));
 	const [categories, setCategories] = useState(initialCategories);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const [updatingMatId, setUpdatingMatId] = useState<string | null>(null);
 	const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [categoryError, setCategoryError] = useState<string | null>(null);
 	const [newCategoryLabel, setNewCategoryLabel] = useState("");
 	const [, startDelete] = useTransition();
+	const [, startMatUpdate] = useTransition();
 	const [addingCategory, startAddCategory] = useTransition();
 
 	const colorCount = options.filter((o) => o.type === "color").length;
@@ -163,6 +167,22 @@ export function GlobalColorsManager({ initialOptions, initialCategories }: Props
 			}
 			setCategories((prev) => [...prev, result.category!]);
 			setNewCategoryLabel("");
+		});
+	}
+
+	function handleMatChange(id: string, matAllowed: boolean) {
+		setDeleteError(null);
+		setUpdatingMatId(id);
+		startMatUpdate(async () => {
+			const result = await updateColorOptionMatAction(id, matAllowed);
+			setUpdatingMatId(null);
+			if (!result.ok || !result.option) {
+				setDeleteError(result.error ?? "Nie udało się zaktualizować opcji mat.");
+				return;
+			}
+			setOptions((prev) =>
+				prev.map((option) => (option.id === id ? { ...option, mat_allowed: result.option!.mat_allowed } : option)),
+			);
 		});
 	}
 
@@ -276,12 +296,23 @@ export function GlobalColorsManager({ initialOptions, initialCategories }: Props
 											key={opt.id}
 											className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
 										>
-											<div className="flex items-center gap-2 text-sm">
-												<ColorSwatch hex={opt.hex_color} />
-												<span className="font-medium">{opt.name}</span>
-												<span className="font-mono text-xs text-muted-foreground">
-													{opt.hex_color ?? "—"}
-												</span>
+											<div className="flex min-w-0 flex-1 items-center gap-3">
+												<div className="flex min-w-0 items-center gap-2 text-sm">
+													<ColorSwatch hex={opt.hex_color} />
+													<span className="font-medium">{opt.name}</span>
+													<span className="font-mono text-xs text-muted-foreground">
+														{opt.hex_color ?? "—"}
+													</span>
+												</div>
+												<div className="flex shrink-0 items-center gap-2 border-l border-border pl-3">
+													<span className="text-xs text-muted-foreground">Mat</span>
+													<Switch
+														checked={opt.mat_allowed}
+														disabled={updatingMatId === opt.id}
+														onCheckedChange={(checked) => handleMatChange(opt.id, checked)}
+														aria-label={`${opt.mat_allowed ? "Wyłącz" : "Włącz"} mat dla koloru ${opt.name}`}
+													/>
+												</div>
 											</div>
 											<Button
 												type="button"

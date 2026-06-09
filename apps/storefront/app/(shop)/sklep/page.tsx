@@ -38,24 +38,18 @@ function extractPrice(variant: unknown, metadata?: Record<string, unknown> | nul
 const CATEGORIES = [
   {
     title: "Gotowe wzory",
-    subtitle: "Kup od ręki · realizacja ok. 10 dni roboczych",
-    description: "Cenniki, tabliczki, menu, kody QR — gotowe wzory do Twojego salonu.",
     cta: "PRZEGLĄDAJ WZORY",
     href: "/sklep/gotowe-wzory",
     image: "/images/categories/gotowe-wzory-personel.png",
   },
   {
     title: "Tablice z logo",
-    subtitle: "Plexi · LED · matowe UV",
-    description: "Logo Twojej marki zrealizowane w postaci ozdobnej tablicy.",
-    cta: "Zobacz tablicę z logo",
+    cta: "Uzyskaj wycenę",
     href: "/sklep/logo-3d",
     image: "/images/categories/logo-kategoria-nail-boss.png",
   },
   {
     title: "Certyfikaty",
-    subtitle: "Dyplomy · podziękowania · vouchery",
-    description: "Eleganckie certyfikaty z plexi dla Twoich kursantek.",
     cta: "Zobacz certyfikaty",
     href: "/sklep/certyfikaty",
     image: "/images/categories/certyfikat-kategoria.png",
@@ -128,17 +122,16 @@ export default async function ShopHubPage() {
 
       {/* Kategorie obok siebie */}
       <section className="bg-brand-100 pb-16 pt-10 lg:pb-24 lg:pt-14">
-        <nav className="container mx-auto max-w-[61.6rem] px-4">
-          <div className="grid gap-6 sm:grid-cols-3 sm:items-stretch sm:gap-12">
+        <nav className="container mx-auto max-w-[80rem] px-4">
+          <div className="grid gap-[1.65rem] sm:grid-cols-3 sm:items-stretch sm:gap-[3.3rem]">
             {CATEGORIES.map((cat, index) => (
               <Link
                 key={cat.href}
                 href={cat.href}
-                className="shop-category-card group relative flex aspect-4/5 h-full w-full flex-col overflow-hidden border border-brand-200 bg-white px-10 pb-11 pt-11 transition-colors hover:border-brand-400"
+                className="shop-category-card relative flex aspect-4/5 h-full w-full flex-col overflow-hidden border border-brand-200 bg-white px-11 pb-12 pt-12"
               >
-                {/* Zdjęcie na pełny kafelek (object-cover); desktop: widoczne po najechaniu */}
                 <div className="pointer-events-none absolute inset-0 z-0">
-                  <div className="shop-category-image-wrap relative h-full w-full">
+                  <div className="relative h-full w-full">
                     <Image
                       src={cat.image}
                       alt={cat.title}
@@ -154,26 +147,20 @@ export default async function ShopHubPage() {
                   </div>
                 </div>
 
-                {/* Układ: stały pas na tytuł + flex-1 na treść + CTA na dole — wyrównanie między kafelkami */}
                 <div className="relative z-10 flex min-h-0 w-full flex-1 flex-col">
-                  {/* Title zone – slides up; blur tylko wokół wiersza tytułu */}
-                  <div className="shop-category-title flex min-h-18 shrink-0 items-center justify-center transition-transform duration-700 ease-in-out group-hover:-translate-y-6">
-                    <div className="inline-block max-w-[min(100%,13rem)] transition-all duration-300 group-hover:rounded-md group-hover:px-1.5 group-hover:py-0.5 group-hover:bg-white/25 group-hover:backdrop-blur-sm">
-                      <h2 className="text-center font-display text-2xl tracking-wide text-brand-800 transition-colors duration-300 lg:text-3xl">
+                  <div className="-translate-y-6 flex min-h-[4.95rem] shrink-0 items-center justify-center">
+                    <div className="inline-block max-w-[min(100%,14.3rem)] rounded-md bg-white/25 px-1.5 py-0.5 backdrop-blur-sm">
+                      <h2 className="text-center font-display text-[1.65rem] tracking-wide text-brand-800 lg:text-[2.0625rem]">
                         {cat.title}
                       </h2>
                     </div>
                   </div>
 
-                  <div className="h-6 shrink-0" aria-hidden="true" />
+                  <div className="h-[1.65rem] shrink-0" aria-hidden="true" />
 
-                  {/* Opis + CTA – blur przy CTA; mt-auto wyrównuje linki na dole kafelka */}
-                  <div className="shop-category-body relative flex min-h-0 flex-1 flex-col items-center text-center transition-transform duration-700 ease-in-out group-hover:translate-y-6">
-                    <p className="w-full max-w-[min(100%,13rem)] shrink-0 text-base leading-relaxed text-brand-400 transition-opacity duration-300 group-hover:opacity-0">
-                      {cat.description}
-                    </p>
-                    <span className="mt-auto self-center pt-4 text-sm font-medium uppercase tracking-[0.18em] text-brand-500 transition-colors group-hover:text-brand-900">
-                      <span className="inline-flex w-max max-w-full items-center gap-2 rounded-md px-0 py-0 transition-all duration-300 group-hover:px-2 group-hover:py-1 group-hover:bg-white/25 group-hover:backdrop-blur-sm">
+                  <div className="relative flex min-h-0 flex-1 translate-y-6 flex-col items-center text-center">
+                    <span className="mt-auto self-center pt-[1.1rem] text-[0.9625rem] font-medium uppercase tracking-[0.18em] text-brand-900">
+                      <span className="inline-flex w-max max-w-full items-center gap-2 rounded-md bg-white/25 px-2 py-1 backdrop-blur-sm">
                         <span className="whitespace-nowrap">{cat.cta}</span>
                         <span aria-hidden="true" className="shrink-0">
                           &rarr;

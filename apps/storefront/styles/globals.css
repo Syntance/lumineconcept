@@ -165,32 +165,6 @@
     display: none;
   }
 
-  /* /sklep — kafelki: zdjęcie na pełny kafelek (object-cover); desktop: do hovera */
-  .shop-category-image-wrap {
-    transition: opacity 0.5s ease-out;
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    .shop-category-image-wrap {
-      opacity: 0;
-    }
-
-    .group:hover .shop-category-image-wrap {
-      opacity: 1;
-    }
-  }
-
-  @media not ((hover: hover) and (pointer: fine)) {
-    .shop-category-image-wrap {
-      opacity: 1;
-    }
-
-    .shop-category-title,
-    .shop-category-body {
-      transform: none !important;
-    }
-  }
-
   /* /sklep/logo-3d — łuk z border-radius, antyaliasing na krawędzi */
   .logo-quote-arch {
     isolation: isolate;

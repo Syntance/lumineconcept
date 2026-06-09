@@ -21,6 +21,9 @@ import {
 	renameColorSlot,
 	serializeColorSlotState,
 	toggleColorCategoryForSlot,
+	getGlobalColorMatAllowed,
+	toggleGlobalColorMat,
+	toggleProductColorMat,
 	type ColorSlotFormState,
 } from "./product-color-config-state";
 import {
@@ -33,6 +36,7 @@ import {
 	type TextFieldFormState,
 } from "./product-text-field-state";
 import { TextFieldsSection } from "./text-fields-section";
+import { ProductFormTabs } from "./product-form-tabs";
 
 type Props = {
 	product?: AdminProductDetail;
@@ -181,6 +185,26 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 		);
 	}
 
+	function resolveGlobalColorMatAllowed(colorId: string, globalDefault: boolean) {
+		return getGlobalColorMatAllowed(colorSlotState, colorSlotState.activeSlot, colorId, globalDefault);
+	}
+
+	function handleToggleGlobalColorMat(colorId: string, globalDefault: boolean, enabled: boolean) {
+		setColorSlotState((prev) =>
+			toggleGlobalColorMat(prev, prev.activeSlot, colorId, globalDefault, enabled),
+		);
+	}
+
+	function handleToggleProductColorMat(
+		category: ColorCategoryId,
+		colorId: string,
+		enabled: boolean,
+	) {
+		setColorSlotState((prev) =>
+			toggleProductColorMat(prev, prev.activeSlot, category, colorId, enabled),
+		);
+	}
+
 	function onSubmit(event: React.FormEvent) {
 		event.preventDefault();
 		setError(null);
@@ -206,6 +230,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				disabledColorCategoriesBySlot: colorConfig.disabledColorCategoriesBySlot,
 				allowCustomColorBySlot: colorConfig.allowCustomColorBySlot,
 				productColorsBySlot: colorConfig.productColorsBySlot,
+				matOverridesBySlot: colorConfig.matOverridesBySlot,
 				colorSlotCount: colorConfig.colorSlotCount,
 				colorSlotNames: colorConfig.colorSlotNames,
 				allowCustomColor: colorConfig.allowCustomColor,
@@ -261,44 +286,63 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 					</div>
 				</div>
 
-				<ProductConfigSection
-					configOptions={configOptions}
-					colorCategories={colorCategories}
-					slotTitles={colorSlotState.slotTitles}
-					activeSlot={colorSlotState.activeSlot}
-					onActiveSlotChange={(slot) => setColorSlotState((prev) => ({ ...prev, activeSlot: slot }))}
-				onAddSlot={() => setColorSlotState((prev) => addColorSlot(prev))}
-				onRemoveSlot={(title) => setColorSlotState((prev) => removeColorSlot(prev, title))}
-				onRenameSlot={(oldTitle, newTitle) => setColorSlotState((prev) => renameColorSlot(prev, oldTitle, newTitle))}
-					disabledConfigIds={colorSlotState.nonColorDisabledIds}
-					disabledColorIdsForActiveSlot={disabledColorIdsForActiveSlot}
-					disabledCategoryIdsForActiveSlot={disabledCategoryIdsForActiveSlot}
-					onToggleColor={toggleColorForActiveSlot}
-					onToggleCategory={toggleCategoryForActiveSlot}
-					onToggleNonColor={toggleNonColorOption}
-					onEnableAllColorsForActiveSlot={enableAllColorsForActiveSlot}
-					onDisableAllColorsForActiveSlot={disableAllColorsForActiveSlot}
-					productColorsForActiveSlot={productColorsForActiveSlot}
-					onAddProductColor={handleAddProductColor}
-					onRemoveProductColor={handleRemoveProductColor}
-					allowCustomColor={allowCustomForActiveSlot}
-					onAllowCustomColorChange={setAllowCustomForActiveSlot}
-					hasAnyDisabled={hasAnyDisabled}
-				/>
-
-				<TextFieldsSection
-					fields={textFieldState.fields}
-					activeFieldKey={textFieldState.activeFieldKey}
-					onActiveFieldChange={(key) =>
-						setTextFieldState((prev) => ({ ...prev, activeFieldKey: key }))
+				<ProductFormTabs
+					fieldsCount={textFieldState.fields.length}
+					colorsPanel={
+						<ProductConfigSection
+							embedded
+							configOptions={configOptions}
+							colorCategories={colorCategories}
+							slotTitles={colorSlotState.slotTitles}
+							activeSlot={colorSlotState.activeSlot}
+							onActiveSlotChange={(slot) =>
+								setColorSlotState((prev) => ({ ...prev, activeSlot: slot }))
+							}
+							onAddSlot={() => setColorSlotState((prev) => addColorSlot(prev))}
+							onRemoveSlot={(title) =>
+								setColorSlotState((prev) => removeColorSlot(prev, title))
+							}
+							onRenameSlot={(oldTitle, newTitle) =>
+								setColorSlotState((prev) => renameColorSlot(prev, oldTitle, newTitle))
+							}
+							disabledConfigIds={colorSlotState.nonColorDisabledIds}
+							disabledColorIdsForActiveSlot={disabledColorIdsForActiveSlot}
+							disabledCategoryIdsForActiveSlot={disabledCategoryIdsForActiveSlot}
+							onToggleColor={toggleColorForActiveSlot}
+							onToggleCategory={toggleCategoryForActiveSlot}
+							onToggleNonColor={toggleNonColorOption}
+							onEnableAllColorsForActiveSlot={enableAllColorsForActiveSlot}
+							onDisableAllColorsForActiveSlot={disableAllColorsForActiveSlot}
+							productColorsForActiveSlot={productColorsForActiveSlot}
+							onAddProductColor={handleAddProductColor}
+							onRemoveProductColor={handleRemoveProductColor}
+							getGlobalColorMatAllowed={resolveGlobalColorMatAllowed}
+							onToggleGlobalColorMat={handleToggleGlobalColorMat}
+							onToggleProductColorMat={handleToggleProductColorMat}
+							allowCustomColor={allowCustomForActiveSlot}
+							onAllowCustomColorChange={setAllowCustomForActiveSlot}
+							hasAnyDisabled={hasAnyDisabled}
+						/>
 					}
-					onAddField={() => setTextFieldState((prev) => addTextField(prev))}
-					onRemoveField={(key) => setTextFieldState((prev) => removeTextField(prev, key))}
-					onRenameField={(key, label) =>
-						setTextFieldState((prev) => renameTextFieldLabel(prev, key, label))
-					}
-					onUpdateField={(key, patch) =>
-						setTextFieldState((prev) => updateTextField(prev, key, patch))
+					fieldsPanel={
+						<TextFieldsSection
+							embedded
+							fields={textFieldState.fields}
+							activeFieldKey={textFieldState.activeFieldKey}
+							onActiveFieldChange={(key) =>
+								setTextFieldState((prev) => ({ ...prev, activeFieldKey: key }))
+							}
+							onAddField={() => setTextFieldState((prev) => addTextField(prev))}
+							onRemoveField={(key) =>
+								setTextFieldState((prev) => removeTextField(prev, key))
+							}
+							onRenameField={(key, label) =>
+								setTextFieldState((prev) => renameTextFieldLabel(prev, key, label))
+							}
+							onUpdateField={(key, patch) =>
+								setTextFieldState((prev) => updateTextField(prev, key, patch))
+							}
+						/>
 					}
 				/>
 			</div>

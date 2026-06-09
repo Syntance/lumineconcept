@@ -27,7 +27,9 @@ import {
 } from "@/lib/products/global-config";
 import type { ColorCategoryDefinition } from "@/lib/products/color-categories";
 import {
+  buildMatDisabledSetForSlot,
   flattenProductColorsForSlot,
+  parseMatOverridesBySlot,
   parseAllowCustomColorBySlot,
   parseDisabledColorCategoriesBySlot,
   parseDisabledConfigIds,
@@ -122,6 +124,11 @@ export function ProductPageClient({
   const customSet = useMemo(() => buildCustomSet(mergedColors), [mergedColors]);
   const matDisabledSet = useMemo(() => buildMatDisabledSet(mergedColors), [mergedColors]);
 
+  const matOverridesBySlot = useMemo(
+    () => parseMatOverridesBySlot(product.metadata, colorOptionTitles),
+    [product.metadata, colorOptionTitles],
+  );
+
   const allowCustomColor = useMemo(
     () => parseAllowCustomColor(product.metadata),
     [product.metadata],
@@ -156,6 +163,29 @@ export function ProductPageClient({
       ),
     [product.metadata, colorOptionTitles, allowCustomColor],
   );
+
+  const matDisabledSetBySlot = useMemo(() => {
+    const result: Record<string, Set<string>> = {};
+    for (const title of colorOptionTitles) {
+      result[title] = buildMatDisabledSetForSlot(
+        title,
+        globalColors,
+        productColorsBySlotFlat[title] ?? [],
+        matOverridesBySlot,
+        disabledConfigIdsBySlot,
+        disabledColorCategoriesBySlot,
+      );
+    }
+    return result;
+  }, [
+    colorOptionTitles,
+    globalColors,
+    productColorsBySlotFlat,
+    matOverridesBySlot,
+    disabledConfigIdsBySlot,
+    disabledColorCategoriesBySlot,
+  ]);
+
   const nonColorOptions = useMemo(
     () => product.options.filter((o) => !isColorOption(o.title)),
     [product.options],
@@ -473,6 +503,7 @@ export function ProductPageClient({
             mirrorSet={mirrorSet}
             customSet={customSet}
             matDisabledSet={matDisabledSet}
+            matDisabledSetBySlot={matDisabledSetBySlot}
             allowCustomColor={allowCustomColor}
             disabledConfigIdsBySlot={disabledConfigIdsBySlot}
             disabledColorCategoriesBySlot={disabledColorCategoriesBySlot}

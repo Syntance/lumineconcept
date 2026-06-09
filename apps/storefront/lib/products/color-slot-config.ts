@@ -258,6 +258,71 @@ export function buildColorNameCategoryMap(
 	return map;
 }
 
+export function parseMatOverridesBySlot(
+	meta: Record<string, unknown> | null | undefined,
+	slotTitles: readonly string[],
+): Record<string, Record<string, boolean>> {
+	const result: Record<string, Record<string, boolean>> = {};
+	for (const title of slotTitles) {
+		result[title] = {};
+	}
+
+	const obj = parseJsonRecord(meta?.mat_overrides_by_slot);
+	if (!obj) return result;
+
+	for (const title of slotTitles) {
+		const slotObj = obj[title];
+		if (!slotObj || typeof slotObj !== "object" || Array.isArray(slotObj)) continue;
+		const slotRecord = slotObj as Record<string, unknown>;
+		const parsed: Record<string, boolean> = {};
+		for (const [colorId, value] of Object.entries(slotRecord)) {
+			if (typeof value === "boolean") {
+				parsed[colorId] = value;
+				continue;
+			}
+			if (value === "true") parsed[colorId] = true;
+			if (value === "false") parsed[colorId] = false;
+		}
+		result[title] = parsed;
+	}
+	return result;
+}
+
+export function buildMatDisabledSetForSlot(
+	slotTitle: string,
+	globalColors: ReadonlyArray<{
+		id: string;
+		name: string;
+		mat_allowed: boolean;
+		color_category?: string | null;
+	}>,
+	productColors: ReadonlyArray<{ id: string; name: string; mat_allowed: boolean }>,
+	matOverridesBySlot: Record<string, Record<string, boolean>>,
+	disabledConfigIdsBySlot: Record<string, string[]> = {},
+	disabledColorCategoriesBySlot: Record<string, string[]> = {},
+): Set<string> {
+	const slotDisabled = new Set(disabledConfigIdsBySlot[slotTitle] ?? []);
+	const slotDisabledCategories = new Set(disabledColorCategoriesBySlot[slotTitle] ?? []);
+	const overrides = matOverridesBySlot[slotTitle] ?? {};
+	const disabled = new Set<string>();
+
+	const categoryEnabled = (category: string | null | undefined) =>
+		!slotDisabledCategories.has(category ?? "standard");
+
+	for (const color of globalColors) {
+		if (slotDisabled.has(color.id) || !categoryEnabled(color.color_category)) continue;
+		const matAllowed = overrides[color.id] ?? color.mat_allowed;
+		if (!matAllowed) disabled.add(color.name.toLowerCase());
+	}
+
+	for (const color of productColors) {
+		const matAllowed = overrides[color.id] ?? color.mat_allowed;
+		if (!matAllowed) disabled.add(color.name.toLowerCase());
+	}
+
+	return disabled;
+}
+
 export function parseAllowCustomColorBySlot(
 	meta: Record<string, unknown> | null | undefined,
 	slotTitles: readonly string[],

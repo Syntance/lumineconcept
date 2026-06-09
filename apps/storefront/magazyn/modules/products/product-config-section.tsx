@@ -44,9 +44,13 @@ type Props = {
 	onToggleCategory: (categoryId: ColorCategoryId, enabled: boolean) => void;
 	onAddProductColor: (category: ColorCategoryId, input: { name: string; hex_color: string }) => void;
 	onRemoveProductColor: (category: ColorCategoryId, colorId: string) => void;
+	getGlobalColorMatAllowed: (colorId: string, globalDefault: boolean) => boolean;
+	onToggleGlobalColorMat: (colorId: string, globalDefault: boolean, enabled: boolean) => void;
+	onToggleProductColorMat: (category: ColorCategoryId, colorId: string, enabled: boolean) => void;
 	allowCustomColor: boolean;
 	onAllowCustomColorChange: (enabled: boolean) => void;
 	hasAnyDisabled: boolean;
+	embedded?: boolean;
 };
 
 export function ProductConfigSection({
@@ -69,8 +73,12 @@ export function ProductConfigSection({
 	onToggleCategory,
 	onAddProductColor,
 	onRemoveProductColor,
+	getGlobalColorMatAllowed,
+	onToggleGlobalColorMat,
+	onToggleProductColorMat,
 	allowCustomColor,
 	onAllowCustomColorChange,
+	embedded = false,
 }: Props) {
 	const colorOptions = configOptions.filter((o) => o.type === "color");
 	const allColorsDisabledForSlot =
@@ -84,7 +92,12 @@ export function ProductConfigSection({
 	}, {});
 
 	return (
-		<div className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
+		<div
+			className={cn(
+				"flex flex-col gap-5",
+				!embedded && "rounded-xl border border-border bg-card p-5",
+			)}
+		>
 			<div>
 				<h2 className="text-sm font-medium text-foreground">Kolory i wersje produktu</h2>
 				<p className="mt-1 text-sm text-muted-foreground">
@@ -165,27 +178,41 @@ export function ProductConfigSection({
 							{categoryEnabled && globalOpts.length > 0 ? (
 								<div className="mt-2">
 									<p className="mb-1.5 text-[11px] text-muted-foreground">Z globalnej palety</p>
-									<div className="flex flex-wrap gap-2">
+									<div className="flex flex-col gap-2">
 										{globalOpts.map((opt) => {
 											const enabled = !disabledColorIdsForActiveSlot.has(opt.id);
+											const matAllowed = getGlobalColorMatAllowed(opt.id, opt.mat_allowed);
 											return (
-												<label
+												<div
 													key={opt.id}
 													className={cn(
-														"flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors",
+														"flex flex-wrap items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors",
 														enabled
 															? "border-border bg-background text-foreground"
 															: "border-border/60 bg-muted/40 text-muted-foreground",
 													)}
 												>
-													<CheckboxInput
-														checked={enabled}
-														onChange={(checked) => onToggleColor(opt.id, checked)}
-														aria-label={`${opt.name} — ${enabled ? "włączony" : "wyłączony"} dla ${activeSlot}`}
-													/>
-													<ColorSwatch hex={opt.hex_color} />
-													<span>{opt.name}</span>
-												</label>
+													<label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+														<CheckboxInput
+															checked={enabled}
+															onChange={(checked) => onToggleColor(opt.id, checked)}
+															aria-label={`${opt.name} — ${enabled ? "włączony" : "wyłączony"} dla ${activeSlot}`}
+														/>
+														<ColorSwatch hex={opt.hex_color} />
+														<span>{opt.name}</span>
+													</label>
+													<div className="flex shrink-0 items-center gap-2">
+														<span className="text-[11px] text-muted-foreground">Mat</span>
+														<Switch
+															checked={matAllowed}
+															disabled={!enabled}
+															onCheckedChange={(checked) =>
+																onToggleGlobalColorMat(opt.id, opt.mat_allowed, checked)
+															}
+															aria-label={`${matAllowed ? "Wyłącz" : "Włącz"} mat dla koloru ${opt.name} w polu ${activeSlot}`}
+														/>
+													</div>
+												</div>
 											);
 										})}
 									</div>
@@ -200,12 +227,24 @@ export function ProductConfigSection({
 											key={opt.id}
 											className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
 										>
-											<div className="flex items-center gap-2 text-sm">
-												<ColorSwatch hex={opt.hex_color} />
-												<span className="font-medium">{opt.name}</span>
-												<span className="font-mono text-xs text-muted-foreground">
-													{opt.hex_color}
-												</span>
+											<div className="flex min-w-0 flex-1 items-center gap-3">
+												<div className="flex min-w-0 items-center gap-2 text-sm">
+													<ColorSwatch hex={opt.hex_color} />
+													<span className="font-medium">{opt.name}</span>
+													<span className="font-mono text-xs text-muted-foreground">
+														{opt.hex_color}
+													</span>
+												</div>
+												<div className="flex shrink-0 items-center gap-2 border-l border-border pl-3">
+													<span className="text-[11px] text-muted-foreground">Mat</span>
+													<Switch
+														checked={opt.mat_allowed}
+														onCheckedChange={(checked) =>
+															onToggleProductColorMat(section.id, opt.id, checked)
+														}
+														aria-label={`${opt.mat_allowed ? "Wyłącz" : "Włącz"} mat dla koloru ${opt.name}`}
+													/>
+												</div>
 											</div>
 											<Button
 												type="button"

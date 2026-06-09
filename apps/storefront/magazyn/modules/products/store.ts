@@ -10,10 +10,11 @@ import {
 	parseCustomSlotNames,
 	parseDisabledColorCategoriesBySlot,
 	parseDisabledConfigIdsBySlot,
+	parseMatOverridesBySlot,
 	parseProductColorsBySlot,
 	type ProductCustomColor,
 } from "@/lib/products/color-slot-config";
-import { LISTING_CATEGORY_HANDLE } from "@/lib/medusa/category-tree";
+import { LISTING_CATEGORY_HANDLE, isShopSectionRoot } from "@/lib/medusa/category-tree";
 import { compareCategoriesBySortOrder } from "@/lib/medusa/category-sort";
 import type { TextFieldDef } from "@/lib/products/text-fields";
 import { parseTextFieldsFromMetadata, serializeTextFieldsForMetadata } from "@/lib/products/text-fields";
@@ -58,6 +59,8 @@ export type ProductFormValues = {
 	allowCustomColorBySlot: Record<string, boolean>;
 	/** Kolory zdefiniowane tylko dla tego produktu (metadata.product_colors_by_slot). */
 	productColorsBySlot: Record<string, Record<string, ProductCustomColor[]>>;
+	/** Nadpisania mat_allowed per pole koloru (metadata.mat_overrides_by_slot). */
+	matOverridesBySlot: Record<string, Record<string, boolean>>;
 	/** Liczba pól „Kolor” w konfiguratorze (1 = samo „Kolor”, 2+ = „Kolor 2”…). */
 	colorSlotCount: number;
 	/** Custom nazwy pól kolorów (metadata.color_slot_names). */
@@ -220,6 +223,17 @@ export async function deleteGlobalColorOption(id: string): Promise<void> {
 	await adminFetch(`/admin/product-config/${id}`, { method: "DELETE" });
 }
 
+export async function updateGlobalColorOption(
+	id: string,
+	patch: Pick<ConfigOption, "mat_allowed">,
+): Promise<ConfigOption> {
+	const data = await adminFetch<{ config_option: ConfigOption }>(`/admin/product-config/${id}`, {
+		method: "POST",
+		body: JSON.stringify(patch),
+	});
+	return data.config_option;
+}
+
 export async function listGlobalConfigOptions(): Promise<ConfigOption[]> {
 	const data = await adminFetch<{ config_options: ConfigOption[] }>("/admin/product-config");
 	return (data.config_options ?? []).sort((a, b) => {
@@ -254,6 +268,7 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 					? "true"
 					: "false",
 				product_colors_by_slot: JSON.stringify(values.productColorsBySlot),
+				mat_overrides_by_slot: JSON.stringify(values.matOverridesBySlot),
 				color_slot_names: values.colorSlotNames ? JSON.stringify(values.colorSlotNames) : undefined,
 				text_fields: JSON.stringify(serializeTextFieldsForMetadata(values.textFields)),
 			},
@@ -323,14 +338,8 @@ export async function listCategoryOptions(): Promise<CategoryOption[]> {
 		(c) => c.handle === LISTING_CATEGORY_HANDLE.gotoweWzory,
 	)?.id;
 
-	const shopRoots = new Set<string>([
-		LISTING_CATEGORY_HANDLE.gotoweWzory,
-		LISTING_CATEGORY_HANDLE.logo3d,
-		LISTING_CATEGORY_HANDLE.certyfikaty,
-	]);
-
 	return data.product_categories
-		.filter((c) => !shopRoots.has(c.handle))
+		.filter((c) => !isShopSectionRoot(c))
 		.filter((c) => !gotoweId || c.parent_category_id === gotoweId)
 		.sort(compareCategoriesBySortOrder)
 		.map((c) => ({
@@ -386,6 +395,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		disabledColorCategoriesBySlot: parseDisabledColorCategoriesBySlot(metadata, slotTitles),
 		allowCustomColorBySlot: parseAllowCustomColorBySlot(metadata, slotTitles, defaultAllowCustom),
 		productColorsBySlot: parseProductColorsBySlot(metadata, slotTitles),
+		matOverridesBySlot: parseMatOverridesBySlot(metadata, slotTitles),
 		colorSlotCount,
 		colorSlotNames: customNames ?? slotTitles,
 		allowCustomColor: defaultAllowCustom,

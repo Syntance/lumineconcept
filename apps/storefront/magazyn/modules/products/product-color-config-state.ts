@@ -12,6 +12,7 @@ import {
 	parseCustomSlotNames,
 	parseDisabledColorCategoriesBySlot,
 	parseDisabledConfigIdsBySlot,
+	parseMatOverridesBySlot,
 	parseProductColorsBySlot,
 	REMOVE_COLOR_FIELD_VALUE,
 } from "@/lib/products/color-slot-config";
@@ -30,6 +31,7 @@ export type ColorSlotFormState = {
 	disabledCategoriesBySlot: Record<string, Set<string>>;
 	allowCustomBySlot: Record<string, boolean>;
 	productColorsBySlot: Record<string, Record<string, ProductCustomColor[]>>;
+	matOverridesBySlot: Record<string, Record<string, boolean>>;
 	nonColorDisabledIds: Set<string>;
 };
 
@@ -74,6 +76,8 @@ export function createInitialColorSlotState(
 	const disabledCategoriesRecord =
 		product?.disabledColorCategoriesBySlot ??
 		parseDisabledColorCategoriesBySlot(metadata, slotTitles);
+	const matOverridesRecord =
+		product?.matOverridesBySlot ?? parseMatOverridesBySlot(metadata, slotTitles);
 
 	return {
 		slotTitles,
@@ -82,6 +86,7 @@ export function createInitialColorSlotState(
 		disabledCategoriesBySlot: setsFromRecord(disabledCategoriesRecord),
 		allowCustomBySlot: allowRecord,
 		productColorsBySlot: productColors,
+		matOverridesBySlot: matOverridesRecord,
 		nonColorDisabledIds: new Set(
 			nonColors.length > 0 ? nonColors : legacyDisabled.filter((id) => !colors.includes(id)),
 		),
@@ -115,6 +120,7 @@ export function addColorSlot(state: ColorSlotFormState): ColorSlotFormState {
 			...state.productColorsBySlot,
 			[newTitle]: emptyProductColorsByCategory(),
 		},
+		matOverridesBySlot: { ...state.matOverridesBySlot, [newTitle]: {} },
 	};
 }
 
@@ -129,6 +135,7 @@ export function removeColorSlot(state: ColorSlotFormState, titleToRemove?: strin
 	const newDisabled: Record<string, Set<string>> = {};
 	const newAllow: Record<string, boolean> = {};
 	const newProductColors: ColorSlotFormState["productColorsBySlot"] = {};
+	const newMatOverrides: ColorSlotFormState["matOverridesBySlot"] = {};
 
 	const newDisabledCategories: Record<string, Set<string>> = {};
 
@@ -137,6 +144,7 @@ export function removeColorSlot(state: ColorSlotFormState, titleToRemove?: strin
 		newDisabledCategories[title] = new Set(state.disabledCategoriesBySlot[title] ?? []);
 		newAllow[title] = state.allowCustomBySlot[title] ?? true;
 		newProductColors[title] = state.productColorsBySlot[title] ?? emptyProductColorsByCategory();
+		newMatOverrides[title] = { ...(state.matOverridesBySlot[title] ?? {}) };
 	}
 
 	const nextActive =
@@ -152,6 +160,7 @@ export function removeColorSlot(state: ColorSlotFormState, titleToRemove?: strin
 		disabledCategoriesBySlot: newDisabledCategories,
 		allowCustomBySlot: newAllow,
 		productColorsBySlot: newProductColors,
+		matOverridesBySlot: newMatOverrides,
 	};
 }
 
@@ -164,6 +173,7 @@ export function renameColorSlot(state: ColorSlotFormState, oldTitle: string, new
 	const newDisabled: Record<string, Set<string>> = {};
 	const newAllow: Record<string, boolean> = {};
 	const newProductColors: ColorSlotFormState["productColorsBySlot"] = {};
+	const newMatOverrides: ColorSlotFormState["matOverridesBySlot"] = {};
 
 	const newDisabledCategories: Record<string, Set<string>> = {};
 
@@ -173,6 +183,7 @@ export function renameColorSlot(state: ColorSlotFormState, oldTitle: string, new
 		newDisabledCategories[title] = new Set(state.disabledCategoriesBySlot[sourceTitle] ?? []);
 		newAllow[title] = state.allowCustomBySlot[sourceTitle] ?? true;
 		newProductColors[title] = state.productColorsBySlot[sourceTitle] ?? emptyProductColorsByCategory();
+		newMatOverrides[title] = { ...(state.matOverridesBySlot[sourceTitle] ?? {}) };
 	}
 
 	return {
@@ -183,6 +194,7 @@ export function renameColorSlot(state: ColorSlotFormState, oldTitle: string, new
 		disabledCategoriesBySlot: newDisabledCategories,
 		allowCustomBySlot: newAllow,
 		productColorsBySlot: newProductColors,
+		matOverridesBySlot: newMatOverrides,
 	};
 }
 
@@ -252,6 +264,60 @@ export function toggleColorCategoryForSlot(
 	};
 }
 
+export function toggleGlobalColorMat(
+	state: ColorSlotFormState,
+	slot: string,
+	colorId: string,
+	globalDefault: boolean,
+	enabled: boolean,
+): ColorSlotFormState {
+	const current = { ...(state.matOverridesBySlot[slot] ?? {}) };
+	if (enabled === globalDefault) {
+		delete current[colorId];
+	} else {
+		current[colorId] = enabled;
+	}
+
+	return {
+		...state,
+		matOverridesBySlot: {
+			...state.matOverridesBySlot,
+			[slot]: current,
+		},
+	};
+}
+
+export function toggleProductColorMat(
+	state: ColorSlotFormState,
+	slot: string,
+	category: ColorCategoryId,
+	colorId: string,
+	enabled: boolean,
+): ColorSlotFormState {
+	const slotColors = state.productColorsBySlot[slot] ?? emptyProductColorsByCategory();
+	return {
+		...state,
+		productColorsBySlot: {
+			...state.productColorsBySlot,
+			[slot]: {
+				...slotColors,
+				[category]: (slotColors[category] ?? []).map((color) =>
+					color.id === colorId ? { ...color, mat_allowed: enabled } : color,
+				),
+			},
+		},
+	};
+}
+
+export function getGlobalColorMatAllowed(
+	state: ColorSlotFormState,
+	slot: string,
+	colorId: string,
+	globalDefault: boolean,
+): boolean {
+	return state.matOverridesBySlot[slot]?.[colorId] ?? globalDefault;
+}
+
 export function serializeColorSlotState(state: ColorSlotFormState): {
 	colorSlotCount: number;
 	colorSlotNames: string[];
@@ -260,6 +326,7 @@ export function serializeColorSlotState(state: ColorSlotFormState): {
 	disabledColorCategoriesBySlot: Record<string, string[]>;
 	allowCustomColorBySlot: Record<string, boolean>;
 	productColorsBySlot: Record<string, Record<string, ProductCustomColor[]>>;
+	matOverridesBySlot: Record<string, Record<string, boolean>>;
 	allowCustomColor: boolean;
 } {
 	const disabledConfigIdsBySlot: Record<string, string[]> = {};
@@ -277,6 +344,7 @@ export function serializeColorSlotState(state: ColorSlotFormState): {
 		disabledColorCategoriesBySlot,
 		allowCustomColorBySlot: state.allowCustomBySlot,
 		productColorsBySlot: state.productColorsBySlot,
+		matOverridesBySlot: state.matOverridesBySlot,
 		allowCustomColor: Object.values(state.allowCustomBySlot).some(Boolean),
 	};
 }

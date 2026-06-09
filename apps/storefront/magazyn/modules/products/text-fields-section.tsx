@@ -2,6 +2,7 @@
 
 import { Input } from "@magazyn/core/ui/input";
 import { CheckboxInput } from "@magazyn/core/ui/checkbox";
+import { cn } from "@magazyn/core/lib/cn";
 import type { TextFieldDef } from "@/lib/products/text-fields";
 import { TextFieldPicker } from "./text-field-picker";
 
@@ -16,6 +17,7 @@ type Props = {
 	onRemoveField: (fieldKey: string) => void;
 	onRenameField: (fieldKey: string, newLabel: string) => void;
 	onUpdateField: (fieldKey: string, patch: Partial<TextFieldDef>) => void;
+	embedded?: boolean;
 };
 
 export function TextFieldsSection({
@@ -26,11 +28,17 @@ export function TextFieldsSection({
 	onRemoveField,
 	onRenameField,
 	onUpdateField,
+	embedded = false,
 }: Props) {
 	const activeField = fields.find((f) => f.key === activeFieldKey);
 
 	return (
-		<div className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
+		<div
+			className={cn(
+				"flex flex-col gap-5",
+				!embedded && "rounded-xl border border-border bg-card p-5",
+			)}
+		>
 			<div>
 				<h2 className="text-sm font-medium text-foreground">Pola tekstowe (personalizacja)</h2>
 				<p className="mt-1 text-sm text-muted-foreground">
