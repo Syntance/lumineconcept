@@ -8,6 +8,7 @@ import { formatPrice } from "@magazyn/core/lib/format";
 import { cn } from "@magazyn/core/lib/cn";
 import { type AdminOrderDetail, getAdminOrder, type OrderAddress } from "./store";
 import { BADGE_TONE_CLASS, fulfillmentStatusBadge, orderStatusBadge, paymentStatusBadge } from "./order-status";
+import { isP24PaymentConfirmed } from "./order-payment-provider";
 import { OrderActions } from "./order-actions";
 
 export const dynamic = "force-dynamic";
@@ -58,17 +59,10 @@ function actionFlags(order: AdminOrderDetail) {
 	const shipped = ["shipped", "partially_shipped", "delivered", "partially_delivered"].includes(order.fulfillmentStatus);
 	const inRealization = ["fulfilled", "partially_fulfilled"].includes(order.fulfillmentStatus);
 
-	const isPaid =
-		order.paymentStatus === "captured" ||
-		order.paymentStatus === "partially_captured" ||
-		order.paymentStatus === "authorized" ||
-		order.paymentStatus === "partially_authorized" ||
-		order.payments.some((p) => p.capturedAt && !p.canceledAt);
-
 	return {
 		canCapture:
 			!closed && !shipped && !inRealization && ["not_fulfilled", "partially_fulfilled"].includes(order.fulfillmentStatus),
-		isPaid,
+		p24ConfirmedPaid: isP24PaymentConfirmed(order),
 		canShip: !closed && !shipped && (inRealization || order.fulfillments.some((f) => !f.canceledAt && !f.shippedAt)),
 		canComplete: !closed && shipped,
 		canCancel: !closed,

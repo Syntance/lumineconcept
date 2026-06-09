@@ -58,6 +58,7 @@ export type OrderPayment = {
 	id: string;
 	amount: number;
 	currencyCode: string;
+	providerId: string | null;
 	capturedAt: string | null;
 	canceledAt: string | null;
 };

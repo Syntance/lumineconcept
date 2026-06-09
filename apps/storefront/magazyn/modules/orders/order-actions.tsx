@@ -18,14 +18,14 @@ type ActionDef = {
 type Props = {
 	orderId: string;
 	canCapture: boolean;
-	/** Opłacone online (P24 itd.) — ten sam przycisk uruchamia realizację bez księgowania. */
-	isPaid?: boolean;
+	/** P24 + captured — pomijamy księgowanie, od razu realizacja. */
+	p24ConfirmedPaid?: boolean;
 	canShip: boolean;
 	canComplete: boolean;
 	canCancel: boolean;
 };
 
-export function OrderActions({ orderId, canCapture, isPaid = false, canShip, canComplete, canCancel }: Props) {
+export function OrderActions({ orderId, canCapture, p24ConfirmedPaid = false, canShip, canComplete, canCancel }: Props) {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [activeAction, setActiveAction] = useState<OrderActionType | null>(null);
@@ -34,8 +34,8 @@ export function OrderActions({ orderId, canCapture, isPaid = false, canShip, can
 	const actions: ActionDef[] = [
 		{
 			type: "capture",
-			label: isPaid ? "Rozpocznij realizację" : "Zaksięguj płatność",
-			icon: isPaid ? Package : CreditCard,
+			label: p24ConfirmedPaid ? "Rozpocznij realizację" : "Zaksięguj płatność",
+			icon: p24ConfirmedPaid ? Package : CreditCard,
 			variant: "primary",
 			available: canCapture,
 		},

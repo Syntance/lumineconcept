@@ -55,6 +55,7 @@ type MedusaPayment = {
 	id: string;
 	amount?: number | null;
 	currency_code?: string | null;
+	provider_id?: string | null;
 	captured_at?: string | null;
 	canceled_at?: string | null;
 };
@@ -224,6 +225,7 @@ const DETAIL_FIELDS = [
 	"shipping_methods.subtotal",
 	"shipping_methods.total",
 	"*payment_collections.payments",
+	"payment_collections.payments.provider_id",
 	"*fulfillments",
 	"fulfillments.items.id",
 	"fulfillments.items.quantity",
@@ -256,6 +258,7 @@ function mapMedusaOrderToDetail(order: MedusaOrder): AdminOrderDetail {
 			id: payment.id,
 			amount: toMinorUnits(payment.amount),
 			currencyCode: (payment.currency_code ?? order.currency_code ?? "pln").toUpperCase(),
+			providerId: payment.provider_id ?? null,
 			capturedAt: payment.captured_at ?? null,
 			canceledAt: payment.canceled_at ?? null,
 		})),
