@@ -39,8 +39,11 @@ function compareProducts(a: AdminProductRow, b: AdminProductRow, sort: SortState
 		case "title":
 			return a.title.localeCompare(b.title, "pl") * dir;
 		case "category": {
-			const aCat = (a.categoryName ?? "").toLocaleLowerCase("pl");
-			const bCat = (b.categoryName ?? "").toLocaleLowerCase("pl");
+			const aCat = a.categoryName ?? "";
+			const bCat = b.categoryName ?? "";
+			if (!aCat && !bCat) return 0;
+			if (!aCat) return dir;
+			if (!bCat) return -dir;
 			return aCat.localeCompare(bCat, "pl") * dir;
 		}
 		case "price": {
@@ -84,6 +87,17 @@ function StatusBadge({ status }: { status: AdminProductRow["status"] }) {
 	);
 }
 
+function CategoryCell({ categoryName }: { categoryName: string | null }) {
+	if (!categoryName) {
+		return (
+			<span className="inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-600 dark:text-rose-400">
+				Brak kategorii
+			</span>
+		);
+	}
+	return <span className="text-sm text-muted-foreground">{categoryName}</span>;
+}
+
 export function ProductsList({ products }: { products: AdminProductRow[] }) {
 	const base = `${magazynConfig.basePath}/panel/produkty`;
 
@@ -94,10 +108,18 @@ export function ProductsList({ products }: { products: AdminProductRow[] }) {
 
 	const categoryOptions = useMemo(() => {
 		const names = new Set<string>();
+		let hasUncategorized = false;
 		for (const product of products) {
-			if (product.categoryName) names.add(product.categoryName);
+			if (product.categoryName) {
+				names.add(product.categoryName);
+			} else {
+				hasUncategorized = true;
+			}
 		}
-		return [...names].sort((a, b) => a.localeCompare(b, "pl"));
+		return {
+			categories: [...names].sort((a, b) => a.localeCompare(b, "pl")),
+			hasUncategorized,
+		};
 	}, [products]);
 
 	const hasFilters = query.trim().length > 0 || statusFilter !== "all" || categoryFilter !== "all";
@@ -106,7 +128,11 @@ export function ProductsList({ products }: { products: AdminProductRow[] }) {
 		const result = products.filter((product) => {
 			if (!matchesSearch(product, query)) return false;
 			if (statusFilter !== "all" && product.status !== statusFilter) return false;
-			if (categoryFilter !== "all" && product.categoryName !== categoryFilter) return false;
+			if (categoryFilter === "uncategorized") {
+				if (product.categoryName !== null) return false;
+			} else if (categoryFilter !== "all" && product.categoryName !== categoryFilter) {
+				return false;
+			}
 			return true;
 		});
 		return [...result].sort((a, b) => compareProducts(a, b, sort));
@@ -178,7 +204,10 @@ export function ProductsList({ products }: { products: AdminProductRow[] }) {
 						aria-label="Filtr kategorii"
 					>
 						<option value="all">Wszystkie kategorie</option>
-						{categoryOptions.map((name) => (
+						{categoryOptions.hasUncategorized && (
+							<option value="uncategorized">Brak kategorii</option>
+						)}
+						{categoryOptions.categories.map((name) => (
 							<option key={name} value={name}>
 								{name}
 							</option>
@@ -247,8 +276,8 @@ export function ProductsList({ products }: { products: AdminProductRow[] }) {
 											</span>
 										</Link>
 									</td>
-									<td className="hidden px-4 py-3 text-sm text-muted-foreground sm:table-cell">
-										{product.categoryName ?? "—"}
+									<td className="hidden px-4 py-3 sm:table-cell">
+										<CategoryCell categoryName={product.categoryName} />
 									</td>
 									<td className="px-4 py-3">
 										<PriceCell product={product} />

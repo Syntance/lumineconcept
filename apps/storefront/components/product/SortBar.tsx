@@ -96,13 +96,13 @@ export function SortBarMobile({
   );
 
   const chips = buildActiveChips(activeFilters, update);
-  const pillOn = !!activeFilters.pill && activeFilters.pill !== "all";
+  const pillOn = false;
   const subcatOn = Boolean(
     defaultListingCategoryId &&
       activeFilters.category &&
       activeFilters.category !== defaultListingCategoryId,
   );
-  const activeCount = chips.length + (pillOn ? 1 : 0) + (subcatOn ? 1 : 0);
+  const activeCount = chips.length + (subcatOn ? 1 : 0);
 
   return (
     <div className="sticky top-16 z-30 -mx-4 border-b border-brand-100 bg-white/95 px-4 py-2.5 backdrop-blur-sm lg:hidden">

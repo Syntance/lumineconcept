@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import {
   buildMedusaCategoryScopeMap,
+  buildListingCategoryFilters,
   categoryIdByHandle,
   categoryIdFromKatParam,
   LISTING_CATEGORY_HANDLE,
@@ -68,6 +69,10 @@ export default async function GotoweWzoryPage({
     categoryTree,
     LISTING_CATEGORY_HANDLE.gotoweWzory,
   );
+  const categoryFilters = buildListingCategoryFilters(
+    categoryTree,
+    LISTING_CATEGORY_HANDLE.gotoweWzory,
+  );
   const medusaListingCategoryIds = medusaCategoryIdsForScope(
     listCategoryId,
     medusaCategoryScopeMap,
@@ -131,6 +136,7 @@ export default async function GotoweWzoryPage({
               initialFilter={initialCategoryId}
               defaultListingCategoryId={defaultGotoweWzoryId ?? ""}
               initialSort={params.sort ?? "-created_at"}
+              categoryFilters={categoryFilters}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/gotowe-wzory"
               globalColors={globalConfig.colors}

@@ -15,7 +15,9 @@ export default async function CategoriesPage() {
 		<div className="flex flex-col gap-6">
 			<header>
 				<h1 className="font-serif text-2xl text-foreground">Kategorie</h1>
-				<p className="mt-1 text-sm text-muted-foreground">Działy sklepu — produkty przypisujesz przy edycji.</p>
+				<p className="mt-1 text-sm text-muted-foreground">
+					Podkategorie listingu „Gotowe wzory” — te same pozycje co w filtrach sklepu. Produkty przypisujesz przy edycji.
+				</p>
 			</header>
 
 			<CategoriesManager categories={categories} />

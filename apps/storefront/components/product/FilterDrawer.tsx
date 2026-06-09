@@ -10,7 +10,6 @@ import {
   PRICE_RANGE_TRACK_ACTIVE_CLASS,
   PRICE_RANGE_TRACK_IDLE_CLASS,
   priceRangeActiveTrackStyle,
-  PRODUCT_PILLS,
   PRICE_SLIDER_MIN,
   PRICE_SLIDER_MAX,
   PRICE_STEP,
@@ -24,6 +23,7 @@ interface FilterDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   defaultListingCategoryId: string;
+  categoryFilters: Array<{ id: string; handle: string; name: string }>;
   categories: Array<{ id: string; name: string }>;
   activeFilters: ActiveFilters;
   filterConfig: FilterConfig;
@@ -66,6 +66,7 @@ export function FilterDrawer({
   isOpen,
   onClose,
   defaultListingCategoryId,
+  categoryFilters,
   categories: _categories,
   activeFilters,
   filterConfig,
@@ -149,27 +150,36 @@ export function FilterDrawer({
           <section>
             <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-brand-800">Kategoria</p>
             <div className="flex flex-wrap gap-2">
-              {PRODUCT_PILLS.map((pill) => {
-                const isActive = (activeFilters.pill ?? "all") === pill.value;
-                return (
-                  <Chip
-                    key={pill.value}
-                    active={isActive}
-                    onClick={() => {
-                      const nextPill = pill.value === "all" ? undefined : pill.value;
-                      onFiltersChange({
-                        ...activeFilters,
-                        pill: nextPill,
-                        ...(defaultListingCategoryId
-                          ? { category: defaultListingCategoryId }
-                          : {}),
-                      });
-                    }}
-                  >
-                    {pill.label}
-                  </Chip>
-                );
-              })}
+              <Chip
+                active={
+                  activeFilters.category === defaultListingCategoryId ||
+                  !activeFilters.category
+                }
+                onClick={() =>
+                  onFiltersChange({
+                    ...activeFilters,
+                    category: defaultListingCategoryId,
+                    pill: undefined,
+                  })
+                }
+              >
+                Wszystkie
+              </Chip>
+              {categoryFilters.map((cat) => (
+                <Chip
+                  key={cat.id}
+                  active={activeFilters.category === cat.id}
+                  onClick={() =>
+                    onFiltersChange({
+                      ...activeFilters,
+                      category: cat.id,
+                      pill: undefined,
+                    })
+                  }
+                >
+                  {cat.name}
+                </Chip>
+              ))}
             </div>
           </section>
 

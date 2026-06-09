@@ -25,7 +25,7 @@ const HEADER_MOBILE_ITEMS = [
 
 /** Jedna stała klasy (14px × 1.1) — ta sama w SSR i kliencie; unika hydratacji przy mieszanym cache .next. */
 const NAV_LINK_CLASS =
-  "whitespace-nowrap text-[15.4px] font-medium uppercase tracking-[0.15em] text-brand-700 hover:text-brand-900 transition-colors";
+  "inline-flex items-center leading-[1.1] whitespace-nowrap text-[15.4px] font-medium uppercase tracking-[0.15em] text-brand-700 transition-colors hover:text-brand-900";
 
 /**
  * Header = RSC. Interaktywne części są dwoma małymi „island":

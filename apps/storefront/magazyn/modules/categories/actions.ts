@@ -1,16 +1,33 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
+import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
 import { slugify } from "@magazyn/core/lib/slug";
 import { type CategoryInput, createCategory, deleteCategory, updateCategory } from "./store";
 
 export type CategoryActionState = { error: string | null; ok: boolean };
 
 const PATH = `${magazynConfig.basePath}/panel/kategorie`;
+
+const SHOP_PATHS = [
+	"/sklep",
+	"/sklep/gotowe-wzory",
+	"/sklep/certyfikaty",
+	"/sklep/logo-3d",
+] as const;
+
+async function revalidateCategoryCaches(): Promise<void> {
+	revalidateTag("medusa-categories", "max");
+	revalidateTag("medusa-products", "max");
+	await revalidateStorefrontMedusaCache(["medusa-categories", "medusa-products"]);
+	for (const shopPath of SHOP_PATHS) {
+		revalidatePath(shopPath);
+	}
+}
 
 const schema = z.object({
 	id: z.string().trim().optional(),
@@ -45,6 +62,7 @@ export async function saveCategoryAction(payload: CategoryPayload): Promise<Cate
 	}
 
 	revalidatePath(PATH);
+	await revalidateCategoryCaches();
 	return { ok: true, error: null };
 }
 
@@ -58,5 +76,6 @@ export async function deleteCategoryAction(id: string): Promise<CategoryActionSt
 	}
 
 	revalidatePath(PATH);
+	await revalidateCategoryCaches();
 	return { ok: true, error: null };
 }

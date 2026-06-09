@@ -56,9 +56,13 @@ export function CategoriesManager({ categories }: { categories: AdminCategory[] 
 	}
 
 	function onDelete(category: AdminCategory) {
+		const orphanMsg =
+			category.productCount > 0
+				? ` Produkty (${category.productCount}) stracą kategorię — trzeba przypisać od nowa.`
+				: "";
 		if (category.productCount > 0) {
-			if (!window.confirm(`Kategoria „${category.name}" ma ${category.productCount} produktów. Usunąć mimo to?`)) return;
-		} else if (!window.confirm(`Usunąć kategorię „${category.name}"?`)) {
+			if (!window.confirm(`Kategoria „${category.name}" ma ${category.productCount} produktów.${orphanMsg} Usunąć mimo to?`)) return;
+		} else if (!window.confirm(`Usunąć kategorię „${category.name}"?${orphanMsg}`)) {
 			return;
 		}
 
@@ -87,6 +91,11 @@ export function CategoriesManager({ categories }: { categories: AdminCategory[] 
 										<span className="truncate text-sm font-medium text-foreground">{category.name}</span>
 										{!category.isActive ? (
 											<span className="rounded-full bg-muted px-1.5 py-0.5 text-[0.6rem] font-medium text-muted-foreground">ukryta</span>
+										) : null}
+										{category.needsReparent ? (
+											<span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium text-amber-700 dark:text-amber-400">
+												poza filtrem — zapisz ponownie
+											</span>
 										) : null}
 									</div>
 									<span className="text-xs text-muted-foreground">

@@ -59,6 +59,8 @@ interface ShopGridClientProps {
    */
   defaultListingCategoryId: string;
   initialSort: string;
+  /** Podkategorie z Medusy (magazyn) — filtry „Kategoria” w sidebarze. */
+  categoryFilters: Array<{ id: string; handle: string; name: string }>;
   categories: Array<{ id: string; name: string }>;
   productBasePath: string;
   globalColors?: GlobalConfigOption[];
@@ -82,6 +84,7 @@ export function ShopGridClient({
   initialPill,
   defaultListingCategoryId,
   initialSort,
+  categoryFilters,
   categories,
   productBasePath,
   globalColors = [],
@@ -237,6 +240,7 @@ export function ShopGridClient({
     <div className="lg:flex lg:items-start lg:gap-8">
       <FilterSidebar
         defaultListingCategoryId={defaultListingCategoryId}
+        categoryFilters={categoryFilters}
         activeFilters={filters}
         filterConfig={filterConfig}
         onFiltersChange={handleFiltersChange}
@@ -282,6 +286,7 @@ export function ShopGridClient({
           isOpen={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           defaultListingCategoryId={defaultListingCategoryId}
+          categoryFilters={categoryFilters}
           categories={categories}
           activeFilters={filters}
           filterConfig={filterConfig}

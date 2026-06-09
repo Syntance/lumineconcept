@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import {
   buildMedusaCategoryScopeMap,
+  buildListingCategoryFilters,
   categoryIdByHandle,
   categoryIdFromKatParam,
   LISTING_CATEGORY_HANDLE,
@@ -13,74 +14,12 @@ import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
 import { TESTIMONIALS_BY_PAGE_QUERY } from "@/lib/sanity/queries";
 import type { Testimonial } from "@/lib/sanity/types";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { isPriceSort } from "@/components/product/filter-types";
 import { SITE_URL } from "@/lib/utils";
-import {
-  medusaProductToSimple,
-  type SimpleProduct,
-} from "@/lib/products/simple-product";
-import {
-  productPassesFilters,
-  type ProductFilterParams,
-} from "@/lib/products/product-filters";
+import { medusaProductToSimple, type SimpleProduct } from "@/lib/products/simple-product";
 import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/global-config";
 import { ShopGridClient } from "../gotowe-wzory/client";
 
 const INITIAL_PAGE_SIZE = 24;
-const MEDUSA_BATCH = 50;
-
-const DEFAULT_CERT_PILL: ProductFilterParams = {
-  sizes: [],
-  materials: [],
-  finishes: [],
-  pill: "certyfikaty",
-};
-
-/** Jak przy kliknięciu „Certyfikaty” w filtrze: całe poddrzewo gotowe-wzory + pill (także w `/api/products`). */
-async function fetchDefaultCertyfikatyListing(args: {
-  categoryIds: string[] | undefined;
-  sort: string;
-  pageSize: number;
-}): Promise<{ products: SimpleProduct[]; count: number } | null> {
-  const { categoryIds, sort, pageSize } = args;
-  const priceSort = isPriceSort(sort);
-  const medusaOrder = priceSort ? "-created_at" : sort;
-  const allSimple: SimpleProduct[] = [];
-  let medusaOffset = 0;
-  let totalMedusa = Infinity;
-
-  try {
-    while (medusaOffset < totalMedusa) {
-      const response = await getProducts({
-        limit: MEDUSA_BATCH,
-        offset: medusaOffset,
-        category_id: categoryIds,
-        order: medusaOrder,
-      });
-      totalMedusa = response.count;
-      for (const raw of response.products) {
-        allSimple.push(medusaProductToSimple(raw as unknown as Record<string, unknown>));
-      }
-      medusaOffset += response.products.length;
-      if (response.products.length === 0) break;
-    }
-  } catch {
-    return null;
-  }
-
-  const collected = allSimple.filter((p) => productPassesFilters(p, DEFAULT_CERT_PILL));
-
-  if (priceSort) {
-    collected.sort((a, b) =>
-      sort === "price_asc" ? a.price - b.price : b.price - a.price,
-    );
-  }
-
-  return {
-    products: collected.slice(0, pageSize),
-    count: collected.length,
-  };
-}
 
 export const metadata: Metadata = {
   title: "Certyfikaty z plexi — dyplomy, podziękowania, vouchery | Lumine Concept",
@@ -115,10 +54,15 @@ export default async function CertyfikatyPage({
 
   const tree = allCategories as unknown as CategoryTreeNode[];
   const defaultGotoweWzoryId = categoryIdByHandle(tree, LISTING_CATEGORY_HANDLE.gotoweWzory);
+  const defaultCertyfikatyId = categoryIdByHandle(tree, LISTING_CATEGORY_HANDLE.certyfikaty);
   const resolvedKatId = params.kat ? categoryIdFromKatParam(tree, params.kat) : undefined;
-  const listCategoryId = params.kat ? resolvedKatId : defaultGotoweWzoryId;
+  const listCategoryId = params.kat ? resolvedKatId : defaultCertyfikatyId ?? defaultGotoweWzoryId;
 
   const medusaCategoryScopeMap = buildMedusaCategoryScopeMap(
+    tree,
+    LISTING_CATEGORY_HANDLE.gotoweWzory,
+  );
+  const categoryFilters = buildListingCategoryFilters(
     tree,
     LISTING_CATEGORY_HANDLE.gotoweWzory,
   );
@@ -129,35 +73,22 @@ export default async function CertyfikatyPage({
 
   const globalConfig = await globalConfigPromise;
 
-  const initialCategoryId = params.kat ? resolvedKatId : defaultGotoweWzoryId;
-  const initialPill = params.kat ? undefined : "certyfikaty";
+  const initialCategoryId = params.kat ? resolvedKatId : defaultCertyfikatyId ?? defaultGotoweWzoryId;
 
   const categories = allCategories;
 
-  let initialProducts: SimpleProduct[];
-  let totalCount: number;
+  const productsResponse = await getProducts({
+    limit: INITIAL_PAGE_SIZE,
+    offset: 0,
+    order,
+    category_id: medusaListingCategoryIds,
+  }).catch(() => null);
 
-  if (!params.kat) {
-    const pillListing = await fetchDefaultCertyfikatyListing({
-      categoryIds: medusaListingCategoryIds,
-      sort: order,
-      pageSize: INITIAL_PAGE_SIZE,
-    });
-    initialProducts = pillListing?.products ?? [];
-    totalCount = pillListing?.count ?? 0;
-  } else {
-    const productsResponse = await getProducts({
-      limit: INITIAL_PAGE_SIZE,
-      offset: 0,
-      order,
-      category_id: medusaListingCategoryIds,
-    }).catch(() => null);
-    const products = productsResponse?.products ?? [];
-    totalCount = productsResponse?.count ?? 0;
-    initialProducts = products.map((p) =>
-      medusaProductToSimple(p as unknown as Record<string, unknown>),
-    );
-  }
+  const products = productsResponse?.products ?? [];
+  const totalCount = productsResponse?.count ?? 0;
+  const initialProducts = products.map((p) =>
+    medusaProductToSimple(p as unknown as Record<string, unknown>),
+  );
 
   const trustBar = settings?.trustBar;
 
@@ -193,9 +124,9 @@ export default async function CertyfikatyPage({
               initialProducts={initialProducts}
               totalCount={totalCount}
               initialFilter={initialCategoryId}
-              initialPill={initialPill}
-              defaultListingCategoryId={defaultGotoweWzoryId ?? ""}
+              defaultListingCategoryId={defaultCertyfikatyId ?? defaultGotoweWzoryId ?? ""}
               initialSort={params.sort ?? "-created_at"}
+              categoryFilters={categoryFilters}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               productBasePath="/sklep/certyfikaty"
               globalColors={globalConfig.colors}

@@ -36,10 +36,10 @@ export function HeaderContactTrigger({ className }: HeaderContactTriggerProps) {
   }, [open]);
 
   return (
-    <div className="relative" ref={rootRef}>
+    <div className="relative inline-flex items-center" ref={rootRef}>
       <button
         type="button"
-        className={className}
+        className={`${className} cursor-pointer appearance-none border-0 bg-transparent p-0`}
         aria-expanded={open}
         aria-controls={panelId}
         aria-haspopup="dialog"

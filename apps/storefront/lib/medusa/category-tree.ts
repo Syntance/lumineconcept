@@ -11,8 +11,33 @@ export type CategoryTreeNode = {
   id: string;
   handle: string;
   name: string;
+  is_active?: boolean;
   category_children?: CategoryTreeNode[] | null;
 };
+
+export type ListingCategoryFilterOption = {
+  id: string;
+  handle: string;
+  name: string;
+};
+
+/** Podkategorie listingu (dzieci roota) — nazwy i ID z Medusy / magazynu. */
+export function buildListingCategoryFilters(
+  tree: CategoryTreeNode[],
+  listingRootHandle: string,
+): ListingCategoryFilterOption[] {
+  const root = findCategoryNodeByHandle(tree, listingRootHandle);
+  if (!root?.category_children?.length) return [];
+
+  return root.category_children
+    .filter((node) => node.is_active !== false)
+    .map((node) => ({
+      id: node.id,
+      handle: node.handle,
+      name: node.name,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "pl"));
+}
 
 export function flattenCategoryTree(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
   const out: CategoryTreeNode[] = [];

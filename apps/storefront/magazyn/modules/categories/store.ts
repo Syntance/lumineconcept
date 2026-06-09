@@ -1,5 +1,13 @@
 import "server-only";
 import { adminFetch } from "@magazyn/core/medusa/client";
+import { LISTING_CATEGORY_HANDLE } from "@/lib/medusa/category-tree";
+
+/** Rooty struktury sklepu — nie tworzymy ich w magazynie, nie przenosimy pod „gotowe-wzory”. */
+const SHOP_ROOT_HANDLES = new Set<string>([
+	LISTING_CATEGORY_HANDLE.gotoweWzory,
+	LISTING_CATEGORY_HANDLE.logo3d,
+	LISTING_CATEGORY_HANDLE.certyfikaty,
+]);
 
 export type AdminCategory = {
 	id: string;
@@ -8,6 +16,8 @@ export type AdminCategory = {
 	description: string;
 	isActive: boolean;
 	productCount: number;
+	/** true = kategoria nie jest dzieckiem „gotowe-wzory” — nie pojawi się w filtrach sklepu. */
+	needsReparent: boolean;
 };
 
 type MedusaCategory = {
@@ -16,23 +26,69 @@ type MedusaCategory = {
 	handle: string;
 	description?: string | null;
 	is_active?: boolean;
+	parent_category_id?: string | null;
+	parent_category?: { id?: string; handle?: string } | null;
 	products?: Array<{ id: string }> | null;
 };
 
-export async function listCategories(): Promise<AdminCategory[]> {
-	const data = await adminFetch<{ product_categories: MedusaCategory[] }>(
-		"/admin/product-categories?limit=100&fields=id,name,handle,description,is_active,products.id",
-	);
+const CATEGORY_FIELDS =
+	"id,name,handle,description,is_active,parent_category_id,parent_category.handle,products.id";
 
-	return data.product_categories
-		.map((category) => ({
-			id: category.id,
-			name: category.name,
-			handle: category.handle,
-			description: category.description ?? "",
-			isActive: category.is_active ?? true,
-			productCount: category.products?.length ?? 0,
-		}))
+async function fetchAllCategories(): Promise<MedusaCategory[]> {
+	const data = await adminFetch<{ product_categories: MedusaCategory[] }>(
+		`/admin/product-categories?limit=100&fields=${CATEGORY_FIELDS}`,
+	);
+	return data.product_categories ?? [];
+}
+
+function gotoweWzoryId(categories: MedusaCategory[]): string | null {
+	return categories.find((c) => c.handle === LISTING_CATEGORY_HANDLE.gotoweWzory)?.id ?? null;
+}
+
+function resolveParentForHandle(
+	handle: string,
+	gotoweId: string | null,
+): string | null | undefined {
+	if (SHOP_ROOT_HANDLES.has(handle)) return null;
+	if (!gotoweId) {
+		throw new Error(
+			"Brak kategorii „Gotowe wzory” w Medusie. Uruchom sync kategorii (pnpm sync-medusa-categories).",
+		);
+	}
+	return gotoweId;
+}
+
+function toAdminCategory(
+	category: MedusaCategory,
+	gotoweId: string | null,
+): AdminCategory {
+	const isRoot = SHOP_ROOT_HANDLES.has(category.handle);
+	const underGotowe = Boolean(gotoweId && category.parent_category_id === gotoweId);
+	return {
+		id: category.id,
+		name: category.name,
+		handle: category.handle,
+		description: category.description ?? "",
+		isActive: category.is_active ?? true,
+		productCount: category.products?.length ?? 0,
+		needsReparent: !isRoot && !underGotowe,
+	};
+}
+
+/**
+ * Kategorie zarządzane w magazynie = podkategorie „gotowe-wzory” (te same co w filtrach sklepu).
+ * Rooty sklepu (gotowe-wzory, logo-3d, certyfikaty) są ukryte — tworzy je sync backendu.
+ */
+export async function listCategories(): Promise<AdminCategory[]> {
+	const all = await fetchAllCategories();
+	const gotoweId = gotoweWzoryId(all);
+
+	return all
+		.filter((category) => {
+			if (SHOP_ROOT_HANDLES.has(category.handle)) return false;
+			return true;
+		})
+		.map((category) => toAdminCategory(category, gotoweId))
 		.sort((a, b) => a.name.localeCompare(b.name, "pl"));
 }
 
@@ -44,6 +100,10 @@ export type CategoryInput = {
 };
 
 export async function createCategory(input: CategoryInput): Promise<void> {
+	const all = await fetchAllCategories();
+	const gotoweId = gotoweWzoryId(all);
+	const parentId = resolveParentForHandle(input.handle, gotoweId);
+
 	await adminFetch("/admin/product-categories", {
 		method: "POST",
 		body: JSON.stringify({
@@ -52,11 +112,16 @@ export async function createCategory(input: CategoryInput): Promise<void> {
 			description: input.description ?? "",
 			is_active: input.isActive,
 			is_internal: false,
+			parent_category_id: parentId ?? undefined,
 		}),
 	});
 }
 
 export async function updateCategory(id: string, input: CategoryInput): Promise<void> {
+	const all = await fetchAllCategories();
+	const gotoweId = gotoweWzoryId(all);
+	const parentId = resolveParentForHandle(input.handle, gotoweId);
+
 	await adminFetch(`/admin/product-categories/${id}`, {
 		method: "POST",
 		body: JSON.stringify({
@@ -64,6 +129,7 @@ export async function updateCategory(id: string, input: CategoryInput): Promise<
 			handle: input.handle,
 			description: input.description ?? "",
 			is_active: input.isActive,
+			parent_category_id: parentId ?? null,
 		}),
 	});
 }

@@ -9,7 +9,6 @@ import {
   PRICE_RANGE_TRACK_ACTIVE_CLASS,
   PRICE_RANGE_TRACK_IDLE_CLASS,
   priceRangeActiveTrackStyle,
-  PRODUCT_PILLS,
   PRICE_SLIDER_MIN,
   PRICE_SLIDER_MAX,
   PRICE_STEP,
@@ -20,10 +19,11 @@ import {
 
 interface FilterSidebarProps {
   /**
-   * Root kategorii tej listy; przy zmianie pigułki zastępujemy węższe `?kat=`
-   * i trzymamy jeden aktywny wybór (Medusa: zawsze ten sam scope + filtr pigułki).
+   * Root kategorii tej listy; „Wszystkie” = ten ID w filtrze Medusy.
    */
   defaultListingCategoryId: string;
+  /** Podkategorie z Medusy (edytowane w magazynie). */
+  categoryFilters: Array<{ id: string; handle: string; name: string }>;
   activeFilters: ActiveFilters;
   filterConfig: FilterConfig;
   onFiltersChange: (filters: ActiveFilters) => void;
@@ -35,6 +35,7 @@ function toggle(arr: string[], val: string): string[] {
 
 export function FilterSidebar({
   defaultListingCategoryId,
+  categoryFilters,
   activeFilters,
   filterConfig,
   onFiltersChange,
@@ -97,28 +98,42 @@ export function FilterSidebar({
             Kategoria
           </summary>
           <div className="flex flex-col gap-1 pt-1">
-            {PRODUCT_PILLS.map((pill) => {
-              const isActive = (activeFilters.pill ?? "all") === pill.value;
+            <button
+              type="button"
+              onClick={() =>
+                update({
+                  category: defaultListingCategoryId,
+                  pill: undefined,
+                })
+              }
+              className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
+                activeFilters.category === defaultListingCategoryId ||
+                !activeFilters.category
+                  ? "bg-brand-500/10 text-brand-800 font-medium"
+                  : "text-brand-500 hover:bg-brand-500/10"
+              }`}
+            >
+              Wszystkie
+            </button>
+            {categoryFilters.map((cat) => {
+              const isActive = activeFilters.category === cat.id;
               return (
                 <button
-                  key={pill.value}
+                  key={cat.id}
                   type="button"
-                  onClick={() => {
-                    const nextPill = pill.value === "all" ? undefined : pill.value;
+                  onClick={() =>
                     update({
-                      pill: nextPill,
-                      ...(defaultListingCategoryId
-                        ? { category: defaultListingCategoryId }
-                        : {}),
-                    });
-                  }}
+                      category: cat.id,
+                      pill: undefined,
+                    })
+                  }
                   className={`rounded-md px-3 py-1.5 text-left text-base transition-colors ${
                     isActive
                       ? "bg-brand-500/10 text-brand-800 font-medium"
                       : "text-brand-500 hover:bg-brand-500/10"
                   }`}
                 >
-                  {pill.label}
+                  {cat.name}
                 </button>
               );
             })}
