@@ -8,6 +8,8 @@ import { REALIZATION_GALLERY_DOC_IDS } from "@/lib/sanity/realization-gallery-do
 import type { RealizationPhoto, SanityImage } from "@/lib/sanity/types";
 import { TablicaZLogoFormClient } from "./client";
 import { QuoteTitleBandMeasure } from "./QuoteTitleBandMeasure";
+import { QuoteImageCtaAlign } from "./QuoteImageCtaAlign";
+import { LogoQuoteArchImage } from "./LogoQuoteArchImage";
 import { LogoBoardRealizations } from "./LogoBoardRealizations";
 
 export const metadata: Metadata = {
@@ -69,24 +71,14 @@ function CustomQuoteSection() {
         className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden bg-white lg:block lg:h-(--logo3d-white-h,15rem)"
       />
 
-      <div className="relative z-1 mx-auto max-w-6xl px-4 pt-16 lg:pt-24">
+      <div className="relative z-1 mx-auto w-full max-w-[min(102rem,calc(100vw-2rem))] px-4 pt-16 lg:px-8 lg:pt-24">
         <div
           id="formularz"
           className="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-x-20 xl:gap-x-24"
         >
-          {/* Lewa kolumna: sticky, wysokość dopasowana do okna (z padem od dołu), zdjęcie wyśrodkowane i skalowane (object-contain). */}
-          <div
-            className="relative z-2 flex w-full max-lg:mx-auto max-lg:max-w-md max-lg:justify-center lg:sticky lg:top-[calc(var(--shop-chrome-h)+var(--product-gallery-sticky-gap))] lg:h-[calc(100svh-var(--shop-chrome-h)-var(--product-gallery-sticky-gap)-2rem-env(safe-area-inset-bottom,0px))] lg:min-h-0 lg:items-center lg:justify-center lg:self-start"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- PNG z alfą: bez optymalizacji Next (ostrzejsza maska). */}
-            <img
-              src="/images/categories/logo-kategoria-beauty-sisters.png"
-              alt="Tablica z logo Beauty Sisters — przykładowa realizacja"
-              width={693}
-              height={915}
-              className="h-auto max-h-[min(55svh,915px)] w-full max-w-full object-contain object-center lg:max-h-full lg:w-auto lg:max-w-full"
-            />
-          </div>
+          <QuoteImageCtaAlign>
+            <LogoQuoteArchImage />
+          </QuoteImageCtaAlign>
 
           <div className="relative z-2 space-y-6">
             <QuoteTitleBandMeasure>

@@ -190,6 +190,14 @@
       transform: none !important;
     }
   }
+
+  /* /sklep/logo-3d — łuk z border-radius, antyaliasing na krawędzi */
+  .logo-quote-arch {
+    isolation: isolate;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
 }
 
 @keyframes trust-scroll {
