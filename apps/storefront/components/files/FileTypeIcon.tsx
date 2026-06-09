@@ -5,7 +5,7 @@ import {
 	FileCode,
 	FileSpreadsheet,
 	FileText,
-	FileType,
+	FileType as FileTypeLucideIcon,
 	Image,
 	Music2,
 	PenTool,
@@ -21,7 +21,7 @@ import { type FileType, resolveFileType } from "@/lib/files/file-type";
 const ICON_STROKE = 1.75;
 
 const ICONS: Record<FileType, ComponentType<LucideProps>> = {
-	pdf: FileType,
+	pdf: FileTypeLucideIcon,
 	image: Image,
 	vector: Spline,
 	document: FileText,
