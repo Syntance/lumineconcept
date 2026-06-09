@@ -140,14 +140,14 @@ const ProductUploadsWidget = ({
               <Label size="xsmall" className="mb-1">Nagłówek sekcji (opcjonalnie):</Label>
               <Input
                 size="small"
-                placeholder="Wgraj swoje logo lub elementy"
+                placeholder="Wgraj swoje logo"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 onBlur={handleLabelBlur}
                 disabled={saving}
               />
               <Text size="xsmall" className="text-ui-fg-muted mt-1">
-                Pusty = domyślny: „Wgraj swoje logo lub elementy"
+                Pusty = domyślny: „Wgraj swoje logo”
               </Text>
             </div>
             <div className="flex items-center gap-2">

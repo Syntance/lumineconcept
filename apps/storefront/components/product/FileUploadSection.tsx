@@ -99,7 +99,7 @@ export function FileUploadSection({
   return (
     <div className="space-y-3">
       <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-brand-700">
-        {label || "Wgraj swoje logo lub elementy"}
+        {label || "Wgraj swoje logo"}
       </p>
 
       <div className="flex flex-wrap items-center gap-3">

@@ -19,6 +19,11 @@ import { compareCategoriesBySortOrder } from "@/lib/medusa/category-sort";
 import type { TextFieldDef } from "@/lib/products/text-fields";
 import { parseTextFieldsFromMetadata, serializeTextFieldsForMetadata } from "@/lib/products/text-fields";
 import {
+	parseUploadSettingsFromMetadata,
+	serializeUploadSettingsForMetadata,
+	type ProductUploadSettings,
+} from "@/lib/products/upload-settings";
+import {
 	findCategoryDefinition,
 	type ColorCategoryId,
 	normalizeHexInput,
@@ -69,6 +74,8 @@ export type ProductFormValues = {
 	allowCustomColor: boolean;
 	/** Pola tekstowe konfiguratora (metadata.text_fields). */
 	textFields: TextFieldDef[];
+	/** Wgrywanie plików przez klienta (metadata.uploads_*). */
+	uploadSettings: ProductUploadSettings;
 };
 
 export type AdminProductRow = {
@@ -271,6 +278,7 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 				mat_overrides_by_slot: JSON.stringify(values.matOverridesBySlot),
 				color_slot_names: values.colorSlotNames ? JSON.stringify(values.colorSlotNames) : undefined,
 				text_fields: JSON.stringify(serializeTextFieldsForMetadata(values.textFields)),
+				...serializeUploadSettingsForMetadata(values.uploadSettings),
 			},
 		}),
 	});
@@ -400,6 +408,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		colorSlotNames: customNames ?? slotTitles,
 		allowCustomColor: defaultAllowCustom,
 		textFields: parseTextFieldsFromMetadata(metadata),
+		uploadSettings: parseUploadSettingsFromMetadata(metadata),
 		metadata,
 	};
 }

@@ -71,6 +71,9 @@ const productSchema = z.object({
 			}),
 		)
 		.default([]),
+	uploadsEnabled: z.boolean().default(false),
+	uploadsCount: z.number().int().min(1).max(5).default(1),
+	uploadsLabel: z.string().default(""),
 });
 
 export type ProductPayload = z.input<typeof productSchema>;
@@ -99,6 +102,11 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 		colorSlotNames: data.colorSlotNames,
 		allowCustomColor: data.allowCustomColor ?? true,
 		textFields: data.textFields ?? [],
+		uploadSettings: {
+			enabled: data.uploadsEnabled ?? false,
+			count: data.uploadsCount ?? 1,
+			label: data.uploadsLabel ?? "",
+		},
 	};
 }
 

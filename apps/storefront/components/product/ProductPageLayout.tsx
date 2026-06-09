@@ -1,6 +1,6 @@
 import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getProductByHandle, getProducts } from "@/lib/medusa/products";
+import { getProductByHandle, getProducts, getProductCategories } from "@/lib/medusa/products";
 import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
 import { PRODUCT_FAQ_QUERY } from "@/lib/sanity/queries";
 import type { ProductFaq, CheckoutCallout } from "@/lib/sanity/types";
@@ -25,6 +25,11 @@ import {
   EMPTY_GLOBAL_CONFIG,
   type GlobalConfigOption,
 } from "@/lib/products/global-config";
+import {
+  buildShopProductBreadcrumbs,
+  productBreadcrumbContextFromBasePath,
+} from "@/lib/medusa/shop-breadcrumbs";
+import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
@@ -159,8 +164,8 @@ interface ProductPageLayoutProps {
 export async function ProductPageLayout({
   slug,
   basePath,
-  categoryLabel,
-  categoryHref,
+  categoryLabel: _categoryLabel,
+  categoryHref: _categoryHref,
   requiredTag,
   ProductPageClient,
 }: ProductPageLayoutProps) {
@@ -172,9 +177,10 @@ export async function ProductPageLayout({
   const product = await getProductData(slug);
   if (!product) notFound();
 
-  const [siteSettings, productConfig] = await Promise.all([
+  const [siteSettings, productConfig, allCategories] = await Promise.all([
     getSiteSettings(),
     getGlobalProductConfigForProduct(product.id).catch(() => EMPTY_GLOBAL_CONFIG),
+    getProductCategories().catch(() => []),
   ]);
 
   if (requiredTag) {
@@ -236,6 +242,17 @@ export async function ProductPageLayout({
 
   const productUrl = `${SITE_URL}${basePath}/${slug}`;
 
+  const breadcrumbContext = productBreadcrumbContextFromBasePath(basePath);
+  const productCategories =
+    (product as { categories?: Array<{ id?: string; handle?: string; name?: string }> })
+      .categories ?? [];
+  const breadcrumbItems = buildShopProductBreadcrumbs({
+    productTitle: product.title,
+    tree: allCategories as unknown as CategoryTreeNode[],
+    productCategories,
+    ...breadcrumbContext,
+  });
+
   const productJsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -269,14 +286,7 @@ export async function ProductPageLayout({
       />
 
       <div className="container mx-auto px-4 pt-10 pb-5 lg:pt-12 lg:pb-6">
-        <Breadcrumbs
-          className="mb-0"
-          items={[
-            { label: "Strona główna", href: "/" },
-            { label: categoryLabel, href: categoryHref },
-            { label: product.title },
-          ]}
-        />
+        <Breadcrumbs className="mb-0" items={breadcrumbItems} />
       </div>
 
       <div className="bg-brand-50">

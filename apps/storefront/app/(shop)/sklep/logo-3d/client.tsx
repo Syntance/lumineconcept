@@ -178,7 +178,7 @@ export function TablicaZLogoFormClient() {
       {/* Plik z logo */}
       <div>
         <label htmlFor="logo-file" className={LABEL_CLASS}>
-          Wgraj swoje logo lub elementy graficzne
+          Wgraj swoje logo
         </label>
         <div className="flex flex-wrap items-center gap-3">
           <label

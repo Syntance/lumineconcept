@@ -36,7 +36,9 @@ import {
 	type TextFieldFormState,
 } from "./product-text-field-state";
 import { TextFieldsSection } from "./text-fields-section";
+import { ProductUploadSettingsSection } from "./product-upload-settings-section";
 import { ProductFormTabs } from "./product-form-tabs";
+import type { ProductUploadSettings } from "@/lib/products/upload-settings";
 
 type Props = {
 	product?: AdminProductDetail;
@@ -64,6 +66,9 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 	);
 	const [textFieldState, setTextFieldState] = useState<TextFieldFormState>(() =>
 		createInitialTextFieldState(product),
+	);
+	const [uploadSettings, setUploadSettings] = useState<ProductUploadSettings>(
+		() => product?.uploadSettings ?? { enabled: false, count: 1, label: "" },
 	);
 
 	const [error, setError] = useState<string | null>(null);
@@ -235,6 +240,9 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				colorSlotNames: colorConfig.colorSlotNames,
 				allowCustomColor: colorConfig.allowCustomColor,
 				textFields,
+				uploadsEnabled: uploadSettings.enabled,
+				uploadsCount: uploadSettings.count,
+				uploadsLabel: uploadSettings.label,
 			});
 			if (result && !result.ok) {
 				setError(result.error);
@@ -325,24 +333,45 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 						/>
 					}
 					fieldsPanel={
-						<TextFieldsSection
-							embedded
-							fields={textFieldState.fields}
-							activeFieldKey={textFieldState.activeFieldKey}
-							onActiveFieldChange={(key) =>
-								setTextFieldState((prev) => ({ ...prev, activeFieldKey: key }))
-							}
-							onAddField={() => setTextFieldState((prev) => addTextField(prev))}
-							onRemoveField={(key) =>
-								setTextFieldState((prev) => removeTextField(prev, key))
-							}
-							onRenameField={(key, label) =>
-								setTextFieldState((prev) => renameTextFieldLabel(prev, key, label))
-							}
-							onUpdateField={(key, patch) =>
-								setTextFieldState((prev) => updateTextField(prev, key, patch))
-							}
-						/>
+						<div className="flex flex-col gap-0">
+							<TextFieldsSection
+								embedded
+								fields={textFieldState.fields}
+								activeFieldKey={textFieldState.activeFieldKey}
+								onActiveFieldChange={(key) =>
+									setTextFieldState((prev) => ({ ...prev, activeFieldKey: key }))
+								}
+								onAddField={() => setTextFieldState((prev) => addTextField(prev))}
+								onRemoveField={(key) =>
+									setTextFieldState((prev) => removeTextField(prev, key))
+								}
+								onRenameField={(key, label) =>
+									setTextFieldState((prev) => renameTextFieldLabel(prev, key, label))
+								}
+								onUpdateField={(key, patch) =>
+									setTextFieldState((prev) => updateTextField(prev, key, patch))
+								}
+							/>
+							<ProductUploadSettingsSection
+								embedded
+								enabled={uploadSettings.enabled}
+								count={uploadSettings.count}
+								label={uploadSettings.label}
+								onEnabledChange={(enabled) =>
+									setUploadSettings((prev) => ({
+										...prev,
+										enabled,
+										count: enabled && prev.count < 1 ? 1 : prev.count,
+									}))
+								}
+								onCountChange={(count) =>
+									setUploadSettings((prev) => ({ ...prev, count }))
+								}
+								onLabelChange={(label) =>
+									setUploadSettings((prev) => ({ ...prev, label }))
+								}
+							/>
+						</div>
 					}
 				/>
 			</div>

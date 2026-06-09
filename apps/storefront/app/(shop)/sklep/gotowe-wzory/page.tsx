@@ -17,6 +17,7 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { SITE_URL } from "@/lib/utils";
 import { medusaProductToSimple } from "@/lib/products/simple-product";
 import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/global-config";
+import { buildShopListingBreadcrumbs } from "@/lib/medusa/shop-breadcrumbs";
 import { ShopGridClient } from "./client";
 
 const INITIAL_PAGE_SIZE = 24;
@@ -102,19 +103,19 @@ export default async function GotoweWzoryPage({
 
   const displayTestimonials = testimonials.slice(0, 2);
 
+  const breadcrumbItems = buildShopListingBreadcrumbs({
+    tree: categoryTree,
+    listingRootHandle: LISTING_CATEGORY_HANDLE.gotoweWzory,
+    listingBasePath: "/sklep/gotowe-wzory",
+    activeCategoryId: listCategoryId,
+  });
+
   return (
     <>
       {/* Hero */}
       <section className="bg-brand-50 pt-10 pb-14 lg:pt-12 lg:pb-20">
         <div className="container mx-auto px-4">
-          <Breadcrumbs
-            className="mb-0"
-            items={[
-              { label: "Strona główna", href: "/" },
-              { label: "Sklep", href: "/sklep" },
-              { label: "Gotowe wzory" },
-            ]}
-          />
+          <Breadcrumbs className="mb-0" items={breadcrumbItems} />
         </div>
         <div className="container mx-auto max-w-7xl px-4 pt-10 text-center lg:pt-16">
           <h1 className="font-display text-4xl tracking-[0.06em] text-brand-800 lg:text-5xl">

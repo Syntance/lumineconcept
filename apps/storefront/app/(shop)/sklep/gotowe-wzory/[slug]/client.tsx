@@ -282,11 +282,7 @@ export function ProductPageClient({
 
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
-  /** Produkt wyłącznie z wgrywaniem plików (bez pól tekstowych i linków QR) */
-  const uploadOnlyProduct =
-    uploadsCount > 0 && textFields.length === 0 && linksCount === 0;
-  const uploadsComplete =
-    !uploadOnlyProduct || uploadedFiles.length > 0;
+  const uploadsComplete = uploadsCount === 0 || uploadedFiles.length > 0;
 
   const ctaRef = useRef<HTMLDivElement>(null);
   const configuratorRef = useRef<HTMLDivElement>(null);

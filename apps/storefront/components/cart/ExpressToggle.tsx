@@ -26,7 +26,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
           strokeWidth={2}
           aria-hidden
         />
-        <span className="text-xs font-medium text-brand-800">
+        <span className="text-xs font-gilroy font-medium text-brand-800">
           Chcę ekspres · +50% wart. zam.{" "}
           <span className="font-normal text-brand-500">· 3 dni robocze</span>
         </span>
@@ -43,7 +43,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
           aria-hidden
         />
         <p className="min-w-0 leading-snug sm:text-base">
-          <span className="font-display text-sm font-bold uppercase tracking-[0.12em] text-brand-900 sm:text-base">
+          <span className="font-gilroy text-sm font-bold uppercase tracking-[0.12em] text-brand-900 sm:text-base">
             Realizacja ekspress
           </span>
           <span className="text-base font-normal text-brand-800">
@@ -53,14 +53,14 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
         </p>
       </div>
 
-      <label className="mt-5 inline-flex w-fit max-w-full cursor-pointer items-center gap-3 border border-brand-300 bg-brand-800 px-3 py-2.5 font-display text-sm font-semibold tracking-wide text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-within:outline-none focus-within:ring-2 focus-within:ring-white/30">
+      <label className="mt-5 inline-flex w-fit max-w-full cursor-pointer items-center gap-3 border border-brand-300 bg-brand-800 px-3 py-2.5 font-gilroy text-sm font-semibold tracking-wide text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-within:outline-none focus-within:ring-2 focus-within:ring-white/30">
         <input
           type="checkbox"
           checked={expressDelivery}
           onChange={(e) => toggle(e.target.checked)}
           className="h-5 w-5 shrink-0 rounded-none border border-white/50 bg-brand-800 accent-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         />
-        <span className="font-sans text-base text-white">
+        <span className="text-base text-white">
           Chcę ekspres · +50% wartości zamówienia
         </span>
       </label>
