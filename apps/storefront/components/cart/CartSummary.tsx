@@ -38,7 +38,7 @@ export function CartSummary() {
       </div>
       {expressDelivery && expressSurcharge > 0 && (
         <div className="flex justify-between">
-          <span className="text-brand-500">Ekspress (+50% produktów)</span>
+          <span className="text-brand-500">Express (+50% produktów)</span>
           <span className="tabular-nums text-brand-700">
             {formatPrice(expressSurcharge)}
           </span>

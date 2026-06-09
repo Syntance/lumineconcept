@@ -27,7 +27,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
           aria-hidden
         />
         <span className="text-xs font-gilroy font-medium text-brand-800">
-          Chcę ekspres · +50% wart. zam.{" "}
+          Chcę express · +50% wart. zam.{" "}
           <span className="font-normal text-brand-500">· 3 dni robocze</span>
         </span>
       </label>
@@ -44,7 +44,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
         />
         <p className="min-w-0 leading-snug sm:text-base">
           <span className="font-gilroy text-sm font-bold uppercase tracking-[0.12em] text-brand-900 sm:text-base">
-            Realizacja ekspress
+            Realizacja express
           </span>
           <span className="text-base font-normal text-brand-800">
             {" "}
@@ -61,7 +61,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
           className="h-5 w-5 shrink-0 rounded-none border border-white/50 bg-brand-800 accent-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         />
         <span className="text-base text-white">
-          Chcę ekspres · +50% wartości zamówienia
+          Chcę express · +50% wartości zamówienia
         </span>
       </label>
     </div>

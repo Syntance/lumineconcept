@@ -122,8 +122,8 @@ export default async function ShopHubPage() {
 
       {/* Kategorie obok siebie */}
       <section className="bg-brand-100 pb-16 pt-10 lg:pb-24 lg:pt-14">
-        <nav className="container mx-auto max-w-[80rem] px-4">
-          <div className="grid gap-[1.65rem] sm:grid-cols-3 sm:items-stretch sm:gap-[3.3rem]">
+        <nav className="container mx-auto max-w-[84rem] px-4">
+          <div className="grid gap-[1.65rem] sm:grid-cols-3 sm:items-stretch sm:gap-[2.85rem]">
             {CATEGORIES.map((cat, index) => (
               <Link
                 key={cat.href}

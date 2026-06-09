@@ -25,7 +25,7 @@ export function RegulaminDostawaPlatnosci() {
             czas przygotowania Zamówienia do wysyłki przez Sprzedawcę oraz czas doręczenia Produktu przez przewoźnika. Termin
             dostawy liczony jest od dnia uznania rachunku bankowego lub konta rozliczeniowego Sprzedawcy, nie jest jednak
             dłuższy niż 14 Dni Roboczych, chyba że w opisie wybranego przez Klienta Produktu lub w trakcie składania
-            Zamówienia podano inny termin, lub też Klient korzysta z usługi w postaci Zamówienia Ekspresowego. W przypadku
+            Zamówienia podano inny termin, lub też Klient korzysta z usługi w postaci Zamówienia Express. W przypadku
             jednoczesnego złożenia Zamówienia na kilka Produktów o różnych terminach dostawy, terminem dostawy jest najdłuższy
             podany termin.
           </li>

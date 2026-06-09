@@ -124,9 +124,9 @@ export function RegulaminDefinicje() {
           które Kupujący chce nabyć od Sprzedawcy, a także zawierające dane Klienta konieczne dla zawarcia i wykonania Umowy
           Sprzedaży. W ramach jednego zamówienia, Kupujący może złożyć kilka ofert zakupu Produktu;
         </Def>
-        <Def term="Zamówienie Ekspresowe">
+        <Def term="Zamówienie Express">
           świadczona przez Sprzedawcę na rzecz Klienta opcjonalna usługa dodatkowa polegająca na realizacji Zamówienia w
-          terminie do 3 dni roboczych. Realizacja Zamówienia Ekspresowego wiąże się z powiększeniem o 50% Ceny za Produkty
+          terminie do 3 dni roboczych. Realizacja Zamówienia Express wiąże się z powiększeniem o 50% Ceny za Produkty
           objęte Zamówieniem.
         </Def>
       </dl>

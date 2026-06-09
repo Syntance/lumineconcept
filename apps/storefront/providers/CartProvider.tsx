@@ -81,16 +81,16 @@ interface CartContextType extends CartState {
   expressDelivery: boolean;
   setExpressDelivery: (enabled: boolean) => Promise<void>;
   /**
-   * Dopłata ekspress: 50% sumy produktów (subtotal). Medusa v2 — kwota
+   * Dopłata express: 50% sumy produktów (subtotal). Medusa v2 — kwota
    * w walucie głównej (PLN, dziesiętne).
    */
   expressSurcharge: number;
   /**
-   * Suma `item.total` — do wiersza „Produkty” i ekspressu; pewniejsza niż
+   * Suma `item.total` — do wiersza „Produkty” i express; pewniejsza niż
    * `cart.subtotal` z API (czasem zawiera dostawę po wyborze metody).
    */
   productsSubtotal: number;
-  /** total z Medusy + expressSurcharge (gdy ekspress włączony) + szacunek dostawy, jeśli brak shipping_total */
+  /** total z Medusy + expressSurcharge (gdy express włączony) + szacunek dostawy, jeśli brak shipping_total */
   grandTotal: number;
   /**
    * Gdy `shipping_total` z Medusy jest 0 — najniższa kwota z `listCartOptions`
@@ -259,7 +259,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     /**
      * Autorytetem jest Medusa (`metadata.express_delivery` w koszyku).
-     * `localStorage` to tylko fallback dla anonima, który kliknął „ekspres"
+     * `localStorage` to tylko fallback dla anonima, który kliknął „express"
      * zanim jego koszyk powstał. Po stworzeniu koszyka:
      *   - jeśli Medusa zna wartość → synchronizujemy ją do localStorage,
      *   - jeśli Medusa nic nie ma, a localStorage ma „true" → leniwie
@@ -539,7 +539,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);
 
-  /** Ostatnie zapisane żądanie ekspress — ignorujemy przestarzałe odpowiedzi API. */
+  /** Ostatnie zapisane żądanie express — ignorujemy przestarzałe odpowiedzi API. */
   const expressSaveSeq = useRef(0);
 
   const setExpressDelivery = useCallback(
@@ -576,7 +576,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       Math.round(
         cart.items.reduce((s, i) => s + i.total, 0) * 100,
       ) / 100;
-    // Dopłata ekspress to 50% sumy pozycji — zaokrąglamy do groszy (2 miejsc po
+    // Dopłata express to 50% sumy pozycji — zaokrąglamy do groszy (2 miejsc po
     // przecinku), nie do pełnych złotych.
     const expressSurcharge = expressDelivery
       ? Math.round(productsSubtotal * 0.5 * 100) / 100

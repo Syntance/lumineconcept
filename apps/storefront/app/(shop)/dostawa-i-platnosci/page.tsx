@@ -16,7 +16,7 @@ import { SITE_URL } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Dostawa i płatności",
   description:
-    "Sprawdź dostępne sposoby dostawy oraz formy płatności w sklepie Lumine Concept — kurier, paczkomat, Przelewy24, BLIK, przelew tradycyjny i zamówienie ekspresowe (3 dni).",
+    "Sprawdź dostępne sposoby dostawy oraz formy płatności w sklepie Lumine Concept — kurier, paczkomat, Przelewy24, BLIK, przelew tradycyjny i zamówienie express (3 dni).",
   robots: { index: true, follow: true },
   alternates: {
     canonical: `${SITE_URL}/dostawa-i-platnosci`,
@@ -151,7 +151,7 @@ export default function DostawaIPlatnosciPage() {
                   <span className="inline-flex h-5 items-center rounded-full bg-brand-700 px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
                     Express
                   </span>{" "}
-                  Zamówienie ekspresowe
+                  Zamówienie express
                 </h3>
                 <p className="text-sm leading-relaxed text-brand-800">
                   Realizacja do <span className="font-semibold">3 dni roboczych</span> za dopłatą{" "}

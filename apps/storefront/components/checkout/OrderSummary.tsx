@@ -170,7 +170,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
           <span className="text-brand-600">Realizacja</span>
           <span className="font-medium text-brand-800">
             {expressDelivery
-              ? "Ekspress: 3 dni robocze"
+              ? "Express: 3 dni robocze"
               : "ok. 10 dni roboczych"}
           </span>
         </div>
@@ -182,7 +182,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
         </div>
         {expressDelivery && expressSurcharge > 0 && (
           <div className="flex justify-between">
-            <span className="text-brand-600">Ekspress (+50% produktów)</span>
+            <span className="text-brand-600">Express (+50% produktów)</span>
             <span className="font-medium tabular-nums text-brand-800">
               {formatPrice(expressSurcharge)}
             </span>

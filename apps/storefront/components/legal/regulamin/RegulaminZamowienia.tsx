@@ -16,7 +16,7 @@ export function RegulaminZamowienia() {
           odpłatnych usług dodatkowych, świadczonych na rzecz Klienta przez Sprzedawcę na zasadach przewidzianych w
           Regulaminie. Zakres dostępnych usług dodatkowych może być uzależniony od rodzaju Produktu, miejsca dostawy lub
           sposobu dostawy wybranego przez Klienta (np. konfigurowanie Produktów według specyfikacji Klienta, zamówienie
-          ekspresowe). Wybór usługi dodatkowej (zawarcie umowy w zakresie usługi dodatkowej) jest możliwy wyłącznie w
+          express). Wybór usługi dodatkowej (zawarcie umowy w zakresie usługi dodatkowej) jest możliwy wyłącznie w
           ramach składania Zamówienia na Produkt za pośrednictwem Sklepu Internetowego lub innych środków porozumiewania
           się na odległość przewidzianych przez Sprzedawcę. Szczegółowe informacje dotyczące usług dodatkowych dostępnych za
           pośrednictwem Sklepu Internetowego, w szczególności ich koszt, zakres i dostępność, są Klientowi wskazywane za
@@ -57,7 +57,7 @@ export function RegulaminZamowienia() {
           składania Zamówienia, faktura VAT nie będzie mogła zostać wystawiona;
         </li>
         <li>
-          wybór dodatkowych usług, jeżeli są dostępne (np. usługi Zamówienia Ekspresowego), wybór spośród dostępnych sposobów
+          wybór dodatkowych usług, jeżeli są dostępne (np. usługi Zamówienia Express), wybór spośród dostępnych sposobów
           zapłaty, oraz metod dostawy;
         </li>
         <li>akceptacja Regulaminu;</li>
@@ -91,7 +91,7 @@ export function RegulaminZamowienia() {
         <li>wskazanie danych do dostawy zamówionych Produktów;</li>
         <li>
           wybór przez Klienta spośród dostępnych opcji dostawy, płatności i usług dodatkowych (np. usługi Zamówienia
-          Ekspresowego);
+          Express);
         </li>
         <li>akceptacja Regulaminu;</li>
         <li>
