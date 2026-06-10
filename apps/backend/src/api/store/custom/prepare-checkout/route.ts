@@ -30,6 +30,7 @@ type Body = {
   cart_id?: string;
   option_id?: string;
   provider_id?: string;
+  order_notes?: string;
 };
 
 /**
@@ -78,6 +79,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   const cartId = body.cart_id?.trim();
   const optionId = body.option_id?.trim();
   const providerId = body.provider_id?.trim();
+  const orderNotes = body.order_notes?.trim() ?? "";
 
   if (!cartId || !optionId || !providerId) {
     return res.status(400).json({
@@ -88,6 +90,14 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   const scope = req.scope;
 
   try {
+    // Zapisz order_notes do cart.metadata jeśli podane
+    if (orderNotes) {
+      const cartModuleService = scope.resolve("cartModuleService");
+      await cartModuleService.updateCarts(cartId, {
+        metadata: { order_notes: orderNotes },
+      });
+    }
+
     await addShippingMethodToCartWorkflow(scope).run({
       input: {
         cart_id: cartId,
