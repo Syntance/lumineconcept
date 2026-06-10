@@ -330,3 +330,10 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.553 0.013 58.071);
 }
+
+/* Turnstile (iframe Cloudflare) — szerokość jak pole formularza, tło brand-50 */
+.checkout-turnstile .cf-turnstile,
+.checkout-turnstile iframe {
+  width: 100% !important;
+  max-width: 100%;
+}

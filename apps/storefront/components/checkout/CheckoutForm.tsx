@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Turnstile } from "@marsidev/react-turnstile";
 import DOMPurify from "isomorphic-dompurify";
 import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges";
+import { CheckoutTurnstile } from "./CheckoutTurnstile";
 import { isP24CircuitOpen, recordP24Failure } from "@/lib/checkout/p24-circuit-breaker";
 import { verifyTurnstileToken } from "@/lib/checkout/verify-turnstile";
 import {
@@ -1200,14 +1200,12 @@ export function CheckoutForm() {
             </div>
 
             {TURNSTILE_ENABLED ? (
-              <div className="rounded-lg border border-brand-200 bg-brand-50/30 p-4">
-                <Turnstile
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onSuccess={(token: string) => updateField("turnstileToken", token)}
-                  onError={() => updateField("turnstileToken", "")}
-                  onExpire={() => updateField("turnstileToken", "")}
-                />
-              </div>
+              <CheckoutTurnstile
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={(token) => updateField("turnstileToken", token)}
+                onError={() => updateField("turnstileToken", "")}
+                onExpire={() => updateField("turnstileToken", "")}
+              />
             ) : null}
 
             <div className="space-y-3 border-t border-brand-100 pt-4">
