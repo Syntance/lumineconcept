@@ -2,7 +2,7 @@ import Image from "next/image";
 
 import { HeroPortalContent } from "./HeroPortalContent";
 
-/** Wymiary pliku `public/images/hero-main-wall.png` — przy podmianie grafiki zaktualizuj. */
+/** Wymiary pliku `public/images/hero-main-wall.webp` — przy podmianie grafiki zaktualizuj. */
 const HERO_BG_WIDTH = 2560;
 const HERO_BG_HEIGHT = 966;
 
@@ -17,7 +17,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
         className="relative w-full overflow-x-hidden max-lg:aspect-[5/6] max-lg:max-h-[min(72vh,34rem)] max-lg:min-h-[22rem] lg:aspect-[2560/966] lg:max-h-[966px]"
       >
         <Image
-          src="/images/hero-main-wall.png"
+          src="/images/hero-main-wall.webp"
           alt=""
           width={HERO_BG_WIDTH}
           height={HERO_BG_HEIGHT}

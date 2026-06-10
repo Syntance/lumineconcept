@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 const IG_PROFILE = "https://instagram.com/lumineconcept";
 
-/** Wymiary `public/images/monia-branding-cta-bg.png` — przy podmianie zdjęcia zaktualizuj. */
+/** Wymiary `public/images/monia-branding-cta-bg.webp` — przy podmianie zdjęcia zaktualizuj. */
 const BRANDING_BG_WIDTH = 2560;
 const BRANDING_BG_HEIGHT = 922;
 /** Desktop: max-h 645px (= 70% wysokości pliku 922px). */
@@ -164,12 +164,11 @@ export async function FooterCTA() {
         {/* Desktop — tło jak hero + overlay */}
         <div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/645] lg:max-h-[645px]">
           <Image
-            src="/images/monia-branding-cta-bg.png"
+            src="/images/monia-branding-cta-bg.webp"
             alt=""
             width={BRANDING_BG_WIDTH}
             height={BRANDING_BG_HEIGHT}
             sizes="100vw"
-            unoptimized
             priority={false}
             className="absolute inset-0 h-full w-full origin-[30%_80%] scale-[1.2] select-none object-cover object-[30%_80%]"
           />
