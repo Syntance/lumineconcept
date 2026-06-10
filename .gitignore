@@ -7,6 +7,7 @@ dist/
 .env.local
 .env.*.local
 .env.*.tmp
+.env.vercel.check
 *.tmp
 KLUCZE_API_KLIENT.md
 *.log
