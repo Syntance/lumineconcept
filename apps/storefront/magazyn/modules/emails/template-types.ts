@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import type { EmailThemeConfig } from "@magazyn/core/config/types";
+import { FONT_KEYS, type FontKey } from "./email-fonts";
+
+export { FONT_KEYS, FONT_STACKS, type FontKey } from "./email-fonts";
+export { FONT_OPTIONS } from "./email-fonts";
 
 /**
  * Model danych wizualnego edytora maili transakcyjnych.
@@ -13,15 +17,6 @@ import type { EmailThemeConfig } from "@magazyn/core/config/types";
  */
 
 export type TextAlign = "left" | "center" | "right";
-
-export type FontKey = "serif" | "sans" | "mono";
-
-/** Stosy fontów email-safe (web-safe — bez ładowania zewnętrznych krojów). */
-export const FONT_STACKS: Record<FontKey, string> = {
-	serif: "Georgia, 'Times New Roman', Times, serif",
-	sans: "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-	mono: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace",
-};
 
 /** Globalny motyw maila — kolory, font, szerokość, nagłówek marki. */
 export type EmailTheme = EmailThemeConfig;
@@ -554,7 +549,7 @@ const themeSchema = z.object({
 	accent: z.string(),
 	muted: z.string(),
 	link: z.string(),
-	fontKey: z.enum(["serif", "sans", "mono"]),
+	fontKey: z.enum(FONT_KEYS),
 	contentWidth: z.number().int().min(320).max(800),
 	radius: z.number().int().min(0).max(48),
 	headerBg: z.string(),

@@ -55,7 +55,7 @@ export const magazynConfig: MagazynConfig = {
 		accent: "#AF7C61",
 		muted: "#8f7a74",
 		link: "#AF7C61",
-		fontKey: "serif",
+		fontKey: "gilroy",
 		contentWidth: 600,
 		radius: 10,
 		headerBg: "#725750",

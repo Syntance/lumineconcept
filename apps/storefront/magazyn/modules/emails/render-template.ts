@@ -1,4 +1,6 @@
 import { formatPrice } from "@magazyn/core/lib/format";
+import { magazynConfig } from "@magazyn/magazyn.config";
+import { emailFontFaceCss } from "./email-fonts";
 import {
 	type Block,
 	type BlockStyle,
@@ -206,10 +208,19 @@ function renderBlock(block: Block, theme: EmailTheme, ctx: EmailRenderContext): 
 	}
 }
 
+/** Bazowy URL plików /fonts/ — lokalny podgląd vs produkcja w wysyłanych mailach. */
+function emailAssetsBaseUrl(): string {
+	if (typeof window !== "undefined" && window.location?.origin) {
+		return window.location.origin;
+	}
+	return magazynConfig.email.siteUrl ?? magazynConfig.branding.storefrontUrl;
+}
+
 /** Główny renderer: szablon + kontekst danych -> email-safe HTML + plaintext. */
 export function renderTemplate(template: EmailTemplate, ctx: EmailRenderContext): RenderedEmail {
 	const { theme } = template;
 	const fontFamily = FONT_STACKS[theme.fontKey];
+	const fontFaceCss = emailFontFaceCss(theme.fontKey, emailAssetsBaseUrl());
 	const body = template.blocks.map((block) => renderBlock(block, theme, ctx)).join("\n");
 
 	const header = theme.brandName
@@ -222,7 +233,7 @@ export function renderTemplate(template: EmailTemplate, ctx: EmailRenderContext)
 
 	const html = `<!DOCTYPE html>
 <html lang="pl">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">${fontFaceCss ? `<style>${fontFaceCss}</style>` : ""}</head>
 <body style="margin:0;padding:0;background:${theme.bg};font-family:${fontFamily};color:${theme.text}">
 ${preheader}
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${theme.bg};padding:32px 16px">
