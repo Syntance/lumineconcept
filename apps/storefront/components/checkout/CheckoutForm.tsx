@@ -730,17 +730,6 @@ export function CheckoutForm() {
   return (
     <div className="grid gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-8">
-        {/* Progress bar */}
-        <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-brand-100">
-          <div
-            className="h-full bg-brand-800 transition-all duration-500 ease-out"
-            style={{ width: `${(step / STEPS.length) * 100}%` }}
-          />
-        </div>
-        <p className="mb-2 text-center text-sm text-brand-600">
-          Krok {step} z {STEPS.length} ({Math.round((step / STEPS.length) * 100)}%)
-        </p>
-
         {/* Step indicator */}
         <nav aria-label="Postęp zamówienia" className="flex items-center gap-1">
           {STEPS.map((s, i) => (
