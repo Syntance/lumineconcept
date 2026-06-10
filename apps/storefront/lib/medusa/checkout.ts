@@ -741,6 +741,18 @@ export async function retryPrzelewy24Payment(cartId: string): Promise<string> {
 }
 
 /** Wysyła mail o nieudanej płatności (szablon magazynu). Fire-and-forget. */
+export function buildP24RetryUrl(cartId: string): string {
+  const path = `/checkout/p24/retry?cart_id=${encodeURIComponent(cartId)}`;
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}${path}`;
+  }
+  const site =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+    process.env.NEXT_PUBLIC_VERCEL_URL?.replace(/\/$/, "");
+  return site ? `${site}${path}` : path;
+}
+
+/** Wysyła mail o nieudanej płatności (szablon magazynu). Fire-and-forget. */
 export function notifyPaymentFailed(cartId: string, retryUrl: string): void {
   void fetch("/api/checkout/send-payment-failed-email", {
     method: "POST",

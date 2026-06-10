@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, XCircle } from "lucide-react";
 import {
   completeCart,
   fetchP24ReturnStatus,
+  buildP24RetryUrl,
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
   notifyOrderPlaced,
@@ -129,7 +130,7 @@ function Przelewy24ReturnInner() {
 
     let cancelled = false;
     const startedAt = Date.now();
-    let lastRetryUrl = `/checkout/p24/retry?cart_id=${encodeURIComponent(cartId)}`;
+    let lastRetryUrl = buildP24RetryUrl(cartId);
     let consecutiveZeroStatus = 0;
 
     const maybeSendFailedEmail = (retryUrl: string) => {
@@ -217,6 +218,7 @@ function Przelewy24ReturnInner() {
           allowFailedOnZero: true,
         }).catch(() => null);
         if (finalStatus?.retry_url) lastRetryUrl = finalStatus.retry_url;
+        else lastRetryUrl = buildP24RetryUrl(cartId);
 
         if (finalStatus?.status === "failed") {
           maybeSendFailedEmail(lastRetryUrl);

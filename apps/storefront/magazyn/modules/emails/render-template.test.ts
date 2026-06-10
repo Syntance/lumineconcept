@@ -30,4 +30,16 @@ describe("renderTemplate", () => {
 		const { text } = renderTemplate(buildDefaultTemplate("placed"), ctx);
 		expect(text).toContain("Razem:");
 	});
+
+	it("podstawia {{linkPlatnosci}} w href przycisku payment_failed", () => {
+		const retryUrl = "https://lumineconcept.pl/checkout/p24/retry?cart_id=cart_abc";
+		const tpl = buildDefaultTemplate("payment_failed");
+		const { html, text } = renderTemplate(tpl, {
+			...ctx,
+			vars: { ...ctx.vars, linkPlatnosci: retryUrl },
+		});
+		expect(html).toContain(`href="${retryUrl}"`);
+		expect(html).not.toContain("{{linkPlatnosci}}");
+		expect(text).toContain(retryUrl);
+	});
 });
