@@ -180,6 +180,26 @@ export function trackFormError(args: {
   capturePostHogEvent("form_error", withShortContext(args));
 }
 
+export function trackFormFieldError(params: {
+  formName: string;
+  field: string;
+  error: string;
+  step?: number;
+}) {
+  if (typeof window === "undefined") return;
+
+  const posthog = (window as any).posthog;
+  if (!posthog) return;
+
+  posthog.capture("form_field_error", {
+    form_name: params.formName,
+    field: params.field,
+    error: params.error,
+    step: params.step,
+    timestamp: new Date().toISOString(),
+  });
+}
+
 /* ───────────────────────── Sklep 🛒 ───────────────────────── */
 
 export interface ProductSummary {
@@ -288,6 +308,7 @@ export interface PurchaseDetails {
   items: Array<{ id: string; title: string; price: number; quantity: number }>;
   paymentMethod?: string;
   shippingMethod?: string;
+  checkout_duration_seconds?: number;
 }
 
 export function trackPurchase(order: PurchaseDetails) {
@@ -300,6 +321,7 @@ export function trackPurchase(order: PurchaseDetails) {
       items: order.items,
       paymentMethod: order.paymentMethod,
       shippingMethod: order.shippingMethod,
+      checkout_duration_seconds: order.checkout_duration_seconds,
     }),
   );
   trackMetaEvent("Purchase", {
