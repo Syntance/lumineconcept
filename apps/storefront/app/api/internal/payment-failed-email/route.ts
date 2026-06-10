@@ -10,8 +10,25 @@ const bodySchema = z.object({
 	p24_session_id: z.string().min(1).optional(),
 });
 
-/** Wysyłka maila o nieudanej płatności P24 — fallback z klienta (główna ścieżka: backend). */
+function internalSecret(): string | undefined {
+	return (
+		process.env.ORDER_EMAIL_INTERNAL_SECRET?.replace(/\r\n/g, "").trim() ??
+		process.env.MEDUSA_REVALIDATE_SECRET?.replace(/\r\n/g, "").trim()
+	);
+}
+
+/**
+ * POST /api/internal/payment-failed-email
+ *
+ * Wysyłka maila o nieudanej płatności P24 — wołane z backendu Medusa.
+ */
 export async function POST(request: Request) {
+	const expected = internalSecret();
+	const provided = request.headers.get("x-order-email-secret")?.trim();
+	if (!expected || !provided || provided !== expected) {
+		return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+	}
+
 	let body: unknown;
 	try {
 		body = await request.json();

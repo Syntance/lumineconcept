@@ -11,7 +11,7 @@ import {
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
   notifyOrderPlaced,
-  notifyPaymentFailed,
+  triggerPaymentFailedEmail,
   attachOrderNotes,
   redirectToOrderConfirmation,
   retryPrzelewy24Payment,
@@ -36,7 +36,7 @@ function showFailedState(
 ) {
   if (!emailSentRef.current) {
     emailSentRef.current = true;
-    notifyPaymentFailed(cartId, retryUrl);
+    void triggerPaymentFailedEmail(cartId, retryUrl);
   }
   return { kind: "failed" as const, retryUrl };
 }

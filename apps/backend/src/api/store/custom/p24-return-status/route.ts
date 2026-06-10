@@ -10,11 +10,14 @@ import {
   type P24SessionData,
 } from "../../../../lib/p24-transaction-api";
 import { PRZELEWY24_PROVIDER_ID } from "../../../../lib/p24-reconcile";
+import { dispatchPaymentFailedEmailViaStorefront } from "../../../../lib/payment-failed-email-dispatch";
 
 type Body = {
   cart_id?: string;
   /** Po krótkim pollingu — status 0 traktujemy jako nieudaną płatność. */
   allow_failed_on_zero?: boolean;
+  /** Wyślij mail payment_failed (deduplikacja per sesja P24). */
+  send_failed_email?: boolean;
 };
 
 function storefrontBase(): string {
@@ -37,6 +40,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   }
 
   const allowFailedOnZero = req.body?.allow_failed_on_zero === true;
+  const sendFailedEmail = req.body?.send_failed_email === true;
   const scope = req.scope;
   const remoteQuery = scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY);
 
@@ -113,11 +117,24 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   });
 
   const retryUrl = `${storefrontBase()}/checkout/p24/retry?cart_id=${encodeURIComponent(cartId)}`;
+  const p24SessionId = sessionData.p24_session_id ?? "";
+
+  let emailSent = false;
+  if (sendFailedEmail && status === "failed") {
+    const mail = await dispatchPaymentFailedEmailViaStorefront({
+      cartId,
+      retryUrl,
+      p24SessionId: p24SessionId || undefined,
+    });
+    emailSent = mail.ok && !mail.skipped;
+  }
 
   return res.status(200).json({
     status,
     email: cart.email ?? "",
     retry_url: retryUrl,
+    p24_session_id: p24SessionId || undefined,
     p24_status: tx?.status ?? null,
+    email_sent: emailSent,
   });
 }
