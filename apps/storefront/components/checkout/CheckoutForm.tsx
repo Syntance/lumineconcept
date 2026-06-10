@@ -129,7 +129,7 @@ function resetStaleCartAndReload() {
 }
 
 export function CheckoutForm() {
-  const { id: cartId, items, total, refreshCart } = useCart();
+  const { id: cartId, items, total, refreshCart, isInitialized } = useCart();
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formStarted, setFormStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -146,9 +146,16 @@ export function CheckoutForm() {
   const staleResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const beginCheckoutFiredRef = useRef(false);
 
-  /** Po udanym zamówieniu — nie wracaj na checkout (przycisk Wstecz). Aktywny koszyk = nowe zamówienie. */
+  /**
+   * Po udanym zamówieniu — nie wracaj na checkout (przycisk Wstecz). Aktywny
+   * koszyk = nowe zamówienie. KLUCZOWE: czekamy aż koszyk się zbootstrapuje
+   * (`isInitialized`), bo na pierwszym renderze `cartId` jest null i `items`
+   * puste — bez tej bramki stara flaga „completed" cofała usera na potwierdzenie
+   * mimo że dodał nowy produkt.
+   */
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!isInitialized) return;
     if (cartId && items.length > 0) {
       clearCheckoutCompleted();
       return;
@@ -157,14 +164,16 @@ export function CheckoutForm() {
     if (completed) {
       redirectToOrderConfirmation(completed.orderId, completed.displayId);
     }
-  }, [cartId, items.length]);
+  }, [cartId, items.length, isInitialized]);
 
-  /** Pusty koszyk nie może iść do płatności — wróć do koszyka. */
+  /** Pusty koszyk nie może iść do płatności — wróć do koszyka (po bootstrapie). */
   useEffect(() => {
+    if (!isInitialized) return;
     if (!cartId || items.length > 0) return;
     if (typeof window === "undefined") return;
+    if (readCheckoutCompleted()) return;
     window.location.replace("/koszyk");
-  }, [cartId, items.length]);
+  }, [cartId, items.length, isInitialized]);
 
   useEffect(() => {
     return () => {
