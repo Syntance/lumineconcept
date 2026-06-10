@@ -46,16 +46,20 @@ function GalleryMainImage({
   priority: boolean;
 }) {
   return (
-    <Image
-      src={url}
-      alt={alt}
-      fill
-      priority={priority}
-      loading={priority ? undefined : "lazy"}
-      className="object-cover object-center"
-      sizes="(max-width: 1024px) 100vw, (max-width: 1920px) 50vw, 1120px"
-      unoptimized={medusaImageUnoptimized(url)}
-    />
+    <>
+      {/* Skeleton tło — zapobiega białemu błyskowi i CLS */}
+      <div className="absolute inset-0 bg-brand-50 animate-pulse" aria-hidden />
+      <Image
+        src={url}
+        alt={alt}
+        fill
+        priority={priority}
+        loading={priority ? undefined : "lazy"}
+        className="relative z-10 object-cover object-center"
+        sizes="(max-width: 1024px) 100vw, (max-width: 1920px) 50vw, 1120px"
+        unoptimized={medusaImageUnoptimized(url)}
+      />
+    </>
   );
 }
 
@@ -246,12 +250,13 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 aria-selected={index === selectedIndex}
                 aria-label={`Zdjęcie ${index + 1} z ${images.length}`}
               >
+                <div className="absolute inset-0 bg-brand-50" aria-hidden />
                 <Image
                   src={image.url}
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
                   fill
                   sizes="(max-width: 1024px) 3.5rem, 8.25rem"
-                  className="object-cover"
+                  className="relative z-10 object-cover"
                   unoptimized={medusaImageUnoptimized(image.url)}
                 />
               </button>
