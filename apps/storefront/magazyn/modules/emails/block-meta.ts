@@ -58,13 +58,19 @@ export function createBlock(type: BlockType): Block {
 	const id = uid();
 	switch (type) {
 		case "heading":
-			return { id, type, text: "Nagłówek", level: 2, style: { bold: true, fontSize: 18, align: "left", paddingY: 8 } };
+			return { id, type, text: "Nagłówek", level: 2, style: { bold: true, fontSize: 18, align: "left", paddingY: 8, fontKey: "gilroy" } };
 		case "text":
 			return {
 				id,
 				type,
 				text: "Nowy akapit. Wstaw dane przez {{imie}} lub {{nrZamowienia}}.",
-				style: { fontSize: 14, align: "left", paddingY: 6, color: magazynConfig.emailTheme.text },
+				style: {
+					fontSize: 14,
+					align: "left",
+					paddingY: 6,
+					color: magazynConfig.emailTheme.text,
+					fontKey: "gilroy",
+				},
 			};
 		case "image":
 			return { id, type, src: "", alt: "", width: 280, align: "center", paddingY: 8 };

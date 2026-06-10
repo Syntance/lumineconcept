@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
-import type { EmailThemeConfig } from "@magazyn/core/config/types";
+import type { EmailFontKey, EmailThemeConfig } from "@magazyn/core/config/types";
 import { FONT_KEYS, type FontKey } from "./email-fonts";
 
 export { FONT_KEYS, FONT_STACKS, type FontKey } from "./email-fonts";
@@ -18,13 +18,14 @@ export { FONT_OPTIONS } from "./email-fonts";
 
 export type TextAlign = "left" | "center" | "right";
 
-/** Globalny motyw maila — kolory, font, szerokość, nagłówek marki. */
+/** Globalny motyw maila — kolory, domyślna czcionka, szerokość, nagłówek marki. */
 export type EmailTheme = EmailThemeConfig;
 
 /** Styl wspólny dla bloków tekstowych. */
 export type BlockStyle = {
 	color?: string;
 	fontSize?: number;
+	fontKey?: EmailFontKey;
 	bold?: boolean;
 	italic?: boolean;
 	align?: TextAlign;
@@ -60,6 +61,7 @@ export type ButtonBlock = BaseBlock & {
 	href: string;
 	bg?: string;
 	color?: string;
+	fontKey?: EmailFontKey;
 	radius?: number;
 	align?: TextAlign;
 	paddingY?: number;
@@ -447,6 +449,7 @@ const alignSchema = z.enum(["left", "center", "right"]);
 const blockStyleSchema = z.object({
 	color: z.string().optional(),
 	fontSize: z.number().int().min(8).max(72).optional(),
+	fontKey: z.enum(FONT_KEYS).optional(),
 	bold: z.boolean().optional(),
 	italic: z.boolean().optional(),
 	align: alignSchema.optional(),
@@ -488,6 +491,7 @@ const buttonSchema = z.object({
 	href: z.string(),
 	bg: z.string().optional(),
 	color: z.string().optional(),
+	fontKey: z.enum(FONT_KEYS).optional(),
 	radius: z.number().int().min(0).max(48).optional(),
 	align: alignSchema.optional(),
 	paddingY: z.number().int().min(0).max(96).optional(),
