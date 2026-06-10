@@ -15,8 +15,20 @@ export function CookieConsent() {
   const [mode, setMode] = useState<Mode>("hidden");
   const [analytics, setAnalytics] = useState(true);
   const [marketing, setMarketing] = useState(true);
+  const [canShow, setCanShow] = useState(false);
 
   useEffect(() => {
+    // Opóźnienie 2s - nie blokuj LCP hero image
+    const delayTimer = setTimeout(() => {
+      setCanShow(true);
+    }, 2000);
+
+    return () => clearTimeout(delayTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!canShow) return;
+
     const current = getConsent();
     if (!current) {
       setMode("banner");
@@ -35,7 +47,7 @@ export function CookieConsent() {
     };
     window.addEventListener(CONSENT_OPEN_EVENT, openHandler);
     return () => window.removeEventListener(CONSENT_OPEN_EVENT, openHandler);
-  }, []);
+  }, [canShow]);
 
   const persist = useCallback((next: Pick<ConsentState, "analytics" | "marketing">) => {
     saveConsent(next);
@@ -49,7 +61,7 @@ export function CookieConsent() {
     [persist, analytics, marketing],
   );
 
-  if (mode === "hidden") return null;
+  if (!canShow || mode === "hidden") return null;
 
   return (
     <div
