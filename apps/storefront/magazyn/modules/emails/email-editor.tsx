@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Monitor, Plus, RotateCcw, Save, Send, Smartphone, Undo2 } from "lucide-react";
+import { Loader2, Monitor, Plus, Redo2, RotateCcw, Save, Send, Smartphone, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
@@ -86,34 +86,53 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 	}
 
 	const onUndo = useCallback(() => {
-		const previous = history.undo(activeType);
-		if (!previous) return;
-		setTemplates((prev) => ({ ...prev, [activeType]: previous }));
+		setTemplates((prev) => {
+			const current = prev[activeType];
+			const previous = history.undo(activeType, current);
+			if (!previous) return prev;
+			return { ...prev, [activeType]: previous };
+		});
+		setFeedback(null);
+	}, [activeType, history]);
+
+	const onRedo = useCallback(() => {
+		setTemplates((prev) => {
+			const current = prev[activeType];
+			const next = history.redo(activeType, current);
+			if (!next) return prev;
+			return { ...prev, [activeType]: next };
+		});
 		setFeedback(null);
 	}, [activeType, history]);
 
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {
-			if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "z" || event.shiftKey) {
+			if (!(event.ctrlKey || event.metaKey)) return;
+
+			const key = event.key.toLowerCase();
+			const isUndo = key === "z" && !event.shiftKey;
+			const isRedo = key === "r" || (key === "z" && event.shiftKey) || key === "y";
+
+			if (!isUndo && !isRedo) return;
+
+			if (isUndo) {
+				if (!history.canUndo(activeType)) return;
+				event.preventDefault();
+				onUndo();
 				return;
 			}
-			const target = event.target;
-			if (
-				target instanceof HTMLInputElement ||
-				target instanceof HTMLTextAreaElement ||
-				target instanceof HTMLSelectElement
-			) {
-				return;
-			}
-			if (!history.canUndo(activeType)) return;
+
+			if (!history.canRedo(activeType)) return;
 			event.preventDefault();
-			onUndo();
+			onRedo();
 		}
+
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [activeType, history, onUndo]);
+	}, [activeType, history, onUndo, onRedo]);
 
 	const canUndo = history.canUndo(activeType);
+	const canRedo = history.canRedo(activeType);
 
 	function setBlocks(blocks: Block[]) {
 		updateActive((t) => ({ ...t, blocks }));
@@ -334,10 +353,22 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 							disabled={busy || !canUndo}
 							onClick={onUndo}
 							className="gap-1.5"
-							title="Cofnij ostatnią zmianę (Ctrl+Z)"
+							title="Cofnij (Ctrl+Z)"
 						>
 							<Undo2 className="size-4" aria-hidden />
 							Cofnij
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							disabled={busy || !canRedo}
+							onClick={onRedo}
+							className="gap-1.5"
+							title="Ponów (Ctrl+R)"
+						>
+							<Redo2 className="size-4" aria-hidden />
+							Ponów
 						</Button>
 						<Button type="button" variant="ghost" size="sm" disabled={busy} onClick={onReset} className="gap-1.5">
 							{resetting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <RotateCcw className="size-4" aria-hidden />}
