@@ -8,6 +8,23 @@ import {
   createPaymentCollectionForCartWorkflow,
   createPaymentSessionsWorkflow,
 } from "@medusajs/medusa/core-flows";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+let ratelimit: Ratelimit | null = null;
+
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+
+  ratelimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(5, "1 m"),
+    analytics: true,
+  });
+}
 
 type Body = {
   cart_id?: string;
@@ -40,6 +57,22 @@ type Body = {
  * dodatkowego `cart.retrieve`.
  */
 export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
+  if (ratelimit) {
+    const identifier = req.headers.get("x-forwarded-for") ?? "anonymous";
+    const { success, limit, reset, remaining } = await ratelimit.limit(identifier);
+
+    if (!success) {
+      return res.status(429).json({
+        error: "Za dużo prób. Spróbuj ponownie za chwilę.",
+        retryAfter: Math.ceil((reset - Date.now()) / 1000),
+      });
+    }
+
+    res.setHeader("X-RateLimit-Limit", limit.toString());
+    res.setHeader("X-RateLimit-Remaining", remaining.toString());
+    res.setHeader("X-RateLimit-Reset", reset.toString());
+  }
+
   const body = (req.body ?? {}) as Body;
   const cartId = body.cart_id?.trim();
   const optionId = body.option_id?.trim();
