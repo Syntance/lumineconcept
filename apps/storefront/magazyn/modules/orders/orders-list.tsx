@@ -239,7 +239,7 @@ export function OrdersList({ orders }: { orders: AdminOrderRow[] }) {
 						</thead>
 						<tbody className="divide-y divide-border">
 							{filtered.map((order) => {
-								const payment = paymentStatusBadge(order.paymentStatus);
+								const payment = paymentStatusBadge(order.paymentStatus, order.status);
 								const fulfillment = fulfillmentStatusBadge(order.fulfillmentStatus, order.status);
 								const status = orderStatusBadge(order.status);
 

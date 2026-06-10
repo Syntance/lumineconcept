@@ -1,6 +1,6 @@
 import type { OrderFulfillmentStatus, OrderPaymentStatus, OrderStatus } from "./order-types";
 
-type Tone = "neutral" | "info" | "success" | "warning" | "danger";
+type Tone = "neutral" | "info" | "success" | "warning" | "danger" | "refund";
 
 export type StatusBadge = { label: string; tone: Tone };
 
@@ -37,11 +37,25 @@ const FULFILLMENT: Record<OrderFulfillmentStatus, StatusBadge> = {
 	canceled: { label: "Anulowane", tone: "danger" },
 };
 
+/** Anulowane zamówienie z już zaksięgowaną / autoryzowaną płatnością — oczekuje zwrotu. */
+const PAYMENT_NEEDING_REFUND: OrderPaymentStatus[] = [
+	"captured",
+	"partially_captured",
+	"authorized",
+	"partially_authorized",
+];
+
 export function orderStatusBadge(status: OrderStatus): StatusBadge {
 	return STATUS[status] ?? { label: status, tone: "neutral" };
 }
 
-export function paymentStatusBadge(status: OrderPaymentStatus): StatusBadge {
+export function paymentStatusBadge(
+	status: OrderPaymentStatus,
+	orderStatus?: OrderStatus,
+): StatusBadge {
+	if (orderStatus === "canceled" && PAYMENT_NEEDING_REFUND.includes(status)) {
+		return { label: "Do zwrotu", tone: "refund" };
+	}
 	return PAYMENT[status] ?? { label: status, tone: "neutral" };
 }
 
@@ -59,4 +73,5 @@ export const BADGE_TONE_CLASS: Record<Tone, string> = {
 	success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
 	warning: "bg-amber-500/10 text-amber-600 dark:text-amber-500",
 	danger: "bg-destructive/10 text-destructive",
+	refund: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
 };

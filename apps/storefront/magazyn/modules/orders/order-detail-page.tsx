@@ -81,7 +81,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 	if (!order) notFound();
 
 	const status = orderStatusBadge(order.status);
-	const payment = paymentStatusBadge(order.paymentStatus);
+	const payment = paymentStatusBadge(order.paymentStatus, order.status);
 	const fulfillment = fulfillmentStatusBadge(order.fulfillmentStatus, order.status);
 	const flags = actionFlags(order);
 	const orderNotes = order.metadata.order_notes?.trim() ?? "";
