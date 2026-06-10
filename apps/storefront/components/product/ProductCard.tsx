@@ -139,6 +139,7 @@ export function ProductCard({
               alt={title}
               width={imageWidth}
               height={imageHeight}
+              loading="lazy"
               className="relative z-10 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               unoptimized={thumbnail.startsWith("http://localhost")}
@@ -149,6 +150,7 @@ export function ProductCard({
               aria-hidden="true"
               width={24}
               height={24}
+              loading="lazy"
               sizes="24px"
               quality={85}
               className="pointer-events-none absolute right-2 top-2 z-20 h-5 w-auto select-none opacity-30"
