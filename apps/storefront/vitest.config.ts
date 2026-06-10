@@ -16,6 +16,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@magazyn": path.resolve(__dirname, "./magazyn"),
       "@": path.resolve(__dirname, "."),
       "@lumine/types": path.resolve(__dirname, "../../packages/types/index.ts"),
       "@lumine/ui": path.resolve(__dirname, "../../packages/ui/index.ts"),

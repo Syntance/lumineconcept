@@ -21,6 +21,7 @@ import {
   pickLowestPaidShippingOptionPrice,
   prefetchShippingOptions,
 } from "@/lib/medusa/checkout";
+import { resolveCartLineItemThumbnail } from "@/lib/medusa/product-thumbnail";
 
 interface CartItem {
   id: string;
@@ -146,7 +147,13 @@ function mapCartItems(items: Array<Record<string, unknown>>): CartItem[] {
     id: item.id as string,
     variant_id: item.variant_id as string,
     title: item.title as string,
-    thumbnail: item.thumbnail as string | undefined,
+    thumbnail: resolveCartLineItemThumbnail({
+      thumbnail: item.thumbnail as string | null | undefined,
+      product: item.product as
+        | { thumbnail?: string | null; images?: Array<{ url?: string | null }> | null }
+        | null
+        | undefined,
+    }),
     quantity: Math.max(1, Math.round(numberFromUnknown(item.quantity) ?? 1)),
     unit_price: numberFromUnknown(item.unit_price) ?? 0,
     total: lineItemTotal(item),

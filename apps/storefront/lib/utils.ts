@@ -9,6 +9,10 @@ export function cn(...inputs: ClassValue[]) {
  * Formatuje kwotę do polskiego locale ("179,90 zł"). Medusa v2 zwraca ceny
  * jako dziesiętne w walucie głównej (PLN), więc przyjmujemy je 1:1 —
  * bez dzielenia przez 100, które było relliktem Medusy v1 (integer grosze).
+ *
+ * PLN formatujemy ręcznie (bez Intl), żeby SSR (Node) i hydration (Chromium)
+ * dawały identyczny string — ICU w Node vs przeglądarce potrafi różnić
+ * separatory i powodować mismatch w BestsellersSection / PriceDisplay.
  */
 export function formatPrice(
   amount: number,
@@ -16,14 +20,21 @@ export function formatPrice(
   locale = "pl-PL",
 ): string {
   const value = typeof amount === "number" && Number.isFinite(amount) ? amount : 0;
-  const raw = new Intl.NumberFormat(locale, {
+
+  if (currency === "PLN" && locale === "pl-PL") {
+    const sign = value < 0 ? "-" : "";
+    const abs = Math.abs(value);
+    // toFixed(2) zawsze daje "X.YY" — defaulty tylko dla strict TS.
+    const [intPart = "0", decPart = "00"] = abs.toFixed(2).split(".");
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
+    return `${sign}${grouped},${decPart}\u00a0zł`;
+  }
+
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
   }).format(value);
-
-  // Większy odstęp między przecinkiem a groszami (pl-PL: „12,34 zł” → „12, 34 zł”)
-  return raw.replace(/,(\d)/g, ",\u2009$1");
 }
 
 export function formatDate(

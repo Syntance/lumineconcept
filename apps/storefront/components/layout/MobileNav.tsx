@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ContactCalloutPanel } from "./ContactCalloutPanel";
@@ -23,6 +24,11 @@ interface MobileNavProps {
 
 export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
   const [panel, setPanel] = useState<"menu" | "contact">("menu");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) setPanel("menu");
@@ -44,17 +50,27 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu nawigacyjne">
+  /**
+   * Portal na `document.body`: header ma `backdrop-blur` / `sticky`, co tworzy
+   * kontekst pozycjonowania — wtedy `fixed` wewnątrz drzewka headera obejmuje
+   * tylko pasek nawigacji zamiast całego viewportu (drawer był przezroczysty
+   * i nieczytelny na tle treści). Ten sam wzorzec co `CartDrawer`.
+   */
+  return createPortal(
+    <div className="fixed inset-0 z-[100] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu nawigacyjne">
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-brand-900/40 backdrop-blur-sm"
+        style={{ animation: "cartFadeIn 200ms ease-out" }}
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-brand-100 p-4">
+      <div
+        className="fixed inset-y-0 left-0 flex h-full w-[86%] max-w-xs flex-col bg-white shadow-2xl"
+        style={{ animation: "cartSlideInLeft 300ms ease-out" }}
+      >
+        <div className="flex items-center justify-between border-b border-brand-100 p-4 pt-[max(1rem,env(safe-area-inset-top))]">
           {panel === "contact" ? (
             <button
               type="button"
@@ -77,7 +93,7 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
             <X className="h-[22px] w-[22px]" />
           </button>
         </div>
-        <nav className="p-4" aria-label="Menu mobilne">
+        <nav className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" aria-label="Menu mobilne">
           {panel === "contact" ? (
             <ContactCalloutPanel onNavigate={onClose} />
           ) : (
@@ -132,6 +148,7 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
           )}
         </nav>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
