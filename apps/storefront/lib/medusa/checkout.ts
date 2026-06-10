@@ -458,9 +458,9 @@ export function attachOrderNotes(orderId: string, orderNotes: string): void {
 }
 
 /** Mail z danymi do przelewu tradycyjnego (backend Medusa + Resend). */
-export function notifyBankTransferPending(orderId: string): void {
-  if (!orderId) return;
-  if (typeof window === "undefined") return;
+export async function notifyBankTransferPending(orderId: string): Promise<boolean> {
+  if (!orderId) return false;
+  if (typeof window === "undefined") return false;
 
   const base = resolveMedusaFetchBase();
   const url = `${base}/store/custom/notify-bank-transfer`;
@@ -474,14 +474,22 @@ export function notifyBankTransferPending(orderId: string): void {
       : {}),
   };
 
-  void fetch(url, {
-    method: "POST",
-    headers,
-    body: payload,
-    keepalive: true,
-  }).catch((e) => {
-    console.warn("[mail] notify-bank-transfer fire-and-forget error", e);
-  });
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: payload,
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      console.warn("[mail] notify-bank-transfer failed", res.status, body);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.warn("[mail] notify-bank-transfer error", e);
+    return false;
+  }
 }
 
 export async function selectShippingOption(cartId: string, optionId: string) {

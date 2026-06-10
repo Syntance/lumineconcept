@@ -6,6 +6,7 @@ import { captureError } from "../lib/sentry";
 import { renderOrderPlacedEmail, renderBankTransferPendingEmail } from "../lib/email-templates";
 import {
   buildOrderEmailPayload,
+  retrieveOrderForEmail,
   sendTransactionalEmail,
 } from "../lib/send-email";
 import { orderAwaitingBankTransfer } from "../lib/order-payment-method";
@@ -65,27 +66,28 @@ export default async function orderPlacedHandler({
     container.resolve(Modules.ORDER);
 
   let order: Awaited<ReturnType<typeof orderService.retrieveOrder>>;
+  let orderForEmail: Record<string, unknown> | null = null;
   try {
-    // Bez `items.variant` — cross-module relation, powoduje błąd „strategy".
-    // Wystarczą pola z samego `items` do renderu maila; Meta CAPI i PostHog
-    // poniżej mają własną ścieżkę fallbacku na brak `variant`.
     order = await orderService.retrieveOrder(event.data.id, {
-      relations: [
-        "items",
-        "shipping_address",
-        "shipping_methods",
-        "payment_collections",
-        "payment_collections.payments",
-      ],
+      relations: ["items", "shipping_address", "shipping_methods"],
     });
+    orderForEmail =
+      (await retrieveOrderForEmail(container, event.data.id)) ??
+      (order as unknown as Record<string, unknown>);
   } catch (e) {
     console.error("[order-placed] retrieveOrder failed", e);
-    captureError(e, {
-      subscriber: "order-placed",
-      step: "retrieveOrder",
-      orderId: event.data.id,
-    });
-    return;
+    orderForEmail = await retrieveOrderForEmail(container, event.data.id);
+    if (!orderForEmail) {
+      captureError(e, {
+        subscriber: "order-placed",
+        step: "retrieveOrder",
+        orderId: event.data.id,
+      });
+      return;
+    }
+    order = orderForEmail as unknown as Awaited<
+      ReturnType<typeof orderService.retrieveOrder>
+    >;
   }
 
   // Mail potwierdzający — najważniejsze dla klienta. Awaitujemy, ale z
@@ -93,13 +95,12 @@ export default async function orderPlacedHandler({
   // (/store/custom/notify-order-placed) dośle w razie timeoutu — a jeśli
   // zdąży tu, idempotency w `sendTransactionalEmail` zablokuje duplikat.
   if (order?.email) {
+    const emailOrder = orderForEmail ?? (order as unknown as Record<string, unknown>);
     if (
-      orderAwaitingBankTransfer(order as unknown as Record<string, unknown>)
+      orderAwaitingBankTransfer(emailOrder as Record<string, unknown>)
     ) {
       try {
-        const payload = buildOrderEmailPayload(
-          order as unknown as Record<string, unknown>,
-        );
+        const payload = buildOrderEmailPayload(emailOrder);
         const { subject, html, text } = renderBankTransferPendingEmail(payload);
         await withTimeout("email-bank-transfer", 6000, async () => {
           await sendTransactionalEmail(container, {
@@ -121,9 +122,7 @@ export default async function orderPlacedHandler({
       }
     } else {
     try {
-      const payload = buildOrderEmailPayload(
-        order as unknown as Record<string, unknown>,
-      );
+      const payload = buildOrderEmailPayload(emailOrder);
       const { subject, html, text } = renderOrderPlacedEmail(payload);
       await withTimeout("email", 6000, async () => {
         await sendTransactionalEmail(container, {

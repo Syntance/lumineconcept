@@ -639,7 +639,7 @@ export function CheckoutForm() {
       }
 
       if (isBankTransfer) {
-        notifyBankTransferPending(result.order.id);
+        await notifyBankTransferPending(result.order.id);
       } else {
         notifyOrderPlaced(result.order.id);
       }

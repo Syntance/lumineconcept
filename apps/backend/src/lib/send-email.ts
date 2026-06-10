@@ -2,7 +2,11 @@ import type {
   INotificationModuleService,
   MedusaContainer,
 } from "@medusajs/framework/types";
-import { Modules } from "@medusajs/framework/utils";
+import {
+  ContainerRegistrationKeys,
+  Modules,
+  remoteQueryObjectFromString,
+} from "@medusajs/framework/utils";
 import { Resend } from "resend";
 import type { OrderEmailPayload } from "./email-templates";
 import { getResendConfig } from "./resend-defaults";
@@ -82,14 +86,20 @@ export async function sendTransactionalEmail(
     return false;
   }
 
+  // Resend API bezpośrednio — najpewniejsza ścieżka (moduł Notification
+  // potrafi zwrócić sukces bez realnej dostawy przy błędnym providerze).
+  if (getResendConfig().configured) {
+    return sendViaResendApi({ to, subject, html, text, context });
+  }
+
   let notificationService: INotificationModuleService;
   try {
     notificationService = container.resolve(Modules.NOTIFICATION);
   } catch (_e) {
     console.warn(
-      `[mail:${context}] moduł Notification niedostępny — fallback Resend API (ustaw RESEND_API_KEY + restart, żeby włączyć moduł z idempotencją).`,
+      `[mail:${context}] brak RESEND_API_KEY i modułu Notification — mail nie wysłany`,
     );
-    return sendViaResendApi({ to, subject, html, text, context });
+    return false;
   }
 
   try {
@@ -107,8 +117,6 @@ export async function sendTransactionalEmail(
         ? {
             resource_id: orderId,
             resource_type: "order",
-            // Idempotency: jeden mail danego typu per zamówienie, nawet jeśli
-            // event zostanie powtórzony przez retry workera.
             idempotency_key: `${context}:${orderId}`,
           }
         : {}),
@@ -118,20 +126,43 @@ export async function sendTransactionalEmail(
   } catch (err) {
     console.error(`[mail:${context}] błąd createNotifications do ${to}:`, err);
     captureError(err, { mail: context, orderId, to });
-    const recovered = await sendViaResendApi({
-      to,
-      subject,
-      html,
-      text,
-      context,
-    });
-    if (recovered) {
-      console.warn(
-        `[mail:${context}] dostarczono przez Resend (direct) po błędzie modułu Notification`,
-      );
-    }
-    return recovered;
+    return false;
   }
+}
+
+/** Pobiera zamówienie pod maile — remoteQuery zamiast retrieveOrder (bez błędu „strategy”). */
+export async function retrieveOrderForEmail(
+  scope: MedusaContainer,
+  orderId: string,
+): Promise<Record<string, unknown> | null> {
+  const remoteQuery = scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY);
+  const query = remoteQueryObjectFromString({
+    entryPoint: "order",
+    variables: { filters: { id: orderId } },
+    fields: [
+      "id",
+      "display_id",
+      "email",
+      "currency_code",
+      "total",
+      "item_total",
+      "shipping_total",
+      "subtotal",
+      "payment_status",
+      "metadata",
+      "*items",
+      "items.title",
+      "items.product_title",
+      "items.quantity",
+      "items.unit_price",
+      "items.thumbnail",
+      "*shipping_address",
+      "shipping_methods.name",
+    ],
+  });
+  const rows = await remoteQuery(query);
+  const order = Array.isArray(rows) ? rows[0] : rows;
+  return order ? (order as Record<string, unknown>) : null;
 }
 
 /**
