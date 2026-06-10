@@ -193,6 +193,11 @@ function clearCheckoutDraft(): void {
   }
 }
 
+/** Token Turnstile nie zapisujemy — wygasa po ~5 min i psuje powrót na checkout. */
+function sanitizeDraftFormData(formData: CheckoutFormData): CheckoutFormData {
+  return { ...formData, turnstileToken: "" };
+}
+
 const STEPS = [
   { number: 1, label: "Dane" },
   { number: 2, label: "Dostawa" },
@@ -232,6 +237,8 @@ export function CheckoutForm() {
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const turnstileRef = useRef<CheckoutTurnstileHandle>(null);
+  const prevStepRef = useRef<CheckoutStep>(1);
+  const [turnstileMountKey, setTurnstileMountKey] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   /**
    * Po ~3s od kliknięcia „Zamawiam i płacę" pokazujemy dodatkowy komunikat
@@ -435,7 +442,9 @@ export function CheckoutForm() {
         ...getDefaultCheckoutFormData(),
         ...parsed.formData,
         phone: formatPolishPhone(parsed.formData.phone ?? ""),
+        turnstileToken: "",
       });
+      setSubmitError(null);
     } catch {
       /* uszkodzony JSON */
     }
@@ -451,7 +460,7 @@ export function CheckoutForm() {
         v: 1,
         cartId,
         step,
-        formData,
+        formData: sanitizeDraftFormData(formData),
       };
       sessionStorage.setItem(
         CHECKOUT_DRAFT_STORAGE_KEY,
@@ -481,6 +490,18 @@ export function CheckoutForm() {
     () => updateField("turnstileToken", ""),
     [updateField],
   );
+
+  /** Wejście na krok płatności = świeży widget Turnstile (token z draftu byłby nieważny). */
+  useEffect(() => {
+    if (step !== 3 || prevStepRef.current === 3) {
+      prevStepRef.current = step;
+      return;
+    }
+    prevStepRef.current = step;
+    setSubmitError(null);
+    setFormData((prev) => ({ ...prev, turnstileToken: "" }));
+    setTurnstileMountKey((k) => k + 1);
+  }, [step]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -555,6 +576,7 @@ export function CheckoutForm() {
     !!cartId &&
     items.length > 0 &&
     formData.shippingOptionId !== "" &&
+    (!TURNSTILE_ENABLED || formData.turnstileToken !== "") &&
     !submitting &&
     !submittingRef.current;
 
@@ -597,7 +619,7 @@ export function CheckoutForm() {
         turnstileRef.current?.reset();
         const message =
           turnstileResult.reason === "config"
-            ? "Nie udało się zweryfikować zabezpieczenia. Spróbuj ponownie za chwilę."
+            ? "Chwilowy problem z zabezpieczeniem płatności. Odśwież stronę za chwilę — jeśli błąd wraca, napisz do nas."
             : turnstileResult.reason === "network"
               ? "Brak połączenia z serwerem. Sprawdź sieć i spróbuj ponownie."
               : "Weryfikacja wygasła — zaznacz ponownie pole „Potwierdź, że jesteś człowiekiem”.";
@@ -1223,6 +1245,7 @@ export function CheckoutForm() {
 
             {TURNSTILE_ENABLED ? (
               <CheckoutTurnstile
+                key={turnstileMountKey}
                 ref={turnstileRef}
                 siteKey={TURNSTILE_SITE_KEY}
                 onSuccess={handleTurnstileSuccess}
