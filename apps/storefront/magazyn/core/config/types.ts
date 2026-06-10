@@ -62,6 +62,12 @@ export type BankTransferConfig = {
 	recipientName: string;
 	/** Numer IBAN (bez spacji). Można nadpisać przez NEXT_PUBLIC_BANK_TRANSFER_IBAN. */
 	iban: string;
+	/** Kod SWIFT/BIC banku (przelewy zagraniczne). */
+	swift: string;
+	/** Ulica i numer (np. „Jana Pawła II 93"). */
+	addressLine1: string;
+	/** Kod pocztowy i miejscowość (np. „34-115 Ryczów"). */
+	addressLine2: string;
 	/** Ile dni roboczych klient ma na opłacenie zamówienia. */
 	paymentDays: number;
 	/** Prefix tytułu przelewu, np. „Zamówienie" → „Zamówienie #1042". */

@@ -38,8 +38,11 @@ export const magazynConfig: MagazynConfig = {
 	},
 
 	bankTransfer: {
-		recipientName: "KATARZYNA KNAPIK LUMINE CONCEPT",
-		iban: "",
+		recipientName: "Lumine Concept",
+		iban: "PL58105011001000009085809698",
+		swift: "INGBPLPW",
+		addressLine1: "Jana Pawła II 93",
+		addressLine2: "34-115 Ryczów",
 		paymentDays: 5,
 		transferTitlePrefix: "Zamówienie",
 	},

@@ -1,7 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import {
   ContainerRegistrationKeys,
-  Modules,
   remoteQueryObjectFromString,
 } from "@medusajs/framework/utils";
 import {
@@ -11,6 +10,7 @@ import {
 } from "@medusajs/medusa/core-flows";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { persistCartOrderNotes } from "../../../../lib/order-notes";
 
 let ratelimit: Ratelimit | null = null;
 
@@ -91,23 +91,6 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   const scope = req.scope;
 
   try {
-    // Zapisz order_notes do cart.metadata jeśli podane
-    if (orderNotes) {
-      const cartModule = scope.resolve(Modules.CART);
-      const existingList = await cartModule.listCarts(
-        { id: [cartId] },
-        { select: ["id", "metadata"], take: 1 },
-      );
-      const existing = existingList[0];
-      const prev =
-        existing?.metadata && typeof existing.metadata === "object"
-          ? { ...existing.metadata }
-          : {};
-      await cartModule.updateCarts([
-        { id: cartId, metadata: { ...prev, order_notes: orderNotes } },
-      ]);
-    }
-
     await addShippingMethodToCartWorkflow(scope).run({
       input: {
         cart_id: cartId,
@@ -193,6 +176,11 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
           },
         },
       });
+    }
+
+    // Na końcu — po workflowach, żeby metadata nie została nadpisana.
+    if (orderNotes) {
+      await persistCartOrderNotes(scope, cartId, orderNotes);
     }
 
     /**

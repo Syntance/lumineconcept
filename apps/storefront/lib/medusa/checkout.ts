@@ -427,6 +427,36 @@ export function notifyOrderPlaced(orderId: string): void {
   });
 }
 
+/**
+ * Zapisuje uwagi klienta w metadata zamówienia (fire-and-forget).
+ * Wołane zaraz po `completeCart`, żeby magazyn widział tekst z checkoutu.
+ */
+export function attachOrderNotes(orderId: string, orderNotes: string): void {
+  const notes = orderNotes.trim();
+  if (!orderId || !notes) return;
+
+  const base = resolveMedusaFetchBase();
+  const url = `${base}/store/custom/attach-order-notes`;
+  const payload = JSON.stringify({ order_id: orderId, order_notes: notes });
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+      : {}),
+  };
+
+  void fetch(url, {
+    method: "POST",
+    headers,
+    body: payload,
+    keepalive: true,
+  }).catch((e) => {
+    console.warn("[checkout] attach-order-notes fire-and-forget error", e);
+  });
+}
+
 /** Mail z danymi do przelewu tradycyjnego (szablon z magazynu). */
 export function notifyBankTransferPending(orderId: string): void {
   if (!orderId) return;

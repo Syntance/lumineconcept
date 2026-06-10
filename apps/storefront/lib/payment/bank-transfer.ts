@@ -4,6 +4,9 @@ import { magazynConfig } from "@magazyn/magazyn.config";
 export type BankTransferDetails = {
 	recipientName: string;
 	iban: string;
+	swift: string;
+	addressLine1: string;
+	addressLine2: string;
 	paymentDays: number;
 };
 
@@ -14,6 +17,9 @@ export function getBankTransferDetails(): BankTransferDetails {
 	return {
 		recipientName: cfg.recipientName,
 		iban: ENV_IBAN || cfg.iban.replace(/\s+/g, ""),
+		swift: cfg.swift,
+		addressLine1: cfg.addressLine1,
+		addressLine2: cfg.addressLine2,
 		paymentDays: cfg.paymentDays,
 	};
 }
@@ -32,10 +38,13 @@ export function buildTransferTitle(displayId: number | string): string {
 
 /** Zmienne merge dla maila / podglądu z numerem zamówienia. */
 export function bankTransferMergeVars(displayId: number | string): Record<string, string> {
-	const { recipientName, iban, paymentDays } = getBankTransferDetails();
+	const { recipientName, iban, swift, addressLine1, addressLine2, paymentDays } =
+		getBankTransferDetails();
 	return {
 		odbiorca: recipientName,
 		nrKonta: formatIbanDisplay(iban),
+		swift,
+		adresOdbiorcy: `${addressLine1}, ${addressLine2}`,
 		tytulPrzelewu: buildTransferTitle(displayId),
 		terminPlatnosci: `${paymentDays} dni roboczych`,
 	};

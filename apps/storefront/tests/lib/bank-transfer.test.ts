@@ -11,8 +11,8 @@ import {
 
 describe("formatIbanDisplay", () => {
   it("grupuje IBAN po 4 znaki", () => {
-    expect(formatIbanDisplay("PL61109010140000071219812874")).toBe(
-      "PL61 1090 1014 0000 0712 1981 2874",
+    expect(formatIbanDisplay("PL58105011001000009085809698")).toBe(
+      "PL58 1050 1100 1000 0090 8580 9698",
     );
   });
 
@@ -44,5 +44,7 @@ describe("bankTransferMergeVars", () => {
     expect(vars.tytulPrzelewu).toMatch(/#77$/);
     expect(vars.terminPlatnosci).toMatch(/dni roboczych/);
     expect(vars).toHaveProperty("nrKonta");
+    expect(vars.swift).toBe("INGBPLPW");
+    expect(vars.adresOdbiorcy).toContain("Ryczów");
   });
 });
