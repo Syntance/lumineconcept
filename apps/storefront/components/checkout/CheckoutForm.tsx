@@ -644,6 +644,20 @@ export function CheckoutForm() {
           email: payment.email,
           displayId: result.order.display_id ?? undefined,
           totalMinor: total,
+          itemTotalMinor: items.reduce(
+            (sum, i) => sum + i.unit_price * i.quantity,
+            0,
+          ),
+          customerName: [payment.firstName, payment.lastName]
+            .filter(Boolean)
+            .join(" ")
+            .trim(),
+          items: items.map((i) => ({
+            title: i.title,
+            quantity: i.quantity,
+            totalMinor: i.unit_price * i.quantity,
+            thumbnail: i.thumbnail ?? null,
+          })),
           paymentProviderId: payment.paymentProviderId,
         });
       } else {

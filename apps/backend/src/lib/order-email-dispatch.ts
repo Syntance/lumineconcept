@@ -18,9 +18,129 @@ import {
 
 const RETRY_DELAYS_MS = [0, 400, 800, 1200, 2000];
 
+type MagazynEmailType = "bank_transfer_pending" | "placed";
+
+async function callMagazynOrderEmail(params: {
+  orderId: string;
+  type: MagazynEmailType;
+  fallbackEmail?: string;
+  order?: Record<string, unknown>;
+}): Promise<{ ok: boolean; skipped?: boolean; email?: string }> {
+  const storefrontUrl = trimEnv(process.env.STOREFRONT_URL);
+  const secret =
+    trimEnv(process.env.ORDER_EMAIL_INTERNAL_SECRET) ??
+    trimEnv(process.env.MEDUSA_REVALIDATE_SECRET);
+  if (!storefrontUrl || !secret) {
+    return { ok: false };
+  }
+
+  const order = params.order;
+  const email = params.fallbackEmail?.trim() ||
+    (typeof order?.email === "string" ? order.email.trim() : "");
+  const displayIdRaw = order?.display_id;
+  const displayId =
+    typeof displayIdRaw === "number"
+      ? displayIdRaw
+      : typeof displayIdRaw === "string"
+        ? Number.parseInt(displayIdRaw, 10)
+        : NaN;
+
+  const snapshot =
+    email && Number.isFinite(displayId) && displayId > 0
+      ? {
+          email,
+          displayId,
+          total: Math.round(Number(order?.total ?? 0) * 100) || 0,
+          itemTotal: Math.round(Number(order?.item_total ?? order?.subtotal ?? 0) * 100) || 0,
+          shippingTotal: Math.round(Number(order?.shipping_total ?? 0) * 100) || 0,
+          currencyCode: (order?.currency_code as string | undefined) ?? "PLN",
+        }
+      : undefined;
+
+  try {
+    const res = await fetch(
+      `${storefrontUrl.replace(/\/$/, "")}/api/internal/order-email`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-order-email-secret": secret,
+        },
+        body: JSON.stringify({
+          order_id: params.orderId,
+          type: params.type,
+          ...(snapshot ? { snapshot } : {}),
+        }),
+        signal: AbortSignal.timeout(20_000),
+      },
+    );
+    if (!res.ok) {
+      console.warn("[mail] magazyn internal API", res.status);
+      return { ok: false };
+    }
+    const data = (await res.json()) as {
+      ok?: boolean;
+      skipped?: boolean;
+      email?: string;
+    };
+    if (data.ok) {
+      console.info(
+        `[mail] magazyn ${params.type} order=${params.orderId} skipped=${Boolean(data.skipped)}`,
+      );
+      return { ok: true, skipped: data.skipped, email: data.email };
+    }
+  } catch (e) {
+    console.warn("[mail] magazyn internal API error", e);
+  }
+  return { ok: false };
+}
+
 function trimEnv(value: string | undefined): string | undefined {
   const trimmed = value?.replace(/\r\n/g, "").trim();
   return trimmed || undefined;
+}
+
+async function sendLegacyCustomerEmail(
+  scope: MedusaContainer,
+  params: {
+    orderId: string;
+    order: Record<string, unknown>;
+    email: string;
+    context: "bank-transfer-pending" | "order-placed";
+    isBankTransfer: boolean;
+  },
+): Promise<boolean> {
+  const payload = buildOrderEmailPayload(params.order, { email: params.email });
+  const { subject, html, text } = params.isBankTransfer
+    ? renderBankTransferPendingEmail(payload)
+    : renderOrderPlacedEmail(payload);
+
+  const customerOk = await sendTransactionalEmail(scope, {
+    to: params.email,
+    subject,
+    html,
+    text,
+    context: params.context,
+    orderId: params.orderId,
+  });
+
+  if (!customerOk) return false;
+
+  await markOrderEmailSent(scope, params.orderId, params.context);
+
+  void sendShopNewOrderCopy(scope, {
+    orderId: params.orderId,
+    displayId:
+      typeof payload.displayId === "number" ? payload.displayId : undefined,
+    customerEmail: params.email,
+    totalMinor: payload.totalMinor,
+    currencyCode: payload.currencyCode,
+    paymentLabel: params.isBankTransfer ? "Przelew tradycyjny" : "Online",
+  }).catch((e) => {
+    console.error("[mail:shop-new-order] failed", e);
+  });
+
+  return true;
 }
 
 export function shopOrderInbox(): string {
@@ -131,44 +251,38 @@ export async function dispatchOrderPlacedEmails(
     order as Parameters<typeof orderAwaitingBankTransfer>[0],
   );
   const context = isBankTransfer ? "bank-transfer-pending" : "order-placed";
+  const magazynType: MagazynEmailType = isBankTransfer
+    ? "bank_transfer_pending"
+    : "placed";
 
   if (wasOrderEmailSent(order, context)) {
     return { ok: true, email, step: "already-sent" };
   }
 
-  const payload = buildOrderEmailPayload(order, { email });
-  const { subject, html, text } = isBankTransfer
-    ? renderBankTransferPendingEmail(payload)
-    : renderOrderPlacedEmail(payload);
-
-  const customerOk = await sendTransactionalEmail(scope, {
-    to: email,
-    subject,
-    html,
-    text,
-    context,
+  const magazyn = await callMagazynOrderEmail({
     orderId: params.orderId,
+    type: magazynType,
+    fallbackEmail: email,
+    order,
   });
+  if (magazyn.ok) {
+    await markOrderEmailSent(scope, params.orderId, context);
+    return { ok: true, email: magazyn.email ?? email, step: magazyn.skipped ? "already-sent" : "magazyn" };
+  }
 
-  if (!customerOk) {
+  console.warn("[mail] magazyn fallback → legacy backend template", params.orderId);
+  const legacyOk = await sendLegacyCustomerEmail(scope, {
+    orderId: params.orderId,
+    order,
+    email,
+    context,
+    isBankTransfer,
+  });
+  if (!legacyOk) {
     return { ok: false, step: "send-customer", email };
   }
 
-  await markOrderEmailSent(scope, params.orderId, context);
-
-  void sendShopNewOrderCopy(scope, {
-    orderId: params.orderId,
-    displayId:
-      typeof payload.displayId === "number" ? payload.displayId : undefined,
-    customerEmail: email,
-    totalMinor: payload.totalMinor,
-    currencyCode: payload.currencyCode,
-    paymentLabel: isBankTransfer ? "Przelew tradycyjny" : "Online",
-  }).catch((e) => {
-    console.error("[mail:shop-new-order] failed", e);
-  });
-
-  return { ok: true, email };
+  return { ok: true, email, step: "legacy" };
 }
 
 export async function dispatchBankTransferPendingEmail(
@@ -197,35 +311,28 @@ export async function dispatchBankTransferPendingEmail(
     return { ok: true, email, step: "already-sent" };
   }
 
-  const payload = buildOrderEmailPayload(order, { email });
-  const { subject, html, text } = renderBankTransferPendingEmail(payload);
-
-  const customerOk = await sendTransactionalEmail(scope, {
-    to: email,
-    subject,
-    html,
-    text,
-    context,
+  const magazyn = await callMagazynOrderEmail({
     orderId: params.orderId,
+    type: "bank_transfer_pending",
+    fallbackEmail: email,
+    order,
   });
+  if (magazyn.ok) {
+    await markOrderEmailSent(scope, params.orderId, context);
+    return { ok: true, email: magazyn.email ?? email, step: magazyn.skipped ? "already-sent" : "magazyn" };
+  }
 
-  if (!customerOk) {
+  console.warn("[mail] magazyn fallback → legacy backend template", params.orderId);
+  const legacyOk = await sendLegacyCustomerEmail(scope, {
+    orderId: params.orderId,
+    order,
+    email,
+    context,
+    isBankTransfer: true,
+  });
+  if (!legacyOk) {
     return { ok: false, step: "send-customer", email };
   }
 
-  await markOrderEmailSent(scope, params.orderId, context);
-
-  void sendShopNewOrderCopy(scope, {
-    orderId: params.orderId,
-    displayId:
-      typeof payload.displayId === "number" ? payload.displayId : undefined,
-    customerEmail: email,
-    totalMinor: payload.totalMinor,
-    currencyCode: payload.currencyCode,
-    paymentLabel: "Przelew tradycyjny",
-  }).catch((e) => {
-    console.error("[mail:shop-new-order] failed", e);
-  });
-
-  return { ok: true, email };
+  return { ok: true, email, step: "legacy" };
 }

@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAdminOrderForEmail, orderToEmailSource } from "@magazyn/modules/orders/store";
-import { sendBankTransferPendingEmail } from "@magazyn/modules/emails/send-bank-transfer-email";
+import { dispatchMagazynOrderEmail } from "@/lib/email/dispatch-magazyn-order-email";
 import { SYSTEM_PAYMENT_PROVIDER_ID } from "@/lib/medusa/checkout";
-import { primaryPaymentProviderId } from "@magazyn/modules/orders/order-payment-provider";
 
 export const maxDuration = 30;
 
@@ -12,8 +10,9 @@ const bodySchema = z.object({
 });
 
 /**
- * Fire-and-forget z checkoutu po zamówieniu z przelewem tradycyjnym.
- * Wysyła szablon `bank_transfer_pending` z magazynu (Resend).
+ * POST /api/checkout/notify-bank-transfer
+ *
+ * Wysyła szablon `bank_transfer_pending` z magazynu (store.metadata.email_templates).
  */
 export async function POST(request: Request) {
 	let body: unknown;
@@ -28,19 +27,15 @@ export async function POST(request: Request) {
 		return NextResponse.json({ ok: false, error: "missing order_id" }, { status: 400 });
 	}
 
-	const order = await getAdminOrderForEmail(parsed.data.order_id);
-	if (!order) {
-		return NextResponse.json({ ok: false, error: "order_not_found" }, { status: 404 });
-	}
+	const result = await dispatchMagazynOrderEmail({
+		orderId: parsed.data.order_id,
+		type: "bank_transfer_pending",
+	});
 
-	if (primaryPaymentProviderId(order) !== SYSTEM_PAYMENT_PROVIDER_ID) {
-		return NextResponse.json({ ok: false, error: "not_bank_transfer" }, { status: 422 });
-	}
-
-	const result = await sendBankTransferPendingEmail(orderToEmailSource(order));
 	if (!result.ok) {
-		return NextResponse.json({ ok: false, error: result.message }, { status: 502 });
+		const status = result.step === "no-order-source" ? 404 : 502;
+		return NextResponse.json(result, { status });
 	}
 
-	return NextResponse.json({ ok: true, skipped: result.skipped ?? false });
+	return NextResponse.json({ ok: true, skipped: result.skipped ?? false, source: "magazyn" });
 }

@@ -457,23 +457,59 @@ export function attachOrderNotes(orderId: string, orderNotes: string): void {
   });
 }
 
-/** Mail z danymi do przelewu tradycyjnego (backend Medusa + zapasowy Vercel Resend). */
+/** Mail z danymi do przelewu — szablon `bank_transfer_pending` z magazynu. */
 export async function notifyBankTransferPending(input: {
   orderId: string;
   email: string;
   displayId?: number;
   totalMinor?: number;
+  itemTotalMinor?: number;
+  shippingTotalMinor?: number;
   paymentProviderId?: string;
+  customerName?: string;
+  items?: Array<{
+    title: string;
+    quantity: number;
+    totalMinor: number;
+    thumbnail?: string | null;
+  }>;
 }): Promise<boolean> {
   const { orderId, email } = input;
   if (!orderId || !email.trim()) return false;
   if (typeof window === "undefined") return false;
 
-  const payload = JSON.stringify({
-    order_id: orderId,
-    email: email.trim(),
-    payment_provider_id: input.paymentProviderId ?? SYSTEM_PAYMENT_PROVIDER_ID,
-  });
+  const providerId = input.paymentProviderId ?? SYSTEM_PAYMENT_PROVIDER_ID;
+
+  if (input.displayId != null && input.totalMinor != null) {
+    try {
+      const res = await fetch("/api/checkout/send-bank-transfer-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          order_id: orderId,
+          email: email.trim(),
+          display_id: input.displayId,
+          total: input.totalMinor,
+          item_total: input.itemTotalMinor,
+          shipping_total: input.shippingTotalMinor,
+          currency_code: "PLN",
+          customer_name: input.customerName,
+          payment_provider_id: providerId,
+          items: input.items?.map((item) => ({
+            title: item.title,
+            quantity: item.quantity,
+            total: item.totalMinor,
+            thumbnail: item.thumbnail ?? null,
+          })),
+        }),
+      });
+      if (res.ok) return true;
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      console.warn("[mail] send-bank-transfer-email (magazyn)", res.status, body);
+    } catch (e) {
+      console.warn("[mail] send-bank-transfer-email error", e);
+    }
+  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -482,6 +518,12 @@ export async function notifyBankTransferPending(input: {
       ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
       : {}),
   };
+
+  const backendPayload = JSON.stringify({
+    order_id: orderId,
+    email: email.trim(),
+    payment_provider_id: providerId,
+  });
 
   const base = resolveMedusaFetchBase();
   const backendUrl = `${base}/store/custom/notify-bank-transfer`;
@@ -494,45 +536,15 @@ export async function notifyBankTransferPending(input: {
       const res = await fetch(backendUrl, {
         method: "POST",
         headers,
-        body: payload,
+        body: backendPayload,
       });
       if (res.ok) return true;
-      if (res.status !== 404 && res.status !== 422 && res.status !== 500) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        console.warn("[mail] notify-bank-transfer failed", res.status, body);
-      }
     } catch (e) {
       console.warn("[mail] notify-bank-transfer error", e);
     }
   }
 
-  if (input.displayId == null || input.totalMinor == null) {
-    return false;
-  }
-
-  try {
-    const res = await fetch("/api/checkout/send-bank-transfer-email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        order_id: orderId,
-        email: email.trim(),
-        display_id: input.displayId,
-        total: input.totalMinor,
-        currency_code: "PLN",
-        payment_provider_id: input.paymentProviderId ?? SYSTEM_PAYMENT_PROVIDER_ID,
-      }),
-    });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      console.warn("[mail] send-bank-transfer-email fallback failed", res.status, body);
-      return false;
-    }
-    return true;
-  } catch (e) {
-    console.warn("[mail] send-bank-transfer-email fallback error", e);
-    return false;
-  }
+  return false;
 }
 
 export async function selectShippingOption(cartId: string, optionId: string) {
