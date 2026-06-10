@@ -78,6 +78,52 @@ describe("initiatePayment — rejestracja transakcji", () => {
     );
   });
 
+  it("dodaje Express fee (+50%) do kwoty rejestracji P24 z cart.metadata", async () => {
+    mockFetchJsonOnce(fetchMock, { data: { token: "tok_express" } });
+
+    const service = makeService();
+    await service.initiatePayment({
+      amount: 100, // produkty + dostawa = 100 PLN
+      currency_code: "pln",
+      data: { cart_id: "cart_express" },
+      context: {
+        cart: {
+          metadata: {
+            express_delivery: "true",
+            express_fee_minor: "50", // 50 PLN (50% z 100 PLN produktów)
+          },
+        },
+      },
+    } as never);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(String(init.body));
+    expect(body.amount).toBe(15000); // (100 + 50) * 100 groszy
+  });
+
+  it("ignoruje Express gdy express_delivery=false w metadata", async () => {
+    mockFetchJsonOnce(fetchMock, { data: { token: "tok_no_express" } });
+
+    const service = makeService();
+    await service.initiatePayment({
+      amount: 100,
+      currency_code: "pln",
+      data: { cart_id: "cart_no_express" },
+      context: {
+        cart: {
+          metadata: {
+            express_delivery: "false",
+            express_fee_minor: "50",
+          },
+        },
+      },
+    } as never);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(String(init.body));
+    expect(body.amount).toBe(10000); // tylko 100 PLN, bez expressu
+  });
+
   it("pozwala nadpisać channel opcją modułu", async () => {
     mockFetchJsonOnce(fetchMock, { data: { token: "tok_abc" } });
 
@@ -151,6 +197,22 @@ describe("authorizePayment — pull-based potwierdzenie (filar rekoncyliacji)", 
     expect((result.data as Record<string, unknown>).order_id).toBe(987);
   });
 
+  it("status=2, ale NIEZGODNA kwota → pending (blokada capture)", async () => {
+    mockFetchJsonOnce(fetchMock, {
+      data: { status: 2, orderId: 987, amount: 200, currency: "PLN" },
+    });
+
+    const service = makeService();
+    const result = await service.authorizePayment({
+      data: { p24_session_id: "p24_tamper", status: "pending", amount_grosz: 100, currency: "PLN" },
+    } as never);
+
+    expect(result.status).toBe("pending");
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("niezgodna kwota"),
+    );
+  });
+
   it("status=1 w P24 → wykonuje transaction/verify i dopiero wtedy captured", async () => {
     mockFetchJsonOnce(fetchMock, {
       data: { status: 1, orderId: 555, amount: 100, currency: "PLN" },
@@ -167,6 +229,23 @@ describe("authorizePayment — pull-based potwierdzenie (filar rekoncyliacji)", 
     const [verifyUrl, verifyInit] = fetchMock.mock.calls[1] as [string, RequestInit];
     expect(verifyUrl).toContain("/transaction/verify");
     expect(JSON.parse(String(verifyInit.body)).orderId).toBe(555);
+  });
+
+  it("status=1, ale NIEZGODNA kwota → pending bez verify", async () => {
+    mockFetchJsonOnce(fetchMock, {
+      data: { status: 1, orderId: 555, amount: 150, currency: "PLN" },
+    });
+
+    const service = makeService();
+    const result = await service.authorizePayment({
+      data: { p24_session_id: "p24_tamper2", status: "pending", amount_grosz: 100, currency: "PLN" },
+    } as never);
+
+    expect(result.status).toBe("pending");
+    expect(fetchMock).toHaveBeenCalledTimes(1); // tylko GET, bez verify PUT
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("niezgodna kwota"),
+    );
   });
 
   it("nieopłacona transakcja → pending (zamówienie NIE powstanie)", async () => {

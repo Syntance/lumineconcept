@@ -131,8 +131,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 								<dd>{formatPrice(order.shippingTotal, order.currencyCode)}</dd>
 							</div>
 							{express && expressFee > 0 ? (
-								<div className="flex justify-between">
-									<dt className="text-muted-foreground">Express (+50% produktów)</dt>
+								<div
+									className="-mx-2 flex justify-between rounded-lg bg-amber-500/15 px-2 py-1.5 font-medium text-amber-900 dark:text-amber-100"
+								>
+									<dt>Express (+50% produktów)</dt>
 									<dd>{formatPrice(expressFee, order.currencyCode)}</dd>
 								</div>
 							) : null}
@@ -166,11 +168,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 									{order.phone ? <a href={`tel:${order.phone}`} className="hover:underline">{order.phone}</a> : "—"}
 								</span>
 								{order.shippingMethodName ? <span className="text-muted-foreground">Dostawa: {order.shippingMethodName}</span> : null}
-								{express ? (
-									<span className="inline-flex w-fit items-center rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-900 dark:text-amber-100">
-										{EXPRESS_DELIVERY_LABEL}
-									</span>
-								) : null}
 							</div>
 						</div>
 

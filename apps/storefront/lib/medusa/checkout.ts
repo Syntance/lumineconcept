@@ -58,8 +58,6 @@ export function readCheckoutCompleted(): CheckoutCompletedPayload | null {
 
 export type OrderConfirmationOptions = {
   payment?: "bank_transfer";
-  /** Kwota w PLN (dziesiętna, jak w koszyku Medusa v2). */
-  amount?: number;
 };
 
 export function redirectToOrderConfirmation(
@@ -72,9 +70,6 @@ export function redirectToOrderConfirmation(
   if (displayId) qs.set("display_id", String(displayId));
   if (options?.payment === "bank_transfer") {
     qs.set("payment", "bank_transfer");
-    if (options.amount != null && Number.isFinite(options.amount)) {
-      qs.set("amount", String(options.amount));
-    }
   }
   window.location.replace(`/checkout/potwierdzenie?${qs.toString()}`);
 }

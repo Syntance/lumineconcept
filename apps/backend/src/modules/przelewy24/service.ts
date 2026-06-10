@@ -168,13 +168,31 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
   async initiatePayment(
     input: InitiatePaymentInput,
   ): Promise<InitiatePaymentOutput> {
-    const amountGrosz = this.toGrosz(input.amount);
+    let amountGrosz = this.toGrosz(input.amount);
     const currency = (input.currency_code ?? "pln").toUpperCase();
 
     const ctx = (input.data ?? {}) as Record<string, unknown>;
     const customerCtx = (input.context?.customer ?? {}) as {
       email?: string;
     };
+
+    // Express fee z metadata koszyka — pobieramy metadata przez context.cart
+    // (Medusa przekazuje cart object w kontekście płatności).
+    const cartCtx = (input.context as { cart?: { metadata?: Record<string, string> } } | undefined)?.cart;
+    const metadata = cartCtx?.metadata ?? {};
+    const expressEnabled = metadata.express_delivery === "true" || metadata.express_delivery === "1";
+    let expressFeeGrosz = 0;
+    if (expressEnabled) {
+      const raw = metadata.express_fee_minor?.trim();
+      if (raw) {
+        const n = Number(raw.replace(",", "."));
+        if (Number.isFinite(n) && n > 0) {
+          expressFeeGrosz = Math.round(n * 100);
+        }
+      }
+    }
+    amountGrosz += expressFeeGrosz;
+
     const sessionId = `p24_${crypto.randomUUID()}`;
     const email =
       (ctx.email as string | undefined) ||
@@ -290,6 +308,14 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
 
     // 2 = transakcja potwierdzona (środki rozliczone) → gotowe.
     if (status === P24_STATUS_PAID) {
+      const paidAmount = Number(info.amount);
+      if (paidAmount !== data.amount_grosz) {
+        this.logger_.error(
+          `[przelewy24] confirmFromP24: niezgodna kwota dla sessionId=${sessionId}. ` +
+          `Oczekiwano ${data.amount_grosz} groszy, otrzymano ${paidAmount} groszy.`,
+        );
+        return { paid: false, data };
+      }
       return {
         paid: true,
         data: { ...data, status: "verified", order_id: orderId },
@@ -300,6 +326,13 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
     // po jego sukcesie uznajemy płatność za opłaconą.
     if (status === 1 && orderId) {
       const amount = Number(info.amount);
+      if (amount !== data.amount_grosz) {
+        this.logger_.error(
+          `[przelewy24] confirmFromP24: niezgodna kwota dla sessionId=${sessionId}. ` +
+          `Oczekiwano ${data.amount_grosz} groszy, otrzymano ${amount} groszy.`,
+        );
+        return { paid: false, data };
+      }
       const currency = String(info.currency ?? data.currency);
       const verifySign = this.sign({
         sessionId,
