@@ -50,52 +50,66 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useTimeOnPage(safePath);
 
   // Inicjalizacja + reakcja na zmianę zgody.
+  // Opóźniona o 2s po mount, żeby nie blokować LCP (mobile 4G).
   useEffect(() => {
-    initPostHog();
+    let cleanupFn: (() => void) | undefined;
 
-    const applyConsent = () => {
-      const consent = getConsent();
-      const analytics = !!consent?.analytics;
-      const marketing = !!consent?.marketing;
-      const wasAnalyticsDeclined = prevAnalyticsConsentRef.current === false;
+    // Czekamy ~2s (po LCP) zanim zainicjalizujemy PostHog
+    const timeoutId = setTimeout(() => {
+      initPostHog();
 
-      if (analytics) {
-        optInPostHog();
-        // Po pierwszym "Akceptuj" emitujemy page_view, bo wcześniejszy hit
-        // został zignorowany przez opt-out PostHoga.
-        if (wasAnalyticsDeclined) {
-          captureUtmFromCurrentUrl();
-          trackPageView({
-            url: `${window.location.pathname}${window.location.search}`,
-            title: document.title,
-          });
-          // PostHog UI funnels → zostawiamy też klasyczny $pageview.
-          capturePostHogEvent("$pageview", {
-            $current_url: `${window.location.pathname}${window.location.search}`,
-            $title: document.title,
-          });
+      const applyConsent = () => {
+        const consent = getConsent();
+        const analytics = !!consent?.analytics;
+        const marketing = !!consent?.marketing;
+        const wasAnalyticsDeclined = prevAnalyticsConsentRef.current === false;
+
+        if (analytics) {
+          optInPostHog();
+          // Po pierwszym "Akceptuj" emitujemy page_view, bo wcześniejszy hit
+          // został zignorowany przez opt-out PostHoga.
+          if (wasAnalyticsDeclined) {
+            captureUtmFromCurrentUrl();
+            trackPageView({
+              url: `${window.location.pathname}${window.location.search}`,
+              title: document.title,
+            });
+            // PostHog UI funnels → zostawiamy też klasyczny $pageview.
+            capturePostHogEvent("$pageview", {
+              $current_url: `${window.location.pathname}${window.location.search}`,
+              $title: document.title,
+            });
+          }
+        } else {
+          optOutPostHog();
         }
-      } else {
-        optOutPostHog();
-      }
 
-      if (marketing) {
-        initMetaPixel();
-        grantMetaConsent();
-        if (prevMarketingConsentRef.current === false) {
-          trackPixelPageView();
+        if (marketing) {
+          initMetaPixel();
+          grantMetaConsent();
+          if (prevMarketingConsentRef.current === false) {
+            trackPixelPageView();
+          }
+        } else {
+          revokeMetaConsent();
         }
-      } else {
-        revokeMetaConsent();
-      }
 
-      prevAnalyticsConsentRef.current = analytics;
-      prevMarketingConsentRef.current = marketing;
+        prevAnalyticsConsentRef.current = analytics;
+        prevMarketingConsentRef.current = marketing;
+      };
+
+      applyConsent();
+      window.addEventListener(CONSENT_EVENT, applyConsent);
+      
+      cleanupFn = () => {
+        window.removeEventListener(CONSENT_EVENT, applyConsent);
+      };
+    }, 2000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      cleanupFn?.();
     };
-
-    applyConsent();
-    window.addEventListener(CONSENT_EVENT, applyConsent);
-    return () => window.removeEventListener(CONSENT_EVENT, applyConsent);
   }, []);
 
   // Page view + UTM capture przy każdej zmianie URL.
