@@ -376,7 +376,9 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 								? "przykładowy formularz"
 								: activeType === "bank_transfer_pending"
 									? "przelew tradycyjny"
-									: "przykładowe zamówienie"}
+									: activeType === "payment_failed"
+										? "nieudana płatność online"
+										: "przykładowe zamówienie"}
 							)
 						</h3>
 						<div className={segmentTrack}>

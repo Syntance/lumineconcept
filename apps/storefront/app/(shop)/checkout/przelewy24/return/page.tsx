@@ -3,17 +3,31 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, XCircle } from "lucide-react";
 import {
   completeCart,
+  fetchP24ReturnStatus,
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
   notifyOrderPlaced,
+  notifyPaymentFailed,
   attachOrderNotes,
   redirectToOrderConfirmation,
+  retryPrzelewy24Payment,
 } from "@/lib/medusa/checkout";
 
 const CHECKOUT_DRAFT_STORAGE_KEY = "lumine_checkout_draft_v1";
+
+/** Po tym czasie status P24=0 traktujemy jako nieudaną płatność. */
+const FAILED_GRACE_MS = 2_500;
+
+const POLL_DELAYS_MS = [800, 1200, 1800, 2500, 3000, 3000, 4000, 4000];
+
+type ReturnState =
+  | { kind: "verifying" }
+  | { kind: "pending" }
+  | { kind: "failed"; retryUrl: string }
+  | { kind: "error"; message: string };
 
 function readCheckoutDraftOrderNotes(): string {
   try {
@@ -28,19 +42,6 @@ function readCheckoutDraftOrderNotes(): string {
   }
 }
 
-/**
- * Harmonogram odpytań finalizacji. Webhook P24 (urlStatus → /hooks/payment)
- * dociera asynchronicznie — czasem ułamek sekundy po powrocie klienta, czasem
- * kilka sekund. Dopóki płatność nie jest potwierdzona, `completeCart` zwraca
- * koszyk (status pending) zamiast zamówienia, więc ponawiamy.
- */
-const POLL_DELAYS_MS = [800, 1200, 1800, 2500, 3000, 3000, 4000, 4000];
-
-type ReturnState =
-  | { kind: "verifying" }
-  | { kind: "pending" }
-  | { kind: "error"; message: string };
-
 function clearLocalCart() {
   try {
     localStorage.removeItem("lumine_cart_id");
@@ -51,11 +52,67 @@ function clearLocalCart() {
   }
 }
 
+function FailedActions({
+  cartId,
+  retryUrl,
+}: {
+  cartId: string;
+  retryUrl: string;
+}) {
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    setRetryError(null);
+    try {
+      const url = await retryPrzelewy24Payment(cartId);
+      window.location.assign(url);
+    } catch (e) {
+      setRetryError(
+        e instanceof Error
+          ? e.message
+          : "Nie udało się przygotować płatności. Spróbuj ponownie.",
+      );
+      setRetrying(false);
+    }
+  };
+
+  return (
+    <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+      <button
+        type="button"
+        onClick={handleRetry}
+        disabled={retrying}
+        className="rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors disabled:opacity-60"
+      >
+        {retrying ? "Przekierowujemy…" : "Zapłać ponownie"}
+      </button>
+      <Link
+        href="/sklep"
+        className="text-sm text-brand-600 underline hover:text-brand-800"
+      >
+        Wróć do sklepu
+      </Link>
+      {retryError ? (
+        <p className="w-full text-center text-sm text-red-600">{retryError}</p>
+      ) : null}
+      <p className="w-full text-center text-xs text-brand-400">
+        Możesz też użyć linku z e-maila:{" "}
+        <a href={retryUrl} className="underline hover:text-brand-600">
+          ponów płatność
+        </a>
+      </p>
+    </div>
+  );
+}
+
 function Przelewy24ReturnInner() {
   const params = useSearchParams();
   const cartId = params.get("cart_id");
   const [state, setState] = useState<ReturnState>({ kind: "verifying" });
   const startedRef = useRef(false);
+  const emailSentRef = useRef(false);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -64,51 +121,110 @@ function Przelewy24ReturnInner() {
     if (!cartId) {
       setState({
         kind: "error",
-        message: "Brak identyfikatora koszyka. Sprawdź skrzynkę e-mail lub skontaktuj się z nami.",
+        message:
+          "Brak identyfikatora koszyka. Sprawdź skrzynkę e-mail lub skontaktuj się z nami.",
       });
       return;
     }
 
     let cancelled = false;
+    const startedAt = Date.now();
+    let lastRetryUrl = `/checkout/p24/retry?cart_id=${encodeURIComponent(cartId)}`;
+    let consecutiveZeroStatus = 0;
+
+    const maybeSendFailedEmail = (retryUrl: string) => {
+      if (emailSentRef.current) return;
+      emailSentRef.current = true;
+      notifyPaymentFailed(cartId, retryUrl);
+    };
 
     (async () => {
       for (let i = 0; i <= POLL_DELAYS_MS.length; i++) {
         if (cancelled) return;
-        try {
-          const result = await completeCart(cartId, { retries: 0 });
-          if (result.type === "order") {
-            const orderNotes = readCheckoutDraftOrderNotes();
-            if (orderNotes) {
-              attachOrderNotes(result.order.id, orderNotes);
-            }
-            notifyOrderPlaced(result.order.id);
-            markCheckoutCompleted(
-              result.order.id,
-              result.order.display_id ?? undefined,
-            );
-            clearLocalCart();
-            redirectToOrderConfirmation(
-              result.order.id,
-              result.order.display_id ?? undefined,
-            );
-            return;
+
+        const allowFailedOnZero = Date.now() - startedAt >= FAILED_GRACE_MS;
+
+        const [p24Status, completeResult] = await Promise.all([
+          fetchP24ReturnStatus(cartId, { allowFailedOnZero }).catch(() => null),
+          completeCart(cartId, { retries: 0 }).catch((e) => {
+            if (isCartAlreadyCompletedError(e)) return "completed" as const;
+            return null;
+          }),
+        ]);
+
+        if (completeResult === "completed") {
+          clearLocalCart();
+          if (typeof window !== "undefined") {
+            window.location.replace("/checkout/potwierdzenie");
           }
-          // type === "cart" → płatność jeszcze niepotwierdzona, ponawiamy.
-        } catch (e) {
-          if (isCartAlreadyCompletedError(e)) {
-            clearLocalCart();
-            if (typeof window !== "undefined") {
-              window.location.replace("/checkout/potwierdzenie");
-            }
-            return;
-          }
-          // Błąd sieci/serwera — spróbujemy ponownie w kolejnej iteracji.
+          return;
         }
+
+        if (
+          completeResult &&
+          typeof completeResult === "object" &&
+          completeResult.type === "order"
+        ) {
+          const orderNotes = readCheckoutDraftOrderNotes();
+          if (orderNotes) {
+            attachOrderNotes(completeResult.order.id, orderNotes);
+          }
+          notifyOrderPlaced(completeResult.order.id);
+          markCheckoutCompleted(
+            completeResult.order.id,
+            completeResult.order.display_id ?? undefined,
+          );
+          clearLocalCart();
+          redirectToOrderConfirmation(
+            completeResult.order.id,
+            completeResult.order.display_id ?? undefined,
+          );
+          return;
+        }
+
+        if (p24Status?.retry_url) {
+          lastRetryUrl = p24Status.retry_url;
+        }
+
+        if (p24Status?.p24_status === 0) {
+          consecutiveZeroStatus += 1;
+        } else if (p24Status?.p24_status != null) {
+          consecutiveZeroStatus = 0;
+        }
+
+        const shouldTreatAsFailed =
+          allowFailedOnZero &&
+          p24Status?.status === "failed" &&
+          consecutiveZeroStatus >= 2;
+
+        if (shouldTreatAsFailed) {
+          maybeSendFailedEmail(lastRetryUrl);
+          setState({ kind: "failed", retryUrl: lastRetryUrl });
+          return;
+        }
+
+        if (p24Status?.status === "paid") {
+          // completeCart w kolejnej iteracji powinien domknąć zamówienie
+        }
+
         if (i < POLL_DELAYS_MS.length) {
           await new Promise((r) => setTimeout(r, POLL_DELAYS_MS[i]));
         }
       }
-      if (!cancelled) setState({ kind: "pending" });
+
+      if (!cancelled) {
+        const finalStatus = await fetchP24ReturnStatus(cartId, {
+          allowFailedOnZero: true,
+        }).catch(() => null);
+        if (finalStatus?.retry_url) lastRetryUrl = finalStatus.retry_url;
+
+        if (finalStatus?.status === "failed") {
+          maybeSendFailedEmail(lastRetryUrl);
+          setState({ kind: "failed", retryUrl: lastRetryUrl });
+        } else {
+          setState({ kind: "pending" });
+        }
+      }
     })();
 
     return () => {
@@ -127,14 +243,23 @@ function Przelewy24ReturnInner() {
           Trwa weryfikacja transakcji w Przelewy24 — zwykle kilka sekund. Za
           chwilę przeniesiemy Cię do potwierdzenia zamówienia.
         </p>
-        <p className="mx-auto mt-6 max-w-md text-xs text-brand-400">
-          Jeśli nie chcesz czekać, możesz{" "}
-          <Link href="/sklep" className="underline hover:text-brand-600">
-            wrócić do sklepu
-          </Link>{" "}
-          — gdy płatność zostanie zaksięgowana, zamówienie utworzy się
-          automatycznie, a potwierdzenie wyślemy e-mailem.
+      </div>
+    );
+  }
+
+  if (state.kind === "failed") {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center">
+        <XCircle className="mx-auto h-12 w-12 text-red-500" />
+        <h1 className="mt-6 font-display text-2xl font-semibold text-brand-800">
+          Płatność nie powiodła się
+        </h1>
+        <p className="mx-auto mt-3 max-w-md text-sm text-brand-600">
+          Transakcja w Przelewy24 nie została zrealizowana. Twoje produkty
+          nadal czekają w koszyku — możesz spróbować ponownie. Wysłaliśmy też
+          e-mail z linkiem do płatności.
         </p>
+        <FailedActions cartId={cartId!} retryUrl={state.retryUrl} />
       </div>
     );
   }

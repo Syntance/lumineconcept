@@ -671,6 +671,84 @@ export async function initPrzelewy24Redirect(
   return redirectUrl;
 }
 
+export type P24ReturnStatus = "paid" | "pending" | "failed";
+
+export type P24ReturnStatusResponse = {
+  status: P24ReturnStatus;
+  email?: string;
+  retry_url?: string;
+  p24_status?: number | null;
+};
+
+/** Sprawdza stan płatności P24 po powrocie klienta z bramki. */
+export async function fetchP24ReturnStatus(
+  cartId: string,
+  options?: { allowFailedOnZero?: boolean },
+): Promise<P24ReturnStatusResponse | null> {
+  const base = resolveMedusaFetchBase();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+      : {}),
+  };
+
+  const res = await fetch(`${base}/store/custom/p24-return-status`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      cart_id: cartId,
+      allow_failed_on_zero: options?.allowFailedOnZero ?? false,
+    }),
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (!res.ok) return null;
+  return (await res.json()) as P24ReturnStatusResponse;
+}
+
+/** Rejestruje nową sesję P24 i zwraca URL bramki płatności. */
+export async function retryPrzelewy24Payment(cartId: string): Promise<string> {
+  const base = resolveMedusaFetchBase();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+      : {}),
+  };
+
+  const res = await fetch(`${base}/store/custom/p24-retry-payment`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ cart_id: cartId }),
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(
+      body.message ?? "Nie udało się przygotować ponownej płatności.",
+    );
+  }
+
+  const data = (await res.json()) as { redirect_url?: string };
+  if (!data.redirect_url) {
+    throw new Error("Nie udało się przygotować ponownej płatności.");
+  }
+  return data.redirect_url;
+}
+
+/** Wysyła mail o nieudanej płatności (szablon magazynu). Fire-and-forget. */
+export function notifyPaymentFailed(cartId: string, retryUrl: string): void {
+  void fetch("/api/checkout/send-payment-failed-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cart_id: cartId, retry_url: retryUrl }),
+  }).catch(() => undefined);
+}
+
 export type CompleteCartResponse =
   | { type: "order"; order: { id: string; display_id?: number } }
   | {
