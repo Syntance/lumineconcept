@@ -132,12 +132,14 @@ export function ProductCard({
       >
         {thumbnail ? (
           <>
+            {/* Tło ładowania — zapobiega CLS i białemu błyskowi */}
+            <div className="absolute inset-0 bg-brand-50" aria-hidden />
             <Image
               src={thumbnail}
               alt={title}
               width={imageWidth}
               height={imageHeight}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="relative z-10 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               unoptimized={thumbnail.startsWith("http://localhost")}
             />
@@ -148,7 +150,7 @@ export function ProductCard({
               width={24}
               height={24}
               unoptimized
-              className="pointer-events-none absolute right-2 top-2 z-10 h-5 w-auto select-none opacity-30"
+              className="pointer-events-none absolute right-2 top-2 z-20 h-5 w-auto select-none opacity-30"
               style={{ filter: "brightness(0) invert(1)" }}
               draggable={false}
             />

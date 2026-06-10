@@ -28,15 +28,18 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
               onClick={onSelect}
               className="flex items-center gap-4 rounded-lg p-3 hover:bg-brand-50 transition-colors"
             >
-              <div className="relative h-14 w-[2.625rem] shrink-0 overflow-hidden rounded-md bg-brand-100">
+              <div className="relative h-14 w-[2.625rem] shrink-0 overflow-hidden rounded-md bg-brand-50">
                 {product.thumbnail ? (
-                  <Image
-                    src={product.thumbnail}
-                    alt={product.title}
-                    fill
-                    sizes="42px"
-                    className="object-cover"
-                  />
+                  <>
+                    <div className="absolute inset-0 bg-brand-100" aria-hidden />
+                    <Image
+                      src={product.thumbnail}
+                      alt={product.title}
+                      fill
+                      sizes="42px"
+                      className="relative z-10 object-cover"
+                    />
+                  </>
                 ) : (
                   <div className="h-full w-full flex items-center justify-center text-brand-300 text-xs">
                     Brak

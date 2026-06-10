@@ -53,13 +53,16 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
             className="flex items-center gap-3 rounded-md p-1.5 transition-colors hover:bg-brand-50"
           >
             {p.thumbnail ? (
-              <Image
-                src={p.thumbnail}
-                alt={p.title}
-                width={36}
-                height={48}
-                className="rounded-md object-cover"
-              />
+              <div className="relative h-12 w-[2.25rem] overflow-hidden rounded-md">
+                <div className="absolute inset-0 bg-brand-50" aria-hidden />
+                <Image
+                  src={p.thumbnail}
+                  alt={p.title}
+                  width={36}
+                  height={48}
+                  className="relative z-10 rounded-md object-cover"
+                />
+              </div>
             ) : (
               <div className="h-12 w-[2.25rem] rounded-md bg-brand-100" />
             )}

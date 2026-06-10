@@ -328,12 +328,13 @@ export function ProductConfigurator({
           <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-wider text-brand-500">
             Schemat personalizacji
           </p>
-          <div className="relative aspect-[3/4] w-full overflow-hidden border border-brand-200">
+          <div className="relative aspect-[3/4] w-full overflow-hidden border border-brand-200 bg-brand-50">
+            <div className="absolute inset-0 bg-brand-100" aria-hidden />
             <Image
               src={schemaImageUrl}
               alt="Schemat personalizacji produktu"
               fill
-              className="object-contain"
+              className="relative z-10 object-contain"
               sizes="320px"
             />
           </div>
