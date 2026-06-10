@@ -48,6 +48,7 @@ const r2RemotePattern = (() => {
 
 const nextConfig: NextConfig = {
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       /**
        * Istniejące produkty w Medusie mogą nadal wskazywać na URL-e z
