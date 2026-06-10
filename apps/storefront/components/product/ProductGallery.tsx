@@ -54,9 +54,10 @@ function GalleryMainImage({
         alt={alt}
         fill
         priority={priority}
+        fetchPriority={priority ? "high" : undefined}
         loading={priority ? undefined : "lazy"}
         className="relative z-10 object-cover object-center"
-        sizes="(max-width: 1024px) 100vw, (max-width: 1920px) 50vw, 1120px"
+        sizes="(max-width: 1024px) 100vw, 50vw"
         unoptimized={medusaImageUnoptimized(url)}
       />
     </>
@@ -202,6 +203,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 aria-hidden="true"
                 width={128}
                 height={128}
+                loading="lazy"
                 sizes="128px"
                 quality={85}
                 className="pointer-events-none absolute right-4 -top-0.5 h-32 w-auto select-none opacity-100"
@@ -256,6 +258,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                   src={image.url}
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
                   fill
+                  loading={index === 0 ? "eager" : "lazy"}
                   sizes="(max-width: 1024px) 3.5rem, 8.25rem"
                   className="relative z-10 object-cover"
                   unoptimized={medusaImageUnoptimized(image.url)}

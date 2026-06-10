@@ -334,6 +334,7 @@ export function ProductConfigurator({
               src={schemaImageUrl}
               alt="Schemat personalizacji produktu"
               fill
+              loading="lazy"
               className="relative z-10 object-contain"
               sizes="320px"
             />
