@@ -13,6 +13,7 @@ import {
   trackFormStart,
   trackFormSubmit,
   trackPurchase,
+  trackFormFieldError,
 } from "@/lib/analytics/events";
 import { identifyLead, markPurchaseCustomer } from "@/lib/analytics/identify";
 import { useCart } from "@/hooks/useCart";
@@ -178,6 +179,7 @@ export function CheckoutForm() {
   const submitSlowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const staleResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const beginCheckoutFiredRef = useRef(false);
+  const checkoutStartTimeRef = useRef<number | null>(null);
 
   /**
    * Po udanym zamówieniu — nie wracaj na checkout (przycisk Wstecz). Aktywny
@@ -248,6 +250,7 @@ export function CheckoutForm() {
     if (beginCheckoutFiredRef.current) return;
     if (!cartId || items.length === 0) return;
     beginCheckoutFiredRef.current = true;
+    checkoutStartTimeRef.current = Date.now();
     trackCheckoutStart({
       total,
       currency: "PLN",
@@ -559,6 +562,11 @@ export function CheckoutForm() {
       }
 
       trackCheckoutStep({ stepNumber: 3, cartValue: total });
+      
+      const checkoutDurationSeconds = checkoutStartTimeRef.current
+        ? Math.round((Date.now() - checkoutStartTimeRef.current) / 1000)
+        : undefined;
+      
       trackPurchase({
         id: result.order.id,
         total,
@@ -571,6 +579,7 @@ export function CheckoutForm() {
         })),
         paymentMethod: payment.paymentProviderId,
         shippingMethod: payment.shippingOptionId,
+        checkout_duration_seconds: checkoutDurationSeconds,
       });
       // Notion: po `purchase` aktualizujemy profil PostHog (`firstOrderId`, `totalSpent`).
       markPurchaseCustomer({
@@ -640,6 +649,17 @@ export function CheckoutForm() {
   return (
     <div className="grid gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-8">
+        {/* Progress bar */}
+        <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-brand-100">
+          <div
+            className="h-full bg-brand-800 transition-all duration-500 ease-out"
+            style={{ width: `${(step / STEPS.length) * 100}%` }}
+          />
+        </div>
+        <p className="mb-2 text-center text-sm text-brand-600">
+          Krok {step} z {STEPS.length} ({Math.round((step / STEPS.length) * 100)}%)
+        </p>
+
         {/* Step indicator */}
         <nav aria-label="Postęp zamówienia" className="flex items-center gap-1">
           {STEPS.map((s, i) => (
@@ -948,53 +968,62 @@ export function CheckoutForm() {
                 {shippingSaveError}
               </p>
             )}
-            <button
-              type="button"
-              onClick={async () => {
-                if (!cartId) return;
-                setShippingSaveError(null);
-                setPreparingPayment(true);
-                try {
-                  trackFormSubmit({ formName: "checkout_shipping" });
-                  trackCheckoutStep({ stepNumber: 2, cartValue: total });
-                  // Najpierw czekamy na providerId (prefetched, zwykle < 50 ms),
-                  // żeby w 1 request dolecieć shipping + payment-session.
-                  // Wcześniej były to 2 sekwencyjne round-tripy (600 + 200 ms)
-                  // — teraz jeden ~600-800 ms w jednym HTTP do `/store/custom/prepare-checkout`.
-                  const { providerId } = await prefetchPaymentReadiness(
-                    getPolishRegionId,
-                  );
-                  await prepareCheckout(
-                    cartId,
-                    formData.shippingOptionId,
-                    providerId,
-                  );
-                  await refreshCart().catch(() => undefined);
-                  updateField("paymentProviderId", providerId);
-                  setStep(3);
-                } catch (e) {
-                  console.error("[checkout] zapis dostawy/płatności", e);
-                  if (isCartAlreadyCompletedError(e)) {
-                    setShippingSaveError(
-                      "Ten koszyk został już sfinalizowany. Za chwilę zaczniesz od nowa…",
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="flex-1 rounded-lg border border-brand-300 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+              >
+                ← Wróć
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!cartId) return;
+                  setShippingSaveError(null);
+                  setPreparingPayment(true);
+                  try {
+                    trackFormSubmit({ formName: "checkout_shipping" });
+                    trackCheckoutStep({ stepNumber: 2, cartValue: total });
+                    // Najpierw czekamy na providerId (prefetched, zwykle < 50 ms),
+                    // żeby w 1 request dolecieć shipping + payment-session.
+                    // Wcześniej były to 2 sekwencyjne round-tripy (600 + 200 ms)
+                    // — teraz jeden ~600-800 ms w jednym HTTP do `/store/custom/prepare-checkout`.
+                    const { providerId } = await prefetchPaymentReadiness(
+                      getPolishRegionId,
                     );
-                    scheduleStaleReset();
-                    return;
+                    await prepareCheckout(
+                      cartId,
+                      formData.shippingOptionId,
+                      providerId,
+                    );
+                    await refreshCart().catch(() => undefined);
+                    updateField("paymentProviderId", providerId);
+                    setStep(3);
+                  } catch (e) {
+                    console.error("[checkout] zapis dostawy/płatności", e);
+                    if (isCartAlreadyCompletedError(e)) {
+                      setShippingSaveError(
+                        "Ten koszyk został już sfinalizowany. Za chwilę zaczniesz od nowa…",
+                      );
+                      scheduleStaleReset();
+                      return;
+                    }
+                    const message = describeMedusaError(
+                      e,
+                      "Nie udało się przygotować płatności. Spróbuj ponownie.",
+                    );
+                    setShippingSaveError(message);
+                  } finally {
+                    setPreparingPayment(false);
                   }
-                  const message = describeMedusaError(
-                    e,
-                    "Nie udało się przygotować płatności. Spróbuj ponownie.",
-                  );
-                  setShippingSaveError(message);
-                } finally {
-                  setPreparingPayment(false);
-                }
-              }}
-              disabled={!canGoToStep3 || !cartId || preparingPayment}
-              className="w-full rounded-md bg-brand-800 py-3 text-sm font-semibold text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:bg-brand-200 disabled:text-brand-500 transition-colors"
-            >
-              {preparingPayment ? "Przygotowuję płatność…" : "Przejdź do płatności"}
-            </button>
+                }}
+                disabled={!canGoToStep3 || !cartId || preparingPayment}
+                className="flex-1 rounded-lg bg-brand-800 py-3 text-sm font-semibold text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:bg-brand-200 disabled:text-brand-500 transition-colors"
+              >
+                {preparingPayment ? "Przygotowuję płatność…" : "Przejdź do płatności →"}
+              </button>
+            </div>
           </section>
         )}
 
@@ -1085,20 +1114,29 @@ export function CheckoutForm() {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              className="w-full rounded-md bg-brand-800 py-3 text-sm font-semibold text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:bg-brand-200 disabled:text-brand-500 transition-colors"
-            >
-              {submitting
-                ? formData.paymentProviderId === PRZELEWY24_PROVIDER_ID
-                  ? "Przekierowuję do Przelewy24…"
-                  : "Składanie zamówienia…"
-                : formData.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID
-                  ? "Zamawiam — opłać przelewem"
-                  : "Zamawiam i płacę"}
-            </button>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="flex-1 rounded-lg border border-brand-300 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+              >
+                ← Wróć
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+                className="flex-1 rounded-lg bg-brand-800 py-3 text-sm font-semibold text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:bg-brand-200 disabled:text-brand-500 transition-colors"
+              >
+                {submitting
+                  ? formData.paymentProviderId === PRZELEWY24_PROVIDER_ID
+                    ? "Przekierowuję do Przelewy24…"
+                    : "Składanie zamówienia…"
+                  : formData.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID
+                    ? "Zamawiam — opłać przelewem"
+                    : "Zamawiam i płacę"}
+              </button>
+            </div>
             {submitSlow && submitting && (
               <p
                 className="text-center text-xs text-brand-600"
