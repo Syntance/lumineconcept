@@ -1,0 +1,84 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import {
+	dispatchMagazynOrderEmail,
+	type CheckoutOrderSnapshot,
+} from "@/lib/email/dispatch-magazyn-order-email";
+
+export const maxDuration = 30;
+
+const itemSchema = z.object({
+	title: z.string(),
+	quantity: z.number().int().positive(),
+	total: z.number().nonnegative(),
+	thumbnail: z.string().nullable().optional(),
+});
+
+const snapshotSchema = z.object({
+	email: z.string().email(),
+	display_id: z.number().int().positive(),
+	total: z.number().nonnegative(),
+	item_total: z.number().nonnegative().optional(),
+	shipping_total: z.number().nonnegative().optional(),
+	currency_code: z.string().default("PLN"),
+	customer_name: z.string().optional(),
+	address: z.string().optional(),
+	phone: z.string().optional(),
+	shipping_method_name: z.string().nullable().optional(),
+	items: z.array(itemSchema).optional(),
+});
+
+const bodySchema = z.object({
+	order_id: z.string().min(1),
+	snapshot: snapshotSchema.optional(),
+});
+
+/** Wysyła mail „złożone zamówienie” — szablon `placed` z magazynu. */
+export async function POST(request: Request) {
+	let body: unknown;
+	try {
+		body = await request.json();
+	} catch {
+		return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
+	}
+
+	const parsed = bodySchema.safeParse(body);
+	if (!parsed.success) {
+		return NextResponse.json({ ok: false, error: "invalid_body" }, { status: 400 });
+	}
+
+	const data = parsed.data;
+	const snapshot: CheckoutOrderSnapshot | undefined = data.snapshot
+		? {
+				email: data.snapshot.email,
+				displayId: data.snapshot.display_id,
+				total: data.snapshot.total,
+				itemTotal: data.snapshot.item_total,
+				shippingTotal: data.snapshot.shipping_total,
+				currencyCode: data.snapshot.currency_code,
+				customerName: data.snapshot.customer_name,
+				address: data.snapshot.address,
+				phone: data.snapshot.phone,
+				shippingMethodName: data.snapshot.shipping_method_name,
+				items: data.snapshot.items,
+			}
+		: undefined;
+
+	const result = await dispatchMagazynOrderEmail({
+		orderId: data.order_id,
+		type: "placed",
+		snapshot,
+	});
+
+	if (!result.ok) {
+		const status = result.step === "no-order-source" ? 404 : 502;
+		return NextResponse.json(result, { status });
+	}
+
+	return NextResponse.json({
+		ok: true,
+		skipped: result.skipped ?? false,
+		email: result.email,
+		source: "magazyn",
+	});
+}
