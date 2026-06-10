@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
+import DOMPurify from "isomorphic-dompurify";
 import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
@@ -43,13 +44,30 @@ import {
 import { getBankTransferDetails } from "@/lib/payment/bank-transfer";
 import { getPolishRegionId } from "@/lib/medusa/region";
 
-const PHONE_REGEX = /^(?:\+48)?[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{3}$/;
 const POSTAL_CODE_REGEX = /^\d{2}-\d{3}$/;
 const NIP_REGEX = /^\d{10}$/;
 
+/** Formatuje numer PL na bieżąco: +48 XXX XXX XXX */
+function formatPolishPhone(input: string): string {
+  const digits = input.replace(/\D/g, "");
+  if (digits.length === 0) {
+    return input.includes("+") ? "+48" : "";
+  }
+
+  const national = digits.startsWith("48") ? digits.slice(2, 11) : digits.slice(0, 9);
+  if (national.length === 0) return "+48";
+
+  let formatted = "+48";
+  if (national.length > 0) formatted += ` ${national.slice(0, 3)}`;
+  if (national.length > 3) formatted += ` ${national.slice(3, 6)}`;
+  if (national.length > 6) formatted += ` ${national.slice(6, 9)}`;
+  return formatted;
+}
+
 function validatePhone(phone: string): boolean {
-  const cleaned = phone.replace(/[\s-]/g, "");
-  return PHONE_REGEX.test(phone) && (cleaned.length === 9 || cleaned.length === 11);
+  const digits = phone.replace(/\D/g, "");
+  const national = digits.startsWith("48") ? digits.slice(2) : digits;
+  return national.length === 9 && /^\d{9}$/.test(national);
 }
 
 function validatePostalCode(code: string): boolean {
@@ -411,6 +429,7 @@ export function CheckoutForm() {
       setFormData({
         ...getDefaultCheckoutFormData(),
         ...parsed.formData,
+        phone: formatPolishPhone(parsed.formData.phone ?? ""),
       });
     } catch {
       /* uszkodzony JSON */
@@ -459,9 +478,9 @@ export function CheckoutForm() {
   }, [p24CircuitOpen, formData.paymentProviderId, updateField]);
 
   const handleFieldBlur = useCallback(
-    (field: ValidatedField) => {
+    (field: ValidatedField, overrideValue?: string) => {
       setTouchedFields((prev) => ({ ...prev, [field]: true }));
-      const value = formData[field];
+      const value = overrideValue ?? formData[field];
       const error = getFieldValidationError(field, value);
       setFieldErrors((prev) => {
         const next = { ...prev };
@@ -570,6 +589,14 @@ export function CheckoutForm() {
     try {
       await assertCartReadyForCheckout(cartId);
 
+      // Sanityzuj orderNotes przed wysłaniem (XSS protection)
+      const sanitizedNotes = payment.orderNotes
+        ? DOMPurify.sanitize(payment.orderNotes, {
+            ALLOWED_TAGS: [], // Text-only, bez HTML
+            ALLOWED_ATTR: [],
+          })
+        : "";
+
       // Przelewy24 = płatność z przekierowaniem. Inicjujemy sesję P24,
       // a finalizację koszyka (utworzenie zamówienia) robi strona powrotu
       // /checkout/przelewy24/return po potwierdzeniu płatności przez webhook.
@@ -578,6 +605,7 @@ export function CheckoutForm() {
           cartId,
           payment.shippingOptionId,
           payment.paymentProviderId,
+          sanitizedNotes,
         );
         const redirectUrl = await initPrzelewy24Redirect(cartId);
         trackCheckoutStep({ stepNumber: 3, cartValue: total });
@@ -593,6 +621,7 @@ export function CheckoutForm() {
         cartId,
         payment.shippingOptionId,
         payment.paymentProviderId,
+        sanitizedNotes,
       );
       await initPaymentSession(cartId, payment.paymentProviderId);
 
@@ -843,8 +872,14 @@ export function CheckoutForm() {
                   inputMode="tel"
                   required
                   value={formData.phone}
-                  onBlur={() => handleFieldBlur("phone")}
-                  onChange={(e) => updateField("phone", e.target.value)}
+                  onBlur={() => {
+                    const formatted = formatPolishPhone(formData.phone);
+                    if (formatted !== formData.phone) {
+                      updateField("phone", formatted);
+                    }
+                    handleFieldBlur("phone", formatted);
+                  }}
+                  onChange={(e) => updateField("phone", formatPolishPhone(e.target.value))}
                   className={`${INPUT_CLASS} ${showFieldError("phone") ? "border-red-300" : ""}`}
                   placeholder="+48 000 000 000"
                   aria-invalid={showFieldError("phone") ? true : undefined}

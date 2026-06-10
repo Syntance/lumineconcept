@@ -465,6 +465,7 @@ export async function prepareCheckout(
   cartId: string,
   optionId: string,
   providerId: string,
+  orderNotes?: string,
 ): Promise<{ paymentCollectionId?: string }> {
   const base = resolveMedusaFetchBase();
   const headers: Record<string, string> = {
@@ -482,6 +483,7 @@ export async function prepareCheckout(
       cart_id: cartId,
       option_id: optionId,
       provider_id: providerId,
+      ...(orderNotes ? { order_notes: orderNotes } : {}),
     }),
   });
   if (!res.ok) {
