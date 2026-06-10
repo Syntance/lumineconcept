@@ -14,6 +14,7 @@ import {
 	type EmailTemplateType,
 	type EmailTheme,
 	FONT_STACKS,
+	type FontKey,
 	type FooterBlock,
 	type HeadingBlock,
 	type ImageBlock,
@@ -90,8 +91,13 @@ function align(value: TextAlign | undefined): TextAlign {
 	return value ?? "left";
 }
 
+function resolveFontFamily(fontKey: FontKey | undefined, theme: EmailTheme): string {
+	return FONT_STACKS[fontKey ?? theme.fontKey];
+}
+
 function textStyleCss(style: BlockStyle, theme: EmailTheme): string {
 	const parts = [
+		`font-family:${resolveFontFamily(style.fontKey, theme)}`,
 		`color:${style.color ?? theme.text}`,
 		`font-size:${style.fontSize ?? 14}px`,
 		"line-height:1.7",
@@ -140,7 +146,8 @@ function renderButton(block: ButtonBlock, theme: EmailTheme, vars: Record<string
 	const color = block.color ?? "#ffffff";
 	const radius = block.radius ?? 8;
 	const href = mergeAttr(block.href, vars);
-	return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:${block.paddingY ?? 10}px ${align(block.align) === "center" ? "auto" : "0"}"><tr><td style="background:${bg};border-radius:${radius}px"><a href="${href}" target="_blank" rel="noopener" style="display:inline-block;padding:12px 24px;color:${color};font-weight:700;font-size:14px;text-decoration:none;border-radius:${radius}px">${mergeHtml(block.label, vars)}</a></td></tr></table>`;
+	const fontFamily = resolveFontFamily(block.fontKey, theme);
+	return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:${block.paddingY ?? 10}px ${align(block.align) === "center" ? "auto" : "0"}"><tr><td style="background:${bg};border-radius:${radius}px"><a href="${href}" target="_blank" rel="noopener" style="display:inline-block;padding:12px 24px;color:${color};font-family:${fontFamily};font-weight:700;font-size:14px;text-decoration:none;border-radius:${radius}px">${mergeHtml(block.label, vars)}</a></td></tr></table>`;
 }
 
 function renderDivider(block: DividerBlock): string {
@@ -152,20 +159,21 @@ function renderSpacer(block: SpacerBlock): string {
 }
 
 function renderOrderItems(block: OrderItemsBlock, theme: EmailTheme, ctx: EmailRenderContext): string {
+	const fontFamily = resolveFontFamily(block.style.fontKey, theme);
 	const rows = ctx.items
 		.map((item) => {
-			const titleCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text}">${esc(item.title)}${item.quantity > 1 ? ` × ${item.quantity}` : ""}</td>`;
+			const titleCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;font-family:${fontFamily};font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text}">${esc(item.title)}${item.quantity > 1 ? ` × ${item.quantity}` : ""}</td>`;
 			const thumb =
 				block.showThumbnails && item.thumbnail
 					? `<td width="56" style="padding:10px 12px 10px 0;border-bottom:1px solid #e8dcc0"><img src="${esc(item.thumbnail)}" alt="" width="48" style="display:block;border-radius:6px" /></td>`
 					: "";
-			const priceCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;text-align:right;white-space:nowrap;font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text}">${esc(item.total)}</td>`;
+			const priceCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;text-align:right;white-space:nowrap;font-family:${fontFamily};font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text}">${esc(item.total)}</td>`;
 			return `<tr>${thumb}${titleCell}${priceCell}</tr>`;
 		})
 		.join("");
 
 	const totalRow = block.showTotal
-		? `<tr><td${block.showThumbnails ? ' colspan="2"' : ""} style="padding:12px 0;font-size:16px;font-weight:700;color:${theme.text};border-top:2px solid ${theme.text}">Razem</td><td style="padding:12px 0;font-size:16px;font-weight:700;text-align:right;color:${theme.text};border-top:2px solid ${theme.text}">${esc(ctx.vars.suma ?? "")}</td></tr>`
+		? `<tr><td${block.showThumbnails ? ' colspan="2"' : ""} style="padding:12px 0;font-family:${fontFamily};font-size:16px;font-weight:700;color:${theme.text};border-top:2px solid ${theme.text}">Razem</td><td style="padding:12px 0;font-family:${fontFamily};font-size:16px;font-weight:700;text-align:right;color:${theme.text};border-top:2px solid ${theme.text}">${esc(ctx.vars.suma ?? "")}</td></tr>`
 		: "";
 
 	return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:${block.style.paddingY ?? 12}px 0">${rows}${totalRow}</table>`;
@@ -216,11 +224,59 @@ function emailAssetsBaseUrl(): string {
 	return magazynConfig.email.siteUrl ?? magazynConfig.branding.storefrontUrl;
 }
 
+function collectFontKeys(template: EmailTemplate): FontKey[] {
+	const keys = new Set<FontKey>([template.theme.fontKey]);
+
+	function trackStyle(style?: BlockStyle) {
+		if (style?.fontKey) keys.add(style.fontKey);
+	}
+
+	function trackLeaf(leaf: LeafBlock) {
+		switch (leaf.type) {
+			case "heading":
+			case "text":
+				trackStyle(leaf.style);
+				break;
+			case "button":
+				if (leaf.fontKey) keys.add(leaf.fontKey);
+				break;
+			default:
+				break;
+		}
+	}
+
+	for (const block of template.blocks) {
+		switch (block.type) {
+			case "heading":
+			case "text":
+			case "footer":
+			case "orderItems":
+				trackStyle(block.style);
+				break;
+			case "button":
+				if (block.fontKey) keys.add(block.fontKey);
+				break;
+			case "columns":
+				block.left.forEach(trackLeaf);
+				block.right.forEach(trackLeaf);
+				break;
+			default:
+				break;
+		}
+	}
+
+	return [...keys];
+}
+
 /** Główny renderer: szablon + kontekst danych -> email-safe HTML + plaintext. */
 export function renderTemplate(template: EmailTemplate, ctx: EmailRenderContext): RenderedEmail {
 	const { theme } = template;
 	const fontFamily = FONT_STACKS[theme.fontKey];
-	const fontFaceCss = emailFontFaceCss(theme.fontKey, emailAssetsBaseUrl());
+	const assetsBase = emailAssetsBaseUrl();
+	const fontFaceCss = collectFontKeys(template)
+		.map((key) => emailFontFaceCss(key, assetsBase))
+		.filter(Boolean)
+		.join("");
 	const body = template.blocks.map((block) => renderBlock(block, theme, ctx)).join("\n");
 
 	const header = theme.brandName

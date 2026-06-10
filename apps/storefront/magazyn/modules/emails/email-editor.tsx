@@ -1,7 +1,7 @@
 "use client";
 
-import { Loader2, Monitor, Plus, RotateCcw, Save, Send, Smartphone } from "lucide-react";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { Loader2, Monitor, Plus, RotateCcw, Save, Send, Smartphone, Undo2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import { cn } from "@magazyn/core/lib/cn";
@@ -21,12 +21,14 @@ import {
 	setTemplateEnabledAction,
 	uploadEmailImageAction,
 } from "./actions";
-import { BLOCK_META, createBlock, duplicateBlock, PALETTE_BLOCKS } from "./block-meta";
+import { createBlock, duplicateBlock } from "./block-meta";
+import { AddBlockCallout } from "./add-block-callout";
 import { BlockInspector, type ImageUploader } from "./block-inspector";
 import { editorBtnRounded, segmentItem, segmentItemActive, segmentItemIdle, segmentTrack } from "./editor-chrome";
 import { EditorCanvas } from "./editor-canvas";
 import { EmailTemplatePicker, enabledByTypeFromTemplates } from "./email-template-picker";
 import { ThemePanel } from "./theme-panel";
+import { useTemplateHistory } from "./use-template-history";
 
 type Feedback = { type: "ok" | "err"; text: string } | null;
 
@@ -40,7 +42,9 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 	const [templates, setTemplates] = useState(() => toRecord(initialTemplates));
 	const [activeType, setActiveType] = useState<EmailTemplateType>(initialTemplates[0]?.type ?? "placed");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
-	const [leftPanelTab, setLeftPanelTab] = useState<"block" | "theme">("theme");
+	const [leftPanelTab, setLeftPanelTab] = useState<"block" | "theme">("block");
+	const [addBlockOpen, setAddBlockOpen] = useState(false);
+	const addBlockAnchorRef = useRef<HTMLButtonElement>(null);
 	const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
 	const [testEmail, setTestEmail] = useState("");
 	const [feedback, setFeedback] = useState<Feedback>(null);
@@ -48,6 +52,7 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 	const [resetting, startReset] = useTransition();
 	const [testing, startTest] = useTransition();
 	const [togglingType, setTogglingType] = useState<EmailTemplateType | null>(null);
+	const history = useTemplateHistory();
 
 	const active = templates[activeType];
 	const activeEnabled = isEmailTemplateEnabled(active);
@@ -67,9 +72,48 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 		[active, activeType],
 	);
 
-	function updateActive(updater: (t: EmailTemplate) => EmailTemplate) {
-		setTemplates((prev) => ({ ...prev, [activeType]: updater(prev[activeType]) }));
+	function updateActive(
+		updater: (t: EmailTemplate) => EmailTemplate,
+		options?: { skipHistory?: boolean },
+	) {
+		setTemplates((prev) => {
+			const current = prev[activeType];
+			if (!options?.skipHistory) {
+				history.recordBeforeChange(activeType, current);
+			}
+			return { ...prev, [activeType]: updater(current) };
+		});
 	}
+
+	const onUndo = useCallback(() => {
+		const previous = history.undo(activeType);
+		if (!previous) return;
+		setTemplates((prev) => ({ ...prev, [activeType]: previous }));
+		setFeedback(null);
+	}, [activeType, history]);
+
+	useEffect(() => {
+		function onKeyDown(event: KeyboardEvent) {
+			if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "z" || event.shiftKey) {
+				return;
+			}
+			const target = event.target;
+			if (
+				target instanceof HTMLInputElement ||
+				target instanceof HTMLTextAreaElement ||
+				target instanceof HTMLSelectElement
+			) {
+				return;
+			}
+			if (!history.canUndo(activeType)) return;
+			event.preventDefault();
+			onUndo();
+		}
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [activeType, history, onUndo]);
+
+	const canUndo = history.canUndo(activeType);
 
 	function setBlocks(blocks: Block[]) {
 		updateActive((t) => ({ ...t, blocks }));
@@ -82,8 +126,19 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 
 	function addBlock(type: Block["type"]) {
 		const block = createBlock(type);
-		updateActive((t) => ({ ...t, blocks: [...t.blocks, block] }));
+		updateActive((t) => {
+			const blocks = [...t.blocks];
+			if (selectedId) {
+				const index = blocks.findIndex((b) => b.id === selectedId);
+				if (index >= 0) {
+					blocks.splice(index + 1, 0, block);
+					return { ...t, blocks };
+				}
+			}
+			return { ...t, blocks: [...blocks, block] };
+		});
 		selectBlock(block.id);
+		setAddBlockOpen(false);
 	}
 
 	function updateBlock(id: string, next: Block) {
@@ -109,7 +164,8 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 	const switchTemplate = useCallback((type: EmailTemplateType) => {
 		setActiveType(type);
 		setSelectedId(null);
-		setLeftPanelTab("theme");
+		setLeftPanelTab("block");
+		setAddBlockOpen(false);
 		setFeedback(null);
 	}, []);
 
@@ -124,6 +180,7 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 					...prev,
 					[type]: result.template as EmailTemplate,
 				}));
+				history.clear(type);
 				setFeedback({
 					type: "ok",
 					text: enabled
@@ -137,7 +194,7 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 				});
 			}
 		})();
-	}, []);
+	}, [history]);
 
 	const uploadImage: ImageUploader = async (file) => {
 		const formData = new FormData();
@@ -168,6 +225,7 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 			const result = await resetTemplateAction(activeType);
 			if (result.ok && result.template) {
 				setTemplates((prev) => ({ ...prev, [activeType]: result.template as EmailTemplate }));
+				history.clear(activeType);
 				setSelectedId(null);
 				setFeedback({ type: "ok", text: "Przywrócono domyślny szablon." });
 			} else {
@@ -269,6 +327,18 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 						</Button>
 					</div>
 					<div className="flex items-center gap-2">
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							disabled={busy || !canUndo}
+							onClick={onUndo}
+							className="gap-1.5"
+							title="Cofnij ostatnią zmianę (Ctrl+Z)"
+						>
+							<Undo2 className="size-4" aria-hidden />
+							Cofnij
+						</Button>
 						<Button type="button" variant="ghost" size="sm" disabled={busy} onClick={onReset} className="gap-1.5">
 							{resetting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <RotateCcw className="size-4" aria-hidden />}
 							Przywróć domyślny
@@ -330,32 +400,30 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 					</div>
 
 					<div className="rounded-xl border border-border bg-card p-3">
-						<h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Dodaj blok</h3>
-						<div className="grid grid-cols-2 gap-1.5">
-							{PALETTE_BLOCKS.map((type) => {
-								const Icon = BLOCK_META[type].icon;
-								return (
-									<button
-										key={type}
-										type="button"
-										onClick={() => addBlock(type)}
-										className={cn(
-											editorBtnRounded,
-											"inline-flex items-center gap-1.5 border border-input px-2 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-										)}
-									>
-										<Icon className="size-3.5 text-muted-foreground" aria-hidden />
-										<span className="truncate">{BLOCK_META[type].label}</span>
-									</button>
-								);
-							})}
-						</div>
-					</div>
-
-					<div className="rounded-xl border border-border bg-card p-3">
-						<div className="mb-2 flex items-center justify-between">
-							<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bloki ({active.blocks.length})</h3>
-							<Plus className="size-3.5 text-muted-foreground" aria-hidden />
+						<div className="relative mb-2 flex items-center justify-between">
+							<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+								Bloki ({active.blocks.length})
+							</h3>
+							<button
+								ref={addBlockAnchorRef}
+								type="button"
+								aria-label="Dodaj sekcję"
+								aria-expanded={addBlockOpen}
+								onClick={() => setAddBlockOpen((open) => !open)}
+								className={cn(
+									editorBtnRounded,
+									"inline-flex size-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+									addBlockOpen && "bg-muted text-foreground",
+								)}
+							>
+								<Plus className="size-4" aria-hidden />
+							</button>
+							<AddBlockCallout
+								open={addBlockOpen}
+								onClose={() => setAddBlockOpen(false)}
+								onAdd={addBlock}
+								anchorRef={addBlockAnchorRef}
+							/>
 						</div>
 						<EditorCanvas
 							blocks={active.blocks}

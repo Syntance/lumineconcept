@@ -19,6 +19,8 @@ import type {
 } from "./template-types";
 import { editorBtnRounded } from "./editor-chrome";
 import { BLOCK_META, createBlock, LEAF_PALETTE } from "./block-meta";
+import { FONT_OPTIONS } from "./email-fonts";
+import type { FontKey } from "./template-types";
 import {
 	AlignField,
 	ColorField,
@@ -43,6 +45,17 @@ function StyleEditor({
 	const patch = (p: Partial<BlockStyle>) => onChange({ ...style, ...p });
 	return (
 		<div className="flex flex-col gap-3">
+			<SelectField
+				label="Czcionka"
+				value={style.fontKey ?? ""}
+				options={[
+					{ value: "", label: "Domyślna (z motywu)" },
+					...FONT_OPTIONS,
+				]}
+				onChange={(value) =>
+					patch({ fontKey: value ? (value as FontKey) : undefined })
+				}
+			/>
 			{withColor ? (
 				<ColorField label="Kolor tekstu" value={style.color ?? "#2a1f14"} onChange={(color) => patch({ color })} />
 			) : null}
@@ -140,6 +153,17 @@ function ButtonEditor({ block, onChange }: { block: ButtonBlock; onChange: (next
 		<div className="flex flex-col gap-3">
 			<TextField label="Etykieta" value={block.label} onChange={(label) => onChange({ ...block, label })} />
 			<TextField label="Adres (URL)" value={block.href} onChange={(href) => onChange({ ...block, href })} />
+			<SelectField
+				label="Czcionka"
+				value={block.fontKey ?? ""}
+				options={[
+					{ value: "", label: "Domyślna (z motywu)" },
+					...FONT_OPTIONS,
+				]}
+				onChange={(value) =>
+					onChange({ ...block, fontKey: value ? (value as FontKey) : undefined })
+				}
+			/>
 			<div className="grid grid-cols-2 gap-3">
 				<ColorField label="Tło" value={block.bg ?? "#c8622a"} onChange={(bg) => onChange({ ...block, bg })} />
 				<ColorField label="Tekst" value={block.color ?? "#ffffff"} onChange={(color) => onChange({ ...block, color })} />
