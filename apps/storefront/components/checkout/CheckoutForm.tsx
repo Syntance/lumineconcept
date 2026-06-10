@@ -179,12 +179,6 @@ function getDefaultCheckoutFormData(): CheckoutFormData {
   };
 }
 
-function clampCheckoutStep(n: unknown): CheckoutStep {
-  const s = typeof n === "number" ? n : Number(n);
-  if (s === 2 || s === 3) return s;
-  return 1;
-}
-
 function clearCheckoutDraft(): void {
   try {
     sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
@@ -403,8 +397,9 @@ export function CheckoutForm() {
   const skipPersistDraftRef = useRef(false);
 
   /**
-   * Po odświeżeniu / powrocie na /checkout — przywróć krok i pola z szkicu
-   * powiązanego z aktualnym `cart_id` (inny koszyk = ignorujemy stary szkic).
+   * Po odświeżeniu / powrocie na /checkout — przywróć pola z szkicu
+   * powiązanego z aktualnym `cart_id`, ale zawsze od kroku 1 (Dane).
+   * Inny koszyk = czyścimy stary szkic.
    */
   useEffect(() => {
     if (!cartId) return;
@@ -437,7 +432,7 @@ export function CheckoutForm() {
         });
         return;
       }
-      setStep(clampCheckoutStep(parsed.step));
+      setStep(1);
       setFormData({
         ...getDefaultCheckoutFormData(),
         ...parsed.formData,
