@@ -8,6 +8,8 @@
  * filter).
  */
 
+import { bankTransferEmailLines } from "./bank-transfer";
+
 export type OrderEmailItem = {
   title: string;
   quantity: number;
@@ -237,5 +239,46 @@ Jeśli płatność została zaksięgowana, zwrot pojawi się na koncie w 3–5 d
 Masz pytania? Odpowiedz na tego maila.
 
 ${BRAND.name} · lumineconcept.pl`,
+  };
+}
+
+export function renderBankTransferPendingEmail(payload: OrderEmailPayload) {
+  const num = formatOrderNumber(payload);
+  const bt = bankTransferEmailLines(payload.displayId ?? payload.orderId.slice(-8));
+
+  const transferBlock = `<div style="margin:16px 0;padding:16px;background:${BRAND.bg};border-radius:6px;font-size:14px;line-height:1.7;">
+      <div style="font-weight:600;margin-bottom:8px;">Dane do przelewu</div>
+      <div><span style="color:${BRAND.mute};">Odbiorca:</span> ${escapeHtml(bt.recipientName)}</div>
+      <div><span style="color:${BRAND.mute};">Adres:</span> ${escapeHtml(bt.address)}</div>
+      <div><span style="color:${BRAND.mute};">IBAN:</span> <span style="font-family:monospace;font-weight:600;">${escapeHtml(bt.ibanDisplay)}</span></div>
+      <div><span style="color:${BRAND.mute};">SWIFT / BIC:</span> <span style="font-family:monospace;font-weight:600;">${escapeHtml(bt.swift)}</span></div>
+      <div><span style="color:${BRAND.mute};">Tytuł przelewu:</span> ${escapeHtml(bt.transferTitle)}</div>
+      <div><span style="color:${BRAND.mute};">Kwota:</span> <strong>${escapeHtml(formatPrice(payload.totalMinor, payload.currencyCode))}</strong></div>
+      <div style="margin-top:8px;color:${BRAND.mute};font-size:13px;">Termin płatności: ${bt.paymentDays} dni roboczych od złożenia zamówienia.</div>
+    </div>`;
+
+  return {
+    subject: `Zamówienie ${num} — dane do przelewu`,
+    html: wrap({
+      preheader: `Opłać zamówienie ${num} przelewem w ciągu ${bt.paymentDays} dni roboczych.`,
+      heading: `Zamówienie ${num} czeka na wpłatę`,
+      intro: `Dziękujemy za złożenie zamówienia. Opłać je przelewem tradycyjnym — po zaksięgowaniu wpłaty wyślemy potwierdzenie i rozpoczniemy realizację.`,
+      body: transferBlock + renderItemsTable(payload) + renderAddress(payload),
+    }),
+    text: `Zamówienie ${num} czeka na wpłatę.
+
+Opłać przelewem w ciągu ${bt.paymentDays} dni roboczych:
+
+Odbiorca: ${bt.recipientName}
+Adres: ${bt.address}
+IBAN: ${bt.ibanDisplay}
+SWIFT / BIC: ${bt.swift}
+Tytuł przelewu: ${bt.transferTitle}
+Kwota: ${formatPrice(payload.totalMinor, payload.currencyCode)}
+
+${plainOrderLines(payload)}
+
+${BRAND.name} · lumineconcept.pl
+Masz pytanie? Odpowiedz na tego maila.`,
   };
 }

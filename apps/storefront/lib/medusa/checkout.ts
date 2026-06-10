@@ -457,15 +457,27 @@ export function attachOrderNotes(orderId: string, orderNotes: string): void {
   });
 }
 
-/** Mail z danymi do przelewu tradycyjnego (szablon z magazynu). */
+/** Mail z danymi do przelewu tradycyjnego (backend Medusa + Resend). */
 export function notifyBankTransferPending(orderId: string): void {
   if (!orderId) return;
   if (typeof window === "undefined") return;
 
-  void fetch("/api/checkout/notify-bank-transfer", {
+  const base = resolveMedusaFetchBase();
+  const url = `${base}/store/custom/notify-bank-transfer`;
+  const payload = JSON.stringify({ order_id: orderId });
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+      : {}),
+  };
+
+  void fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ order_id: orderId }),
+    headers,
+    body: payload,
     keepalive: true,
   }).catch((e) => {
     console.warn("[mail] notify-bank-transfer fire-and-forget error", e);

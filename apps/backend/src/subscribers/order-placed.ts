@@ -3,7 +3,7 @@ import type { IOrderModuleService } from "@medusajs/framework/types";
 import { Modules } from "@medusajs/framework/utils";
 import crypto from "node:crypto";
 import { captureError } from "../lib/sentry";
-import { renderOrderPlacedEmail } from "../lib/email-templates";
+import { renderOrderPlacedEmail, renderBankTransferPendingEmail } from "../lib/email-templates";
 import {
   buildOrderEmailPayload,
   sendTransactionalEmail,
@@ -96,9 +96,29 @@ export default async function orderPlacedHandler({
     if (
       orderAwaitingBankTransfer(order as unknown as Record<string, unknown>)
     ) {
-      logger.info(
-        `[order-placed] bank transfer pending — pomijam generic placed email (${order.id})`,
-      );
+      try {
+        const payload = buildOrderEmailPayload(
+          order as unknown as Record<string, unknown>,
+        );
+        const { subject, html, text } = renderBankTransferPendingEmail(payload);
+        await withTimeout("email-bank-transfer", 6000, async () => {
+          await sendTransactionalEmail(container, {
+            to: order.email!,
+            subject,
+            html,
+            text,
+            context: "bank-transfer-pending",
+            orderId: order.id,
+          });
+        });
+      } catch (e) {
+        console.error("[order-placed] bank transfer email failed", e);
+        captureError(e, {
+          subscriber: "order-placed",
+          step: "email-bank-transfer",
+          orderId: order.id,
+        });
+      }
     } else {
     try {
       const payload = buildOrderEmailPayload(
