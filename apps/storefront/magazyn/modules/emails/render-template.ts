@@ -225,7 +225,7 @@ function emailAssetsBaseUrl(): string {
 }
 
 function collectFontKeys(template: EmailTemplate): FontKey[] {
-	const keys = new Set<FontKey>([template.theme.fontKey]);
+	const keys = new Set<FontKey>([template.theme.fontKey, template.theme.headerFontKey ?? template.theme.fontKey]);
 
 	function trackStyle(style?: BlockStyle) {
 		if (style?.fontKey) keys.add(style.fontKey);
@@ -281,14 +281,15 @@ export function renderTemplate(template: EmailTemplate, ctx: EmailRenderContext)
 
 	const headerEyebrow = theme.headerEyebrow?.trim() ?? "";
 	const showHeader = Boolean(headerEyebrow || theme.brandName?.trim());
+	const headerFontFamily = FONT_STACKS[theme.headerFontKey ?? theme.fontKey];
 	const header = showHeader
-		? `<tr><td style="background:${theme.headerBg};padding:24px 32px">${
+		? `<tr><td style="background:${theme.headerBg};padding:24px 32px;font-family:${headerFontFamily}">${
 				headerEyebrow
-					? `<p style="margin:0 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:${theme.headerText};opacity:0.85">${mergeHtml(headerEyebrow, ctx.vars)}</p>`
+					? `<p style="margin:0 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:${theme.headerText};opacity:0.85;font-family:${headerFontFamily}">${mergeHtml(headerEyebrow, ctx.vars)}</p>`
 					: ""
 			}${
 				theme.brandName?.trim()
-					? `<p style="margin:0;font-size:24px;color:${theme.headerText};letter-spacing:0.05em">${esc(theme.brandName.trim())}</p>`
+					? `<p style="margin:0;font-size:24px;color:${theme.headerText};letter-spacing:0.05em;font-family:${headerFontFamily}">${esc(theme.brandName.trim())}</p>`
 					: ""
 			}</td></tr>`
 		: "";
