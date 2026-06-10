@@ -58,7 +58,8 @@ type Body = {
  */
 export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   if (ratelimit) {
-    const identifier = req.headers.get("x-forwarded-for") ?? "anonymous";
+    const xForwardedFor = req.headers["x-forwarded-for"];
+    const identifier = (typeof xForwardedFor === "string" ? xForwardedFor : xForwardedFor?.[0]) ?? "anonymous";
     const { success, limit, reset, remaining } = await ratelimit.limit(identifier);
 
     if (!success) {
