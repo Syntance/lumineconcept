@@ -1,5 +1,6 @@
 import type { Address } from "@lumine/types";
 import type { HttpTypes } from "@medusajs/types";
+import { toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
 import { getCart } from "./cart";
 import { medusa } from "./client";
 import { resolveMedusaFetchBase } from "./resolve-fetch-base";
@@ -559,9 +560,7 @@ function readCheckoutDraftFormData(): CheckoutDraftFormData | null {
 }
 
 function cartAmountToMinor(value: unknown): number {
-  const n = Number(value ?? 0);
-  if (!Number.isFinite(n)) return 0;
-  return Math.round(n);
+  return toMinorUnitsFromDecimal(Number(value ?? 0));
 }
 
 /**
@@ -721,16 +720,22 @@ export async function notifyBankTransferPending(input: {
           order_id: orderId,
           email: email.trim(),
           display_id: input.displayId,
-          total: input.totalMinor,
-          item_total: input.itemTotalMinor,
-          shipping_total: input.shippingTotalMinor,
+          total: toMinorUnitsFromDecimal(input.totalMinor),
+          item_total:
+            input.itemTotalMinor != null
+              ? toMinorUnitsFromDecimal(input.itemTotalMinor)
+              : undefined,
+          shipping_total:
+            input.shippingTotalMinor != null
+              ? toMinorUnitsFromDecimal(input.shippingTotalMinor)
+              : undefined,
           currency_code: "PLN",
           customer_name: input.customerName,
           payment_provider_id: providerId,
           items: input.items?.map((item) => ({
             title: item.title,
             quantity: item.quantity,
-            total: item.totalMinor,
+            total: toMinorUnitsFromDecimal(item.totalMinor),
             thumbnail: item.thumbnail ?? null,
           })),
         }),
