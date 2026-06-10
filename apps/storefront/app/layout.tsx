@@ -111,6 +111,7 @@ export default function RootLayout({
   return (
     <html lang="pl" className={`${gilroy.variable} ${chronicle.variable} ${binerka.variable}`}>
       <head>
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <link rel="preconnect" href="https://eu.posthog.com" />
         <link rel="preconnect" href="https://eu.i.posthog.com" />
         <link rel="preconnect" href="https://eu-assets.i.posthog.com" />
