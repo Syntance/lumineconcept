@@ -20,7 +20,7 @@ import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/glob
 import { buildShopListingBreadcrumbs } from "@/lib/medusa/shop-breadcrumbs";
 import { ShopGridClient } from "./client";
 
-const INITIAL_PAGE_SIZE = 24;
+const INITIAL_PAGE_SIZE = 12;
 
 export const metadata: Metadata = {
   title: "Gotowe wzory z plexi — cenniki, tabliczki, menu, QR | Lumine Concept",
