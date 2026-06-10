@@ -25,6 +25,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       body: formData,
+      signal: AbortSignal.timeout(10_000),
     });
     const json = await result.json() as { success: boolean; "error-codes"?: string[] };
 

@@ -6,6 +6,9 @@ import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
+import { CheckoutTrustBadges } from "./CheckoutTrustBadges";
+import { isP24CircuitOpen, recordP24Failure } from "@/lib/checkout/p24-circuit-breaker";
+import { verifyTurnstileToken } from "@/lib/checkout/verify-turnstile";
 import {
   trackCheckoutAbandon,
   trackCheckoutStart,
@@ -65,6 +68,44 @@ function validateNip(nip: string): boolean {
     .reduce((acc, digit, i) => acc + parseInt(digit, 10) * (weights[i] || 0), 0);
   const checksum = sum % 11;
   return checksum === parseInt(cleaned[9] || "0", 10);
+}
+
+type ValidatedField =
+  | "email"
+  | "phone"
+  | "postalCode"
+  | "firstName"
+  | "lastName"
+  | "address"
+  | "city";
+
+function getFieldValidationError(field: ValidatedField, value: string): string | null {
+  switch (field) {
+    case "email":
+      if (!value.trim()) return "Email jest wymagany";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+        return "Podaj poprawny adres email";
+      }
+      return null;
+    case "phone":
+      if (!value.trim()) return "Telefon jest wymagany";
+      if (!validatePhone(value)) return "Podaj numer w formacie +48 XXX XXX XXX";
+      return null;
+    case "postalCode":
+      if (!value.trim()) return "Kod pocztowy jest wymagany";
+      if (!validatePostalCode(value)) return "Kod pocztowy: format XX-XXX";
+      return null;
+    case "firstName":
+      return value.trim() === "" ? "Imię jest wymagane" : null;
+    case "lastName":
+      return value.trim() === "" ? "Nazwisko jest wymagane" : null;
+    case "address":
+      return value.trim() === "" ? "Adres jest wymagany" : null;
+    case "city":
+      return value.trim() === "" ? "Miasto jest wymagane" : null;
+    default:
+      return null;
+  }
 }
 
 type CheckoutStep = 1 | 2 | 3;
@@ -286,6 +327,13 @@ export function CheckoutForm() {
   const [preparingPayment, setPreparingPayment] = useState(false);
   const [shippingSaveError, setShippingSaveError] = useState<string | null>(null);
   const [availableProviderIds, setAvailableProviderIds] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<ValidatedField, string>>
+  >({});
+  const [touchedFields, setTouchedFields] = useState<
+    Partial<Record<ValidatedField, boolean>>
+  >({});
+  const [p24CircuitOpen, setP24CircuitOpen] = useState(false);
   const [formData, setFormData] = useState<CheckoutFormData>(() =>
     getDefaultCheckoutFormData(),
   );
@@ -397,23 +445,54 @@ export function CheckoutForm() {
     [],
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setP24CircuitOpen(isP24CircuitOpen());
+  }, [step]);
+
+  /** Circuit breaker P24 — przełącz na przelew tradycyjny gdy online pada. */
+  useEffect(() => {
+    if (!p24CircuitOpen) return;
+    if (formData.paymentProviderId === PRZELEWY24_PROVIDER_ID) {
+      updateField("paymentProviderId", SYSTEM_PAYMENT_PROVIDER_ID);
+    }
+  }, [p24CircuitOpen, formData.paymentProviderId, updateField]);
+
+  const handleFieldBlur = useCallback(
+    (field: ValidatedField) => {
+      setTouchedFields((prev) => ({ ...prev, [field]: true }));
+      const value = formData[field];
+      const error = getFieldValidationError(field, value);
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        if (error) next[field] = error;
+        else delete next[field];
+        return next;
+      });
+      if (error) {
+        trackFormFieldError({
+          formName: "checkout_contact",
+          field,
+          error,
+          step: 1,
+        });
+      }
+      if (field === "email" && formData.email.includes("@")) {
+        identifyLead({ email: formData.email, source: "checkout" });
+      }
+    },
+    [formData],
+  );
+
+  const showFieldError = (field: ValidatedField) =>
+    touchedFields[field] && fieldErrors[field];
+
   const handleFocus = useCallback(() => {
     if (!formStarted) {
       setFormStarted(true);
       trackFormStart("checkout_contact");
     }
   }, [formStarted]);
-
-  /**
-   * Identyfikujemy użytkownika dopiero przy `onBlur` z poprawnym emailem,
-   * żeby nie strzelać `identify()` na każdą literę. Notion: "Checkout (krok 1: email):
-   * `posthog.identify(email)` po blur na polu email".
-   */
-  const handleEmailBlur = useCallback(() => {
-    if (formData.email.includes("@")) {
-      identifyLead({ email: formData.email, source: "checkout" });
-    }
-  }, [formData.email]);
 
   const isNipValid = validateNip(formData.nip);
   const vatValid =
@@ -428,9 +507,7 @@ export function CheckoutForm() {
     formData.address.trim() !== "" &&
     formData.city.trim() !== "" &&
     validatePostalCode(formData.postalCode) &&
-    vatValid &&
-    formData.acceptTerms &&
-    formData.acceptRodo;
+    vatValid;
 
   const canGoToStep3 = formData.shippingOptionId !== "";
 
@@ -441,7 +518,8 @@ export function CheckoutForm() {
     !!cartId &&
     items.length > 0 &&
     formData.shippingOptionId !== "" &&
-    !submitting;
+    !submitting &&
+    !submittingRef.current;
 
   const handleSubmit = useCallback(async () => {
     if (!cartId) return;
@@ -476,39 +554,9 @@ export function CheckoutForm() {
       return;
     }
 
-    try {
-      const verifyRes = await fetch("/api/store/custom/verify-turnstile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: payment.turnstileToken }),
-      });
-      
-      if (!verifyRes.ok) {
-        setSubmitError("Weryfikacja nie powiodła się. Odśwież stronę i spróbuj ponownie.");
-        setSubmitting(false);
-        setSubmitSlow(false);
-        if (submitSlowTimerRef.current) {
-          clearTimeout(submitSlowTimerRef.current);
-          submitSlowTimerRef.current = null;
-        }
-        submittingRef.current = false;
-        return;
-      }
-
-      const verifyData = await verifyRes.json();
-      if (!verifyData.success) {
-        setSubmitError("Weryfikacja nie powiodła się. Odśwież stronę i spróbuj ponownie.");
-        setSubmitting(false);
-        setSubmitSlow(false);
-        if (submitSlowTimerRef.current) {
-          clearTimeout(submitSlowTimerRef.current);
-          submitSlowTimerRef.current = null;
-        }
-        submittingRef.current = false;
-        return;
-      }
-    } catch (error) {
-      setSubmitError("Błąd weryfikacji. Sprawdź połączenie i spróbuj ponownie.");
+    const turnstileOk = await verifyTurnstileToken(payment.turnstileToken);
+    if (!turnstileOk) {
+      setSubmitError("Weryfikacja nie powiodła się. Odśwież stronę i spróbuj ponownie.");
       setSubmitting(false);
       setSubmitSlow(false);
       if (submitSlowTimerRef.current) {
@@ -621,6 +669,10 @@ export function CheckoutForm() {
       }
     } catch (e) {
       console.error("[checkout] błąd składania zamówienia", e);
+      if (payment.paymentProviderId === PRZELEWY24_PROVIDER_ID) {
+        recordP24Failure();
+        setP24CircuitOpen(isP24CircuitOpen());
+      }
       if (isCartAlreadyCompletedError(e)) {
         setSubmitError(
           "Koszyk został już sfinalizowany wcześniej. Zaraz zaczniesz od nowa…",
@@ -723,11 +775,18 @@ export function CheckoutForm() {
                 autoFocus
                 value={formData.email}
                 onFocus={handleFocus}
-                onBlur={handleEmailBlur}
+                onBlur={() => handleFieldBlur("email")}
                 onChange={(e) => updateField("email", e.target.value)}
-                className={INPUT_CLASS}
+                className={`${INPUT_CLASS} ${showFieldError("email") ? "border-red-300" : ""}`}
                 placeholder="twoj@email.pl"
+                aria-invalid={showFieldError("email") ? true : undefined}
+                aria-describedby={showFieldError("email") ? "email-error" : undefined}
               />
+              {showFieldError("email") && (
+                <p id="email-error" className="mt-1 text-xs text-red-500" role="alert">
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -741,9 +800,16 @@ export function CheckoutForm() {
                   autoComplete="given-name"
                   required
                   value={formData.firstName}
+                  onBlur={() => handleFieldBlur("firstName")}
                   onChange={(e) => updateField("firstName", e.target.value)}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} ${showFieldError("firstName") ? "border-red-300" : ""}`}
+                  aria-invalid={showFieldError("firstName") ? true : undefined}
                 />
+                {showFieldError("firstName") && (
+                  <p className="mt-1 text-xs text-red-500" role="alert">
+                    {fieldErrors.firstName}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="lastName" className={LABEL_CLASS}>
@@ -755,9 +821,16 @@ export function CheckoutForm() {
                   autoComplete="family-name"
                   required
                   value={formData.lastName}
+                  onBlur={() => handleFieldBlur("lastName")}
                   onChange={(e) => updateField("lastName", e.target.value)}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} ${showFieldError("lastName") ? "border-red-300" : ""}`}
+                  aria-invalid={showFieldError("lastName") ? true : undefined}
                 />
+                {showFieldError("lastName") && (
+                  <p className="mt-1 text-xs text-red-500" role="alert">
+                    {fieldErrors.lastName}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="phone" className={LABEL_CLASS}>
@@ -770,10 +843,18 @@ export function CheckoutForm() {
                   inputMode="tel"
                   required
                   value={formData.phone}
+                  onBlur={() => handleFieldBlur("phone")}
                   onChange={(e) => updateField("phone", e.target.value)}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} ${showFieldError("phone") ? "border-red-300" : ""}`}
                   placeholder="+48 000 000 000"
+                  aria-invalid={showFieldError("phone") ? true : undefined}
+                  aria-describedby={showFieldError("phone") ? "phone-error" : undefined}
                 />
+                {showFieldError("phone") && (
+                  <p id="phone-error" className="mt-1 text-xs text-red-500" role="alert">
+                    {fieldErrors.phone}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="postalCode" className={LABEL_CLASS}>
@@ -787,10 +868,20 @@ export function CheckoutForm() {
                   pattern="\d{2}-\d{3}"
                   required
                   value={formData.postalCode}
+                  onBlur={() => handleFieldBlur("postalCode")}
                   onChange={(e) => updateField("postalCode", e.target.value)}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} ${showFieldError("postalCode") ? "border-red-300" : ""}`}
                   placeholder="00-000"
+                  aria-invalid={showFieldError("postalCode") ? true : undefined}
+                  aria-describedby={
+                    showFieldError("postalCode") ? "postalCode-error" : undefined
+                  }
                 />
+                {showFieldError("postalCode") && (
+                  <p id="postalCode-error" className="mt-1 text-xs text-red-500" role="alert">
+                    {fieldErrors.postalCode}
+                  </p>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="address" className={LABEL_CLASS}>
@@ -802,10 +893,17 @@ export function CheckoutForm() {
                   autoComplete="street-address"
                   required
                   value={formData.address}
+                  onBlur={() => handleFieldBlur("address")}
                   onChange={(e) => updateField("address", e.target.value)}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} ${showFieldError("address") ? "border-red-300" : ""}`}
                   placeholder="ul. Przykładowa 1/2"
+                  aria-invalid={showFieldError("address") ? true : undefined}
                 />
+                {showFieldError("address") && (
+                  <p className="mt-1 text-xs text-red-500" role="alert">
+                    {fieldErrors.address}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="city" className={LABEL_CLASS}>
@@ -817,9 +915,16 @@ export function CheckoutForm() {
                   autoComplete="address-level2"
                   required
                   value={formData.city}
+                  onBlur={() => handleFieldBlur("city")}
                   onChange={(e) => updateField("city", e.target.value)}
-                  className={INPUT_CLASS}
+                  className={`${INPUT_CLASS} ${showFieldError("city") ? "border-red-300" : ""}`}
+                  aria-invalid={showFieldError("city") ? true : undefined}
                 />
+                {showFieldError("city") && (
+                  <p className="mt-1 text-xs text-red-500" role="alert">
+                    {fieldErrors.city}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -884,7 +989,8 @@ export function CheckoutForm() {
                 className="mt-0.5 h-4 w-4 rounded border-brand-300 text-accent focus:ring-accent"
               />
               <span className="text-sm text-brand-600">
-                Chcę otrzymywać inspiracje, nowości i oferty specjalne na email
+                Wyrażam zgodę na otrzymywanie informacji handlowych drogą elektroniczną
+                (newsletter) zgodnie z ustawą o świadczeniu usług drogą elektroniczną
               </span>
             </label>
 
@@ -1037,7 +1143,13 @@ export function CheckoutForm() {
               selectedProviderId={formData.paymentProviderId}
               onSelect={(id: string) => updateField("paymentProviderId", id)}
               availableProviderIds={availableProviderIds}
+              disabledProviderIds={
+                p24CircuitOpen ? [PRZELEWY24_PROVIDER_ID] : []
+              }
+              p24CircuitOpen={p24CircuitOpen}
             />
+
+            <CheckoutTrustBadges />
 
             {/* Order Notes */}
             <div>
