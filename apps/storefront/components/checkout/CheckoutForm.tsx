@@ -7,7 +7,7 @@ import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges";
-import { CheckoutTurnstile } from "./CheckoutTurnstile";
+import { CheckoutTurnstile, type CheckoutTurnstileHandle } from "./CheckoutTurnstile";
 import { isP24CircuitOpen, recordP24Failure } from "@/lib/checkout/p24-circuit-breaker";
 import { verifyTurnstileToken } from "@/lib/checkout/verify-turnstile";
 import {
@@ -231,6 +231,7 @@ export function CheckoutForm() {
   const [formStarted, setFormStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const turnstileRef = useRef<CheckoutTurnstileHandle>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   /**
    * Po ~3s od kliknięcia „Zamawiam i płacę" pokazujemy dodatkowy komunikat
@@ -577,9 +578,17 @@ export function CheckoutForm() {
         return;
       }
 
-      const turnstileOk = await verifyTurnstileToken(payment.turnstileToken);
-      if (!turnstileOk) {
-        setSubmitError("Weryfikacja nie powiodła się. Odśwież stronę i spróbuj ponownie.");
+      const turnstileResult = await verifyTurnstileToken(payment.turnstileToken);
+      if (!turnstileResult.ok) {
+        updateField("turnstileToken", "");
+        turnstileRef.current?.reset();
+        const message =
+          turnstileResult.reason === "config"
+            ? "Nie udało się zweryfikować zabezpieczenia. Spróbuj ponownie za chwilę."
+            : turnstileResult.reason === "network"
+              ? "Brak połączenia z serwerem. Sprawdź sieć i spróbuj ponownie."
+              : "Weryfikacja wygasła — zaznacz ponownie pole „Potwierdź, że jesteś człowiekiem”.";
+        setSubmitError(message);
         setSubmitting(false);
         setSubmitSlow(false);
         if (submitSlowTimerRef.current) {
@@ -1201,10 +1210,14 @@ export function CheckoutForm() {
 
             {TURNSTILE_ENABLED ? (
               <CheckoutTurnstile
+                ref={turnstileRef}
                 siteKey={TURNSTILE_SITE_KEY}
                 onSuccess={(token) => updateField("turnstileToken", token)}
                 onError={() => updateField("turnstileToken", "")}
-                onExpire={() => updateField("turnstileToken", "")}
+                onExpire={() => {
+                  updateField("turnstileToken", "");
+                  turnstileRef.current?.reset();
+                }}
               />
             ) : null}
 
