@@ -516,7 +516,7 @@ export function CheckoutForm() {
         redirectToOrderConfirmation(
           result.order.id,
           result.order.display_id ?? undefined,
-          isBankTransfer ? { payment: "bank_transfer", amount: total } : undefined,
+          isBankTransfer ? { payment: "bank_transfer" } : undefined,
         );
         return;
       }

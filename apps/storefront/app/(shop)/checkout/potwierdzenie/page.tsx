@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CheckCircle } from "lucide-react";
 import { CheckoutConfirmationGuard } from "@/components/checkout/CheckoutConfirmationGuard";
 import { BankTransferInstructions } from "@/components/checkout/BankTransferInstructions";
+import { getOrder } from "@/lib/medusa/order";
 
 export const metadata: Metadata = {
   title: "Potwierdzenie zamówienia",
@@ -14,16 +15,27 @@ interface PageProps {
     order_id?: string;
     display_id?: string;
     payment?: string;
-    amount?: string;
   }>;
 }
 
 export default async function OrderConfirmationPage({ searchParams }: PageProps) {
-  const { order_id: orderId, display_id: displayId, payment, amount: amountRaw } =
+  const { order_id: orderId, display_id: displayIdQuery, payment } =
     await searchParams;
   const isBankTransfer = payment === "bank_transfer";
-  const amount = amountRaw ? Number(amountRaw) : undefined;
-  const parsedAmount = amount != null && Number.isFinite(amount) ? amount : undefined;
+
+  // Pobieramy order z API żeby mieć pewność co do kwoty (nie ufamy URL).
+  // Dla przelewu tradycyjnego kwota musi być z serwera, nie z przeglądarki.
+  let orderAmount: number | undefined;
+  let displayId = displayIdQuery;
+  if (orderId) {
+    const order = await getOrder(orderId);
+    if (order) {
+      orderAmount = order.total;
+      if (!displayId && order.display_id) {
+        displayId = String(order.display_id);
+      }
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-16 text-center">
@@ -55,7 +67,7 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps)
       )}
 
       {isBankTransfer ? (
-        <BankTransferInstructions displayId={displayId} amount={parsedAmount} />
+        <BankTransferInstructions displayId={displayId} amount={orderAmount} />
       ) : null}
 
       <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
