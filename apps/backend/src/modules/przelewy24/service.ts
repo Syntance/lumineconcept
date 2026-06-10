@@ -236,6 +236,7 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
           urlReturn,
           urlStatus,
           channel,
+          waitForResult: false,
           sign,
         },
       );
