@@ -69,7 +69,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 	);
 	const [uploadSettings, setUploadSettings] = useState<ProductUploadSettings>(
 		() =>
-			product?.uploadSettings ?? { enabled: false, required: true, count: 1, label: "" },
+			product?.uploadSettings ?? { enabled: false, required: false, count: 1, label: "" },
 	);
 
 	const [error, setError] = useState<string | null>(null);
@@ -365,6 +365,8 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 										...prev,
 										enabled,
 										count: enabled && prev.count < 1 ? 1 : prev.count,
+										/** Nowe pole uploadu domyślnie opcjonalne — wymaganie włącza osobny przełącznik. */
+										...(enabled && !prev.enabled ? { required: false } : {}),
 									}))
 								}
 								onRequiredChange={(required) =>

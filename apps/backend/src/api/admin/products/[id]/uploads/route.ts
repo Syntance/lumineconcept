@@ -3,9 +3,18 @@ import type { IProductModuleService } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 
 function parseBooleanMeta(value: unknown): boolean | undefined {
-  if (value === "true" || value === true) return true
-  if (value === "false" || value === false) return false
+  if (value === true || value === 1 || value === "1") return true
+  if (value === false || value === 0 || value === "0") return false
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === "true" || normalized === "yes") return true
+    if (normalized === "false" || normalized === "no") return false
+  }
   return undefined
+}
+
+function metadataHasUploadRequiredKey(meta: Record<string, unknown>): boolean {
+  return Object.prototype.hasOwnProperty.call(meta, "uploads_required")
 }
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
@@ -19,7 +28,11 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 
   res.json({
     uploads_enabled: enabled,
-    uploads_required: enabled ? (requiredRaw ?? true) : false,
+    uploads_required: enabled
+      ? metadataHasUploadRequiredKey(meta)
+        ? (requiredRaw ?? false)
+        : true
+      : false,
     uploads_count: Number(meta.uploads_count) || 5,
     uploads_label: typeof meta.uploads_label === "string" ? meta.uploads_label : "",
   })
