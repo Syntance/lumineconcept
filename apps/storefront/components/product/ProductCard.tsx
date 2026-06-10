@@ -48,6 +48,8 @@ interface ProductCardProps {
   globalColors?: GlobalConfigOption[];
   /** Opis pod tytułem (HTML z Medusy, po sanityzacji — patrz mapowanie `SimpleProduct`). */
   description?: string | null;
+  /** Gdy true — image ładuje się eager (above fold). */
+  priority?: boolean;
 }
 
 function htmlPlainText(html: string): string {
@@ -84,6 +86,7 @@ export function ProductCard({
   globalColors: _globalColors,
   description,
   hideMaterialRow = false,
+  priority = false,
 }: ProductCardProps) {
   const productHref = href ?? `/sklep/gotowe-wzory/${handle}`;
   const dimensionsLabel = getProductDimensionsLabel(productMetadata, variantMetadata);
@@ -139,9 +142,10 @@ export function ProductCard({
               alt={title}
               width={imageWidth}
               height={imageHeight}
-              loading="lazy"
+              loading={priority ? "eager" : "lazy"}
+              quality={80}
               className="relative z-10 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
               unoptimized={thumbnail.startsWith("http://localhost")}
             />
             <Image

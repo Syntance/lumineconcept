@@ -248,6 +248,7 @@ export default async function ShopHubPage() {
                           sharpCorners={sharpCorners}
                           imageAspectClassName={PRODUCT_IMAGE_ASPECT_CLASS}
                           imageAreaClassName="bg-white"
+                          priority
                         />
                       </div>
                       <p className="text-center text-lg font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">

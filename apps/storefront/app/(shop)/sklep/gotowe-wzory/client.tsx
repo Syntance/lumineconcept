@@ -317,7 +317,7 @@ export function ShopGridClient({
         ) : products.length > 0 ? (
           <>
             <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:mt-4 lg:grid-cols-3">
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <div key={product.id} className="relative">
                   <ProductCard
                     handle={product.handle}
@@ -335,6 +335,7 @@ export function ShopGridClient({
                     productMetadata={product.metadata}
                     variantMetadata={product.firstVariantMetadata}
                     globalColors={globalColors}
+                    priority={index < 6}
                   />
                 </div>
               ))}
