@@ -47,6 +47,10 @@ const r2RemotePattern = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
