@@ -37,19 +37,29 @@ interface PaymentSelectorProps {
   onSelect: (providerId: string) => void;
   /** Aktywne providery w regionie — filtrujemy do widocznych w checkoutcie. */
   availableProviderIds?: string[];
+  /** Providery tymczasowo wyłączone (np. circuit breaker P24). */
+  disabledProviderIds?: string[];
+  /** Komunikat gdy P24 jest wyłączony z powodu błędów. */
+  p24CircuitOpen?: boolean;
 }
 
 export function PaymentSelector({
   selectedProviderId,
   onSelect,
   availableProviderIds,
+  disabledProviderIds = [],
+  p24CircuitOpen = false,
 }: PaymentSelectorProps) {
   const visibleIds = new Set<string>(CHECKOUT_VISIBLE_PROVIDER_IDS);
+  const disabledSet = new Set(disabledProviderIds);
   const isRegistered = (id: string) =>
     !availableProviderIds || availableProviderIds.includes(id);
 
   const options = PAYMENT_OPTIONS.filter(
-    (option) => visibleIds.has(option.id) && isRegistered(option.id),
+    (option) =>
+      visibleIds.has(option.id) &&
+      isRegistered(option.id) &&
+      !disabledSet.has(option.id),
   );
 
   if (options.length === 0) {
@@ -66,6 +76,12 @@ export function PaymentSelector({
 
   return (
     <div className="space-y-3">
+      {p24CircuitOpen && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-brand-800">
+          Płatność online Przelewy24 jest chwilowo niedostępna. Wybierz{" "}
+          <strong>przelew tradycyjny</strong> — zamówienie przyjmujemy od razu.
+        </p>
+      )}
       {options.map((option) => {
         const Icon = option.icon;
         const isSelected = selectedProviderId === option.id;

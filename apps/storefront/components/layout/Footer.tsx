@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { SITE_CONTACT } from "@/lib/site-contact";
+import { FooterCookieSettings } from "@/components/layout/FooterCookieSettings";
 
 const FOOTER_LINKS = {
   Sklep: [
@@ -14,6 +15,7 @@ const FOOTER_LINKS = {
     { href: "/polityka-prywatnosci", label: "Polityka prywatności" },
     { href: "/dostawa-i-platnosci", label: "Dostawa i płatności" },
     { href: "/zwroty", label: "Reklamacje" },
+    { href: "/deklaracja-dostepnosci", label: "Deklaracja dostępności" },
   ],
 } as const;
 
@@ -91,6 +93,9 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t border-brand-700 pt-3 lg:mt-10 lg:pt-4">
+          <div className="mb-3 flex justify-center lg:justify-start">
+            <FooterCookieSettings />
+          </div>
           <div className="flex flex-col items-center gap-2 text-sm text-brand-400 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
             <p className="text-center lg:text-left">
               &copy; {new Date().getFullYear()} Lumine Concept. Wszelkie prawa zastrzeżone.
