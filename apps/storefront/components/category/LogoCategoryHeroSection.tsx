@@ -23,7 +23,7 @@ export function LogoCategoryHeroSection() {
           height={LOGO_HERO_BG_HEIGHT}
           priority
           fetchPriority="high"
-          sizes="100vw"
+          sizes="(max-width: 1024px) 640px, 1920px"
           className="block h-auto w-full select-none max-lg:absolute max-lg:inset-0 max-lg:h-full max-lg:w-full max-lg:object-cover max-lg:object-[45%_55%] lg:absolute lg:inset-0 lg:h-full lg:w-full lg:object-cover lg:object-[48%_58%]"
         />
 
