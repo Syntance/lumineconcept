@@ -131,18 +131,19 @@ export default async function ShopHubPage() {
                 className="shop-category-card group relative flex w-full overflow-hidden border border-brand-200 bg-white transition-shadow duration-300 hover:border-brand-400 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent max-sm:aspect-[3/1] max-sm:flex-row max-sm:items-stretch max-sm:p-0 sm:aspect-4/5 sm:flex-col sm:gap-0 sm:px-11 sm:pb-12 sm:pt-12 sm:h-full"
               >
                 <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden max-sm:hidden">
-                  <div className="relative h-full w-full">
+                  <div className="relative h-full w-full bg-brand-50">
                     <Image
                       src={cat.image}
                       alt=""
                       fill
+                      loading={index === 0 ? "eager" : "lazy"}
                       className={cn(
-                        "object-cover transition-transform duration-300",
+                        "relative z-10 object-cover transition-transform duration-300",
                         index === 0
                           ? "origin-bottom -translate-x-[1%] translate-y-[3.5%] scale-[1.05] object-bottom group-hover:scale-[1.1]"
                           : "object-center group-hover:scale-105",
                       )}
-                      sizes="33vw"
+                      sizes="(max-width: 640px) 0px, (max-width: 1280px) 33vw, 420px"
                       aria-hidden
                     />
                   </div>
@@ -171,12 +172,13 @@ export default async function ShopHubPage() {
                   </div>
                 </div>
 
-                <div className="absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden max-sm:block">
+                <div className="absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden bg-brand-50 max-sm:block">
                   <Image
                     src={cat.image}
                     alt={cat.title}
                     fill
-                    className="origin-center object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    className="relative z-10 origin-center object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
                     sizes="(max-width: 640px) 50vw, 0px"
                   />
                 </div>
