@@ -114,6 +114,20 @@ export default function RootLayout({
         <link rel="preconnect" href="https://eu.posthog.com" />
         <link rel="preconnect" href="https://eu.i.posthog.com" />
         <link rel="preconnect" href="https://eu-assets.i.posthog.com" />
+        <link
+          rel="preload"
+          href="/fonts/Gilroy-Regular.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/images/hero-main-wall.webp"
+          as="image"
+          type="image/webp"
+          fetchPriority="high"
+        />
       </head>
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">
         <CookieConsent />
