@@ -1,0 +1,1395 @@
+---
+description: Checkout & Payment Gateway — bezpieczeństwo, stabilność, compliance, standardy branżowe
+globs:
+  - "apps/storefront/src/app/(shop)/checkout/**"
+  - "apps/storefront/src/components/checkout/**"
+  - "apps/backend/src/modules/payment-*/**"
+  - "apps/backend/src/api/webhooks/**"
+  - "apps/backend/src/api/store/custom/*checkout*/**"
+  - "apps/backend/src/api/store/custom/*turnstile*/**"
+---
+
+# Checkout & Payment Gateway Standards
+
+Dokument definiuje twarde standardy dla Medusa checkout i integracji bramek płatniczych. Wszystkie punkty są **OBOWIĄZKOWE** dla nowych projektów. Bazuje na implementacji production-grade z audytu security/stability/compliance.
+
+---
+
+## 1. SECURITY — Bezpieczeństwo
+
+### 1.1 Rate Limiting (MUST)
+```typescript
+// Backend: apps/backend/src/api/store/custom/*/route.ts
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, "60s"), // 10 req/min per IP
+  prefix: "ratelimit:checkout",
+});
+
+const xForwardedFor = req.headers["x-forwarded-for"];
+const identifier = (typeof xForwardedFor === "string" ? xForwardedFor : xForwardedFor?.[0]) ?? "anonymous";
+const { success, limit, remaining, reset } = await ratelimit.limit(identifier);
+
+if (!success) {
+  return res.status(429).json({
+    error: "Too many requests",
+    limit,
+    remaining,
+    reset: new Date(reset),
+  });
+}
+```
+
+**Scope**: `/api/store/custom/prepare-checkout`, `/api/store/custom/verify-turnstile`, `/api/store/cart/complete`.
+
+**NEVER**: Nie używaj in-memory rate limitera (ginie przy restart / autoscale). Zawsze Redis (Upstash dla serverless).
+
+---
+
+### 1.2 CAPTCHA (Cloudflare Turnstile)
+
+**MUST**: CAPTCHA w ostatnim kroku checkout (przed submit), NIE wcześniej (frustruje, zabija konwersję).
+
+**Client** (`CheckoutForm.tsx`):
+```typescript
+import { Turnstile } from "@marsidev/react-turnstile";
+
+const [formData, setFormData] = useState({ turnstileToken: "" });
+
+<Turnstile
+  siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
+  onSuccess={(token: string) => setFormData(prev => ({ ...prev, turnstileToken: token }))}
+/>
+```
+
+**Server** (`apps/backend/src/api/store/custom/verify-turnstile/route.ts`):
+```typescript
+export async function POST(req: MedusaRequest, res: MedusaResponse) {
+  const { token } = req.body as { token?: string };
+  if (!token) return res.status(400).json({ success: false });
+
+  const secret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
+  const formData = new FormData();
+  formData.append("secret", secret);
+  formData.append("response", token);
+
+  const xForwardedFor = req.headers["x-forwarded-for"];
+  const ip = (typeof xForwardedFor === "string" ? xForwardedFor : xForwardedFor?.[0])?.split(",")[0]?.trim();
+  if (ip) formData.append("remoteip", ip);
+
+  try {
+    const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: formData,
+      signal: AbortSignal.timeout(10_000), // TIMEOUT obowiązkowy
+    });
+    const json = await result.json() as { success: boolean; "error-codes"?: string[] };
+    
+    if (json.success) {
+      return res.status(200).json({ success: true });
+    } else {
+      console.warn("[Turnstile] Weryfikacja failed:", json["error-codes"]);
+      return res.status(400).json({ success: false, errors: json["error-codes"] });
+    }
+  } catch (error: unknown) {
+    console.error("[Turnstile] Błąd API:", error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ success: false, message: "Błąd weryfikacji" });
+  }
+}
+```
+
+**Retry Logic** (`lib/checkout/verify-turnstile.ts`):
+```typescript
+const RETRY_DELAYS_MS = [500, 1500, 3000]; // exponential backoff
+
+export async function verifyTurnstileToken(token: string): Promise<boolean> {
+  for (let attempt = 0; attempt < RETRY_DELAYS_MS.length + 1; attempt++) {
+    try {
+      const response = await fetch("/api/store/custom/verify-turnstile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (response.ok) return true;
+    } catch (error) {
+      if (attempt < RETRY_DELAYS_MS.length) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[attempt] ?? 0));
+      }
+    }
+  }
+  return false;
+}
+```
+
+**CSP Headers** (`next.config.ts`):
+```typescript
+async headers() {
+  return [{
+    source: "/(.*)",
+    headers: [{
+      key: "Content-Security-Policy",
+      value: [
+        "script-src 'self' 'nonce-PLACEHOLDER' 'strict-dynamic' https://challenges.cloudflare.com",
+        "connect-src 'self' https://challenges.cloudflare.com",
+        "frame-src https://challenges.cloudflare.com",
+      ].join("; "),
+    }],
+  }];
+}
+```
+
+**NEVER**: Nie używaj reCAPTCHA (Google tracking, GDPR issues, wolniejsze). Turnstile to zero-friction, 0 cookies, GDPR-safe.
+
+---
+
+### 1.3 Payment Amount Verification (CRITICAL)
+
+**Problem**: Atakujący modyfikuje URL `/checkout?amount=100` → `?amount=1` → płaci 1 zł za zamówienie 1000 zł.
+
+**Solution**: **NIGDY** nie bierz kwoty z URL ani z ciała żądania od klienta.
+
+**MUST**:
+```typescript
+// Backend: apps/backend/src/modules/payment-p24/service.ts
+async initiatePayment(context: PaymentProviderContext): Promise<PaymentProviderSessionResponse> {
+  // Pobierz ŚWIEŻE dane z bazy, NIE z context.amount (może być sfałszowane)
+  const cart = await this.cartService.retrieve(context.resource_id);
+  const amount = cart.total; // Zawsze z DB
+
+  // Walidacja
+  if (context.amount !== amount) {
+    throw new Error(`Amount mismatch: client=${context.amount}, server=${amount}`);
+  }
+
+  // Teraz dopiero initiate payment w P24
+  const p24Response = await fetch(`${this.p24ApiUrl}/transaction/register`, {
+    method: "POST",
+    body: JSON.stringify({
+      merchantId: this.p24MerchantId,
+      amount: amount, // <-- Z DB, NIE z context.amount
+      currency: "PLN",
+      sessionId: context.resource_id,
+      sign: md5(`${context.resource_id}|${amount}|PLN|${this.p24Crc}`),
+    }),
+    signal: AbortSignal.timeout(30_000), // TIMEOUT obowiązkowy
+  });
+  // ...
+}
+```
+
+**NEVER**: Nie przekazuj kwoty w query params (`?amount=X`) ani w POST body od klienta do initiate payment.
+
+---
+
+### 1.4 Timeouts & AbortSignal (MUST)
+
+**Problem**: Provider pada → request wisi 5 min → user czeka → double-click → 2 płatności.
+
+**Solution**: Każdy fetch do zewnętrznego API = `AbortSignal.timeout(30_000)` (30s).
+
+```typescript
+const response = await fetch(providerUrl, {
+  method: "POST",
+  body: JSON.stringify(payload),
+  signal: AbortSignal.timeout(30_000), // 30s timeout
+});
+```
+
+**Scope**: P24, PayPo, Fakturownia, PostHog, VIES, Turnstile, GUS, CAPI.
+
+**NEVER**: Nie używaj `setTimeout` ręcznie. `AbortSignal.timeout()` to native API (Node 18+).
+
+---
+
+### 1.5 Webhook Signature Verification (CRITICAL)
+
+**P24 Webhook** (`apps/backend/src/api/webhooks/p24/route.ts`):
+```typescript
+export async function POST(req: MedusaRequest, res: MedusaResponse) {
+  const { sessionId, orderId, amount, currency, sign } = req.body;
+
+  // Weryfikuj PRZED jakąkolwiek logiką
+  const expectedSign = md5(`${sessionId}|${orderId}|${amount}|${currency}|${process.env.P24_CRC}`);
+  if (sign !== expectedSign) {
+    console.error("[P24 Webhook] Invalid signature");
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  // Idempotency check
+  const existing = await db.webhookEvents.findUnique({ where: { event_id: sessionId } });
+  if (existing) {
+    return res.status(200).json({ message: "Already processed" });
+  }
+
+  // Teraz dopiero verify transaction w P24 API
+  const verifyResponse = await fetch(`${p24ApiUrl}/transaction/verify`, {
+    method: "POST",
+    body: JSON.stringify({ sessionId, orderId, amount }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  // ...
+
+  // Zapisz event ID do idempotency
+  await db.webhookEvents.create({ data: { event_id: sessionId, provider: "p24", processed_at: new Date() } });
+  return res.status(200).json({ message: "OK" });
+}
+```
+
+**NEVER**: Nie ufaj query params w URL (`?status=success`). Zawsze pull status z API providera PO weryfikacji podpisu.
+
+---
+
+### 1.6 XSS Protection (Input Sanitization)
+
+**Problem**: User wpisuje `<script>alert('XSS')</script>` w order notes → payload zapisany w DB → admin otwiera order → XSS.
+
+**Solution**: Sanitize przed zapisem w DB.
+
+```typescript
+import DOMPurify from "isomorphic-dompurify";
+
+const sanitizedNotes = DOMPurify.sanitize(formData.orderNotes, {
+  ALLOWED_TAGS: [], // Text-only
+  ALLOWED_ATTR: [],
+});
+
+await medusa.store.cart.update({
+  metadata: { order_notes: sanitizedNotes },
+});
+```
+
+**Scope**: Order notes, customer comments, address line 2 (jeśli freeform).
+
+**NEVER**: Nie używaj `dangerouslySetInnerHTML` dla user-generated content bez sanitizacji.
+
+---
+
+## 2. STABILITY — Stabilność
+
+### 2.1 Double-Submit Protection (MUST)
+
+**Problem**: User klika „Zapłać" 2× → 2 płatności.
+
+**Solution**: `useRef` flag + disabled button.
+
+```typescript
+const submittingRef = useRef(false);
+
+async function handleSubmit(e: FormEvent) {
+  e.preventDefault();
+  if (submittingRef.current) return; // Guard
+  submittingRef.current = true;
+
+  try {
+    // ... płatność
+  } finally {
+    submittingRef.current = false;
+  }
+}
+
+<button disabled={submittingRef.current || !canSubmit}>
+  {submittingRef.current ? "Przetwarzanie..." : "Zapłać"}
+</button>
+```
+
+**NEVER**: Nie używaj `useState` dla `submitting` — re-render może być za wolny, user kliknie 2× przed update.
+
+---
+
+### 2.2 Circuit Breaker Pattern (Payment Providers)
+
+**Problem**: P24 pada → 100% transakcji failuje → checkout nie działa.
+
+**Solution**: Client-side circuit breaker → fallback na bank transfer.
+
+**Implementation** (`lib/checkout/p24-circuit-breaker.ts`):
+```typescript
+const MAX_FAILURES = 3;
+const WINDOW_MS = 5 * 60 * 1000; // 5 min
+
+interface CircuitState {
+  failures: number[];
+  lastCheck: number;
+}
+
+const STORAGE_KEY = "p24_circuit";
+
+export function isP24CircuitOpen(): boolean {
+  if (typeof window === "undefined") return false;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) return false;
+
+  const state: CircuitState = JSON.parse(stored);
+  const now = Date.now();
+  const recentFailures = state.failures.filter(ts => now - ts < WINDOW_MS);
+
+  return recentFailures.length >= MAX_FAILURES;
+}
+
+export function recordP24Failure(): void {
+  if (typeof window === "undefined") return;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  const state: CircuitState = stored ? JSON.parse(stored) : { failures: [], lastCheck: 0 };
+
+  state.failures.push(Date.now());
+  state.failures = state.failures.filter(ts => Date.now() - ts < WINDOW_MS);
+  state.lastCheck = Date.now();
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+export function resetP24Circuit(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(STORAGE_KEY);
+}
+```
+
+**Usage** (`CheckoutForm.tsx`):
+```typescript
+const [p24CircuitOpen, setP24CircuitOpen] = useState(false);
+
+useEffect(() => {
+  setP24CircuitOpen(isP24CircuitOpen());
+}, []);
+
+async function handleSubmit() {
+  try {
+    // ... płatność
+  } catch (error) {
+    if (formData.paymentProvider === "pp_przelewy24") {
+      recordP24Failure();
+      setP24CircuitOpen(true);
+    }
+    throw error;
+  }
+}
+
+// Disable P24 w PaymentSelector
+<PaymentSelector
+  disabledProviderIds={p24CircuitOpen ? ["pp_przelewy24"] : []}
+  p24CircuitOpen={p24CircuitOpen}
+/>
+```
+
+**NEVER**: Nie blokuj całego checkoutu gdy jeden provider failuje. Zawsze fallback na bank transfer.
+
+---
+
+### 2.3 Exponential Backoff Retry (MUST)
+
+**Problem**: `completeCart` failuje (race condition, timeout) → user dostaje błąd → nie próbuje ponownie.
+
+**Solution**: Retry z exponential backoff (2s → 5s → 10s).
+
+```typescript
+const RETRY_DELAYS_MS = [2000, 5000, 10000];
+
+async function completeCartWithRetry(cartId: string): Promise<Order> {
+  for (let attempt = 0; attempt < RETRY_DELAYS_MS.length + 1; attempt++) {
+    try {
+      return await medusa.store.cart.complete(cartId);
+    } catch (error) {
+      if (attempt < RETRY_DELAYS_MS.length) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+      } else {
+        throw error; // Final attempt failed
+      }
+    }
+  }
+  throw new Error("Unreachable");
+}
+```
+
+**Scope**: `completeCart`, Turnstile verification, Fakturownia invoice creation.
+
+**NEVER**: Nie retryuj infinite loop. Max 3–4 próby, potem user error + Sentry alert.
+
+---
+
+### 2.4 Payment Reconciliation Cron (MUST)
+
+**Problem**: P24 webhook zginie (sieć, restart) → order wisi `pending` na wieczność.
+
+**Solution**: Cron co 15 min pulluje status z P24 dla pending payments.
+
+**Implementation** (`apps/backend/src/jobs/reconcile-p24-payments.ts`):
+```typescript
+export async function reconcileP24Payments() {
+  const pendingOrders = await db.order.findMany({
+    where: {
+      payment_status: "pending",
+      payment_provider: "pp_przelewy24",
+      created_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // Last 24h
+    },
+  });
+
+  for (const order of pendingOrders) {
+    const sessionId = order.metadata.p24_session_id;
+    if (!sessionId) continue;
+
+    try {
+      const statusResponse = await fetch(`${p24ApiUrl}/transaction/status/${sessionId}`, {
+        headers: { Authorization: `Bearer ${p24ApiKey}` },
+        signal: AbortSignal.timeout(30_000),
+      });
+      const status = await statusResponse.json();
+
+      if (status.status === "success") {
+        await orderService.update(order.id, { payment_status: "captured" });
+        console.log(`[Reconciliation] Order ${order.id} captured`);
+      } else if (status.status === "failed") {
+        await orderService.update(order.id, { payment_status: "failed" });
+        console.log(`[Reconciliation] Order ${order.id} failed`);
+      }
+    } catch (error) {
+      console.error(`[Reconciliation] Failed for order ${order.id}:`, error);
+    }
+  }
+}
+```
+
+**Cron Config** (`medusa-config.ts`):
+```typescript
+jobs: [
+  {
+    name: "reconcile-p24-payments",
+    schedule: "*/15 * * * *", // Co 15 min
+    handler: reconcileP24Payments,
+  },
+],
+```
+
+**NEVER**: Nie polegaj tylko na webhookach. Zawsze reconciliation cron jako fallback.
+
+---
+
+## 3. COMPLIANCE — Zgodność prawna (PL/EU)
+
+### 3.1 RODO/GDPR Checkboxes (MUST)
+
+**Checkout Step 3**:
+```typescript
+<label>
+  <input
+    type="checkbox"
+    checked={formData.acceptTerms}
+    onChange={e => setFormData(prev => ({ ...prev, acceptTerms: e.target.checked }))}
+    required
+  />
+  Akceptuję{" "}
+  <a href="/regulamin" target="_blank" rel="noopener noreferrer">
+    Regulamin sklepu
+  </a>{" "}
+  oraz{" "}
+  <a href="/polityka-prywatnosci" target="_blank" rel="noopener noreferrer">
+    Politykę prywatności
+  </a>
+</label>
+
+<label>
+  <input
+    type="checkbox"
+    checked={formData.acceptRodo}
+    onChange={e => setFormData(prev => ({ ...prev, acceptRodo: e.target.checked }))}
+    required
+  />
+  Zgadzam się na przetwarzanie moich danych osobowych w celu realizacji zamówienia zgodnie z{" "}
+  <a href="/polityka-prywatnosci" target="_blank" rel="noopener noreferrer">
+    Polityką prywatności
+  </a>
+</label>
+```
+
+**NEVER**: Nie pre-checkuj tych checkboxów. GDPR wymaga explicit opt-in.
+
+---
+
+### 3.2 Newsletter Opt-in (UODO Compliance)
+
+**Problem**: „Zapisz się na newsletter" jako wymagane pole → UODO mandat.
+
+**Solution**: Oddzielny checkbox, NIE required, clear wording.
+
+```typescript
+<label>
+  <input
+    type="checkbox"
+    checked={formData.acceptNewsletter}
+    onChange={e => setFormData(prev => ({ ...prev, acceptNewsletter: e.target.checked }))}
+  />
+  Chcę otrzymywać newsletter z ofertami specjalnymi i nowościami. Zgoda jest dobrowolna i mogę ją wycofać w każdej chwili.
+</label>
+```
+
+**NEVER**: Nie używaj „Chcę otrzymywać informacje handlowe" (zbyt ogólne). Konkretnie: „newsletter".
+
+---
+
+### 3.3 Cookie Consent Banner (MUST)
+
+**Component** (`CookieConsent.tsx`):
+```typescript
+"use client";
+import { useState, useEffect } from "react";
+
+export function CookieConsent() {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const consent = localStorage.getItem("cookie_consent");
+    if (!consent) setShow(true);
+  }, []);
+
+  function handleAccept() {
+    localStorage.setItem("cookie_consent", "accepted");
+    setShow(false);
+    // Enable analytics
+    if (typeof window !== "undefined" && window.posthog) {
+      window.posthog.opt_in_capturing();
+    }
+  }
+
+  function handleReject() {
+    localStorage.setItem("cookie_consent", "rejected");
+    setShow(false);
+    if (typeof window !== "undefined" && window.posthog) {
+      window.posthog.opt_out_capturing();
+    }
+  }
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50">
+      <p className="text-sm mb-4">
+        Używamy plików cookie do analizy ruchu i personalizacji treści. Szczegóły w{" "}
+        <a href="/polityka-prywatnosci" className="underline">
+          Polityce prywatności
+        </a>
+        .
+      </p>
+      <div className="flex gap-4">
+        <button onClick={handleAccept} className="btn-primary">
+          Akceptuję
+        </button>
+        <button onClick={handleReject} className="btn-secondary">
+          Odrzuć
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+**Layout** (`app/layout.tsx`):
+```tsx
+import { CookieConsent } from "@/components/layout/CookieConsent";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <CookieConsent />
+      </body>
+    </html>
+  );
+}
+```
+
+**Footer** — przycisk do re-open:
+```typescript
+// FooterCookieSettings.tsx
+export function FooterCookieSettings() {
+  function handleClick() {
+    localStorage.removeItem("cookie_consent");
+    window.location.reload();
+  }
+
+  return (
+    <button onClick={handleClick} className="text-sm underline">
+      Ustawienia cookies
+    </button>
+  );
+}
+```
+
+**NEVER**: Nie blokuj całej strony do czasu akceptacji cookies (cookie wall → GDPR violation). Banner na dole, content accessible.
+
+---
+
+### 3.4 Accessibility Declaration (EAA 2025)
+
+**Page** (`app/(shop)/deklaracja-dostepnosci/page.tsx`):
+```tsx
+export default function AccessibilityDeclarationPage() {
+  return (
+    <div className="container prose max-w-3xl py-12">
+      <h1>Deklaracja dostępności</h1>
+      
+      <p>
+        <strong>[Nazwa firmy]</strong> zobowiązuje się zapewnić dostępność swojej strony internetowej zgodnie z 
+        ustawą z dnia 4 kwietnia 2019 r. o dostępności cyfrowej stron internetowych i aplikacji mobilnych 
+        podmiotów publicznych oraz European Accessibility Act (EAA 2025).
+      </p>
+
+      <h2>Status zgodności</h2>
+      <p>
+        Ta strona internetowa jest <strong>częściowo zgodna</strong> z WCAG 2.2 poziom AA ze względu na 
+        niezgodności wymienione poniżej.
+      </p>
+
+      <h3>Treści niedostępne</h3>
+      <ul>
+        <li>Niektóre materiały wideo mogą nie posiadać napisów (w trakcie dodawania).</li>
+        <li>Część PDF-ów może nie być w pełni dostępna dla czytników ekranu (planowane do poprawy).</li>
+      </ul>
+
+      <h2>Data sporządzenia deklaracji</h2>
+      <p>Deklaracja została sporządzona dnia: <strong>{new Date().toLocaleDateString("pl-PL")}</strong>.</p>
+
+      <h2>Informacje zwrotne i dane kontaktowe</h2>
+      <p>
+        W przypadku problemów z dostępnością strony prosimy o kontakt:{" "}
+        <a href="mailto:kontakt@example.com">kontakt@example.com</a>.
+      </p>
+
+      <h2>Procedura wnioskowo-skargowa</h2>
+      <p>
+        Każdy ma prawo do wystąpienia z żądaniem zapewnienia dostępności cyfrowej strony internetowej lub 
+        jakiegoś jej elementu. Można również zażądać udostępnienia informacji w formach alternatywnych, 
+        na przykład odczytanie niedostępnego cyfrowo dokumentu, opisania zawartości filmu bez audiodeskrypcji itp.
+      </p>
+      <p>
+        Żądanie powinno zawierać dane osoby zgłaszającej żądanie, wskazanie strony internetowej oraz sposób 
+        kontaktu. W przypadku niemożności zapewnienia dostępności, zobowiązujemy się zaproponować alternatywny 
+        sposób dostępu do treści.
+      </p>
+    </div>
+  );
+}
+```
+
+**Link w stopce** (`Footer.tsx`):
+```tsx
+<a href="/deklaracja-dostepnosci">Deklaracja dostępności</a>
+```
+
+**NEVER**: Nie ignoruj EAA. Od czerwca 2025 obowiązkowe dla e-commerce B2C w EU. Brak deklaracji = kary UOKiK.
+
+---
+
+### 3.5 Bank Transfer Instructions (Clear Copy)
+
+**Po wyborze "Przelew bankowy"**:
+```tsx
+{formData.paymentProvider === "pp_system_default" && (
+  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+    <h3 className="font-medium mb-2">Dane do przelewu</h3>
+    <p className="text-sm mb-2">
+      Numer konta: <strong>12 3456 7890 1234 5678 9012 3456</strong>
+    </p>
+    <p className="text-sm mb-2">
+      Tytuł przelewu: <strong>Zamówienie {cartId}</strong>
+    </p>
+    <p className="text-sm text-gray-600">
+      Zamówienie zostanie zrealizowane po zaksięgowaniu wpłaty (1-2 dni robocze).
+    </p>
+  </div>
+)}
+```
+
+**NEVER**: Nie wysyłaj danych do przelewu tylko emailem — user musi widzieć je OD RAZU na potwierdzeniu.
+
+---
+
+## 4. INDUSTRY STANDARDS — Standardy branżowe
+
+### 4.1 Trust Badges (MUST w Step 3)
+
+**Component** (`CheckoutTrustBadges.tsx`):
+```tsx
+export function CheckoutTrustBadges() {
+  return (
+    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+      <div className="flex items-center gap-2">
+        <ShieldCheckIcon className="w-5 h-5 text-green-600" />
+        <span>Przelewy24 Certified</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <LockClosedIcon className="w-5 h-5 text-green-600" />
+        <span>Szyfrowane połączenie SSL</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <TruckIcon className="w-5 h-5 text-green-600" />
+        <span>Darmowa dostawa od 200 zł</span>
+      </div>
+    </div>
+  );
+}
+```
+
+**Usage** (`CheckoutForm.tsx`):
+```tsx
+{step === 3 && (
+  <>
+    <CheckoutTrustBadges />
+    {/* Payment form */}
+  </>
+)}
+```
+
+**NEVER**: Nie dodawaj fake badges („As seen on Forbes" bez linku). Tylko prawdziwe certyfikaty / USP.
+
+---
+
+### 4.2 Real-time Validation (onBlur)
+
+**Problem**: User wypełnia cały formularz → klika „Dalej" → 5 błędów naraz → frustracja.
+
+**Solution**: Walidacja `onBlur` per pole + error message OD RAZU.
+
+**Validators** (`lib/validation/checkout-validators.ts`):
+```typescript
+export const PHONE_REGEX = /^(\+48)?[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{3}$/;
+export const POSTAL_CODE_REGEX = /^\d{2}-?\d{3}$/;
+export const NIP_REGEX = /^\d{10}$/;
+
+export function validatePhone(phone: string): string | null {
+  if (!phone.trim()) return "Numer telefonu jest wymagany";
+  if (!PHONE_REGEX.test(phone)) return "Nieprawidłowy format (xxx-xxx-xxx)";
+  return null;
+}
+
+export function validatePostalCode(code: string): string | null {
+  if (!code.trim()) return "Kod pocztowy jest wymagany";
+  if (!POSTAL_CODE_REGEX.test(code)) return "Nieprawidłowy format (xx-xxx)";
+  return null;
+}
+
+export function validateNip(nip: string): string | null {
+  const cleaned = nip.replace(/\D/g, "");
+  if (!NIP_REGEX.test(cleaned)) return "NIP musi mieć 10 cyfr";
+
+  // Checksum validation (PL algorithm)
+  const weights = [6, 5, 7, 2, 3, 4, 5, 6, 7];
+  const sum = weights.reduce((acc, w, i) => acc + w * parseInt(cleaned[i], 10), 0);
+  const checksum = sum % 11;
+  const lastDigit = parseInt(cleaned[9] || "0", 10);
+
+  if (checksum !== lastDigit) return "NIP nieprawidłowy (błąd sumy kontrolnej)";
+  return null;
+}
+
+export function getFieldValidationError(field: string, value: string): string | null {
+  switch (field) {
+    case "phone": return validatePhone(value);
+    case "postal_code": return validatePostalCode(value);
+    case "nip": return validateNip(value);
+    case "email": return value.includes("@") ? null : "Nieprawidłowy email";
+    default: return null;
+  }
+}
+```
+
+**Component** (`CheckoutForm.tsx`):
+```tsx
+const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+
+function handleFieldBlur(field: string, value: string) {
+  setTouchedFields(prev => ({ ...prev, [field]: true }));
+  const error = getFieldValidationError(field, value);
+  setFieldErrors(prev => ({ ...prev, [field]: error || "" }));
+  
+  if (error) {
+    trackFormFieldError(field, error);
+  }
+}
+
+<input
+  type="tel"
+  value={formData.phone}
+  onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+  onBlur={e => handleFieldBlur("phone", e.target.value)}
+  className={touchedFields.phone && fieldErrors.phone ? "border-red-500" : ""}
+  aria-invalid={!!fieldErrors.phone}
+  aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
+/>
+{touchedFields.phone && fieldErrors.phone && (
+  <p id="phone-error" className="text-sm text-red-600 mt-1">
+    {fieldErrors.phone}
+  </p>
+)}
+```
+
+**NEVER**: Nie waliduj `onChange` (zbyt agresywne, user dostaje błąd po 1 znaku). `onBlur` to sweet spot.
+
+---
+
+### 4.3 Progress Tracking (Visual + Analytics)
+
+**Visual Progress Bar** (`CheckoutForm.tsx`):
+```tsx
+const progressPercentage = step === 1 ? 33 : step === 2 ? 66 : 100;
+
+<div className="mb-6">
+  <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+    <div
+      className="h-full bg-blue-600 transition-all duration-300"
+      style={{ width: `${progressPercentage}%` }}
+    />
+  </div>
+  <p className="text-sm text-gray-600 mt-2">{progressPercentage}% ukończone</p>
+</div>
+```
+
+**Analytics** (`lib/analytics/events.ts`):
+```typescript
+export function trackCheckoutStep(step: number, cartId: string) {
+  if (typeof window === "undefined" || !window.posthog) return;
+  
+  window.posthog.capture("checkout_step", {
+    step,
+    step_name: step === 1 ? "address" : step === 2 ? "delivery" : "payment",
+    cart_id: cartId,
+  });
+}
+
+export function trackCheckoutStart(cartId: string, cartTotal: number) {
+  if (typeof window === "undefined" || !window.posthog) return;
+  
+  window.posthog.capture("checkout_start", {
+    cart_id: cartId,
+    cart_total: cartTotal,
+  });
+}
+
+export function trackPurchase(details: PurchaseDetails & { checkout_duration_seconds?: number }) {
+  if (typeof window === "undefined" || !window.posthog) return;
+  
+  window.posthog.capture("purchase", {
+    order_id: details.orderId,
+    total: details.total,
+    payment_provider: details.paymentProvider,
+    checkout_duration_seconds: details.checkout_duration_seconds,
+  });
+}
+
+export function trackFormFieldError(field: string, error: string) {
+  if (typeof window === "undefined" || !window.posthog) return;
+  
+  window.posthog.capture("form_field_error", {
+    field,
+    error,
+    location: "checkout",
+  });
+}
+```
+
+**Usage**:
+```tsx
+const checkoutStartTimeRef = useRef<number | null>(null);
+
+useEffect(() => {
+  if (step === 1 && !checkoutStartTimeRef.current) {
+    checkoutStartTimeRef.current = Date.now();
+    trackCheckoutStart(cartId, cartTotal);
+  }
+}, [step]);
+
+useEffect(() => {
+  trackCheckoutStep(step, cartId);
+}, [step]);
+
+async function handleSubmit() {
+  // ... complete cart
+  const duration = checkoutStartTimeRef.current
+    ? Math.round((Date.now() - checkoutStartTimeRef.current) / 1000)
+    : undefined;
+  
+  trackPurchase({
+    orderId: order.id,
+    total: order.total,
+    paymentProvider: formData.paymentProvider,
+    checkout_duration_seconds: duration,
+  });
+}
+```
+
+**NEVER**: Nie trackuj PII (email, phone, address) do PostHog / GA4 bez haszowania.
+
+---
+
+### 4.4 Back Navigation (MUST)
+
+**Problem**: User omyłkowo przeszedł do kroku 2 → chce wrócić → brak przycisku → musi refresh → traci dane.
+
+**Solution**: Przycisk „← Wróć" w każdym kroku (oprócz Step 1).
+
+```tsx
+{step > 1 && (
+  <button
+    type="button"
+    onClick={() => setStep(prev => prev - 1)}
+    className="btn-secondary mb-4"
+  >
+    ← Wróć
+  </button>
+)}
+```
+
+**NEVER**: Nie blokuj browser back button (`history.pushState` bez state management) — user przyzwyczajony do back.
+
+---
+
+### 4.5 Loading States & Timeout Messages
+
+**Problem**: `completeCart` trwa 5s → user patrzy na spinner → brak feedbacku → klika ponownie.
+
+**Solution**: Po 3s pokaż message „Przetwarzamy zamówienie, nie zamykaj okna".
+
+```tsx
+const [submitting, setSubmitting] = useState(false);
+const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
+
+async function handleSubmit() {
+  setSubmitting(true);
+  setShowTimeoutMessage(false);
+
+  const timeoutId = setTimeout(() => setShowTimeoutMessage(true), 3000);
+
+  try {
+    // ... płatność
+  } finally {
+    clearTimeout(timeoutId);
+    setSubmitting(false);
+    setShowTimeoutMessage(false);
+  }
+}
+
+{submitting && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-lg text-center">
+      <Spinner />
+      <p className="mt-4">Przetwarzamy płatność...</p>
+      {showTimeoutMessage && (
+        <p className="mt-2 text-sm text-gray-600">
+          Nie zamykaj okna. Operacja może potrwać do minuty.
+        </p>
+      )}
+    </div>
+  </div>
+)}
+```
+
+**NEVER**: Nie pokazuj generic spinner bez timeout message — user myśli że się zawiesiło.
+
+---
+
+## 5. PAYMENT PROVIDER INTEGRATION — Best Practices
+
+### 5.1 Przelewy24 (P24) Module Structure
+
+**Folder**: `apps/backend/src/modules/payment-p24/`
+
+```
+payment-p24/
+├── index.ts          # Module definition
+├── service.ts        # P24Service extends AbstractPaymentProvider
+├── types.ts          # P24InitiatePaymentInput, P24StatusResponse
+└── config.ts         # ENV variables, API URLs
+```
+
+**Service** (`service.ts`):
+```typescript
+import { AbstractPaymentProvider, PaymentProviderContext } from "@medusajs/framework";
+import crypto from "crypto";
+
+export class P24Service extends AbstractPaymentProvider {
+  static identifier = "pp_przelewy24";
+
+  private p24ApiUrl = process.env.P24_API_URL!;
+  private p24MerchantId = parseInt(process.env.P24_MERCHANT_ID!, 10);
+  private p24PosId = parseInt(process.env.P24_POS_ID!, 10);
+  private p24Crc = process.env.P24_CRC!;
+
+  async initiatePayment(context: PaymentProviderContext) {
+    // 1. Pobierz świeże dane z DB (NIGDY z context.amount)
+    const cart = await this.cartService.retrieve(context.resource_id);
+    const amount = Math.round(cart.total); // Integer grosze
+
+    // 2. Walidacja
+    if (context.amount !== amount) {
+      throw new Error(`Amount mismatch: client=${context.amount}, server=${amount}`);
+    }
+
+    // 3. Generate sign
+    const sessionId = `${context.resource_id}-${Date.now()}`;
+    const sign = crypto
+      .createHash("md5")
+      .update(`${sessionId}|${this.p24PosId}|${amount}|PLN|${this.p24Crc}`)
+      .digest("hex");
+
+    // 4. Register transaction
+    const response = await fetch(`${this.p24ApiUrl}/transaction/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        merchantId: this.p24MerchantId,
+        posId: this.p24PosId,
+        sessionId,
+        amount,
+        currency: "PLN",
+        description: `Zamówienie ${context.resource_id}`,
+        email: cart.email,
+        urlReturn: `${process.env.FRONTEND_URL}/checkout/potwierdzenie?cart_id=${context.resource_id}`,
+        urlStatus: `${process.env.BACKEND_URL}/webhooks/p24`,
+        sign,
+      }),
+      signal: AbortSignal.timeout(30_000), // TIMEOUT obowiązkowy
+    });
+
+    if (!response.ok) {
+      throw new Error(`P24 register failed: ${response.statusText}`);
+    }
+
+    const data = await response.json() as { token: string };
+
+    return {
+      session_data: {
+        session_id: sessionId,
+        token: data.token,
+        redirect_url: `${this.p24ApiUrl}/trnRequest/${data.token}`,
+      },
+    };
+  }
+
+  async getPaymentStatus(context: PaymentProviderContext) {
+    const sessionId = context.data.session_id;
+    
+    // NIGDY nie ufaj query params — pull z API
+    const response = await fetch(`${this.p24ApiUrl}/transaction/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId,
+        merchantId: this.p24MerchantId,
+        posId: this.p24PosId,
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    const data = await response.json() as { status: string };
+    
+    return {
+      status: data.status === "success" ? "captured" : "failed",
+    };
+  }
+
+  async refundPayment(context: PaymentProviderContext, amount: number) {
+    // Refund logic (admin only)
+    // ...
+  }
+}
+```
+
+**NEVER**: Nie hardcoduj `P24_MERCHANT_ID` / `P24_CRC` w kodzie. Zawsze ENV.
+
+---
+
+### 5.2 Webhook Idempotency Table
+
+**Migration** (`migrations/add-webhook-events.ts`):
+```sql
+CREATE TABLE IF NOT EXISTS webhook_events (
+  event_id VARCHAR(255) PRIMARY KEY,
+  provider VARCHAR(50) NOT NULL,
+  processed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  payload JSONB,
+  INDEX idx_provider_processed (provider, processed_at)
+);
+```
+
+**Usage** (`webhooks/p24/route.ts`):
+```typescript
+const existing = await db.webhookEvents.findUnique({ where: { event_id: sessionId } });
+if (existing) {
+  return res.status(200).json({ message: "Already processed" });
+}
+
+// Process payment...
+
+await db.webhookEvents.create({
+  data: {
+    event_id: sessionId,
+    provider: "p24",
+    processed_at: new Date(),
+    payload: req.body,
+  },
+});
+```
+
+**NEVER**: Nie używaj `order.metadata.webhook_processed = true` — race condition gdy 2 webhooki w tym samym czasie.
+
+---
+
+### 5.3 Feature Flags per Provider
+
+**ENV**:
+```bash
+FEATURE_PRZELEWY24=1
+FEATURE_PAYPO=1
+FEATURE_STRIPE=0
+```
+
+**Config** (`medusa-config.ts`):
+```typescript
+const paymentProviders = [];
+
+if (process.env.FEATURE_PRZELEWY24 === "1") {
+  paymentProviders.push({
+    resolve: "./modules/payment-p24",
+    options: {
+      api_url: process.env.P24_API_URL,
+      merchant_id: process.env.P24_MERCHANT_ID,
+      crc: process.env.P24_CRC,
+    },
+  });
+}
+
+if (process.env.FEATURE_PAYPO === "1") {
+  paymentProviders.push({
+    resolve: "./modules/payment-paypo",
+    options: { api_key: process.env.PAYPO_API_KEY },
+  });
+}
+
+export default {
+  modules: paymentProviders,
+};
+```
+
+**NEVER**: Nie dodawaj providera bez feature flag — staging/dev może mieć tylko P24 sandbox, prod wszystkie.
+
+---
+
+## 6. TESTING — Obowiązkowe testy
+
+### 6.1 Playwright E2E (Checkout Happy Path)
+
+**Test** (`tests/e2e/checkout.spec.ts`):
+```typescript
+import { test, expect } from "@playwright/test";
+
+test("checkout happy path with P24", async ({ page }) => {
+  // 1. Add to cart
+  await page.goto("/produkty/test-product");
+  await page.click('button:has-text("Dodaj do koszyka")');
+  
+  // 2. Go to checkout
+  await page.goto("/checkout");
+  
+  // 3. Step 1: Fill address
+  await page.fill('input[name="email"]', "test@example.com");
+  await page.fill('input[name="first_name"]', "Jan");
+  await page.fill('input[name="last_name"]', "Kowalski");
+  await page.fill('input[name="phone"]', "123-456-789");
+  await page.fill('input[name="address_1"]', "ul. Testowa 1");
+  await page.fill('input[name="postal_code"]', "00-001");
+  await page.fill('input[name="city"]', "Warszawa");
+  await page.click('button:has-text("Dalej")');
+  
+  // 4. Step 2: Select delivery
+  await expect(page.locator('text=Wybierz sposób dostawy')).toBeVisible();
+  await page.click('label:has-text("Kurier InPost")');
+  await page.click('button:has-text("Dalej")');
+  
+  // 5. Step 3: Select payment
+  await expect(page.locator('text=Wybierz płatność')).toBeVisible();
+  await page.click('label:has-text("Przelewy24")');
+  
+  // 6. Accept terms
+  await page.check('input[type="checkbox"]:near(:text("Akceptuję Regulamin"))');
+  await page.check('input[type="checkbox"]:near(:text("Zgadzam się na przetwarzanie"))');
+  
+  // 7. Turnstile (auto-pass in test)
+  await page.waitForSelector('[data-testid="turnstile-success"]', { timeout: 10000 });
+  
+  // 8. Submit
+  await page.click('button:has-text("Zapłać")');
+  
+  // 9. Wait for redirect to P24 (or confirmation page in test mode)
+  await expect(page).toHaveURL(/\/checkout\/potwierdzenie/, { timeout: 30000 });
+  
+  // 10. Verify order confirmation
+  await expect(page.locator('text=Zamówienie zostało złożone')).toBeVisible();
+});
+```
+
+**Run**:
+```bash
+pnpm test:e2e
+```
+
+**NEVER**: Nie merguj bez green E2E na checkout. To critical path — każdy bug = strata revenue.
+
+---
+
+### 6.2 Pre-commit Hook
+
+**`.husky/pre-commit`**:
+```bash
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+pnpm typecheck
+pnpm lint
+pnpm test
+```
+
+**NEVER**: Nie commituj bez `pnpm typecheck && pnpm lint && pnpm test`. Broken build na main = blokada zespołu.
+
+---
+
+## 7. MONITORING & ALERTING
+
+### 7.1 Sentry Alerts (MUST)
+
+**Critical Events** → Slack instant alert:
+- Payment provider timeout (> 30s)
+- Webhook signature fail
+- `completeCart` final retry fail
+- P24 circuit breaker open > 5 min
+- Turnstile verification fail rate > 20%
+
+**Setup** (`sentry.config.ts`):
+```typescript
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  beforeSend(event, hint) {
+    // Scrub PII
+    if (event.request?.data) {
+      delete event.request.data.email;
+      delete event.request.data.phone;
+      delete event.request.data.address;
+    }
+    return event;
+  },
+});
+```
+
+**NEVER**: Nie loguj pełnego `cart` ani `order` do Sentry — PII leak.
+
+---
+
+### 7.2 PostHog Funnels
+
+**Funnel**: `checkout_start` → `checkout_step (1)` → `checkout_step (2)` → `checkout_step (3)` → `purchase`.
+
+**Dashboards**:
+- Checkout drop-off per step
+- Average checkout duration
+- Payment provider distribution
+- Form field errors (top 10)
+
+**Alerts**:
+- Drop-off > 70% w Step 3 → investigate payment provider
+- Checkout duration > 5 min median → UX issue
+
+---
+
+## 8. DEPLOYMENT CHECKLIST
+
+Przed deploy checkout / payment gateway na prod:
+
+- [ ] `pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e` ✅
+- [ ] ENV secrets w Railway: `P24_CRC`, `CLOUDFLARE_TURNSTILE_SECRET_KEY`, `UPSTASH_REDIS_URL`
+- [ ] P24 webhook URL w Przelewy24 Panel: `https://api.yourshop.com/webhooks/p24`
+- [ ] CSP headers w `next.config.ts` zawierają `challenges.cloudflare.com`
+- [ ] Sentry `beforeSend` scrubuje PII (email, phone, address)
+- [ ] PostHog opt-out dla rejected cookie consent
+- [ ] Cron `reconcile-p24-payments` uruchomiony (co 15 min)
+- [ ] Smoke test: 1× przelew test w P24 sandbox → webhook przychodzi → order `captured`
+- [ ] Accessibility declaration page `/deklaracja-dostepnosci` live
+- [ ] Cookie consent banner działa + „Ustawienia cookies" w stopce
+- [ ] Staging: test P24 karta `4000 0000 0000 3220` (3DS2 required) → flow działa
+- [ ] Monitoring: Sentry alert na Slack dla critical errors
+- [ ] Backup plan: jeśli P24 pada → bank transfer fallback działa
+
+---
+
+## 9. COMMON BUGS & FIXES
+
+### Bug: User klika „Zapłać" 2× → 2 płatności
+**Fix**: `submittingRef` double-submit protection (§2.1).
+
+### Bug: P24 webhook zginie → order pending na wieczność
+**Fix**: Reconciliation cron (§2.4).
+
+### Bug: Atakujący modyfikuje `?amount=1` w URL
+**Fix**: Weryfikacja kwoty server-side z DB (§1.3).
+
+### Bug: Provider timeout → request wisi 5 min
+**Fix**: `AbortSignal.timeout(30_000)` na każdy fetch (§1.4).
+
+### Bug: User refresh na Step 2 → traci dane
+**Fix**: `nuqs` + localStorage draft (patrz `checkout-forms.mdc`).
+
+### Bug: Turnstile fail → user nie może zapłacić
+**Fix**: Retry logic z exponential backoff (§1.2).
+
+### Bug: P24 failuje 3× → checkout zablokowany
+**Fix**: Circuit breaker + fallback na bank transfer (§2.2).
+
+---
+
+## 10. SUMMARY — TL;DR Checklist
+
+Nowy checkout / payment gateway w Medusa? Sprawdź:
+
+### Security ✅
+- [x] Rate limiting (Upstash Redis)
+- [x] CAPTCHA (Turnstile) w Step 3
+- [x] Payment amount verification (server-side, z DB)
+- [x] Timeouts (`AbortSignal.timeout(30_000)`)
+- [x] Webhook signature verification
+- [x] XSS protection (DOMPurify dla user input)
+- [x] CSP headers (`next.config.ts`)
+
+### Stability ✅
+- [x] Double-submit protection (`useRef`)
+- [x] Circuit breaker dla providerów
+- [x] Exponential backoff retry
+- [x] Reconciliation cron (15 min)
+- [x] Webhook idempotency table
+
+### Compliance ✅
+- [x] RODO/GDPR checkboxes (required)
+- [x] Newsletter opt-in (dobrowolny, clear wording)
+- [x] Cookie consent banner (accept/reject)
+- [x] Accessibility declaration page (`/deklaracja-dostepnosci`)
+- [x] Bank transfer instructions (czytelne)
+
+### Standards ✅
+- [x] Trust badges w Step 3
+- [x] Real-time validation (`onBlur`)
+- [x] Progress tracking (visual + analytics)
+- [x] Back navigation buttons
+- [x] Loading states + timeout messages
+- [x] Analytics taxonomy (PostHog)
+
+### Testing ✅
+- [x] Playwright E2E (happy path)
+- [x] Pre-commit hook (`typecheck + lint + test`)
+- [x] Smoke test P24 sandbox przed prod
+
+---
+
+**Maintenance**: Ten dokument żyje. Gdy dodajesz nowy provider / zmienisz flow → zaktualizuj.
+
+**Questions?** Patrz na implementację w `apps/storefront/components/checkout/CheckoutForm.tsx` jako reference.
