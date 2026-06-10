@@ -40,13 +40,13 @@ const CATEGORIES = [
     title: "Gotowe wzory",
     cta: "PRZEGLĄDAJ WZORY",
     href: "/sklep/gotowe-wzory",
-    image: "/images/categories/gotowe-wzory-personel.png",
+    image: "/images/categories/gotowe-wzory-personel.webp",
   },
   {
     title: "Tablice z logo",
     cta: "Uzyskaj wycenę",
     href: "/sklep/logo-3d",
-    image: "/images/categories/logo-kategoria-nail-boss.png",
+    image: "/images/categories/logo-kategoria-nail-boss.webp",
   },
   {
     title: "Certyfikaty",
