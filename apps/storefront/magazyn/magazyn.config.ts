@@ -60,6 +60,7 @@ export const magazynConfig: MagazynConfig = {
 		radius: 10,
 		headerBg: "#725750",
 		headerText: "#EEE8E0",
+		headerEyebrow: "",
 		brandName: "Lumine Concept",
 	},
 

@@ -279,8 +279,18 @@ export function renderTemplate(template: EmailTemplate, ctx: EmailRenderContext)
 		.join("");
 	const body = template.blocks.map((block) => renderBlock(block, theme, ctx)).join("\n");
 
-	const header = theme.brandName
-		? `<tr><td style="background:${theme.headerBg};padding:24px 32px"><p style="margin:0;font-size:24px;color:${theme.headerText};letter-spacing:0.05em">${esc(theme.brandName)}</p></td></tr>`
+	const headerEyebrow = theme.headerEyebrow?.trim() ?? "";
+	const showHeader = Boolean(headerEyebrow || theme.brandName?.trim());
+	const header = showHeader
+		? `<tr><td style="background:${theme.headerBg};padding:24px 32px">${
+				headerEyebrow
+					? `<p style="margin:0 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:${theme.headerText};opacity:0.85">${mergeHtml(headerEyebrow, ctx.vars)}</p>`
+					: ""
+			}${
+				theme.brandName?.trim()
+					? `<p style="margin:0;font-size:24px;color:${theme.headerText};letter-spacing:0.05em">${esc(theme.brandName.trim())}</p>`
+					: ""
+			}</td></tr>`
 		: "";
 
 	const preheader = template.preheader

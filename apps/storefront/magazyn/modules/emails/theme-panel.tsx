@@ -20,6 +20,13 @@ export function ThemePanel({
 
 			<TextField label="Nazwa marki (nagłówek)" value={theme.brandName} onChange={(brandName) => patch({ brandName })} />
 
+			<TextField
+				label="Tekst nad marką (opcjonalny)"
+				value={theme.headerEyebrow ?? ""}
+				placeholder="np. Potwierdzenie zamówienia"
+				onChange={(headerEyebrow) => patch({ headerEyebrow })}
+			/>
+
 			<div className="grid grid-cols-2 gap-3">
 				<NumberField label="Szerokość (px)" value={theme.contentWidth} min={320} max={800} step={10} onChange={(contentWidth) => patch({ contentWidth })} />
 				<NumberField label="Zaokrąglenie (px)" value={theme.radius} min={0} max={48} onChange={(radius) => patch({ radius })} />

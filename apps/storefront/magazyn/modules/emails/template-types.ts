@@ -558,6 +558,7 @@ const themeSchema = z.object({
 	radius: z.number().int().min(0).max(48),
 	headerBg: z.string(),
 	headerText: z.string(),
+	headerEyebrow: z.string().default(""),
 	brandName: z.string(),
 });
 
@@ -585,5 +586,9 @@ export const emailTemplateSchema = z.object({
 /** Bezpieczny parse jednego szablonu z nieznanego JSON (fallback = null). */
 export function parseTemplate(raw: unknown): EmailTemplate | null {
 	const result = emailTemplateSchema.safeParse(raw);
-	return result.success ? (result.data as EmailTemplate) : null;
+	if (!result.success) return null;
+	return {
+		...result.data,
+		theme: { ...DEFAULT_THEME, ...result.data.theme },
+	} as EmailTemplate;
 }
