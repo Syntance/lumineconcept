@@ -15,6 +15,7 @@ import { bootstrapCartSession } from "@/lib/medusa/cart-bootstrap";
 import { isAbortedFetchError, isTransientMedusaError } from "@/lib/medusa/transient-error";
 import { cartLineConfigFingerprint } from "@/lib/cart/line-config-fingerprint";
 import {
+  clearCheckoutCompleted,
   invalidateShippingOptionsCache,
   normalizeShippingOptionsForDisplay,
   pickLowestPaidShippingOptionPrice,
@@ -58,6 +59,8 @@ interface CartState {
 
 interface CartContextType extends CartState {
   isLoading: boolean;
+  /** true po pierwszym bootstrapie koszyka — dopóki false, nie wiemy czy koszyk jest pusty. */
+  isInitialized: boolean;
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -153,6 +156,7 @@ function mapCartItems(items: Array<Record<string, unknown>>): CartItem[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [shippingEstimate, setShippingEstimate] = useState<number | null>(null);
   const [cart, setCart] = useState<CartState>({
@@ -266,6 +270,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
      *     wysyłamy metadata do Medusy (fire-and-forget, bez blokady UI).
      */
     getOrCreateCart().then(() => {
+      setIsInitialized(true);
       setCart((c) => {
         const fromServer = c.metadata.express_delivery;
         if (fromServer !== undefined) {
@@ -303,6 +308,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       preview?: { title: string; thumbnail?: string; unit_price: number },
     ) => {
       if (!cart.id) return;
+
+      /**
+       * Klient dodaje nowy produkt = chce kupować dalej. Kasujemy flagę
+       * „zamówienie złożone", żeby /checkout nie cofał go na potwierdzenie
+       * poprzedniego zamówienia.
+       */
+      clearCheckoutCompleted();
 
       /**
        * Optymistyczny render: gdy mamy `preview`, natychmiast pokazujemy
@@ -590,6 +602,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return {
       ...cart,
       isLoading,
+      isInitialized,
       isOpen,
       openCart,
       closeCart,
@@ -608,6 +621,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [
     cart,
     isLoading,
+    isInitialized,
     isOpen,
     openCart,
     closeCart,
