@@ -7,9 +7,7 @@ import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges";
-import { CheckoutTurnstile, type CheckoutTurnstileHandle } from "./CheckoutTurnstile";
 import { isP24CircuitOpen, recordP24Failure } from "@/lib/checkout/p24-circuit-breaker";
-import { verifyTurnstileToken } from "@/lib/checkout/verify-turnstile";
 import {
   trackCheckoutAbandon,
   trackCheckoutStart,
@@ -146,7 +144,6 @@ type CheckoutFormData = {
   nip: string;
   acceptTerms: boolean;
   acceptRodo: boolean;
-  turnstileToken: string;
   orderNotes: string;
 };
 
@@ -174,7 +171,6 @@ function getDefaultCheckoutFormData(): CheckoutFormData {
     nip: "",
     acceptTerms: false,
     acceptRodo: false,
-    turnstileToken: "",
     orderNotes: "",
   };
 }
@@ -187,11 +183,6 @@ function clearCheckoutDraft(): void {
   }
 }
 
-/** Token Turnstile nie zapisujemy — wygasa po ~5 min i psuje powrót na checkout. */
-function sanitizeDraftFormData(formData: CheckoutFormData): CheckoutFormData {
-  return { ...formData, turnstileToken: "" };
-}
-
 const STEPS = [
   { number: 1, label: "Dane" },
   { number: 2, label: "Dostawa" },
@@ -201,10 +192,6 @@ const STEPS = [
 const INPUT_CLASS =
   "w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors";
 const LABEL_CLASS = "block text-sm font-medium text-brand-700 mb-1";
-
-const TURNSTILE_SITE_KEY =
-  process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY?.trim() ?? "";
-const TURNSTILE_ENABLED = TURNSTILE_SITE_KEY.length > 0;
 
 /**
  * Gdy Medusa oznajmia, że koszyk jest już completed, zużyty cart_id nadal
@@ -230,9 +217,6 @@ export function CheckoutForm() {
   const [formStarted, setFormStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
-  const turnstileRef = useRef<CheckoutTurnstileHandle>(null);
-  const prevStepRef = useRef<CheckoutStep>(1);
-  const [turnstileMountKey, setTurnstileMountKey] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   /**
    * Po ~3s od kliknięcia „Zamawiam i płacę" pokazujemy dodatkowy komunikat
@@ -437,7 +421,6 @@ export function CheckoutForm() {
         ...getDefaultCheckoutFormData(),
         ...parsed.formData,
         phone: formatPolishPhone(parsed.formData.phone ?? ""),
-        turnstileToken: "",
       });
       setSubmitError(null);
     } catch {
@@ -455,7 +438,7 @@ export function CheckoutForm() {
         v: 1,
         cartId,
         step,
-        formData: sanitizeDraftFormData(formData),
+        formData,
       };
       sessionStorage.setItem(
         CHECKOUT_DRAFT_STORAGE_KEY,
@@ -472,31 +455,6 @@ export function CheckoutForm() {
     },
     [],
   );
-
-  const handleTurnstileSuccess = useCallback(
-    (token: string) => updateField("turnstileToken", token),
-    [updateField],
-  );
-  const handleTurnstileError = useCallback(
-    () => updateField("turnstileToken", ""),
-    [updateField],
-  );
-  const handleTurnstileExpire = useCallback(
-    () => updateField("turnstileToken", ""),
-    [updateField],
-  );
-
-  /** Wejście na krok płatności = świeży widget Turnstile (token z draftu byłby nieważny). */
-  useEffect(() => {
-    if (step !== 3 || prevStepRef.current === 3) {
-      prevStepRef.current = step;
-      return;
-    }
-    prevStepRef.current = step;
-    setSubmitError(null);
-    setFormData((prev) => ({ ...prev, turnstileToken: "" }));
-    setTurnstileMountKey((k) => k + 1);
-  }, [step]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -571,7 +529,6 @@ export function CheckoutForm() {
     !!cartId &&
     items.length > 0 &&
     formData.shippingOptionId !== "" &&
-    (!TURNSTILE_ENABLED || formData.turnstileToken !== "") &&
     !submitting &&
     !submittingRef.current;
 
@@ -594,41 +551,6 @@ export function CheckoutForm() {
     trackFormSubmit({ formName: "checkout_payment" });
 
     const payment = formDataRef.current;
-
-    if (TURNSTILE_ENABLED) {
-      if (!payment.turnstileToken) {
-        setSubmitError("Potwierdź, że nie jesteś robotem.");
-        setSubmitting(false);
-        setSubmitSlow(false);
-        if (submitSlowTimerRef.current) {
-          clearTimeout(submitSlowTimerRef.current);
-          submitSlowTimerRef.current = null;
-        }
-        submittingRef.current = false;
-        return;
-      }
-
-      const turnstileResult = await verifyTurnstileToken(payment.turnstileToken);
-      if (!turnstileResult.ok) {
-        updateField("turnstileToken", "");
-        turnstileRef.current?.reset();
-        const message =
-          turnstileResult.reason === "config"
-            ? "Chwilowy problem z zabezpieczeniem płatności. Odśwież stronę za chwilę — jeśli błąd wraca, napisz do nas."
-            : turnstileResult.reason === "network"
-              ? "Brak połączenia z serwerem. Sprawdź sieć i spróbuj ponownie."
-              : "Weryfikacja wygasła — zaznacz ponownie pole „Potwierdź, że jesteś człowiekiem”.";
-        setSubmitError(message);
-        setSubmitting(false);
-        setSubmitSlow(false);
-        if (submitSlowTimerRef.current) {
-          clearTimeout(submitSlowTimerRef.current);
-          submitSlowTimerRef.current = null;
-        }
-        submittingRef.current = false;
-        return;
-      }
-    }
 
     try {
       await assertCartReadyForCheckout(cartId);
@@ -1237,17 +1159,6 @@ export function CheckoutForm() {
                 {formData.orderNotes.length}/500 znaków
               </p>
             </div>
-
-            {TURNSTILE_ENABLED ? (
-              <CheckoutTurnstile
-                key={turnstileMountKey}
-                ref={turnstileRef}
-                siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={handleTurnstileSuccess}
-                onError={handleTurnstileError}
-                onExpire={handleTurnstileExpire}
-              />
-            ) : null}
 
             <div className="space-y-3 border-t border-brand-100 pt-4">
               <label className="flex items-start gap-2 cursor-pointer">
