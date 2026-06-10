@@ -79,12 +79,12 @@ function FailedActions({
   };
 
   return (
-    <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+    <div className="mx-auto mt-8 flex max-w-md flex-col items-center gap-4 text-center">
       <button
         type="button"
         onClick={handleRetry}
         disabled={retrying}
-        className="rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors disabled:opacity-60"
+        className="w-full rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors disabled:opacity-60 sm:w-auto"
       >
         {retrying ? "Przekierowujemy…" : "Zapłać ponownie"}
       </button>
@@ -95,9 +95,9 @@ function FailedActions({
         Wróć do sklepu
       </Link>
       {retryError ? (
-        <p className="w-full text-center text-sm text-red-600">{retryError}</p>
+        <p className="text-sm text-red-600">{retryError}</p>
       ) : null}
-      <p className="w-full text-center text-xs text-brand-400">
+      <p className="text-xs text-brand-400">
         Możesz też użyć linku z e-maila:{" "}
         <a href={retryUrl} className="underline hover:text-brand-600">
           ponów płatność
