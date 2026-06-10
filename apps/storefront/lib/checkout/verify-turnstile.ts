@@ -1,20 +1,21 @@
-import { resolveMedusaFetchBase } from "@/lib/medusa/resolve-fetch-base";
-
 export type TurnstileVerifyResult =
   | { ok: true }
   | { ok: false; reason: "network" | "rejected" | "config" };
 
 /**
  * Weryfikacja tokenu Turnstile — jedna próba (token CF jest jednorazowy).
- * Używa proxy `/api/medusa` — ten sam origin co reszta Store API.
+ * Storefront API na Vercel (site + secret w jednym miejscu).
  */
 export async function verifyTurnstileToken(
   token: string,
 ): Promise<TurnstileVerifyResult> {
-  const base = resolveMedusaFetchBase();
+  const base =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
 
   try {
-    const res = await fetch(`${base}/store/custom/verify-turnstile`, {
+    const res = await fetch(`${base}/api/checkout/verify-turnstile`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ token }),

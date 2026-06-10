@@ -469,6 +469,19 @@ export function CheckoutForm() {
     [],
   );
 
+  const handleTurnstileSuccess = useCallback(
+    (token: string) => updateField("turnstileToken", token),
+    [updateField],
+  );
+  const handleTurnstileError = useCallback(
+    () => updateField("turnstileToken", ""),
+    [updateField],
+  );
+  const handleTurnstileExpire = useCallback(
+    () => updateField("turnstileToken", ""),
+    [updateField],
+  );
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     setP24CircuitOpen(isP24CircuitOpen());
@@ -1212,12 +1225,9 @@ export function CheckoutForm() {
               <CheckoutTurnstile
                 ref={turnstileRef}
                 siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={(token) => updateField("turnstileToken", token)}
-                onError={() => updateField("turnstileToken", "")}
-                onExpire={() => {
-                  updateField("turnstileToken", "");
-                  turnstileRef.current?.reset();
-                }}
+                onSuccess={handleTurnstileSuccess}
+                onError={handleTurnstileError}
+                onExpire={handleTurnstileExpire}
               />
             ) : null}
 
