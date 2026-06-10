@@ -1,13 +1,10 @@
-import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { magazynConfig } from "../../magazyn.config";
 import { getPanelTheme } from "@magazyn/modules/settings/panel-theme-store";
 import { panelThemeToStyle } from "@magazyn/modules/settings/panel-theme-vars";
-import { logoutAction } from "../auth/actions";
 import { getSessionToken } from "../medusa/session";
-import { Button } from "../ui/button";
 import { PanelSidebarNav } from "./panel-sidebar-nav";
 
 /**
@@ -41,22 +38,7 @@ export async function PanelShell({ children }: { children: ReactNode }) {
 						<p className="font-serif text-lg text-foreground">{branding.panelTitle}</p>
 					</Link>
 
-					<PanelSidebarNav />
-
-					<div className="mt-auto flex flex-col gap-2 border-t border-border pt-4">
-						<Link
-							href={branding.storefrontUrl}
-							className="px-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
-						>
-							↗ Otwórz sklep
-						</Link>
-						<form action={logoutAction}>
-							<Button type="submit" variant="ghost" size="sm" className="w-full justify-start gap-2">
-								<LogOut className="size-4" aria-hidden />
-								Wyloguj
-							</Button>
-						</form>
-					</div>
+					<PanelSidebarNav storefrontUrl={branding.storefrontUrl} />
 				</aside>
 
 				<main className="min-w-0 flex-1 p-5 lg:p-8">{children}</main>

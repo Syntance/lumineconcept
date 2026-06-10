@@ -28,6 +28,8 @@ export type EmailThemeConfig = {
 	radius: number;
 	headerBg: string;
 	headerText: string;
+	/** Opcjonalny wiersz nad nazwą marki w pasku nagłówka. */
+	headerEyebrow: string;
 	brandName: string;
 };
 
