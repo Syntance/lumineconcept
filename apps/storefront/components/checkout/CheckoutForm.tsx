@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Turnstile from "@marsidev/react-turnstile";
 import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
@@ -38,6 +39,33 @@ import {
 import { getBankTransferDetails } from "@/lib/payment/bank-transfer";
 import { getPolishRegionId } from "@/lib/medusa/region";
 
+const PHONE_REGEX = /^(?:\+48)?[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{3}$/;
+const POSTAL_CODE_REGEX = /^\d{2}-\d{3}$/;
+const NIP_REGEX = /^\d{10}$/;
+
+function validatePhone(phone: string): boolean {
+  const cleaned = phone.replace(/[\s-]/g, "");
+  return PHONE_REGEX.test(phone) && (cleaned.length === 9 || cleaned.length === 11);
+}
+
+function validatePostalCode(code: string): boolean {
+  return POSTAL_CODE_REGEX.test(code);
+}
+
+function validateNip(nip: string): boolean {
+  const cleaned = nip.replace(/[\s-]/g, "");
+  if (!NIP_REGEX.test(cleaned)) return false;
+  
+  // Checksum validation
+  const weights = [6, 5, 7, 2, 3, 4, 5, 6, 7];
+  const sum = cleaned
+    .slice(0, 9)
+    .split("")
+    .reduce((acc, digit, i) => acc + parseInt(digit) * weights[i], 0);
+  const checksum = sum % 11;
+  return checksum === parseInt(cleaned[9]);
+}
+
 type CheckoutStep = 1 | 2 | 3;
 
 const CHECKOUT_DRAFT_STORAGE_KEY = "lumine_checkout_draft_v1";
@@ -58,6 +86,8 @@ type CheckoutFormData = {
   nip: string;
   acceptTerms: boolean;
   acceptRodo: boolean;
+  turnstileToken: string;
+  orderNotes: string;
 };
 
 type CheckoutDraftPayload = {
@@ -84,6 +114,8 @@ function getDefaultCheckoutFormData(): CheckoutFormData {
     nip: "",
     acceptTerms: false,
     acceptRodo: false,
+    turnstileToken: "",
+    orderNotes: "",
   };
 }
 
@@ -380,7 +412,7 @@ export function CheckoutForm() {
     }
   }, [formData.email]);
 
-  const isNipValid = /^\d{10}$/.test(formData.nip.replace(/[-\s]/g, ""));
+  const isNipValid = validateNip(formData.nip);
   const vatValid =
     !formData.wantInvoice ||
     (formData.companyName.trim() !== "" && isNipValid);
@@ -389,11 +421,13 @@ export function CheckoutForm() {
     formData.email.includes("@") &&
     formData.firstName.trim() !== "" &&
     formData.lastName.trim() !== "" &&
-    formData.phone.trim() !== "" &&
+    validatePhone(formData.phone) &&
     formData.address.trim() !== "" &&
     formData.city.trim() !== "" &&
-    formData.postalCode.trim() !== "" &&
-    vatValid;
+    validatePostalCode(formData.postalCode) &&
+    vatValid &&
+    formData.acceptTerms &&
+    formData.acceptRodo;
 
   const canGoToStep3 = formData.shippingOptionId !== "";
 
@@ -425,6 +459,62 @@ export function CheckoutForm() {
     trackFormSubmit({ formName: "checkout_payment" });
 
     const payment = formDataRef.current;
+
+    // Verify Turnstile
+    if (!payment.turnstileToken) {
+      setSubmitError("Potwierdź, że nie jesteś robotem.");
+      setSubmitting(false);
+      setSubmitSlow(false);
+      if (submitSlowTimerRef.current) {
+        clearTimeout(submitSlowTimerRef.current);
+        submitSlowTimerRef.current = null;
+      }
+      submittingRef.current = false;
+      return;
+    }
+
+    try {
+      const verifyRes = await fetch("/api/store/custom/verify-turnstile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: payment.turnstileToken }),
+      });
+      
+      if (!verifyRes.ok) {
+        setSubmitError("Weryfikacja nie powiodła się. Odśwież stronę i spróbuj ponownie.");
+        setSubmitting(false);
+        setSubmitSlow(false);
+        if (submitSlowTimerRef.current) {
+          clearTimeout(submitSlowTimerRef.current);
+          submitSlowTimerRef.current = null;
+        }
+        submittingRef.current = false;
+        return;
+      }
+
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        setSubmitError("Weryfikacja nie powiodła się. Odśwież stronę i spróbuj ponownie.");
+        setSubmitting(false);
+        setSubmitSlow(false);
+        if (submitSlowTimerRef.current) {
+          clearTimeout(submitSlowTimerRef.current);
+          submitSlowTimerRef.current = null;
+        }
+        submittingRef.current = false;
+        return;
+      }
+    } catch (error) {
+      setSubmitError("Błąd weryfikacji. Sprawdź połączenie i spróbuj ponownie.");
+      setSubmitting(false);
+      setSubmitSlow(false);
+      if (submitSlowTimerRef.current) {
+        clearTimeout(submitSlowTimerRef.current);
+        submitSlowTimerRef.current = null;
+      }
+      submittingRef.current = false;
+      return;
+    }
 
     try {
       await assertCartReadyForCheckout(cartId);
@@ -607,6 +697,8 @@ export function CheckoutForm() {
               <input
                 id="email"
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 required
                 autoFocus
                 value={formData.email}
@@ -626,6 +718,7 @@ export function CheckoutForm() {
                 <input
                   id="firstName"
                   type="text"
+                  autoComplete="given-name"
                   required
                   value={formData.firstName}
                   onChange={(e) => updateField("firstName", e.target.value)}
@@ -639,6 +732,7 @@ export function CheckoutForm() {
                 <input
                   id="lastName"
                   type="text"
+                  autoComplete="family-name"
                   required
                   value={formData.lastName}
                   onChange={(e) => updateField("lastName", e.target.value)}
@@ -652,6 +746,8 @@ export function CheckoutForm() {
                 <input
                   id="phone"
                   type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
                   required
                   value={formData.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
@@ -666,6 +762,9 @@ export function CheckoutForm() {
                 <input
                   id="postalCode"
                   type="text"
+                  autoComplete="postal-code"
+                  inputMode="numeric"
+                  pattern="\d{2}-\d{3}"
                   required
                   value={formData.postalCode}
                   onChange={(e) => updateField("postalCode", e.target.value)}
@@ -680,6 +779,7 @@ export function CheckoutForm() {
                 <input
                   id="address"
                   type="text"
+                  autoComplete="street-address"
                   required
                   value={formData.address}
                   onChange={(e) => updateField("address", e.target.value)}
@@ -694,6 +794,7 @@ export function CheckoutForm() {
                 <input
                   id="city"
                   type="text"
+                  autoComplete="address-level2"
                   required
                   value={formData.city}
                   onChange={(e) => updateField("city", e.target.value)}
@@ -908,6 +1009,37 @@ export function CheckoutForm() {
               onSelect={(id: string) => updateField("paymentProviderId", id)}
               availableProviderIds={availableProviderIds}
             />
+
+            {/* Order Notes */}
+            <div>
+              <label htmlFor="orderNotes" className="block text-sm font-medium text-brand-700 mb-2">
+                Uwagi do zamówienia <span className="text-brand-400">(opcjonalne)</span>
+              </label>
+              <textarea
+                id="orderNotes"
+                rows={3}
+                value={formData.orderNotes}
+                onChange={(e) => updateField("orderNotes", e.target.value)}
+                placeholder="Np. dodatkowe instrukcje dostawy..."
+                className="w-full rounded-lg border border-brand-200 px-4 py-3 text-sm focus:border-brand-800 focus:outline-none focus:ring-1 focus:ring-brand-800"
+                maxLength={500}
+              />
+              <p className="mt-1 text-xs text-brand-500">
+                {formData.orderNotes.length}/500 znaków
+              </p>
+            </div>
+
+            {/* Turnstile Widget */}
+            <div className="rounded-lg border border-brand-200 bg-brand-50/30 p-4">
+              <Turnstile
+                siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
+                onSuccess={(token) => updateField("turnstileToken", token)}
+                onError={() => updateField("turnstileToken", "")}
+                onExpire={() => updateField("turnstileToken", "")}
+                theme="light"
+                size="normal"
+              />
+            </div>
 
             <div className="space-y-3 border-t border-brand-100 pt-4">
               <label className="flex items-start gap-2 cursor-pointer">
