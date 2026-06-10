@@ -146,7 +146,7 @@ export function CartDrawer() {
 
               {/* Express + kupon: zawsze tuż pod produktami */}
               <div className="mx-6 mt-4 space-y-3">
-                <ExpressToggle />
+                <ExpressToggle compact />
 
                 <div className="rounded-lg border border-brand-100 p-4">
                   <div className="mb-3 flex items-center gap-2">
