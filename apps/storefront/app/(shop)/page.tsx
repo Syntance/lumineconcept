@@ -4,7 +4,6 @@ import { getSiteSettings } from "@/lib/sanity/client";
 import { buildMetadata } from "@/lib/sanity/metadata";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
-import { HomeTrustMarquee } from "@/components/home/HomeTrustMarquee";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
@@ -69,11 +68,7 @@ export default function HomePage() {
         <ReferralBanner />
       </Suspense>
 
-      <HeroSection>
-        <Suspense fallback={null}>
-          <HomeTrustMarquee />
-        </Suspense>
-      </HeroSection>
+      <HeroSection />
 
       <Suspense fallback={null}>
         <BestsellersSection />
