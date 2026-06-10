@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Turnstile from "@marsidev/react-turnstile";
+import { Turnstile } from "@marsidev/react-turnstile";
 import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
@@ -62,9 +62,9 @@ function validateNip(nip: string): boolean {
   const sum = cleaned
     .slice(0, 9)
     .split("")
-    .reduce((acc, digit, i) => acc + parseInt(digit) * weights[i], 0);
+    .reduce((acc, digit, i) => acc + parseInt(digit, 10) * (weights[i] || 0), 0);
   const checksum = sum % 11;
-  return checksum === parseInt(cleaned[9]);
+  return checksum === parseInt(cleaned[9] || "0", 10);
 }
 
 type CheckoutStep = 1 | 2 | 3;
@@ -1061,12 +1061,10 @@ export function CheckoutForm() {
             {/* Turnstile Widget */}
             <div className="rounded-lg border border-brand-200 bg-brand-50/30 p-4">
               <Turnstile
-                siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
-                onSuccess={(token) => updateField("turnstileToken", token)}
+                siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY || ""}
+                onSuccess={(token: string) => updateField("turnstileToken", token)}
                 onError={() => updateField("turnstileToken", "")}
                 onExpire={() => updateField("turnstileToken", "")}
-                theme="light"
-                size="normal"
               />
             </div>
 
