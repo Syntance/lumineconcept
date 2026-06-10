@@ -3,7 +3,7 @@ import { adminFetch, serviceAdminFetch } from "@magazyn/core/medusa/client";
 import { getSessionToken } from "@magazyn/core/medusa/session";
 import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
 import { thumbnailFromMedusaProduct, resolveLineItemThumbnail } from "@/lib/medusa/product-thumbnail";
-import { formatPrice } from "@magazyn/core/lib/format";
+import { formatPrice, toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { isExpressDelivery } from "./order-express";
 import type {
@@ -144,7 +144,7 @@ function normalizeMetadata(metadata: Record<string, unknown> | null | undefined)
  * Medusa v2 zwraca kwoty jako decimal PLN — konwersja na grosze (integer).
  */
 function toMinorUnits(amount: number | null | undefined): number {
-	return Math.round((amount ?? 0) * 100);
+	return toMinorUnitsFromDecimal(amount);
 }
 
 function amountFromUnknown(v: unknown): number {

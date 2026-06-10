@@ -1,6 +1,6 @@
 import "server-only";
 
-import { formatPrice } from "@magazyn/core/lib/format";
+import { formatPrice, toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
 import type { OrderRenderSource } from "@magazyn/modules/emails/render-template";
 import { sendPaymentFailedEmail } from "@magazyn/modules/emails/send-payment-failed-email";
 import { getCart, updateCartMetadata } from "@/lib/medusa/cart";
@@ -59,33 +59,40 @@ function cartToEmailSource(cart: Record<string, unknown>): OrderRenderSource | n
 		};
 		const title = item.title ?? item.product_title ?? "Produkt";
 		const quantity = item.quantity ?? 1;
-		const totalMinor = typeof item.total === "number" ? item.total : 0;
+		const lineTotalMinor = toMinorUnitsFromDecimal(
+			typeof item.total === "number" ? item.total : 0,
+		);
 		return {
 			title,
 			quantity,
-			total: formatPrice(totalMinor, currency),
+			total: formatPrice(lineTotalMinor, currency),
 			thumbnail: item.thumbnail ?? null,
 		};
 	});
 
-	const total =
+	const total = toMinorUnitsFromDecimal(
 		typeof cart.total === "number"
 			? cart.total
 			: itemsRaw.reduce((sum, row) => {
 					const t = (row as { total?: number }).total;
 					return sum + (typeof t === "number" ? t : 0);
-				}, 0);
+				}, 0),
+	);
 
-	const itemTotal =
+	const itemTotal = toMinorUnitsFromDecimal(
 		typeof cart.item_total === "number"
 			? cart.item_total
-			: itemsRaw.reduce((sum, row) => {
-					const t = (row as { total?: number }).total;
-					return sum + (typeof t === "number" ? t : 0);
-				}, 0);
+			: typeof cart.subtotal === "number"
+				? cart.subtotal
+				: itemsRaw.reduce((sum, row) => {
+						const t = (row as { total?: number }).total;
+						return sum + (typeof t === "number" ? t : 0);
+					}, 0),
+	);
 
-	const shippingTotal =
-		typeof cart.shipping_total === "number" ? cart.shipping_total : 0;
+	const shippingTotal = toMinorUnitsFromDecimal(
+		typeof cart.shipping_total === "number" ? cart.shipping_total : 0,
+	);
 
 	const shippingMethods = Array.isArray(cart.shipping_methods) ? cart.shipping_methods : [];
 	const shippingMethodName =

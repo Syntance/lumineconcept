@@ -11,6 +11,15 @@ export function formatPrice(minorAmount: number, currency = magazynConfig.curren
 	}).format(minorAmount / 100);
 }
 
+/**
+ * Medusa v2 (store cart + admin order fields) zwraca PLN jako decimal (1 = 1 zł).
+ * Magazyn / maile operują na groszach (integer).
+ */
+export function toMinorUnitsFromDecimal(amount: number | null | undefined): number {
+	if (amount == null || !Number.isFinite(amount)) return 0;
+	return Math.round(amount * 100);
+}
+
 export function formatDateTime(iso: string): string {
 	if (!iso) return "—";
 	return new Intl.DateTimeFormat(magazynConfig.locale, {
