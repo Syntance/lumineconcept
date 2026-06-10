@@ -6,6 +6,7 @@ import {
 	type ColumnsBlock,
 	BANK_TRANSFER_MERGE_VARIABLES,
 	CONTACT_MERGE_VARIABLES,
+	PAYMENT_FAILED_MERGE_VARIABLES,
 	type DividerBlock,
 	type EmailTemplate,
 	type EmailTemplateType,
@@ -323,6 +324,14 @@ export function sampleRenderContextForTemplate(type: EmailTemplateType): EmailRe
 		const base = sampleRenderContext();
 		const vars: Record<string, string> = { ...base.vars };
 		for (const v of BANK_TRANSFER_MERGE_VARIABLES) {
+			if (!(v.token in vars)) vars[v.token] = v.sample;
+		}
+		return { vars, items: base.items };
+	}
+	if (type === "payment_failed") {
+		const base = sampleRenderContext();
+		const vars: Record<string, string> = { ...base.vars };
+		for (const v of PAYMENT_FAILED_MERGE_VARIABLES) {
 			if (!(v.token in vars)) vars[v.token] = v.sample;
 		}
 		return { vars, items: base.items };

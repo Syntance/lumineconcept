@@ -111,7 +111,8 @@ export type OrderEmailTemplateType =
 	| "completed"
 	| "cancelled"
 	| "confirmation"
-	| "bank_transfer_pending";
+	| "bank_transfer_pending"
+	| "payment_failed";
 
 /** Potwierdzenie dla klienta po wysłaniu formularza kontaktowego. */
 export type ContactEmailTemplateType = "contact_confirmation";
@@ -162,6 +163,11 @@ export const EMAIL_TEMPLATE_TYPES: Array<{
 		description: "Po złożeniu zamówienia z płatnością przelewem — dane konta i tytuł.",
 	},
 	{
+		type: "payment_failed",
+		label: "Płatność online · nieudana",
+		description: "Gdy płatność Przelewy24 nie powiodła się — link do ponowienia.",
+	},
+	{
 		type: "contact_confirmation",
 		label: "Formularz kontaktowy · potwierdzenie",
 		description: "Potwierdzenie odbioru wiadomości z formularza kontaktowego.",
@@ -201,6 +207,16 @@ export const MERGE_VARIABLES: Array<{ token: string; label: string; sample: stri
 	{ token: "adres", label: "Adres dostawy", sample: "ul. Przykładowa 1, 00-000 Miasto" },
 ];
 
+/** Zmienne dla maila o nieudanej płatności online ({{token}}). */
+export const PAYMENT_FAILED_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
+	...MERGE_VARIABLES,
+	{
+		token: "linkPlatnosci",
+		label: "Link do ponownej płatności",
+		sample: "https://lumineconcept.pl/checkout/p24/retry?cart_id=cart_abc123",
+	},
+];
+
 /** Zmienne dla maila z danymi do przelewu ({{token}}). */
 export const BANK_TRANSFER_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
 	...MERGE_VARIABLES,
@@ -229,6 +245,7 @@ export const CONTACT_MERGE_VARIABLES: Array<{ token: string; label: string; samp
 export function getMergeVariablesForTemplate(type: EmailTemplateType) {
 	if (isContactEmailTemplateType(type)) return CONTACT_MERGE_VARIABLES;
 	if (type === "bank_transfer_pending") return BANK_TRANSFER_MERGE_VARIABLES;
+	if (type === "payment_failed") return PAYMENT_FAILED_MERGE_VARIABLES;
 	return MERGE_VARIABLES;
 }
 
@@ -252,6 +269,7 @@ type StageContent = {
 	paragraphs: string[];
 	withItems: boolean;
 	links?: string;
+	button?: { label: string; href: string };
 };
 
 const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
@@ -308,6 +326,17 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 		headline: "Dziękujemy za zamówienie!",
 		paragraphs: ["Otrzymaliśmy Twoje zamówienie #{{nrZamowienia}} i właśnie je przetwarzamy. Poniżej szczegóły zakupu."],
 		withItems: true,
+	},
+	payment_failed: {
+		subject: `${SUBJECT_PREFIX} Płatność nieudana — dokończ zamówienie`,
+		preheader: "Nie udało się zrealizować płatności. Możesz spróbować ponownie.",
+		headline: "Płatność nie powiodła się",
+		paragraphs: [
+			"Cześć {{imie}}, niestety płatność Przelewy24 nie została zrealizowana.",
+			"Twoje produkty nadal czekają w koszyku. Kliknij poniżej, aby spróbować ponownie:",
+		],
+		withItems: true,
+		button: { label: "Zapłać ponownie", href: "{{linkPlatnosci}}" },
 	},
 	bank_transfer_pending: {
 		subject: `${SUBJECT_PREFIX} Dane do przelewu — zamówienie #{{nrZamowienia}}`,
@@ -379,6 +408,17 @@ export function buildDefaultBlocks(type: EmailTemplateType): Block[] {
 				paddingY: 8,
 			}),
 		);
+	}
+
+	if (content.button) {
+		blocks.push({
+			id: `${type}-btn`,
+			type: "button",
+			label: content.button.label,
+			href: content.button.href,
+			align: "center",
+			paddingY: 12,
+		});
 	}
 
 	blocks.push({
@@ -530,6 +570,7 @@ export const emailTemplateTypeSchema = z.enum([
 	"cancelled",
 	"confirmation",
 	"bank_transfer_pending",
+	"payment_failed",
 	"contact_confirmation",
 ]);
 
