@@ -203,6 +203,10 @@ const INPUT_CLASS =
   "w-full rounded-md border border-brand-200 px-4 py-2.5 text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors";
 const LABEL_CLASS = "block text-sm font-medium text-brand-700 mb-1";
 
+const TURNSTILE_SITE_KEY =
+  process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY?.trim() ?? "";
+const TURNSTILE_ENABLED = TURNSTILE_SITE_KEY.length > 0;
+
 /**
  * Gdy Medusa oznajmia, że koszyk jest już completed, zużyty cart_id nadal
  * siedzi w localStorage — bez twardego resetu każdy kolejny klik dostaje
@@ -560,30 +564,31 @@ export function CheckoutForm() {
 
     const payment = formDataRef.current;
 
-    // Verify Turnstile
-    if (!payment.turnstileToken) {
-      setSubmitError("Potwierdź, że nie jesteś robotem.");
-      setSubmitting(false);
-      setSubmitSlow(false);
-      if (submitSlowTimerRef.current) {
-        clearTimeout(submitSlowTimerRef.current);
-        submitSlowTimerRef.current = null;
+    if (TURNSTILE_ENABLED) {
+      if (!payment.turnstileToken) {
+        setSubmitError("Potwierdź, że nie jesteś robotem.");
+        setSubmitting(false);
+        setSubmitSlow(false);
+        if (submitSlowTimerRef.current) {
+          clearTimeout(submitSlowTimerRef.current);
+          submitSlowTimerRef.current = null;
+        }
+        submittingRef.current = false;
+        return;
       }
-      submittingRef.current = false;
-      return;
-    }
 
-    const turnstileOk = await verifyTurnstileToken(payment.turnstileToken);
-    if (!turnstileOk) {
-      setSubmitError("Weryfikacja nie powiodła się. Odśwież stronę i spróbuj ponownie.");
-      setSubmitting(false);
-      setSubmitSlow(false);
-      if (submitSlowTimerRef.current) {
-        clearTimeout(submitSlowTimerRef.current);
-        submitSlowTimerRef.current = null;
+      const turnstileOk = await verifyTurnstileToken(payment.turnstileToken);
+      if (!turnstileOk) {
+        setSubmitError("Weryfikacja nie powiodła się. Odśwież stronę i spróbuj ponownie.");
+        setSubmitting(false);
+        setSubmitSlow(false);
+        if (submitSlowTimerRef.current) {
+          clearTimeout(submitSlowTimerRef.current);
+          submitSlowTimerRef.current = null;
+        }
+        submittingRef.current = false;
+        return;
       }
-      submittingRef.current = false;
-      return;
     }
 
     try {
@@ -1194,15 +1199,16 @@ export function CheckoutForm() {
               </p>
             </div>
 
-            {/* Turnstile Widget */}
-            <div className="rounded-lg border border-brand-200 bg-brand-50/30 p-4">
-              <Turnstile
-                siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY || ""}
-                onSuccess={(token: string) => updateField("turnstileToken", token)}
-                onError={() => updateField("turnstileToken", "")}
-                onExpire={() => updateField("turnstileToken", "")}
-              />
-            </div>
+            {TURNSTILE_ENABLED ? (
+              <div className="rounded-lg border border-brand-200 bg-brand-50/30 p-4">
+                <Turnstile
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={(token: string) => updateField("turnstileToken", token)}
+                  onError={() => updateField("turnstileToken", "")}
+                  onExpire={() => updateField("turnstileToken", "")}
+                />
+              </div>
+            ) : null}
 
             <div className="space-y-3 border-t border-brand-100 pt-4">
               <label className="flex items-start gap-2 cursor-pointer">
