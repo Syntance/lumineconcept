@@ -1,13 +1,8 @@
 "use client";
 
-import type { EmailTheme, FontKey } from "./template-types";
+import type { EmailTheme } from "./template-types";
+import { FONT_OPTIONS } from "./email-fonts";
 import { ColorField, NumberField, SelectField, TextField } from "./fields";
-
-const FONT_OPTIONS: Array<{ value: FontKey; label: string }> = [
-	{ value: "serif", label: "Szeryfowy (Georgia)" },
-	{ value: "sans", label: "Bezszeryfowy (system)" },
-	{ value: "mono", label: "Monospace" },
-];
 
 export function ThemePanel({
 	theme,

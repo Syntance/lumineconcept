@@ -6,6 +6,15 @@
  * NIE umieszczaj w nim sekretów (te trzymaj w ENV).
  */
 
+/** Czcionki marki (Gilroy, Chronicle, Binerka) + web-safe fallbacki w edytorze maili. */
+export type EmailFontKey =
+	| "gilroy"
+	| "chronicle"
+	| "binerka"
+	| "serif"
+	| "sans"
+	| "mono";
+
 export type EmailThemeConfig = {
 	bg: string;
 	contentBg: string;
@@ -14,7 +23,7 @@ export type EmailThemeConfig = {
 	accent: string;
 	muted: string;
 	link: string;
-	fontKey: "serif" | "sans" | "mono";
+	fontKey: EmailFontKey;
 	contentWidth: number;
 	radius: number;
 	headerBg: string;
