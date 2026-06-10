@@ -30,6 +30,7 @@ import {
   productBreadcrumbContextFromBasePath,
 } from "@/lib/medusa/shop-breadcrumbs";
 import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
+import { variantOptionsRecord } from "@/lib/products/variant-options";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
@@ -204,7 +205,8 @@ export async function ProductPageLayout({
   const variants = (product.variants ?? []) as unknown as Array<{
     id: string;
     title: string;
-    options: Record<string, string>;
+    /** Surowe z Medusy: tablica `{ value, option.title }` — normalizujemy niżej. */
+    options: unknown;
     calculated_price?: { calculated_amount: number };
     inventory_quantity: number;
     manage_inventory?: boolean;
@@ -371,7 +373,7 @@ export async function ProductPageLayout({
                 variants: variants.map((v) => ({
                   id: v.id,
                   title: v.title,
-                  options: v.options,
+                  options: variantOptionsRecord(v.options),
                   price: v.calculated_price?.calculated_amount ?? 0,
                   inventory_quantity: v.inventory_quantity,
                   manage_inventory: v.manage_inventory,

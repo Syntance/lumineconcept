@@ -104,8 +104,16 @@ function Przelewy24ReturnInner() {
           Potwierdzamy płatność…
         </h1>
         <p className="mx-auto mt-3 max-w-md text-sm text-brand-600">
-          Trwa weryfikacja transakcji w Przelewy24. Nie zamykaj tego okna — za
+          Trwa weryfikacja transakcji w Przelewy24 — zwykle kilka sekund. Za
           chwilę przeniesiemy Cię do potwierdzenia zamówienia.
+        </p>
+        <p className="mx-auto mt-6 max-w-md text-xs text-brand-400">
+          Jeśli nie chcesz czekać, możesz{" "}
+          <Link href="/sklep" className="underline hover:text-brand-600">
+            wrócić do sklepu
+          </Link>{" "}
+          — gdy płatność zostanie zaksięgowana, zamówienie utworzy się
+          automatycznie, a potwierdzenie wyślemy e-mailem.
         </p>
       </div>
     );
@@ -119,8 +127,10 @@ function Przelewy24ReturnInner() {
           Płatność jest przetwarzana
         </h1>
         <p className="mx-auto mt-3 max-w-md text-sm text-brand-600">
-          Jeśli płatność się powiodła, potwierdzenie zamówienia trafi na Twój
-          e-mail w ciągu kilku minut. Możesz bezpiecznie zamknąć tę stronę.
+          Czekamy na potwierdzenie z Przelewy24. Możesz bezpiecznie zamknąć tę
+          stronę — gdy wpłata zostanie zaksięgowana, zamówienie utworzy się
+          automatycznie, a potwierdzenie z numerem zamówienia trafi na Twój
+          e-mail.
         </p>
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link

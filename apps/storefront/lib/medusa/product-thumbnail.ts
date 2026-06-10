@@ -21,3 +21,13 @@ export function resolveLineItemThumbnail(
 ): string | null {
 	return resolveMedusaMediaUrl(lineThumbnail) ?? productThumbnail ?? null;
 }
+
+/** Miniatura pozycji koszyka: line item → produkt (thumbnail / galeria). */
+export function resolveCartLineItemThumbnail(item: {
+	thumbnail?: string | null;
+	product?: MedusaProductMedia | null;
+}): string | undefined {
+	const fromProduct = thumbnailFromMedusaProduct(item.product);
+	const resolved = resolveLineItemThumbnail(item.thumbnail, fromProduct);
+	return resolved ?? undefined;
+}

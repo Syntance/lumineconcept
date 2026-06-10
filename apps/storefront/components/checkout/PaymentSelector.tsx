@@ -1,9 +1,10 @@
 "use client";
 
-import { CreditCard } from "lucide-react";
+import { Building2, CreditCard } from "lucide-react";
 import {
   CHECKOUT_VISIBLE_PROVIDER_IDS,
   PRZELEWY24_PROVIDER_ID,
+  SYSTEM_PAYMENT_PROVIDER_ID,
 } from "@/lib/medusa/checkout";
 
 interface PaymentOption {
@@ -18,9 +19,16 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
   {
     id: PRZELEWY24_PROVIDER_ID,
     name: "Przelewy24",
-    description: "BLIK, przelew bankowy, karta płatnicza — szybka płatność online",
+    description: "BLIK, szybki przelew online, karta — płatność od razu",
     icon: CreditCard,
-    methods: ["BLIK", "Przelew", "Karta"],
+    methods: ["BLIK", "Przelew online", "Karta"],
+  },
+  {
+    id: SYSTEM_PAYMENT_PROVIDER_ID,
+    name: "Przelew tradycyjny",
+    description:
+      "Wpłata na konto sklepu — zamówienie przyjmujemy od razu, realizacja po zaksięgowaniu przelewu",
+    icon: Building2,
   },
 ];
 

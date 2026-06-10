@@ -274,16 +274,25 @@ type PaymentReadiness = {
 export const PRZELEWY24_PROVIDER_ID = "pp_przelewy24_przelewy24";
 
 /** Providery widoczne w checkoutcie (reszta ukryta do czasu włączenia). */
-export const CHECKOUT_VISIBLE_PROVIDER_IDS = [PRZELEWY24_PROVIDER_ID] as const;
+export const CHECKOUT_VISIBLE_PROVIDER_IDS = [
+  PRZELEWY24_PROVIDER_ID,
+  SYSTEM_PAYMENT_PROVIDER_ID,
+] as const;
 
 let paymentReadinessPromise: Promise<PaymentReadiness> | null = null;
 
 /**
- * Wybiera providera płatności w checkoutcie — wyłącznie Przelewy24.
+ * Wybiera domyślnego providera płatności: P24 (płatność od razu) →
+ * przelew tradycyjny (`pp_system_default`) → pierwszy dostępny.
+ * Fallback jest celowy — awaria/wyłączenie P24 nie może blokować checkoutu,
+ * skoro przelew tradycyjny jest pełnoprawną metodą.
  */
 function pickPreferredProvider(list: Array<{ id: string }>): string | undefined {
   const p24 = list.find((p) => p.id === PRZELEWY24_PROVIDER_ID);
-  return p24?.id;
+  if (p24) return p24.id;
+  const system = list.find((p) => p.id === SYSTEM_PAYMENT_PROVIDER_ID);
+  if (system) return system.id;
+  return list[0]?.id;
 }
 
 export function prefetchPaymentReadiness(
@@ -301,7 +310,7 @@ export function prefetchPaymentReadiness(
     }
     if (!providerId) {
       throw new Error(
-        "Przelewy24 nie jest skonfigurowane dla tego sklepu. Napisz na kontakt@lumineconcept.pl.",
+        "Brak skonfigurowanych metod płatności. Napisz na kontakt@lumineconcept.pl.",
       );
     }
     return { regionId, providerId, providerIds: providers.map((p) => p.id) };

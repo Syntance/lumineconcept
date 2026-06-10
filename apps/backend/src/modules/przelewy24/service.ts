@@ -38,6 +38,12 @@ interface Przelewy24Options {
   backendUrl: string;
   /** Publiczny URL storefrontu — buduje urlReturn (powrót klienta). */
   storefrontUrl: string;
+  /**
+   * Bitmask kanałów P24 (transaction/register `channel`).
+   * Domyślnie 3 = karty (1) + przelewy online (2), BEZ przelewu tradycyjnego (4).
+   * Przelew tradycyjny obsługujemy przez `pp_system_default` w checkoutcie Lumine.
+   */
+  channel?: number;
 }
 
 interface InjectedDependencies {
@@ -65,6 +71,9 @@ interface Przelewy24SessionData {
 }
 
 const P24_STATUS_PAID = 2;
+
+/** Karty + przelewy online — bez „przelewu tradycyjnego” (bit 4) w panelu P24. */
+const P24_CHANNEL_ONLINE_DEFAULT = 3;
 
 /**
  * Przelewy24 Payment Provider (MedusaJS v2).
@@ -186,6 +195,9 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
       crc: this.options_.crc,
     });
 
+    const channel =
+      this.options_.channel ?? P24_CHANNEL_ONLINE_DEFAULT;
+
     let token: string | undefined;
     try {
       const result = await this.api<{ data: { token: string } }>(
@@ -205,6 +217,7 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
           language: "pl",
           urlReturn,
           urlStatus,
+          channel,
           sign,
         },
       );

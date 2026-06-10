@@ -35,6 +35,7 @@ import {
   saveContactDetails,
   SYSTEM_PAYMENT_PROVIDER_ID,
 } from "@/lib/medusa/checkout";
+import { getBankTransferDetails } from "@/lib/payment/bank-transfer";
 import { getPolishRegionId } from "@/lib/medusa/region";
 
 type CheckoutStep = 1 | 2 | 3;
@@ -962,7 +963,9 @@ export function CheckoutForm() {
                 ? formData.paymentProviderId === PRZELEWY24_PROVIDER_ID
                   ? "Przekierowuję do Przelewy24…"
                   : "Składanie zamówienia…"
-                : "Zamawiam i płacę"}
+                : formData.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID
+                  ? "Zamawiam — opłać przelewem"
+                  : "Zamawiam i płacę"}
             </button>
             {submitSlow && submitting && (
               <p
@@ -976,7 +979,14 @@ export function CheckoutForm() {
             {formData.paymentProviderId === PRZELEWY24_PROVIDER_ID ? (
               <p className="text-center text-[11px] text-brand-400">
                 Po kliknięciu przejdziesz do bezpiecznego panelu Przelewy24,
-                gdzie dokończysz płatność (BLIK, przelew, karta).
+                gdzie dokończysz płatność (BLIK, szybki przelew online, karta).
+              </p>
+            ) : null}
+            {formData.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID ? (
+              <p className="text-center text-[11px] text-brand-500">
+                Po złożeniu zamówienia zobaczysz dane do przelewu na konto{" "}
+                {getBankTransferDetails().recipientName}. Realizacja zacznie się po
+                zaksięgowaniu wpłaty (zwykle 1–2 dni robocze).
               </p>
             ) : null}
           </section>

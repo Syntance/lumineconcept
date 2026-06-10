@@ -422,7 +422,13 @@ export function MiniConfiguratorModal({
       const metadata = buildMetadata();
       await addItemWithTracking(
         variantId,
-        { id: productId, title, price, currency: "PLN" },
+        {
+          id: productId,
+          title,
+          price,
+          currency: "PLN",
+          thumbnail: thumbnail ?? undefined,
+        },
         1,
         Object.keys(metadata).length > 0 ? metadata : undefined,
       );
