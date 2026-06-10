@@ -27,7 +27,7 @@ describe("resolveP24ReturnOutcome", () => {
     ).toBe("paid");
   });
 
-  it("P24 status 1 → pending", () => {
+  it("P24 status 1 → pending (płatność w trakcie weryfikacji)", () => {
     expect(
       resolveP24ReturnOutcome({
         sessionData: { p24_session_id: "p24_x" },
@@ -37,7 +37,7 @@ describe("resolveP24ReturnOutcome", () => {
     ).toBe("pending");
   });
 
-  it("P24 status 0 bez grace → pending", () => {
+  it("bez grace → pending (jeszcze weryfikujemy)", () => {
     expect(
       resolveP24ReturnOutcome({
         sessionData: { p24_session_id: "p24_x" },
@@ -47,11 +47,21 @@ describe("resolveP24ReturnOutcome", () => {
     ).toBe("pending");
   });
 
-  it("P24 status 0 po grace → failed", () => {
+  it("status 0 po grace → failed", () => {
     expect(
       resolveP24ReturnOutcome({
         sessionData: { p24_session_id: "p24_x" },
         tx: { status: P24_STATUS_NO_PAYMENT, orderId: 0, amount: 0, currency: "PLN" },
+        allowFailedOnZero: true,
+      }),
+    ).toBe("failed");
+  });
+
+  it("brak transakcji w P24 po grace → failed (np. anulowana sesja retry)", () => {
+    expect(
+      resolveP24ReturnOutcome({
+        sessionData: { p24_session_id: "p24_new" },
+        tx: null,
         allowFailedOnZero: true,
       }),
     ).toBe("failed");

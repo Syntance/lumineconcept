@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, type MutableRefObject } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, XCircle } from "lucide-react";
@@ -19,8 +19,27 @@ import {
 
 const CHECKOUT_DRAFT_STORAGE_KEY = "lumine_checkout_draft_v1";
 
-/** Po tym czasie status P24=0 traktujemy jako nieudaną płatność. */
-const FAILED_GRACE_MS = 2_500;
+/** Krótkie okno na potwierdzenie z P24 zanim pokażemy „nieudana”. */
+const FAILED_GRACE_MS = 2_000;
+
+/** Tylko przy statusie 1 (verify) — płatność realnie w toku. */
+function isPaymentInProgress(
+  status: Awaited<ReturnType<typeof fetchP24ReturnStatus>>,
+): boolean {
+  return status?.status === "pending" && status.p24_status === 1;
+}
+
+function showFailedState(
+  retryUrl: string,
+  cartId: string,
+  emailSentRef: MutableRefObject<boolean>,
+) {
+  if (!emailSentRef.current) {
+    emailSentRef.current = true;
+    notifyPaymentFailed(cartId, retryUrl);
+  }
+  return { kind: "failed" as const, retryUrl };
+}
 
 const POLL_DELAYS_MS = [800, 1200, 1800, 2500, 3000, 3000, 4000, 4000];
 
@@ -131,13 +150,6 @@ function Przelewy24ReturnInner() {
     let cancelled = false;
     const startedAt = Date.now();
     let lastRetryUrl = buildP24RetryUrl(cartId);
-    let consecutiveZeroStatus = 0;
-
-    const maybeSendFailedEmail = (retryUrl: string) => {
-      if (emailSentRef.current) return;
-      emailSentRef.current = true;
-      notifyPaymentFailed(cartId, retryUrl);
-    };
 
     (async () => {
       for (let i = 0; i <= POLL_DELAYS_MS.length; i++) {
@@ -187,25 +199,9 @@ function Przelewy24ReturnInner() {
           lastRetryUrl = p24Status.retry_url;
         }
 
-        if (p24Status?.p24_status === 0) {
-          consecutiveZeroStatus += 1;
-        } else if (p24Status?.p24_status != null) {
-          consecutiveZeroStatus = 0;
-        }
-
-        const shouldTreatAsFailed =
-          allowFailedOnZero &&
-          p24Status?.status === "failed" &&
-          consecutiveZeroStatus >= 2;
-
-        if (shouldTreatAsFailed) {
-          maybeSendFailedEmail(lastRetryUrl);
-          setState({ kind: "failed", retryUrl: lastRetryUrl });
+        if (allowFailedOnZero && p24Status?.status === "failed") {
+          setState(showFailedState(lastRetryUrl, cartId, emailSentRef));
           return;
-        }
-
-        if (p24Status?.status === "paid") {
-          // completeCart w kolejnej iteracji powinien domknąć zamówienie
         }
 
         if (i < POLL_DELAYS_MS.length) {
@@ -220,11 +216,34 @@ function Przelewy24ReturnInner() {
         if (finalStatus?.retry_url) lastRetryUrl = finalStatus.retry_url;
         else lastRetryUrl = buildP24RetryUrl(cartId);
 
-        if (finalStatus?.status === "failed") {
-          maybeSendFailedEmail(lastRetryUrl);
-          setState({ kind: "failed", retryUrl: lastRetryUrl });
-        } else {
+        if (isPaymentInProgress(finalStatus)) {
           setState({ kind: "pending" });
+        } else if (finalStatus?.status === "paid") {
+          try {
+            const result = await completeCart(cartId, { retries: 0 });
+            if (result.type === "order") {
+              const orderNotes = readCheckoutDraftOrderNotes();
+              if (orderNotes) {
+                attachOrderNotes(result.order.id, orderNotes);
+              }
+              notifyOrderPlaced(result.order.id);
+              markCheckoutCompleted(
+                result.order.id,
+                result.order.display_id ?? undefined,
+              );
+              clearLocalCart();
+              redirectToOrderConfirmation(
+                result.order.id,
+                result.order.display_id ?? undefined,
+              );
+              return;
+            }
+          } catch {
+            /* fallback pending poniżej */
+          }
+          setState({ kind: "pending" });
+        } else {
+          setState(showFailedState(lastRetryUrl, cartId, emailSentRef));
         }
       }
     })();
