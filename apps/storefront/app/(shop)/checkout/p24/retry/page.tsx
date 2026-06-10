@@ -1,48 +1,38 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Loader2, AlertCircle } from "lucide-react";
-import { retryPrzelewy24Payment } from "@/lib/medusa/checkout";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { markP24PaymentStarted } from "@/lib/medusa/checkout";
 
 function P24RetryInner() {
   const params = useSearchParams();
+  const router = useRouter();
   const cartId = params.get("cart_id");
-  const [error, setError] = useState<string | null>(null);
   const startedRef = useRef(false);
 
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
 
-    if (!cartId) {
-      setError("Brak identyfikatora koszyka. Wróć do koszyka i spróbuj ponownie.");
-      return;
-    }
+    if (!cartId) return;
 
-    (async () => {
-      try {
-        const url = await retryPrzelewy24Payment(cartId);
-        window.location.assign(url);
-      } catch (e) {
-        setError(
-          e instanceof Error
-            ? e.message
-            : "Nie udało się przygotować płatności. Spróbuj ponownie.",
-        );
-      }
-    })();
-  }, [cartId]);
+    markP24PaymentStarted(cartId);
+    router.replace(
+      `/checkout/przelewy24/start?cart_id=${encodeURIComponent(cartId)}&retry=1`,
+    );
+  }, [cartId, router]);
 
-  if (error) {
+  if (!cartId) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
         <h1 className="mt-6 font-display text-2xl font-semibold text-brand-800">
           Nie udało się rozpocząć płatności
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm text-brand-600">{error}</p>
+        <p className="mx-auto mt-3 max-w-md text-sm text-brand-600">
+          Brak identyfikatora koszyka. Wróć do koszyka i spróbuj ponownie.
+        </p>
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
             href="/checkout"

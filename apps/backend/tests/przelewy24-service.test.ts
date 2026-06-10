@@ -76,6 +76,7 @@ describe("initiatePayment — rejestracja transakcji", () => {
     expect(body.urlStatus).toBe(
       "https://api.example.com/hooks/payment/pp_przelewy24_przelewy24",
     );
+    expect(body.waitForResult).toBe(false);
   });
 
   it("dodaje Express fee (+50%) do kwoty rejestracji P24 z cart.metadata", async () => {

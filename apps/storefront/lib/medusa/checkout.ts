@@ -7,6 +7,46 @@ import { resolveMedusaFetchBase } from "./resolve-fetch-base";
 /** Po udanym zamówieniu — blokuje ponowny checkout (wstecz w przeglądarce). */
 export const CHECKOUT_COMPLETED_STORAGE_KEY = "lumine_checkout_completed_v1";
 
+/** Kontekst aktywnej sesji P24 — powrót z bramki / brak cart_id w URL. */
+export const P24_CART_CONTEXT_KEY = "lumine_p24_cart_context_v1";
+
+export type P24CartContext = {
+  cartId: string;
+  at: number;
+};
+
+export function markP24PaymentStarted(cartId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const payload: P24CartContext = { cartId, at: Date.now() };
+    sessionStorage.setItem(P24_CART_CONTEXT_KEY, JSON.stringify(payload));
+  } catch {
+    /* prywatny tryb */
+  }
+}
+
+export function readP24CartContext(): P24CartContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(P24_CART_CONTEXT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<P24CartContext>;
+    if (!parsed.cartId?.trim()) return null;
+    return { cartId: parsed.cartId.trim(), at: parsed.at ?? 0 };
+  } catch {
+    return null;
+  }
+}
+
+export function clearP24CartContext(): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(P24_CART_CONTEXT_KEY);
+  } catch {
+    /* prywatny tryb */
+  }
+}
+
 export type CheckoutCompletedPayload = {
   orderId: string;
   displayId?: number;

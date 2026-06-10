@@ -23,9 +23,9 @@ import {
   completeCart,
   describeMedusaError,
   initPaymentSession,
-  initPrzelewy24Redirect,
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
+  markP24PaymentStarted,
   notifyBankTransferPending,
   notifyOrderPlaced,
   notifyOrderPlacedAwait,
@@ -574,10 +574,12 @@ export function CheckoutForm() {
           payment.paymentProviderId,
           sanitizedNotes,
         );
-        const redirectUrl = await initPrzelewy24Redirect(cartId);
         trackCheckoutStep({ stepNumber: 3, cartValue: total });
         if (typeof window !== "undefined") {
-          window.location.assign(redirectUrl);
+          markP24PaymentStarted(cartId);
+          window.location.assign(
+            `/checkout/przelewy24/start?cart_id=${encodeURIComponent(cartId)}`,
+          );
           return;
         }
       }

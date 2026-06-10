@@ -4,14 +4,17 @@ import { Suspense, useEffect, useRef, useState, type MutableRefObject } from "re
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, XCircle } from "lucide-react";
+import { handoffP24PopupToOpener } from "@/lib/checkout/p24-popup";
 import {
   completeCart,
   fetchP24ReturnStatus,
   buildP24RetryUrl,
   buildOrderEmailSnapshotFromCheckout,
+  clearP24CartContext,
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
   notifyOrderPlacedAwait,
+  readP24CartContext,
   triggerPaymentFailedEmail,
   attachOrderNotes,
   redirectToOrderConfirmation,
@@ -68,9 +71,16 @@ function clearLocalCart() {
     localStorage.removeItem("lumine_cart_id");
     localStorage.removeItem("lumine_express");
     sessionStorage.removeItem("lumine_checkout_draft_v1");
+    clearP24CartContext();
   } catch {
     /* prywatny tryb */
   }
+}
+
+function resolveReturnCartId(urlCartId: string | null): string | null {
+  const fromUrl = urlCartId?.trim();
+  if (fromUrl) return fromUrl;
+  return readP24CartContext()?.cartId ?? null;
 }
 
 async function completeP24OrderSuccess(
@@ -128,6 +138,12 @@ function FailedActions({
         {retrying ? "Przekierowujemy…" : "Zapłać ponownie"}
       </button>
       <Link
+        href="/checkout"
+        className="w-full rounded-md border border-brand-300 px-8 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-50 transition-colors sm:w-auto"
+      >
+        Wróć do checkoutu
+      </Link>
+      <Link
         href="/sklep"
         className="text-sm text-brand-600 underline hover:text-brand-800"
       >
@@ -148,12 +164,21 @@ function FailedActions({
 
 function Przelewy24ReturnInner() {
   const params = useSearchParams();
-  const cartId = params.get("cart_id");
+  const urlCartId = params.get("cart_id");
+  const cartId = resolveReturnCartId(urlCartId);
   const [state, setState] = useState<ReturnState>({ kind: "verifying" });
+  const [popupHandoff, setPopupHandoff] = useState(false);
   const startedRef = useRef(false);
   const emailSentRef = useRef(false);
 
   useEffect(() => {
+    if (handoffP24PopupToOpener()) {
+      setPopupHandoff(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (popupHandoff) return;
     if (startedRef.current) return;
     startedRef.current = true;
 
@@ -244,7 +269,16 @@ function Przelewy24ReturnInner() {
     return () => {
       cancelled = true;
     };
-  }, [cartId]);
+  }, [cartId, popupHandoff]);
+
+  if (popupHandoff) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center">
+        <Loader2 className="mx-auto h-12 w-12 animate-spin text-accent" />
+        <p className="mt-6 text-sm text-brand-600">Przenosimy wynik płatności…</p>
+      </div>
+    );
+  }
 
   if (state.kind === "verifying") {
     return (
@@ -293,10 +327,22 @@ function Przelewy24ReturnInner() {
         </p>
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
-            href="/sklep"
+            href={`/checkout/przelewy24/start?cart_id=${encodeURIComponent(cartId ?? "")}&retry=1`}
             className="rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors"
           >
-            Wróć do sklepu
+            Spróbuj ponownie
+          </Link>
+          <Link
+            href="/checkout"
+            className="rounded-md border border-brand-300 px-8 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-50 transition-colors"
+          >
+            Wróć do checkoutu
+          </Link>
+          <Link
+            href="/sklep"
+            className="text-sm text-brand-600 underline hover:text-brand-800 sm:self-center"
+          >
+            Sklep
           </Link>
         </div>
       </div>
@@ -312,10 +358,22 @@ function Przelewy24ReturnInner() {
       <p className="mx-auto mt-3 max-w-md text-sm text-brand-600">{state.message}</p>
       <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         <Link
-          href="/koszyk"
-          className="rounded-md bg-brand-800 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-900 transition-colors"
+          href={cartId ? `/checkout/przelewy24/start?cart_id=${encodeURIComponent(cartId)}&retry=1` : "/checkout"}
+          className="rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors"
         >
-          Wróć do koszyka
+          Spróbuj ponownie
+        </Link>
+        <Link
+          href="/checkout"
+          className="rounded-md border border-brand-300 px-8 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-50 transition-colors"
+        >
+          Wróć do checkoutu
+        </Link>
+        <Link
+          href="/koszyk"
+          className="text-sm text-brand-600 underline hover:text-brand-800 sm:self-center"
+        >
+          Koszyk
         </Link>
       </div>
     </div>
