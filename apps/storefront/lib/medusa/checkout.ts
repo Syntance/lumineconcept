@@ -409,7 +409,7 @@ export async function notifyOrderPlacedAwait(
 					? {
 							snapshot: {
 								email: snapshot.email,
-								display_id: snapshot.displayId,
+								display_id: snapshot.displayId || undefined,
 								total: snapshot.total,
 								item_total: snapshot.itemTotal,
 								shipping_total: snapshot.shippingTotal,
@@ -426,6 +426,34 @@ export async function notifyOrderPlacedAwait(
 			signal: AbortSignal.timeout(20_000),
 		});
 		if (res.ok) return true;
+		const retryBody = JSON.stringify({
+			order_id: orderId,
+			...(snapshot
+				? {
+						snapshot: {
+							email: snapshot.email,
+							display_id: snapshot.displayId || undefined,
+							total: snapshot.total,
+							item_total: snapshot.itemTotal,
+							shipping_total: snapshot.shippingTotal,
+							currency_code: snapshot.currencyCode,
+							customer_name: snapshot.customerName,
+							address: snapshot.address,
+							phone: snapshot.phone,
+							shipping_method_name: snapshot.shippingMethodName,
+							items: snapshot.items,
+						},
+					}
+				: {}),
+		});
+		await new Promise((r) => setTimeout(r, 600));
+		const retry = await fetch("/api/checkout/notify-order-placed", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			body: retryBody,
+			signal: AbortSignal.timeout(20_000),
+		});
+		if (retry.ok) return true;
 	} catch (e) {
 		console.warn("[mail] notify-order-placed storefront error", e);
 	}
@@ -454,6 +482,114 @@ export async function notifyOrderPlacedAwait(
 		console.warn("[mail] notify-order-placed backend error", e);
 		return false;
 	}
+}
+
+const CHECKOUT_DRAFT_STORAGE_KEY = "lumine_checkout_draft_v1";
+
+type CheckoutDraftFormData = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
+  city: string;
+  postalCode: string;
+};
+
+function readCheckoutDraftFormData(): CheckoutDraftFormData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { formData?: Partial<CheckoutDraftFormData> };
+    const form = parsed.formData;
+    if (!form?.email?.trim()) return null;
+    return {
+      email: form.email.trim(),
+      firstName: form.firstName?.trim() ?? "",
+      lastName: form.lastName?.trim() ?? "",
+      phone: form.phone?.trim() ?? "",
+      address: form.address?.trim() ?? "",
+      city: form.city?.trim() ?? "",
+      postalCode: form.postalCode?.trim() ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function cartAmountToMinor(value: unknown): number {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n);
+}
+
+/**
+ * Snapshot z draftu checkoutu + koszyka — działa zanim admin API zwróci zamówienie
+ * (typowy scenariusz po powrocie z P24 po wcześniejszej nieudanej płatności).
+ */
+export async function buildOrderEmailSnapshotFromCheckout(
+  order: { id: string; display_id?: number },
+  cartId: string,
+): Promise<CheckoutOrderSnapshot | undefined> {
+  const draft = readCheckoutDraftFormData();
+  if (!draft?.email) return undefined;
+
+  let cart: Record<string, unknown> | null = null;
+  try {
+    cart = await getCart(cartId);
+  } catch {
+    /* koszyk może być już zamknięty — używamy samego draftu */
+  }
+
+  const currency = String(cart?.currency_code ?? "pln").toUpperCase();
+  const itemsRaw = (cart?.items as Array<Record<string, unknown>> | undefined) ?? [];
+  const items = itemsRaw.map((item) => {
+    const unitPrice = cartAmountToMinor(item.unit_price);
+    const quantity = Number(item.quantity ?? 1);
+    const lineTotal =
+      cartAmountToMinor(item.total) ||
+      unitPrice * (Number.isFinite(quantity) ? quantity : 1);
+    return {
+      title: String(item.title ?? item.product_title ?? "Produkt"),
+      quantity: Number.isFinite(quantity) ? quantity : 1,
+      total: lineTotal,
+      thumbnail: (item.thumbnail as string | null | undefined) ?? null,
+    };
+  });
+
+  const itemTotalFromCart = cartAmountToMinor(cart?.item_subtotal ?? cart?.subtotal);
+  const itemTotal =
+    itemTotalFromCart ||
+    items.reduce((sum, item) => sum + item.total, 0);
+  const shippingTotal = cartAmountToMinor(cart?.shipping_total);
+  const total =
+    cartAmountToMinor(cart?.total) || itemTotal + shippingTotal;
+
+  const shippingMethods = cart?.shipping_methods as
+    | Array<{ name?: string | null }>
+    | undefined;
+
+  const address = [
+    draft.address,
+    [draft.postalCode, draft.city].filter(Boolean).join(" "),
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return {
+    email: draft.email,
+    displayId: order.display_id ?? 0,
+    total,
+    itemTotal,
+    shippingTotal,
+    currencyCode: currency,
+    customerName: [draft.firstName, draft.lastName].filter(Boolean).join(" ").trim(),
+    address,
+    phone: draft.phone,
+    shippingMethodName: shippingMethods?.[0]?.name ?? null,
+    items,
+  };
 }
 
 export type CheckoutOrderSnapshot = {

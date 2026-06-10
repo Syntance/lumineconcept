@@ -599,7 +599,22 @@ export async function markOrderDelivered(orderId: string): Promise<void> {
 	});
 }
 
+/** Anuluje aktywne realizacje — Medusa wymaga tego przed anulowaniem zamówienia. */
+async function cancelActiveFulfillments(orderId: string): Promise<void> {
+	const data = await adminFetch<{ order: { fulfillments?: MedusaFulfillmentForShip[] } }>(
+		`/admin/orders/${orderId}?fields=${SHIPMENT_FIELDS}`,
+	);
+	const active = (data.order.fulfillments ?? []).filter((f) => !f.canceled_at);
+	for (const fulfillment of active) {
+		await adminFetch(`/admin/orders/${orderId}/fulfillments/${fulfillment.id}/cancel`, {
+			method: "POST",
+			body: JSON.stringify({}),
+		});
+	}
+}
+
 export async function cancelOrder(orderId: string): Promise<void> {
+	await cancelActiveFulfillments(orderId);
 	await adminFetch(`/admin/orders/${orderId}/cancel`, { method: "POST", body: JSON.stringify({ no_notification: false }) });
 }
 

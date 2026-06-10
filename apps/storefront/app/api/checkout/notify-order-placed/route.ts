@@ -16,7 +16,7 @@ const itemSchema = z.object({
 
 const snapshotSchema = z.object({
 	email: z.string().email(),
-	display_id: z.number().int().positive(),
+	display_id: z.number().int().nonnegative().optional(),
 	total: z.number().nonnegative(),
 	item_total: z.number().nonnegative().optional(),
 	shipping_total: z.number().nonnegative().optional(),
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 	const snapshot: CheckoutOrderSnapshot | undefined = data.snapshot
 		? {
 				email: data.snapshot.email,
-				displayId: data.snapshot.display_id,
+				displayId: data.snapshot.display_id ?? 0,
 				total: data.snapshot.total,
 				itemTotal: data.snapshot.item_total,
 				shippingTotal: data.snapshot.shipping_total,
