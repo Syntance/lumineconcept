@@ -123,6 +123,13 @@ export default function RootLayout({
         />
         <link
           rel="preload"
+          href="/fonts/Gilroy-Medium.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
           href="/images/hero-main-wall.webp"
           as="image"
           type="image/webp"
