@@ -50,11 +50,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useTimeOnPage(safePath);
 
   // Inicjalizacja + reakcja na zmianę zgody.
-  // Opóźniona o 3s po mount, żeby nie blokować LCP (mobile 4G).
+  // Opóźniona o 5s po mount, żeby nie blokować LCP (mobile 4G).
   useEffect(() => {
     let cleanupFn: (() => void) | undefined;
 
-    // Czekamy ~3s (po LCP) zanim zainicjalizujemy PostHog
+    // Czekamy ~5s (po LCP) zanim zainicjalizujemy PostHog
     const timeoutId = setTimeout(() => {
       initPostHog();
 
@@ -104,7 +104,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       cleanupFn = () => {
         window.removeEventListener(CONSENT_EVENT, applyConsent);
       };
-    }, 3000);
+    }, 5000);
 
     return () => {
       clearTimeout(timeoutId);

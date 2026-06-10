@@ -23,7 +23,8 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           height={HERO_BG_HEIGHT}
           priority
           fetchPriority="high"
-          sizes="(max-width: 1024px) 640px, 1920px"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1920px"
+          quality={85}
           className="block h-auto w-full select-none max-lg:absolute max-lg:inset-0 max-lg:h-full max-lg:w-full max-lg:object-cover max-lg:object-[42%_center] lg:absolute lg:inset-0 lg:h-full lg:w-full lg:object-cover lg:object-[38%_center]"
         />
 
