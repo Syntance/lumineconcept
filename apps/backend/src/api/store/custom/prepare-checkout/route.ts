@@ -10,7 +10,7 @@ import {
 } from "@medusajs/medusa/core-flows";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
-import { persistCartOrderNotes } from "../../../../lib/order-notes";
+import { persistCartCheckoutMetadata } from "../../../../lib/cart-checkout-metadata";
 
 let ratelimit: Ratelimit | null = null;
 
@@ -179,9 +179,10 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     }
 
     // Na końcu — po workflowach, żeby metadata nie została nadpisana.
-    if (orderNotes) {
-      await persistCartOrderNotes(scope, cartId, orderNotes);
-    }
+    await persistCartCheckoutMetadata(scope, cartId, {
+      orderNotes,
+      paymentProviderId: providerId,
+    });
 
     /**
      * Nie zwracamy tu pełnego snapshotu koszyka — storefront i tak robi
