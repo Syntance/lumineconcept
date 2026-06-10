@@ -149,7 +149,8 @@ export function ProductCard({
               aria-hidden="true"
               width={24}
               height={24}
-              unoptimized
+              sizes="24px"
+              quality={85}
               className="pointer-events-none absolute right-2 top-2 z-20 h-5 w-auto select-none opacity-30"
               style={{ filter: "brightness(0) invert(1)" }}
               draggable={false}

@@ -135,11 +135,11 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://connect.facebook.net https://eu.posthog.com https://eu.i.posthog.com https://challenges.cloudflare.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://connect.facebook.net https://eu.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://challenges.cloudflare.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com https://images.unsplash.com " + MEDUSA_BACKEND_URL + r2CspOrigin,
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://eu.posthog.com https://eu.i.posthog.com https://connect.facebook.net https://api.mailerlite.com https://challenges.cloudflare.com " + MEDUSA_BACKEND_URL + " " + MEILISEARCH_HOST + SENTRY_CSP_HOSTS,
+              "connect-src 'self' https://eu.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://connect.facebook.net https://api.mailerlite.com https://challenges.cloudflare.com " + MEDUSA_BACKEND_URL + " " + MEILISEARCH_HOST + SENTRY_CSP_HOSTS,
               "frame-src 'self' https://www.facebook.com https://challenges.cloudflare.com",
               "object-src 'none'",
               "base-uri 'self'",

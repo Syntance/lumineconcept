@@ -110,6 +110,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl" className={`${gilroy.variable} ${chronicle.variable} ${binerka.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://eu.posthog.com" />
+        <link rel="preconnect" href="https://eu.i.posthog.com" />
+        <link rel="preconnect" href="https://eu-assets.i.posthog.com" />
+      </head>
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">
         <CookieConsent />
         <Providers>{children}</Providers>
