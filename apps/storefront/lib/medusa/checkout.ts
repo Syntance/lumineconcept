@@ -677,13 +677,15 @@ export type P24ReturnStatusResponse = {
   status: P24ReturnStatus;
   email?: string;
   retry_url?: string;
+  p24_session_id?: string;
   p24_status?: number | null;
+  email_sent?: boolean;
 };
 
 /** Sprawdza stan płatności P24 po powrocie klienta z bramki. */
 export async function fetchP24ReturnStatus(
   cartId: string,
-  options?: { allowFailedOnZero?: boolean },
+  options?: { allowFailedOnZero?: boolean; sendFailedEmail?: boolean },
 ): Promise<P24ReturnStatusResponse | null> {
   const base = resolveMedusaFetchBase();
   const headers: Record<string, string> = {
@@ -700,6 +702,7 @@ export async function fetchP24ReturnStatus(
     body: JSON.stringify({
       cart_id: cartId,
       allow_failed_on_zero: options?.allowFailedOnZero ?? false,
+      send_failed_email: options?.sendFailedEmail ?? false,
     }),
     signal: AbortSignal.timeout(30_000),
   });
@@ -752,13 +755,41 @@ export function buildP24RetryUrl(cartId: string): string {
   return site ? `${site}${path}` : path;
 }
 
-/** Wysyła mail o nieudanej płatności (szablon magazynu). Fire-and-forget. */
-export function notifyPaymentFailed(cartId: string, retryUrl: string): void {
+/** Fallback wysyłki maila z klienta (główna ścieżka: backend send_failed_email). */
+export function notifyPaymentFailed(
+  cartId: string,
+  retryUrl: string,
+  p24SessionId?: string,
+): void {
   void fetch("/api/checkout/send-payment-failed-email", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cart_id: cartId, retry_url: retryUrl }),
+    keepalive: true,
+    body: JSON.stringify({
+      cart_id: cartId,
+      retry_url: retryUrl,
+      ...(p24SessionId ? { p24_session_id: p24SessionId } : {}),
+    }),
   }).catch(() => undefined);
+}
+
+/** Woła backend — status failed + wysyłka maila (dedupe per sesja P24). */
+export async function triggerPaymentFailedEmail(
+  cartId: string,
+  retryUrl: string,
+): Promise<void> {
+  const status = await fetchP24ReturnStatus(cartId, {
+    allowFailedOnZero: true,
+    sendFailedEmail: true,
+  }).catch(() => null);
+
+  if (status?.email_sent) return;
+
+  notifyPaymentFailed(
+    cartId,
+    status?.retry_url ?? retryUrl,
+    status?.p24_session_id,
+  );
 }
 
 export type CompleteCartResponse =
