@@ -429,8 +429,13 @@ export function ProductPageClient({
   const calloutEnabled =
     checkoutCallout?.enabled !== false && !!checkoutCallout?.message;
 
+  const uploadBlocksAddToCart =
+    uploadSettings.enabled &&
+    uploadSettings.required &&
+    !uploadsComplete;
+
   const configIncomplete =
-    !uploadsComplete ||
+    uploadBlocksAddToCart ||
     !allLinksProvided ||
     !allTextFieldsValid ||
     (!allColorChoicesComplete && colorOptionTitles.length > 0);
@@ -609,7 +614,7 @@ export function ProductPageClient({
               {!allLinksProvided && (
                 <li>Podaj wszystkie wymagane linki do kodów QR</li>
               )}
-              {!uploadsComplete && (
+              {uploadBlocksAddToCart && (
                 <li>Wgraj co najmniej jeden plik w sekcji wgrywania treści</li>
               )}
             </ul>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	doesUploadBlockAddToCart,
 	getStorefrontUploadCount,
 	isProductUploadComplete,
 	parseUploadSettingsFromMetadata,
@@ -28,6 +29,16 @@ describe("parseUploadSettingsFromMetadata", () => {
 			count: 2,
 			label: "",
 		});
+	});
+
+	it("treats explicit uploads_required false as optional even with whitespace", () => {
+		expect(
+			parseUploadSettingsFromMetadata({
+				uploads_enabled: "true",
+				uploads_required: " false ",
+				uploads_count: "1",
+			}).required,
+		).toBe(false);
 	});
 
 	it("parses optional upload when uploads_required is false", () => {
@@ -73,6 +84,26 @@ describe("serializeUploadSettingsForMetadata", () => {
 				label: "Logo",
 			}).uploads_required,
 		).toBe("false");
+	});
+});
+
+describe("doesUploadBlockAddToCart", () => {
+	it("does not block when upload optional", () => {
+		expect(
+			doesUploadBlockAddToCart(
+				{ enabled: true, required: false, count: 1, label: "" },
+				0,
+			),
+		).toBe(false);
+	});
+
+	it("blocks when upload required and no files", () => {
+		expect(
+			doesUploadBlockAddToCart(
+				{ enabled: true, required: true, count: 1, label: "" },
+				0,
+			),
+		).toBe(true);
 	});
 });
 
