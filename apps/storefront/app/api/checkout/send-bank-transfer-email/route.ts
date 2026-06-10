@@ -1,98 +1,85 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { bankTransferMergeVars } from "@/lib/payment/bank-transfer";
-import { sendBankTransferPendingEmail } from "@magazyn/modules/emails/send-bank-transfer-email";
+import { dispatchMagazynOrderEmail } from "@/lib/email/dispatch-magazyn-order-email";
 import { SYSTEM_PAYMENT_PROVIDER_ID } from "@/lib/medusa/checkout";
-import type { OrderRenderSource } from "@magazyn/modules/emails/render-template";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { sendTransactionalEmail } from "@magazyn/modules/emails/send-transactional";
-import { formatPrice } from "@magazyn/core/lib/format";
 
 export const maxDuration = 30;
 
+const itemSchema = z.object({
+	title: z.string(),
+	quantity: z.number().int().positive(),
+	total: z.number().nonnegative(),
+	thumbnail: z.string().nullable().optional(),
+});
+
 const bodySchema = z.object({
-  order_id: z.string().min(1),
-  email: z.string().email(),
-  display_id: z.number().int().positive(),
-  total: z.number().nonnegative(),
-  item_total: z.number().nonnegative().optional(),
-  shipping_total: z.number().nonnegative().optional(),
-  currency_code: z.string().default("PLN"),
-  customer_name: z.string().optional(),
-  payment_provider_id: z.string().optional(),
+	order_id: z.string().min(1),
+	email: z.string().email(),
+	display_id: z.number().int().positive(),
+	total: z.number().nonnegative(),
+	item_total: z.number().nonnegative().optional(),
+	shipping_total: z.number().nonnegative().optional(),
+	currency_code: z.string().default("PLN"),
+	customer_name: z.string().optional(),
+	address: z.string().optional(),
+	phone: z.string().optional(),
+	shipping_method_name: z.string().nullable().optional(),
+	payment_provider_id: z.string().optional(),
+	items: z.array(itemSchema).optional(),
 });
 
 /**
- * Zapasowa wysyłka maila przelewu przez Resend na Vercel (bez Admin API Medusy).
- * Wołane z checkoutu, gdy backend Railway nie zdąży / nie ma emaila na order.
+ * Wysyłka maila przelewu — szablon `bank_transfer_pending` z magazynu.
+ * Wołane z checkoutu po completeCart.
  */
 export async function POST(request: Request) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
-  }
+	let body: unknown;
+	try {
+		body = await request.json();
+	} catch {
+		return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
+	}
 
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: "invalid_body" }, { status: 400 });
-  }
+	const parsed = bodySchema.safeParse(body);
+	if (!parsed.success) {
+		return NextResponse.json({ ok: false, error: "invalid_body" }, { status: 400 });
+	}
 
-  const data = parsed.data;
-  if (
-    data.payment_provider_id &&
-    data.payment_provider_id !== SYSTEM_PAYMENT_PROVIDER_ID
-  ) {
-    return NextResponse.json({ ok: false, error: "not_bank_transfer" }, { status: 422 });
-  }
+	const data = parsed.data;
+	if (
+		data.payment_provider_id &&
+		data.payment_provider_id !== SYSTEM_PAYMENT_PROVIDER_ID
+	) {
+		return NextResponse.json({ ok: false, error: "not_bank_transfer" }, { status: 422 });
+	}
 
-  const customerName =
-    data.customer_name?.trim() ||
-    data.email.split("@")[0] ||
-    "Kliencie";
+	const result = await dispatchMagazynOrderEmail({
+		orderId: data.order_id,
+		type: "bank_transfer_pending",
+		snapshot: {
+			email: data.email,
+			displayId: data.display_id,
+			total: data.total,
+			itemTotal: data.item_total,
+			shippingTotal: data.shipping_total,
+			currencyCode: data.currency_code,
+			customerName: data.customer_name,
+			address: data.address,
+			phone: data.phone,
+			shippingMethodName: data.shipping_method_name,
+			items: data.items,
+		},
+	});
 
-  const source: OrderRenderSource = {
-    displayId: data.display_id,
-    email: data.email,
-    phone: "",
-    currencyCode: data.currency_code,
-    total: data.total,
-    itemTotal: data.item_total ?? data.total,
-    shippingTotal: data.shipping_total ?? 0,
-    shippingMethodName: null,
-    customerName,
-    address: "",
-    items: [],
-  };
+	if (!result.ok) {
+		const status = result.step === "no-order-source" ? 404 : 502;
+		return NextResponse.json(result, { status });
+	}
 
-  const customerResult = await sendBankTransferPendingEmail(source);
-  if (!customerResult.ok) {
-    return NextResponse.json(
-      { ok: false, error: customerResult.message },
-      { status: 502 },
-    );
-  }
-
-  const inbox =
-    process.env.SHOP_ORDER_NOTIFY_EMAIL?.replace(/\r\n/g, "").trim() ??
-    process.env.CONTACT_INBOX_EMAIL?.replace(/\r\n/g, "").trim() ??
-    magazynConfig.email.contactEmail;
-
-  if (inbox) {
-    const vars = bankTransferMergeVars(data.display_id);
-    const totalLabel = formatPrice(data.total, data.currency_code);
-    void sendTransactionalEmail({
-      to: inbox,
-      subject: `Nowe zamówienie #${data.display_id} — ${totalLabel}`,
-      text: `Nowe zamówienie #${data.display_id}\nKlient: ${data.email}\nPłatność: Przelew tradycyjny\nKwota: ${totalLabel}\nTytuł: ${vars.tytulPrzelewu}`,
-      html: `<p>Nowe zamówienie <strong>#${data.display_id}</strong></p><p>Klient: ${data.email}<br/>Płatność: Przelew tradycyjny<br/>Kwota: ${totalLabel}</p>`,
-    }).catch(() => undefined);
-  }
-
-  return NextResponse.json({
-    ok: true,
-    skipped: customerResult.skipped ?? false,
-    order_id: data.order_id,
-  });
+	return NextResponse.json({
+		ok: true,
+		skipped: result.skipped ?? false,
+		order_id: data.order_id,
+		source: "magazyn",
+	});
 }
