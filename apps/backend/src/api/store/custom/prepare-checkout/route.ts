@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import {
   ContainerRegistrationKeys,
+  Modules,
   remoteQueryObjectFromString,
 } from "@medusajs/framework/utils";
 import {
@@ -92,10 +93,19 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   try {
     // Zapisz order_notes do cart.metadata jeśli podane
     if (orderNotes) {
-      const cartModuleService = scope.resolve("cartModuleService");
-      await cartModuleService.updateCarts(cartId, {
-        metadata: { order_notes: orderNotes },
-      });
+      const cartModule = scope.resolve(Modules.CART);
+      const existingList = await cartModule.listCarts(
+        { id: [cartId] },
+        { select: ["id", "metadata"], take: 1 },
+      );
+      const existing = existingList[0];
+      const prev =
+        existing?.metadata && typeof existing.metadata === "object"
+          ? { ...existing.metadata }
+          : {};
+      await cartModule.updateCarts([
+        { id: cartId, metadata: { ...prev, order_notes: orderNotes } },
+      ]);
     }
 
     await addShippingMethodToCartWorkflow(scope).run({
