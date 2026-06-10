@@ -202,7 +202,8 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 aria-hidden="true"
                 width={128}
                 height={128}
-                unoptimized
+                sizes="128px"
+                quality={85}
                 className="pointer-events-none absolute right-4 -top-0.5 h-32 w-auto select-none opacity-100"
                 style={{ filter: "brightness(0) invert(1)" }}
                 draggable={false}
