@@ -15,7 +15,6 @@ const gilroy = localFont({
   src: [
     { path: "../public/fonts/Gilroy-Regular.ttf", weight: "400", style: "normal" },
     { path: "../public/fonts/Gilroy-Medium.ttf", weight: "500", style: "normal" },
-    { path: "../public/fonts/Gilroy-SemiBold.ttf", weight: "600", style: "normal" },
     { path: "../public/fonts/Gilroy-Bold.ttf", weight: "700", style: "normal" },
   ],
   variable: "--font-gilroy",
@@ -26,7 +25,6 @@ const gilroy = localFont({
 const chronicle = localFont({
   src: [
     { path: "../public/fonts/ChronicleDisp-Roman.otf", weight: "400", style: "normal" },
-    { path: "../public/fonts/ChronicleDisp-Bold.otf", weight: "700", style: "normal" },
   ],
   variable: "--font-chronicle",
   display: "optional",
@@ -113,9 +111,6 @@ export default function RootLayout({
     <html lang="pl" className={`${gilroy.variable} ${chronicle.variable} ${binerka.variable}`}>
       <head>
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-        <link rel="preconnect" href="https://eu.posthog.com" />
-        <link rel="preconnect" href="https://eu.i.posthog.com" />
-        <link rel="preconnect" href="https://eu-assets.i.posthog.com" />
         <link
           rel="preload"
           href="/fonts/Gilroy-Regular.ttf"
