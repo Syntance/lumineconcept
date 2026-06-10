@@ -639,7 +639,13 @@ export function CheckoutForm() {
       }
 
       if (isBankTransfer) {
-        await notifyBankTransferPending(result.order.id);
+        await notifyBankTransferPending({
+          orderId: result.order.id,
+          email: payment.email,
+          displayId: result.order.display_id ?? undefined,
+          totalMinor: total,
+          paymentProviderId: payment.paymentProviderId,
+        });
       } else {
         notifyOrderPlaced(result.order.id);
       }
