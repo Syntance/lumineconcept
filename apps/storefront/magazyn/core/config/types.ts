@@ -24,6 +24,8 @@ export type EmailThemeConfig = {
 	muted: string;
 	link: string;
 	fontKey: EmailFontKey;
+	/** Czcionka paska nagłówka (nazwa marki + tekst nad marką). */
+	headerFontKey: EmailFontKey;
 	contentWidth: number;
 	radius: number;
 	headerBg: string;

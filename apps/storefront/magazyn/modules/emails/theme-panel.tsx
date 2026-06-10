@@ -1,7 +1,8 @@
 "use client";
 
 import type { EmailTheme } from "./template-types";
-import { ColorField, NumberField, TextField } from "./fields";
+import { FONT_OPTIONS } from "./email-fonts";
+import { ColorField, NumberField, SelectField, TextField } from "./fields";
 
 export function ThemePanel({
 	theme,
@@ -15,10 +16,17 @@ export function ThemePanel({
 		<div className="flex flex-col gap-4">
 			<div className="border-b border-border pb-3">
 				<h3 className="font-serif text-base text-foreground">Motyw maila</h3>
-				<p className="text-xs text-muted-foreground">Globalne kolory i układ. Czcionkę ustawiasz per blok.</p>
+				<p className="text-xs text-muted-foreground">Globalne kolory i układ. Czcionkę treści ustawiasz per blok.</p>
 			</div>
 
 			<TextField label="Nazwa marki (nagłówek)" value={theme.brandName} onChange={(brandName) => patch({ brandName })} />
+
+			<SelectField
+				label="Czcionka nagłówka marki"
+				value={theme.headerFontKey ?? theme.fontKey}
+				options={FONT_OPTIONS}
+				onChange={(headerFontKey) => patch({ headerFontKey })}
+			/>
 
 			<TextField
 				label="Tekst nad marką (opcjonalny)"

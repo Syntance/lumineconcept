@@ -554,6 +554,7 @@ const themeSchema = z.object({
 	muted: z.string(),
 	link: z.string(),
 	fontKey: z.enum(FONT_KEYS),
+	headerFontKey: z.enum(FONT_KEYS).default("chronicle"),
 	contentWidth: z.number().int().min(320).max(800),
 	radius: z.number().int().min(0).max(48),
 	headerBg: z.string(),
