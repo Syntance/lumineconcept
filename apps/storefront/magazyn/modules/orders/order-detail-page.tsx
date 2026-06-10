@@ -30,6 +30,7 @@ const META_LABELS: Record<string, string> = {
 	nip: "NIP",
 	companyName: "Nazwa firmy",
 	invoice: "Faktura VAT",
+	order_notes: "Uwagi do zamówienia",
 };
 
 function Badge({ label, tone }: { label: string; tone: keyof typeof BADGE_TONE_CLASS }) {
@@ -83,7 +84,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 	const payment = paymentStatusBadge(order.paymentStatus);
 	const fulfillment = fulfillmentStatusBadge(order.fulfillmentStatus, order.status);
 	const flags = actionFlags(order);
-	const metaEntries = Object.entries(order.metadata).filter(([key]) => key in META_LABELS);
+	const orderNotes = order.metadata.order_notes?.trim() ?? "";
+	const metaEntries = Object.entries(order.metadata).filter(
+		([key]) => key in META_LABELS && key !== "order_notes",
+	);
 	const express = isExpressDelivery(order.metadata);
 	const expressFee = expressFeeMinor(order.metadata, order.itemTotal);
 	const ordersHref = `${magazynConfig.basePath}/panel/zamowienia`;
@@ -154,6 +158,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 							</div>
 						</dl>
 					</section>
+
+					{orderNotes ? (
+						<section className="rounded-xl border border-amber-200/80 bg-amber-50/60 p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
+							<h2 className="font-serif text-lg text-foreground">Uwagi klienta</h2>
+							<p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+								{orderNotes}
+							</p>
+						</section>
+					) : null}
 
 					<section className="rounded-xl border border-border bg-card p-5">
 						<h2 className="mb-3 font-serif text-lg text-foreground">Dane kupującego</h2>

@@ -7,6 +7,7 @@ import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges";
+import { BankTransferInstructions } from "./BankTransferInstructions";
 import { isP24CircuitOpen, recordP24Failure } from "@/lib/checkout/p24-circuit-breaker";
 import {
   trackCheckoutAbandon,
@@ -28,6 +29,7 @@ import {
   markCheckoutCompleted,
   notifyBankTransferPending,
   notifyOrderPlaced,
+  attachOrderNotes,
   prefetchPaymentReadiness,
   prefetchShippingOptions,
   prepareCheckout,
@@ -39,7 +41,6 @@ import {
   saveContactDetails,
   SYSTEM_PAYMENT_PROVIDER_ID,
 } from "@/lib/medusa/checkout";
-import { getBankTransferDetails } from "@/lib/payment/bank-transfer";
 import { getPolishRegionId } from "@/lib/medusa/region";
 
 const POSTAL_CODE_REGEX = /^\d{2}-\d{3}$/;
@@ -634,6 +635,10 @@ export function CheckoutForm() {
 
       const isBankTransfer = payment.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID;
 
+      if (sanitizedNotes) {
+        attachOrderNotes(result.order.id, sanitizedNotes);
+      }
+
       if (isBankTransfer) {
         notifyBankTransferPending(result.order.id);
       } else {
@@ -1139,6 +1144,10 @@ export function CheckoutForm() {
               p24CircuitOpen={p24CircuitOpen}
             />
 
+            {formData.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID ? (
+              <BankTransferInstructions variant="checkout" />
+            ) : null}
+
             <CheckoutTrustBadges />
 
             {/* Order Notes */}
@@ -1244,9 +1253,8 @@ export function CheckoutForm() {
             ) : null}
             {formData.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID ? (
               <p className="text-center text-[11px] text-brand-500">
-                Po złożeniu zamówienia zobaczysz dane do przelewu na konto{" "}
-                {getBankTransferDetails().recipientName}. Realizacja zacznie się po
-                zaksięgowaniu wpłaty (zwykle 1–2 dni robocze).
+                Po złożeniu zamówienia potwierdzimy przyjęcie zamówienia e-mailem.
+                Realizacja zacznie się po zaksięgowaniu wpłaty (zwykle 1–2 dni robocze).
               </p>
             ) : null}
           </section>

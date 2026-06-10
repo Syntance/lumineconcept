@@ -204,8 +204,10 @@ export const MERGE_VARIABLES: Array<{ token: string; label: string; sample: stri
 /** Zmienne dla maila z danymi do przelewu ({{token}}). */
 export const BANK_TRANSFER_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
 	...MERGE_VARIABLES,
-	{ token: "odbiorca", label: "Odbiorca przelewu", sample: "KATARZYNA KNAPIK LUMINE CONCEPT" },
-	{ token: "nrKonta", label: "Numer konta (IBAN)", sample: "PL61 1020 2892 0000 5302 0959 1234" },
+	{ token: "odbiorca", label: "Odbiorca przelewu", sample: "Lumine Concept" },
+	{ token: "nrKonta", label: "Numer konta (IBAN)", sample: "PL58 1050 1100 1000 0090 8580 9698" },
+	{ token: "swift", label: "SWIFT / BIC", sample: "INGBPLPW" },
+	{ token: "adresOdbiorcy", label: "Adres odbiorcy", sample: "Jana Pawła II 93, 34-115 Ryczów" },
 	{ token: "tytulPrzelewu", label: "Tytuł przelewu", sample: "Zamówienie #1042" },
 	{ token: "terminPlatnosci", label: "Termin płatności", sample: "5 dni roboczych" },
 ];
@@ -315,7 +317,9 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 			"Cześć {{imie}}, dziękujemy za złożenie zamówienia #{{nrZamowienia}}.",
 			"Opłać je przelewem na konto:",
 			"Odbiorca: {{odbiorca}}",
-			"Numer konta: {{nrKonta}}",
+			"Adres: {{adresOdbiorcy}}",
+			"Numer konta (IBAN): {{nrKonta}}",
+			"SWIFT / BIC: {{swift}}",
 			"Tytuł przelewu: {{tytulPrzelewu}}",
 			"Kwota: {{suma}}",
 			"Termin płatności: {{terminPlatnosci}}.",

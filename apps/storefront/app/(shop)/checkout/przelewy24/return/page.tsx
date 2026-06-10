@@ -9,8 +9,24 @@ import {
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
   notifyOrderPlaced,
+  attachOrderNotes,
   redirectToOrderConfirmation,
 } from "@/lib/medusa/checkout";
+
+const CHECKOUT_DRAFT_STORAGE_KEY = "lumine_checkout_draft_v1";
+
+function readCheckoutDraftOrderNotes(): string {
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    if (!raw) return "";
+    const parsed = JSON.parse(raw) as { formData?: { orderNotes?: string } };
+    return typeof parsed.formData?.orderNotes === "string"
+      ? parsed.formData.orderNotes.trim()
+      : "";
+  } catch {
+    return "";
+  }
+}
 
 /**
  * Harmonogram odpytań finalizacji. Webhook P24 (urlStatus → /hooks/payment)
@@ -61,6 +77,10 @@ function Przelewy24ReturnInner() {
         try {
           const result = await completeCart(cartId, { retries: 0 });
           if (result.type === "order") {
+            const orderNotes = readCheckoutDraftOrderNotes();
+            if (orderNotes) {
+              attachOrderNotes(result.order.id, orderNotes);
+            }
             notifyOrderPlaced(result.order.id);
             markCheckoutCompleted(
               result.order.id,
