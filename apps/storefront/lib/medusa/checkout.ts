@@ -457,14 +457,23 @@ export function attachOrderNotes(orderId: string, orderNotes: string): void {
   });
 }
 
-/** Mail z danymi do przelewu tradycyjnego (backend Medusa + Resend). */
-export async function notifyBankTransferPending(orderId: string): Promise<boolean> {
-  if (!orderId) return false;
+/** Mail z danymi do przelewu tradycyjnego (backend Medusa + zapasowy Vercel Resend). */
+export async function notifyBankTransferPending(input: {
+  orderId: string;
+  email: string;
+  displayId?: number;
+  totalMinor?: number;
+  paymentProviderId?: string;
+}): Promise<boolean> {
+  const { orderId, email } = input;
+  if (!orderId || !email.trim()) return false;
   if (typeof window === "undefined") return false;
 
-  const base = resolveMedusaFetchBase();
-  const url = `${base}/store/custom/notify-bank-transfer`;
-  const payload = JSON.stringify({ order_id: orderId });
+  const payload = JSON.stringify({
+    order_id: orderId,
+    email: email.trim(),
+    payment_provider_id: input.paymentProviderId ?? SYSTEM_PAYMENT_PROVIDER_ID,
+  });
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -474,20 +483,54 @@ export async function notifyBankTransferPending(orderId: string): Promise<boolea
       : {}),
   };
 
+  const base = resolveMedusaFetchBase();
+  const backendUrl = `${base}/store/custom/notify-bank-transfer`;
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 400 * attempt));
+    }
+    try {
+      const res = await fetch(backendUrl, {
+        method: "POST",
+        headers,
+        body: payload,
+      });
+      if (res.ok) return true;
+      if (res.status !== 404 && res.status !== 422 && res.status !== 500) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        console.warn("[mail] notify-bank-transfer failed", res.status, body);
+      }
+    } catch (e) {
+      console.warn("[mail] notify-bank-transfer error", e);
+    }
+  }
+
+  if (input.displayId == null || input.totalMinor == null) {
+    return false;
+  }
+
   try {
-    const res = await fetch(url, {
+    const res = await fetch("/api/checkout/send-bank-transfer-email", {
       method: "POST",
-      headers,
-      body: payload,
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        order_id: orderId,
+        email: email.trim(),
+        display_id: input.displayId,
+        total: input.totalMinor,
+        currency_code: "PLN",
+        payment_provider_id: input.paymentProviderId ?? SYSTEM_PAYMENT_PROVIDER_ID,
+      }),
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { error?: string };
-      console.warn("[mail] notify-bank-transfer failed", res.status, body);
+      console.warn("[mail] send-bank-transfer-email fallback failed", res.status, body);
       return false;
     }
     return true;
   } catch (e) {
-    console.warn("[mail] notify-bank-transfer error", e);
+    console.warn("[mail] send-bank-transfer-email fallback error", e);
     return false;
   }
 }

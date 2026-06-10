@@ -3,13 +3,14 @@ import type { IOrderModuleService } from "@medusajs/framework/types";
 import { Modules } from "@medusajs/framework/utils";
 import crypto from "node:crypto";
 import { captureError } from "../lib/sentry";
-import { renderOrderPlacedEmail, renderBankTransferPendingEmail } from "../lib/email-templates";
 import {
-  buildOrderEmailPayload,
-  retrieveOrderForEmail,
-  sendTransactionalEmail,
-} from "../lib/send-email";
+  dispatchBankTransferPendingEmail,
+  dispatchOrderPlacedEmails,
+} from "../lib/order-email-dispatch";
 import { orderAwaitingBankTransfer } from "../lib/order-payment-method";
+import {
+  retrieveOrderForEmail,
+} from "../lib/send-email";
 
 /**
  * Subscriber „order.placed" — pierwszorzędny kanał wysyłki maila potwierdzającego.
@@ -19,20 +20,13 @@ import { orderAwaitingBankTransfer } from "../lib/order-payment-method";
  * ASYNCHRONICZNIE (na instancji worker). Dzięki temu `completeCart` nie jest
  * zablokowany czekaniem na wysyłkę maila.
  *
- * Idempotency (`order-placed:<order_id>` w `sendTransactionalEmail`) gwarantuje
- * jeden mail per zamówienie nawet gdy storefront dodatkowo zawoła
- * `/store/custom/notify-order-placed` (defensywny duplicate).
+ * Storefront dodatkowo woła `/store/custom/notify-*` z emailem z checkoutu —
+ * idempotency w metadata (`email_sent_*`) blokuje duplikaty.
  *
  * Meta CAPI / PostHog — fire-and-forget z 3s timeoutem, bo Graph API potrafi
  * nie oddać socketa i bez tego zawiesiłoby worker.
  */
 
-/**
- * Twardy timeout niezależny od tego, czy fetch w danym runtime honoruje
- * `AbortSignal.timeout`. Wykorzystujemy oba: abort + wyścig z `setTimeout`,
- * bo historycznie było to źródłem 30-sekundowych zawiszeń (Facebook Graph
- * potrafi nigdy nie oddać socketa).
- */
 async function withTimeout<T>(
   label: string,
   ms: number,
@@ -90,58 +84,34 @@ export default async function orderPlacedHandler({
     >;
   }
 
-  // Mail potwierdzający — najważniejsze dla klienta. Awaitujemy, ale z
-  // twardym 6s limitem, żeby nie trzymać workflow. Kopia ze storefrontu
-  // (/store/custom/notify-order-placed) dośle w razie timeoutu — a jeśli
-  // zdąży tu, idempotency w `sendTransactionalEmail` zablokuje duplikat.
-  if (order?.email) {
-    const emailOrder = orderForEmail ?? (order as unknown as Record<string, unknown>);
-    if (
-      orderAwaitingBankTransfer(emailOrder as Record<string, unknown>)
-    ) {
-      try {
-        const payload = buildOrderEmailPayload(emailOrder);
-        const { subject, html, text } = renderBankTransferPendingEmail(payload);
-        await withTimeout("email-bank-transfer", 6000, async () => {
-          await sendTransactionalEmail(container, {
-            to: order.email!,
-            subject,
-            html,
-            text,
-            context: "bank-transfer-pending",
-            orderId: order.id,
-          });
-        });
-      } catch (e) {
-        console.error("[order-placed] bank transfer email failed", e);
-        captureError(e, {
-          subscriber: "order-placed",
-          step: "email-bank-transfer",
-          orderId: order.id,
-        });
-      }
-    } else {
+  const emailOrder = orderForEmail ?? (order as unknown as Record<string, unknown>);
+  const fallbackEmail = (order?.email as string | undefined) ?? undefined;
+
+  if (order?.email || fallbackEmail) {
+    const isBankTransfer = orderAwaitingBankTransfer(
+      emailOrder as Record<string, unknown>,
+    );
     try {
-      const payload = buildOrderEmailPayload(emailOrder);
-      const { subject, html, text } = renderOrderPlacedEmail(payload);
-      await withTimeout("email", 6000, async () => {
-        await sendTransactionalEmail(container, {
-          to: order.email!,
-          subject,
-          html,
-          text,
-          context: "order-placed",
-          orderId: order.id,
-        });
+      await withTimeout("email", 8000, async () => {
+        if (isBankTransfer) {
+          await dispatchBankTransferPendingEmail(container, {
+            orderId: order.id,
+            fallbackEmail,
+          });
+        } else {
+          await dispatchOrderPlacedEmails(container, {
+            orderId: order.id,
+            fallbackEmail,
+          });
+        }
       });
     } catch (e) {
-      console.error("[order-placed] email render/send failed", e);
+      console.error("[order-placed] email failed", e);
       captureError(e, {
         subscriber: "order-placed",
         step: "email",
         orderId: order.id,
       });
-    }
     }
   } else {
     console.warn(
@@ -173,7 +143,6 @@ async function sendMetaCAPIEvent(order: any): Promise<void> {
 
   if (!pixelId || !accessToken) return;
 
-  // Zamówienie gościnne może nie mieć emaila — bez guarda hash crashuje.
   const email: string | undefined = order?.email;
   if (!email) return;
 
@@ -194,9 +163,6 @@ async function sendMetaCAPIEvent(order: any): Promise<void> {
         custom_data: {
           currency: (order.currency_code ?? "PLN").toUpperCase(),
           value: Number(order.total ?? 0) / 100,
-          // `variant_id` jest na line itemie — nie potrzebujemy dodatkowego
-          // joina na `items.variant` (który wywala retrieveOrder na cross-module
-          // relacji).
           content_ids: order.items.map(
             (i: any) => i.variant_id ?? i.product_id ?? i.id,
           ),
