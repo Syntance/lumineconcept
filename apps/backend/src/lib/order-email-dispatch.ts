@@ -265,9 +265,12 @@ export async function dispatchOrderPlacedEmails(
     fallbackEmail: email,
     order,
   });
-  if (magazyn.ok) {
+  if (magazyn.ok && !magazyn.skipped) {
     await markOrderEmailSent(scope, params.orderId, context);
-    return { ok: true, email: magazyn.email ?? email, step: magazyn.skipped ? "already-sent" : "magazyn" };
+    return { ok: true, email: magazyn.email ?? email, step: "magazyn" };
+  }
+  if (magazyn.ok && magazyn.skipped) {
+    return { ok: true, email: magazyn.email ?? email, step: "already-sent" };
   }
 
   console.warn("[mail] magazyn fallback → legacy backend template", params.orderId);
@@ -317,9 +320,12 @@ export async function dispatchBankTransferPendingEmail(
     fallbackEmail: email,
     order,
   });
-  if (magazyn.ok) {
+  if (magazyn.ok && !magazyn.skipped) {
     await markOrderEmailSent(scope, params.orderId, context);
-    return { ok: true, email: magazyn.email ?? email, step: magazyn.skipped ? "already-sent" : "magazyn" };
+    return { ok: true, email: magazyn.email ?? email, step: "magazyn" };
+  }
+  if (magazyn.ok && magazyn.skipped) {
+    return { ok: true, email: magazyn.email ?? email, step: "already-sent" };
   }
 
   console.warn("[mail] magazyn fallback → legacy backend template", params.orderId);

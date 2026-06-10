@@ -87,14 +87,21 @@ async function loadOrderSource(
 	for (const delayMs of RETRY_DELAYS_MS) {
 		if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
 		const order = await getAdminOrderForEmail(orderId).catch(() => null);
-		if (order) return orderToEmailSource(order);
+		if (order) {
+			const source = orderToEmailSource(order);
+			if (snapshot?.email?.trim() && !source.email?.trim()) {
+				source.email = snapshot.email.trim();
+			}
+			return source;
+		}
 	}
 
-	if (!snapshot?.email || !snapshot.displayId) return null;
+	if (!snapshot?.email) return null;
 
 	const currency = (snapshot.currencyCode ?? "PLN").toUpperCase();
+	const displayId = snapshot.displayId ?? 0;
 	return {
-		displayId: snapshot.displayId,
+		displayId,
 		email: snapshot.email.trim(),
 		phone: snapshot.phone ?? "",
 		currencyCode: currency,

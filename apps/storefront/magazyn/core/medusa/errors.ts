@@ -115,6 +115,14 @@ export function translateAdminApiMessage(message: string): string {
 		return trimmed.replace(/^cannot create/i, "Nie można utworzyć");
 	}
 
+	if (/^all fulfillments must be canceled before canceling an order\.?$/i.test(trimmed)) {
+		return "Przed anulowaniem zamówienia trzeba anulować wszystkie realizacje. Spróbuj ponownie — system powinien zrobić to automatycznie.";
+	}
+
+	if (/^cannot cancel fulfillment.*already been shipped/i.test(trimmed)) {
+		return "Nie można anulować zamówienia — przesyłka została już wysłana.";
+	}
+
 	return trimmed;
 }
 

@@ -8,6 +8,7 @@ import {
   completeCart,
   fetchP24ReturnStatus,
   buildP24RetryUrl,
+  buildOrderEmailSnapshotFromCheckout,
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
   notifyOrderPlacedAwait,
@@ -72,15 +73,19 @@ function clearLocalCart() {
   }
 }
 
-async function completeP24OrderSuccess(order: {
-  id: string;
-  display_id?: number;
-}): Promise<void> {
+async function completeP24OrderSuccess(
+  order: {
+    id: string;
+    display_id?: number;
+  },
+  cartId: string,
+): Promise<void> {
   const orderNotes = readCheckoutDraftOrderNotes();
   if (orderNotes) {
     attachOrderNotes(order.id, orderNotes);
   }
-  await notifyOrderPlacedAwait(order.id);
+  const snapshot = await buildOrderEmailSnapshotFromCheckout(order, cartId);
+  await notifyOrderPlacedAwait(order.id, snapshot);
   markCheckoutCompleted(order.id, order.display_id ?? undefined);
   clearLocalCart();
   redirectToOrderConfirmation(order.id, order.display_id ?? undefined);
@@ -192,7 +197,7 @@ function Przelewy24ReturnInner() {
           typeof completeResult === "object" &&
           completeResult.type === "order"
         ) {
-          await completeP24OrderSuccess(completeResult.order);
+          await completeP24OrderSuccess(completeResult.order, cartId);
           return;
         }
 
@@ -223,7 +228,7 @@ function Przelewy24ReturnInner() {
           try {
             const result = await completeCart(cartId, { retries: 0 });
             if (result.type === "order") {
-              await completeP24OrderSuccess(result.order);
+              await completeP24OrderSuccess(result.order, cartId);
               return;
             }
           } catch {
