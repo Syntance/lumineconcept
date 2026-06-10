@@ -50,6 +50,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
       "payment_collection.payment_sessions.id",
       "payment_collection.payment_sessions.provider_id",
       "payment_collection.payment_sessions.status",
+      "payment_collection.payment_sessions.created_at",
       "payment_collection.payment_sessions.data",
     ],
   });
@@ -75,12 +76,17 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   }
 
   const sessions = cart.payment_collection?.payment_sessions ?? [];
+  /** Najnowsza sesja P24 — po retry stara jest usuwana, ale sortujemy defensywnie. */
   const p24Session = sessions
     .filter((s) => s.provider_id === PRZELEWY24_PROVIDER_ID)
     .sort((a, b) => {
-      const aVerified = a.data?.status === "verified" ? 1 : 0;
-      const bVerified = b.data?.status === "verified" ? 1 : 0;
-      return bVerified - aVerified;
+      const aTime = new Date(
+        (a as { created_at?: string | Date }).created_at ?? 0,
+      ).getTime();
+      const bTime = new Date(
+        (b as { created_at?: string | Date }).created_at ?? 0,
+      ).getTime();
+      return bTime - aTime;
     })[0];
 
   if (!p24Session?.data) {

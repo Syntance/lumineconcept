@@ -95,7 +95,10 @@ export async function fetchP24TransactionBySessionId(
 
 /**
  * Mapuje stan sesji P24 na wynik strony powrotu klienta.
- * `allowFailedOnZero` — po krótkim oknie pollingu status 0 = anulowana/nieudana płatność.
+ *
+ * Zasada: klient wrócił z bramki — domyślnie „failed”, dopóki nie ma dowodu
+ * opłacenia (2 / verified) albo trwającej autoryzacji (1).
+ * `allowFailedOnZero` = min. okno grace na frontendzie zanim pokażemy failed.
  */
 export function resolveP24ReturnOutcome(params: {
   sessionData: P24SessionData;
@@ -105,17 +108,14 @@ export function resolveP24ReturnOutcome(params: {
   if (params.sessionData.status === "verified") return "paid";
 
   const rawStatus = params.tx?.status;
-  if (rawStatus === P24_STATUS_PAID || rawStatus === P24_STATUS_VERIFY) {
-    return rawStatus === P24_STATUS_PAID ? "paid" : "pending";
-  }
 
-  if (rawStatus === P24_STATUS_NO_PAYMENT && params.allowFailedOnZero) {
-    return "failed";
-  }
+  if (rawStatus === P24_STATUS_PAID) return "paid";
+  if (rawStatus === P24_STATUS_VERIFY) return "pending";
 
-  if (rawStatus === P24_STATUS_NO_PAYMENT) {
+  if (!params.allowFailedOnZero) {
     return "pending";
   }
 
-  return "pending";
+  // Status 0, brak transakcji w P24 lub nieznany — anulowana / nieudana płatność.
+  return "failed";
 }
