@@ -1,6 +1,7 @@
 "use client";
 
-import { Turnstile } from "@marsidev/react-turnstile";
+import { forwardRef, useImperativeHandle, useRef } from "react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { ShieldCheck } from "lucide-react";
 
 type CheckoutTurnstileProps = {
@@ -10,16 +11,29 @@ type CheckoutTurnstileProps = {
   onExpire: () => void;
 };
 
+export type CheckoutTurnstileHandle = {
+  reset: () => void;
+};
+
 /**
  * Cloudflare Turnstile — ograniczona customizacja (iframe CF).
  * Dopasowujemy: light theme, PL, flexible width, wrapper jak trust badges.
  */
-export function CheckoutTurnstile({
-  siteKey,
-  onSuccess,
-  onError,
-  onExpire,
-}: CheckoutTurnstileProps) {
+export const CheckoutTurnstile = forwardRef<
+  CheckoutTurnstileHandle,
+  CheckoutTurnstileProps
+>(function CheckoutTurnstile(
+  { siteKey, onSuccess, onError, onExpire },
+  ref,
+) {
+  const turnstileRef = useRef<TurnstileInstance>(null);
+
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      turnstileRef.current?.reset();
+    },
+  }));
+
   return (
     <div className="overflow-hidden rounded-lg border border-brand-100 bg-brand-50/50">
       <div className="flex items-center gap-2.5 border-b border-brand-100 px-4 py-2.5">
@@ -34,11 +48,13 @@ export function CheckoutTurnstile({
 
       <div className="checkout-turnstile flex justify-center bg-brand-50 px-4 py-3">
         <Turnstile
+          ref={turnstileRef}
           siteKey={siteKey}
           options={{
             theme: "light",
             language: "pl",
             size: "flexible",
+            refreshExpired: "auto",
           }}
           onSuccess={onSuccess}
           onError={onError}
@@ -47,4 +63,4 @@ export function CheckoutTurnstile({
       </div>
     </div>
   );
-}
+});
