@@ -7,7 +7,6 @@ import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges";
-import { BankTransferInstructions } from "./BankTransferInstructions";
 import { isP24CircuitOpen, recordP24Failure } from "@/lib/checkout/p24-circuit-breaker";
 import {
   trackCheckoutAbandon,
@@ -1144,10 +1143,6 @@ export function CheckoutForm() {
               p24CircuitOpen={p24CircuitOpen}
             />
 
-            {formData.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID ? (
-              <BankTransferInstructions variant="checkout" />
-            ) : null}
-
             <CheckoutTrustBadges />
 
             {/* Order Notes */}
@@ -1253,8 +1248,9 @@ export function CheckoutForm() {
             ) : null}
             {formData.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID ? (
               <p className="text-center text-[11px] text-brand-500">
-                Po złożeniu zamówienia potwierdzimy przyjęcie zamówienia e-mailem.
-                Realizacja zacznie się po zaksięgowaniu wpłaty (zwykle 1–2 dni robocze).
+                Po kliknięciu „Zamawiam” zobaczysz dane do przelewu na stronie
+                potwierdzenia i w e-mailu. Realizacja zacznie się po zaksięgowaniu
+                wpłaty (zwykle 1–2 dni robocze).
               </p>
             ) : null}
           </section>
