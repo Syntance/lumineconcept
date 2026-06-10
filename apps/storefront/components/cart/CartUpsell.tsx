@@ -60,6 +60,9 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
                   alt={p.title}
                   width={36}
                   height={48}
+                  loading="lazy"
+                  quality={75}
+                  sizes="36px"
                   className="relative z-10 rounded-md object-cover"
                 />
               </div>

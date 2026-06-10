@@ -7,7 +7,7 @@ export function ProductThumbnail({ url }: { url: string }) {
 	return (
 		<>
 			<div className="absolute inset-0 bg-brand-50" aria-hidden />
-			<Image src={url} alt="" fill sizes="44px" className="relative z-10 object-cover" />
+			<Image src={url} alt="" fill loading="lazy" quality={75} sizes="44px" className="relative z-10 object-cover" />
 		</>
 	);
 }

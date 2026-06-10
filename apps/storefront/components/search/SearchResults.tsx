@@ -36,6 +36,8 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
                       src={product.thumbnail}
                       alt={product.title}
                       fill
+                      loading="lazy"
+                      quality={75}
                       sizes="42px"
                       className="relative z-10 object-cover"
                     />
