@@ -1,6 +1,7 @@
 import "server-only";
 
 import { formatPrice } from "@magazyn/core/lib/format";
+import { serviceAdminFetch } from "@magazyn/core/medusa/client";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import {
 	getAdminOrderForEmail,
@@ -44,6 +45,27 @@ export type CheckoutOrderSnapshot = {
 
 function emailSentContext(type: OrderEmailTemplateType): string {
 	return EMAIL_SENT_CONTEXT[type] ?? type;
+}
+
+async function markOrderEmailSentOnServer(
+	orderId: string,
+	type: OrderEmailTemplateType,
+): Promise<void> {
+	const order = await getAdminOrderForEmail(orderId).catch(() => null);
+	if (!order) return;
+	const context = emailSentContext(type);
+	const key = `${EMAIL_SENT_PREFIX}${context}`;
+	if (order.metadata?.[key]?.trim()) return;
+
+	await serviceAdminFetch(`/admin/orders/${orderId}`, {
+		method: "POST",
+		body: JSON.stringify({
+			metadata: {
+				...(order.metadata ?? {}),
+				[key]: new Date().toISOString(),
+			},
+		}),
+	}).catch(() => undefined);
 }
 
 function wasEmailSent(metadata: Record<string, string>, type: OrderEmailTemplateType): boolean {
@@ -159,6 +181,10 @@ export async function dispatchMagazynOrderEmail(params: {
 			currencyCode: source.currencyCode,
 			paymentLabel,
 		});
+	}
+
+	if (!result.skipped) {
+		await markOrderEmailSentOnServer(params.orderId, params.type);
 	}
 
 	return { ok: true, email: source.email, source: "magazyn" };

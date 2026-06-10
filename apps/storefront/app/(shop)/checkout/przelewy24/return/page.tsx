@@ -10,7 +10,7 @@ import {
   buildP24RetryUrl,
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
-  notifyOrderPlaced,
+  notifyOrderPlacedAwait,
   triggerPaymentFailedEmail,
   attachOrderNotes,
   redirectToOrderConfirmation,
@@ -70,6 +70,20 @@ function clearLocalCart() {
   } catch {
     /* prywatny tryb */
   }
+}
+
+async function completeP24OrderSuccess(order: {
+  id: string;
+  display_id?: number;
+}): Promise<void> {
+  const orderNotes = readCheckoutDraftOrderNotes();
+  if (orderNotes) {
+    attachOrderNotes(order.id, orderNotes);
+  }
+  await notifyOrderPlacedAwait(order.id);
+  markCheckoutCompleted(order.id, order.display_id ?? undefined);
+  clearLocalCart();
+  redirectToOrderConfirmation(order.id, order.display_id ?? undefined);
 }
 
 function FailedActions({
@@ -178,20 +192,7 @@ function Przelewy24ReturnInner() {
           typeof completeResult === "object" &&
           completeResult.type === "order"
         ) {
-          const orderNotes = readCheckoutDraftOrderNotes();
-          if (orderNotes) {
-            attachOrderNotes(completeResult.order.id, orderNotes);
-          }
-          notifyOrderPlaced(completeResult.order.id);
-          markCheckoutCompleted(
-            completeResult.order.id,
-            completeResult.order.display_id ?? undefined,
-          );
-          clearLocalCart();
-          redirectToOrderConfirmation(
-            completeResult.order.id,
-            completeResult.order.display_id ?? undefined,
-          );
+          await completeP24OrderSuccess(completeResult.order);
           return;
         }
 
@@ -222,20 +223,7 @@ function Przelewy24ReturnInner() {
           try {
             const result = await completeCart(cartId, { retries: 0 });
             if (result.type === "order") {
-              const orderNotes = readCheckoutDraftOrderNotes();
-              if (orderNotes) {
-                attachOrderNotes(result.order.id, orderNotes);
-              }
-              notifyOrderPlaced(result.order.id);
-              markCheckoutCompleted(
-                result.order.id,
-                result.order.display_id ?? undefined,
-              );
-              clearLocalCart();
-              redirectToOrderConfirmation(
-                result.order.id,
-                result.order.display_id ?? undefined,
-              );
+              await completeP24OrderSuccess(result.order);
               return;
             }
           } catch {

@@ -390,41 +390,97 @@ export async function ensureLuminePaymentBootstrap(): Promise<{ ok: boolean }> {
 }
 
 /**
- * Wyzwala po stronie Medusy mail „potwierdzenie zamówienia" dla podanego
- * `order_id`. Używamy jako niezawodnego kanału obok subscribera `order.placed`
- * (local event bus pod Railway bywa zawodny — zob. backend/route
- * `/store/custom/notify-order-placed`). Backend ma `idempotency_key` więc
- * wielokrotne wywołanie nie wyśle duplikatów.
- *
- * Fire-and-forget: `fetch(..., { keepalive: true })` z nagłówkiem
- * `x-publishable-api-key` — `sendBeacon` nie obsługuje custom headers,
- * więc Medusa zwracała 401 i mail nigdy nie wychodził.
- *
- * NIGDY nie rzuca — błąd providera maila nie może zablokować checkoutu.
+ * Wyzwala mail „potwierdzenie zamówienia" — czeka na wysyłkę (P24 return / checkout).
+ * Storefront API → magazyn; fallback na backend Medusa.
+ */
+export async function notifyOrderPlacedAwait(
+	orderId: string,
+	snapshot?: CheckoutOrderSnapshot,
+): Promise<boolean> {
+	if (!orderId) return false;
+
+	try {
+		const res = await fetch("/api/checkout/notify-order-placed", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			body: JSON.stringify({
+				order_id: orderId,
+				...(snapshot
+					? {
+							snapshot: {
+								email: snapshot.email,
+								display_id: snapshot.displayId,
+								total: snapshot.total,
+								item_total: snapshot.itemTotal,
+								shipping_total: snapshot.shippingTotal,
+								currency_code: snapshot.currencyCode,
+								customer_name: snapshot.customerName,
+								address: snapshot.address,
+								phone: snapshot.phone,
+								shipping_method_name: snapshot.shippingMethodName,
+								items: snapshot.items,
+							},
+						}
+					: {}),
+			}),
+			signal: AbortSignal.timeout(20_000),
+		});
+		if (res.ok) return true;
+	} catch (e) {
+		console.warn("[mail] notify-order-placed storefront error", e);
+	}
+
+	const base = resolveMedusaFetchBase();
+	const headers: Record<string, string> = {
+		"Content-Type": "application/json",
+		Accept: "application/json",
+		...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+			? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+			: {}),
+	};
+
+	try {
+		const res = await fetch(`${base}/store/custom/notify-order-placed`, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({
+				order_id: orderId,
+				...(snapshot?.email ? { email: snapshot.email } : {}),
+			}),
+			signal: AbortSignal.timeout(20_000),
+		});
+		return res.ok;
+	} catch (e) {
+		console.warn("[mail] notify-order-placed backend error", e);
+		return false;
+	}
+}
+
+export type CheckoutOrderSnapshot = {
+	email: string;
+	displayId: number;
+	total: number;
+	itemTotal?: number;
+	shippingTotal?: number;
+	currencyCode?: string;
+	customerName?: string;
+	address?: string;
+	phone?: string;
+	shippingMethodName?: string | null;
+	items?: Array<{
+		title: string;
+		quantity: number;
+		total: number;
+		thumbnail?: string | null;
+	}>;
+};
+
+/**
+ * Fire-and-forget — tylko gdy redirect nie następuje od razu (legacy).
  */
 export function notifyOrderPlaced(orderId: string): void {
   if (!orderId) return;
-  const base = resolveMedusaFetchBase();
-
-  const url = `${base}/store/custom/notify-order-placed`;
-  const payload = JSON.stringify({ order_id: orderId });
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
-      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
-      : {}),
-  };
-
-  void fetch(url, {
-    method: "POST",
-    headers,
-    body: payload,
-    keepalive: true,
-  }).catch((e) => {
-    console.warn("[mail] notify-order-placed fire-and-forget error", e);
-  });
+  void notifyOrderPlacedAwait(orderId).catch(() => undefined);
 }
 
 /**

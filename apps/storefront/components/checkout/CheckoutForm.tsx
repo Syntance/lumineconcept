@@ -28,6 +28,7 @@ import {
   markCheckoutCompleted,
   notifyBankTransferPending,
   notifyOrderPlaced,
+  notifyOrderPlacedAwait,
   attachOrderNotes,
   prefetchPaymentReadiness,
   prefetchShippingOptions,
@@ -661,7 +662,7 @@ export function CheckoutForm() {
           paymentProviderId: payment.paymentProviderId,
         });
       } else {
-        notifyOrderPlaced(result.order.id);
+        await notifyOrderPlacedAwait(result.order.id);
       }
 
       markCheckoutCompleted(
