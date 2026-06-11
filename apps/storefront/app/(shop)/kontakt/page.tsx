@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { Clock, Instagram, Mail, MapPin } from "lucide-react";
+import { Clock, Instagram, Mail, MapPin, Share2 } from "lucide-react";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ContactForm } from "@/components/contact/ContactForm";
+import { getSiteSettings } from "@/lib/content";
+import { resolveSocialLinks } from "@/lib/content/cms-wiring";
 import { SITE_CONTACT } from "@/lib/site-contact";
+import { formatInstagramDisplayLabel } from "@/lib/social-links";
 import { SITE_URL } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -39,7 +41,12 @@ function ContactDetail({
   );
 }
 
-export default function KontaktPage() {
+const EXTERNAL_LINK_CLASS =
+  "font-medium text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline";
+
+export default async function KontaktPage() {
+  const social = resolveSocialLinks(await getSiteSettings());
+
   return (
     <div className="border-b border-brand-100 bg-brand-50/30">
       <div className="container mx-auto px-4 py-8 pb-16 sm:py-12">
@@ -93,26 +100,42 @@ export default function KontaktPage() {
                       {SITE_CONTACT.email}
                     </a>
                   </ContactDetail>
-                  <ContactDetail icon={Instagram} label="Instagram">
-                    <a
-                      href={SITE_CONTACT.instagramUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
-                    >
-                      {SITE_CONTACT.instagramHandle}
-                    </a>
-                    <p className="mt-2 text-sm text-brand-600">
-                      <Link
-                        href={SITE_CONTACT.instagramDmUrl}
+                  {social.instagram ? (
+                    <ContactDetail icon={Instagram} label="Instagram">
+                      <a
+                        href={social.instagram}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="underline-offset-2 hover:underline"
+                        className={EXTERNAL_LINK_CLASS}
                       >
-                        Wyślij wiadomość na IG
-                      </Link>
-                    </p>
-                  </ContactDetail>
+                        {formatInstagramDisplayLabel(social.instagram)}
+                      </a>
+                    </ContactDetail>
+                  ) : null}
+                  {social.facebook ? (
+                    <ContactDetail icon={Share2} label="Facebook">
+                      <a
+                        href={social.facebook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={EXTERNAL_LINK_CLASS}
+                      >
+                        Facebook
+                      </a>
+                    </ContactDetail>
+                  ) : null}
+                  {social.tiktok ? (
+                    <ContactDetail icon={Share2} label="TikTok">
+                      <a
+                        href={social.tiktok}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={EXTERNAL_LINK_CLASS}
+                      >
+                        TikTok
+                      </a>
+                    </ContactDetail>
+                  ) : null}
                 </ul>
               </div>
             </aside>

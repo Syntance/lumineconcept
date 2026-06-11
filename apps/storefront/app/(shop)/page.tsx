@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { resolveSocialLinks } from "@/lib/content/cms-wiring";
 import { buildMetadata } from "@/lib/content/metadata";
-import { SITE_CONTACT } from "@/lib/site-contact";
+import { resolveSocialSameAs } from "@/lib/social-links";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
@@ -29,7 +30,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 3600;
 
 export default async function HomePage() {
-  const pageContent = await getPageContent("home");
+  const [pageContent, settings] = await Promise.all([getPageContent("home"), getSiteSettings()]);
+  const socialSameAs = resolveSocialSameAs(resolveSocialLinks(settings));
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -37,10 +39,7 @@ export default async function HomePage() {
     url: SITE_URL,
     logo: `${SITE_URL}/images/logo.png`,
     description: "Produkty z plexi: tablice z logo Twojej marki, cenniki i oznaczenia w technice 3D. Matowe UV, LED z pilotem, 15+ kolor\u00f3w.",
-    sameAs: [
-      SITE_CONTACT.instagramUrl,
-      "https://www.facebook.com/lumineconcept/",
-    ],
+    ...(socialSameAs.length > 0 ? { sameAs: socialSameAs } : {}),
   };
 
   const websiteJsonLd = {
