@@ -91,6 +91,7 @@ export type HeroContent = {
 	ctaHref: string;
 	ctaAriaLabel?: string;
 	headlineUppercase?: boolean;
+	ctaShowDownArrow?: boolean;
 };
 
 export type CategoryTile = {

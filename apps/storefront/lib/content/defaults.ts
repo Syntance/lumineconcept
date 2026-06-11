@@ -58,6 +58,7 @@ export const LOGO_HERO_DEFAULT: HeroContent = {
 	ctaHref: "#formularz",
 	ctaAriaLabel: "Przewiń do formularza — zamów tablicę z logo",
 	headlineUppercase: true,
+	ctaShowDownArrow: true,
 };
 
 export const DEFAULT_PAGE_CONTENT: PageContentMap = {
