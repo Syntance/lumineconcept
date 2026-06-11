@@ -20,7 +20,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
     <section className="relative flex w-full flex-col overflow-x-hidden">
       {/* Mobile — zdjęcie nad copy (niższy kadr niż 4:5) */}
       <div className="flex flex-col lg:hidden">
-        <div className="relative aspect-[3/2] w-full max-h-[min(40vh,15rem)] overflow-hidden sm:max-h-[min(38vh,16.5rem)]">
+        <div className="relative h-52 w-full overflow-hidden sm:h-60">
           <Image
             src={HERO_MOBILE_SRC}
             alt=""
@@ -30,7 +30,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
             fetchPriority="high"
             sizes="100vw"
             unoptimized
-            className="absolute inset-0 h-full w-full select-none object-cover object-[50%_26%]"
+            className="absolute inset-0 h-full w-full select-none object-cover object-[50%_24%]"
           />
         </div>
         <HeroPortalMobile />
