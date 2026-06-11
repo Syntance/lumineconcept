@@ -28,6 +28,51 @@ export const magazynConfig: MagazynConfig = {
 		categories: true,
 		emails: true,
 		settings: true,
+		content: true,
+	},
+
+	content: {
+		pages: [
+			{
+				id: "home",
+				label: "Strona główna",
+				path: "/",
+				blocks: ["hero"],
+			},
+			{
+				id: "shop",
+				label: "Sklep",
+				path: "/sklep",
+				blocks: ["categoryTiles", "testimonials"],
+			},
+			{
+				id: "logo-3d",
+				label: "Tablice z logo",
+				path: "/sklep/logo-3d",
+				blocks: ["hero", "gallery"],
+			},
+			{
+				id: "gotowe-wzory",
+				label: "Gotowe wzory",
+				path: "/sklep/gotowe-wzory",
+				blocks: ["testimonials", "faq"],
+			},
+			{
+				id: "certyfikaty",
+				label: "Certyfikaty",
+				path: "/sklep/certyfikaty",
+				blocks: ["testimonials", "faq"],
+			},
+		],
+		globalBlocks: [
+			"announcementBar",
+			"trustBar",
+			"socialLinks",
+			"footerText",
+			"checkoutCallout",
+			"salonLogos",
+			"instagramTiles",
+		],
 	},
 
 	email: {

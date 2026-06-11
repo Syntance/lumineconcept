@@ -3,20 +3,22 @@
 import { useId, useState, type ReactNode } from "react";
 import { cn } from "@magazyn/core/lib/cn";
 
-type TabId = "colors" | "fields";
+type TabId = "colors" | "fields" | "seo";
 
 const TABS: ReadonlyArray<{ id: TabId; label: string }> = [
 	{ id: "colors", label: "Edycja kolorów" },
 	{ id: "fields", label: "Pola" },
+	{ id: "seo", label: "SEO i treści" },
 ];
 
 type Props = {
 	colorsPanel: ReactNode;
 	fieldsPanel: ReactNode;
+	seoPanel: ReactNode;
 	fieldsCount?: number;
 };
 
-export function ProductFormTabs({ colorsPanel, fieldsPanel, fieldsCount = 0 }: Props) {
+export function ProductFormTabs({ colorsPanel, fieldsPanel, seoPanel, fieldsCount = 0 }: Props) {
 	const baseId = useId();
 	const [activeTab, setActiveTab] = useState<TabId>("colors");
 
@@ -80,7 +82,7 @@ export function ProductFormTabs({ colorsPanel, fieldsPanel, fieldsCount = 0 }: P
 						hidden={!selected}
 						className="p-5"
 					>
-						{tab.id === "colors" ? colorsPanel : fieldsPanel}
+						{tab.id === "colors" ? colorsPanel : tab.id === "fields" ? fieldsPanel : seoPanel}
 					</div>
 				);
 			})}

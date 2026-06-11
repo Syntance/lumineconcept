@@ -2,33 +2,26 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { RealizationPhoto } from "@/lib/sanity/types";
+import type { GalleryPhoto } from "@/lib/content/types";
 
 const PAGE_SIZE = 4;
 
 type Props = {
-  items: RealizationPhoto[];
+  items: GalleryPhoto[];
 };
 
-function RealizationTile({ item }: { item: RealizationPhoto }) {
-  const dim = item.image?.asset?.metadata?.dimensions;
-  const w = dim?.width ?? 800;
-  const h = dim?.height ?? 600;
-  const alt =
-    item.image?.alt?.trim() ||
-    "Realizacja tablicy z logo — Lumine Concept";
+function RealizationTile({ item }: { item: GalleryPhoto }) {
+  const alt = item.alt?.trim() || "Realizacja tablicy z logo — Lumine Concept";
 
   return (
     <div className="min-w-0 overflow-hidden bg-brand-100 ring-1 ring-brand-200/80">
       <Image
-        src={item.image.asset.url}
+        src={item.imageUrl}
         alt={alt}
-        width={w}
-        height={h}
+        width={800}
+        height={600}
         sizes="(max-width: 1024px) 50vw, 25vw"
         className="h-auto w-full max-w-full"
-        placeholder={item.image.asset.metadata?.lqip ? "blur" : "empty"}
-        blurDataURL={item.image.asset.metadata?.lqip}
       />
     </div>
   );
@@ -39,56 +32,34 @@ export function LogoBoardRealizations({ items }: Props) {
     Math.min(PAGE_SIZE, items.length),
   );
 
-  if (items.length === 0) {
-    return (
-      <section className="bg-white py-16 lg:py-20">
-        <div className="container mx-auto max-w-4xl px-4 text-center">
-          <h2 className="font-display text-2xl uppercase tracking-[0.18em] text-brand-800 lg:text-3xl">
-            Zapoznaj się z naszymi realizacjami
-          </h2>
-          <div className="mx-auto mt-3 h-px w-12 bg-accent" />
-          <p className="mx-auto mt-6 max-w-2xl text-base text-brand-700">
-            Galeria jest w przygotowaniu — wkrótce dodamy tu zdjęcia realizacji.
-          </p>
-        </div>
-      </section>
-    );
-  }
+  if (items.length === 0) return null;
 
-  const slice = items.slice(0, visible);
-  const canShowMore = visible < items.length;
+  const shown = items.slice(0, visible);
+  const hasMore = visible < items.length;
 
   return (
-    <section className="bg-white py-16 lg:py-20">
-      <div className="container mx-auto max-w-6xl px-4">
-        <div className="text-center">
-          <h2 className="font-display text-2xl uppercase tracking-[0.18em] text-brand-800 lg:text-3xl">
-            Zapoznaj się z naszymi realizacjami
-          </h2>
-          <div className="mx-auto mt-3 h-px w-12 bg-accent" />
-        </div>
-
-        <ul className="mt-10 grid grid-cols-2 items-start gap-3 sm:gap-4 lg:grid-cols-4">
-          {slice.map((item) => (
-            <li key={item._key}>
-              <RealizationTile item={item} />
-            </li>
+    <section className="bg-brand-50 py-16 lg:py-24">
+      <div className="container mx-auto px-4">
+        <h2 className="text-center font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
+          Realizacje
+        </h2>
+        <div className="mt-3 mx-auto h-px w-12 bg-accent" />
+        <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+          {shown.map((item) => (
+            <RealizationTile key={item.id} item={item} />
           ))}
-        </ul>
-
-        <div className="mt-10 flex flex-col items-center gap-4">
-          {canShowMore ? (
+        </div>
+        {hasMore ? (
+          <div className="mt-10 text-center">
             <button
               type="button"
-              onClick={() =>
-                setVisible((v) => Math.min(v + PAGE_SIZE, items.length))
-              }
-              className="inline-flex items-center justify-center border border-brand-300 bg-white px-8 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-brand-800 transition-colors hover:bg-brand-50"
+              onClick={() => setVisible((v) => Math.min(v + PAGE_SIZE, items.length))}
+              className="text-sm font-medium uppercase tracking-[0.2em] text-brand-500 transition-colors hover:text-brand-900"
             >
-              Zobacz więcej
+              Pokaż więcej realizacji
             </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

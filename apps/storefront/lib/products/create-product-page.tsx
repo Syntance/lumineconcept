@@ -4,6 +4,9 @@ import {
   getProductData,
 } from "@/components/product/ProductPageLayout";
 import { getProducts } from "@/lib/medusa/products";
+import { buildMetadata } from "@/lib/content/metadata";
+import { parseProductSeoFromMetadata } from "@/lib/content/parsers";
+import { getSiteSettings } from "@/lib/content";
 import { SITE_URL } from "@/lib/utils";
 import { ProductPageClient } from "@/app/(shop)/sklep/gotowe-wzory/[slug]/client";
 
@@ -61,21 +64,18 @@ export function createProductPage(options: CreateProductPageOptions) {
     const product = await getProductData(slug).catch(() => null);
     if (!product) return { title: "Produkt nie znaleziony" };
 
-    const productUrl = `${SITE_URL}${basePath}/${slug}`;
-    return {
-      title: product.title,
-      description: product.description,
-      alternates: { canonical: productUrl },
-      openGraph: {
-        title: product.title,
-        description: product.description ?? "",
-        images: product.thumbnail
-          ? [{ url: product.thumbnail, width: 1200, height: 630 }]
-          : [{ url: `${SITE_URL}/images/logo.png`, width: 1200, height: 630 }],
-        type: "website",
-        url: productUrl,
-      },
-    };
+    const meta = (product.metadata ?? {}) as Record<string, unknown>;
+    const seo = parseProductSeoFromMetadata(meta);
+    const settings = await getSiteSettings().catch(() => null);
+
+    return buildMetadata({
+      seo: seo ?? undefined,
+      fallbackTitle: product.title ?? "Produkt",
+      fallbackDescription: product.description ?? undefined,
+      fallbackImage: product.thumbnail ?? `${SITE_URL}/images/logo.png`,
+      siteSettings: settings,
+      path: `${basePath}/${slug}`,
+    });
   }
 
   async function Page({ params }: { params: SlugParams }) {

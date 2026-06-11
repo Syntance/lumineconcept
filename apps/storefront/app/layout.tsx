@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Providers } from "@/providers/Providers";
 import { CookieConsent } from "@/components/common/CookieConsent";
-import { getSiteSettings } from "@/lib/sanity/client";
+import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
 
 /**
@@ -56,8 +56,8 @@ export async function generateMetadata(): Promise<Metadata> {
     settings?.description ||
     "Produkty z plexi i rozwiązania brandingowe dla salonów beauty. Tablice z logo, stojaki, organizery, tablice cennikowe i więcej.";
   const ogImageUrl =
-    settings?.seo?.ogImage?.asset?.url ||
-    settings?.defaultOgImage?.asset?.url;
+    settings?.seo?.ogImageUrl ||
+    settings?.defaultOgImageUrl;
   const titleTemplate = settings?.titleTemplate || "%s | Lumine Concept";
 
   return {

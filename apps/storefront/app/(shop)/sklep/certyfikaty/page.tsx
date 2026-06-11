@@ -10,24 +10,32 @@ import {
   type CategoryTreeNode,
 } from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
-import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
-import { TESTIMONIALS_BY_PAGE_QUERY } from "@/lib/sanity/queries";
-import type { Testimonial } from "@/lib/sanity/types";
+import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { buildMetadata } from "@/lib/content/metadata";
+import { pickTestimonials, resolveTrustBarDisplay } from "@/lib/content/cms-wiring";
+import { PageFaqSection } from "@/components/content/PageFaqSection";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { SITE_URL } from "@/lib/utils";
-import { medusaProductToSimple, type SimpleProduct } from "@/lib/products/simple-product";
+import { medusaProductToSimple } from "@/lib/products/simple-product";
 import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/global-config";
 import { buildShopListingBreadcrumbs } from "@/lib/medusa/shop-breadcrumbs";
 import { ShopGridClient } from "../gotowe-wzory/client";
 
 const INITIAL_PAGE_SIZE = 12;
 
-export const metadata: Metadata = {
-  title: "Certyfikaty z plexi — dyplomy, podziękowania, vouchery | Lumine Concept",
-  description:
-    "Eleganckie certyfikaty, dyplomy i vouchery z plexi dla salonów beauty. Kup online — szybka wysyłka.",
-  alternates: { canonical: `${SITE_URL}/sklep/certyfikaty` },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [seo, settings] = await Promise.all([
+    getPageSeo("certyfikaty"),
+    getSiteSettings(),
+  ]);
+  return buildMetadata({
+    seo,
+    fallbackTitle: "Certyfikaty z plexi — dyplomy, podziękowania, vouchery | Lumine Concept",
+    fallbackDescription:
+      "Eleganckie certyfikaty, dyplomy i vouchery z plexi dla salonów beauty. Kup online — szybka wysyłka.",
+    siteSettings: settings,
+    path: "/sklep/certyfikaty",
+  });
+}
 
 export const revalidate = 60;
 
@@ -41,17 +49,14 @@ export default async function CertyfikatyPage({
 
   const globalConfigPromise = getGlobalProductConfig().catch(() => EMPTY_GLOBAL_CONFIG);
 
-  const [allCategories, settings, testimonials] = await Promise.all([
+  const [allCategories, settings, pageContent] = await Promise.all([
     getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
     getSiteSettings(),
-    sanityClient
-      .fetch<Testimonial[]>(
-        TESTIMONIALS_BY_PAGE_QUERY,
-        { page: "gotowe-wzory" },
-        { next: { revalidate: 300, tags: ["sanity"] } },
-      )
-      .catch(() => []),
+    getPageContent("certyfikaty"),
   ]);
+
+  const trustBar = resolveTrustBarDisplay(settings?.trustBar);
+  const displayTestimonials = pickTestimonials(pageContent.testimonials, 2);
 
   const tree = allCategories as unknown as CategoryTreeNode[];
   const defaultGotoweWzoryId = categoryIdByHandle(tree, LISTING_CATEGORY_HANDLE.gotoweWzory);
@@ -75,7 +80,6 @@ export default async function CertyfikatyPage({
   const globalConfig = await globalConfigPromise;
 
   const initialCategoryId = params.kat ? resolvedKatId : defaultCertyfikatyId ?? defaultGotoweWzoryId;
-
   const categories = allCategories;
 
   const productsResponse = await getProducts({
@@ -90,10 +94,6 @@ export default async function CertyfikatyPage({
   const initialProducts = products.map((p) =>
     medusaProductToSimple(p as unknown as Record<string, unknown>),
   );
-
-  const trustBar = settings?.trustBar;
-
-  const displayTestimonials = testimonials.slice(0, 2);
 
   const breadcrumbItems = buildShopListingBreadcrumbs({
     tree,
@@ -140,17 +140,17 @@ export default async function CertyfikatyPage({
       <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
         <div className="container mx-auto max-w-7xl px-4 text-center">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-800">
-            <span>{trustBar?.followers ?? "25 000+"} obserwujących</span>
+            <span>{trustBar.followers} obserwujących</span>
             <span className="text-brand-300">·</span>
-            <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
+            <span>{trustBar.realizations} realizacji</span>
             <span className="text-brand-300">·</span>
-            <span>{trustBar?.shippingLabel ?? "Realizacja ok. 10 dni roboczych"}</span>
+            <span>{trustBar.shippingLabel}</span>
           </div>
 
           {displayTestimonials.length > 0 && (
             <div className="mt-10 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
               {displayTestimonials.map((t) => (
-                <blockquote key={t._id} className="rounded-xl bg-white p-6 text-left shadow-sm">
+                <blockquote key={t.id} className="rounded-xl bg-white p-6 text-left shadow-sm">
                   <p className="text-base italic text-brand-800 leading-relaxed">
                     &ldquo;{t.quote}&rdquo;
                   </p>
@@ -163,6 +163,8 @@ export default async function CertyfikatyPage({
           )}
         </div>
       </section>
+
+      <PageFaqSection faq={pageContent.faq} />
     </>
   );
 }

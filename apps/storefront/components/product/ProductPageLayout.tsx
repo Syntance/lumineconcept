@@ -1,9 +1,9 @@
 import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getProductByHandle, getProducts, getProductCategories } from "@/lib/medusa/products";
-import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
-import { PRODUCT_FAQ_QUERY } from "@/lib/sanity/queries";
-import type { ProductFaq, CheckoutCallout } from "@/lib/sanity/types";
+import { getSiteSettings } from "@/lib/content";
+import { parseProductFaqFromMetadata } from "@/lib/content/parsers";
+import type { CheckoutCallout, ProductFaqItem } from "@/lib/content/types";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
@@ -218,6 +218,7 @@ export async function ProductPageLayout({
     values: Array<{ value: string }>;
   }>;
   const metadata = (product.metadata ?? {}) as Record<string, unknown>;
+  const productFaqs = parseProductFaqFromMetadata(metadata);
   const firstVariant = variants[0];
   const dimensionParts = getProductDimensionParts(
     metadata,
@@ -409,10 +410,8 @@ export async function ProductPageLayout({
         <CrossSellSection metadata={metadata} basePath={basePath} globalColors={productConfig.colors} />
       </Suspense>
 
-      {/* FAQ — streamed via Suspense */}
-      <Suspense fallback={null}>
-        <FaqSection slug={slug} />
-      </Suspense>
+      {/* FAQ */}
+      <FaqSection faqs={productFaqs} />
     </div>
   );
 }
@@ -488,11 +487,7 @@ function CrossSellSkeleton() {
 
 /* ── Async streamed: FAQ ────────────────────────────────────────── */
 
-async function FaqSection({ slug }: { slug: string }) {
-  const faqs = await sanityClient
-    .fetch<ProductFaq[]>(PRODUCT_FAQ_QUERY, { handle: slug }, { next: { revalidate: 300 } })
-    .catch(() => []);
-
+function FaqSection({ faqs }: { faqs: ProductFaqItem[] }) {
   if (faqs.length === 0) return null;
 
   return (
@@ -519,7 +514,7 @@ async function FaqSection({ slug }: { slug: string }) {
           <div className="space-y-4">
             {faqs.map((faq) => (
               <details
-                key={faq._id}
+                key={faq.id}
                 className="group rounded-xl bg-white p-5 shadow-sm"
               >
                 <summary className="flex cursor-pointer items-center justify-between text-base font-medium text-brand-800">

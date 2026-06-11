@@ -1,4 +1,4 @@
-import { Palette, Paintbrush, type LucideIcon } from "lucide-react";
+import { Palette, Paintbrush, Search, type LucideIcon } from "lucide-react";
 import { magazynConfig } from "../../magazyn.config";
 
 export type SettingsNavItem = {
@@ -14,6 +14,7 @@ export function buildSettingsNavItems(): SettingsNavItem[] {
 	return [
 		{ href: `${base}/kolory`, label: "Kolory", icon: Palette },
 		{ href: `${base}/motywy`, label: "Motywy magazynu", icon: Paintbrush },
+		{ href: `${base}/seo`, label: "SEO", icon: Search },
 	];
 }
 

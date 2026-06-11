@@ -75,6 +75,28 @@ const productSchema = z.object({
 	uploadsRequired: z.boolean().default(false),
 	uploadsCount: z.number().int().min(1).max(5).default(1),
 	uploadsLabel: z.string().default(""),
+	seo: z
+		.object({
+			metaTitle: z.string().optional(),
+			metaDescription: z.string().optional(),
+			ogTitle: z.string().optional(),
+			ogDescription: z.string().optional(),
+			ogImageUrl: z.string().optional(),
+			canonicalUrl: z.string().optional(),
+			noIndex: z.boolean().optional(),
+			noFollow: z.boolean().optional(),
+		})
+		.default({}),
+	productFaq: z
+		.array(
+			z.object({
+				id: z.string().min(1),
+				question: z.string().min(1),
+				answer: z.string().min(1),
+				order: z.number().int(),
+			}),
+		)
+		.default([]),
 });
 
 export type ProductPayload = z.input<typeof productSchema>;
@@ -109,6 +131,8 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 			count: data.uploadsCount ?? 1,
 			label: data.uploadsLabel ?? "",
 		},
+		seo: data.seo ?? {},
+		productFaq: data.productFaq ?? [],
 	};
 }
 

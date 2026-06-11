@@ -1,4 +1,4 @@
-import { LayoutGrid, Mail, Package, Settings, ShoppingBag, Tags, type LucideIcon } from "lucide-react";
+import { LayoutGrid, Mail, Package, FileText, Settings, ShoppingBag, Tags, type LucideIcon } from "lucide-react";
 import { magazynConfig } from "../../magazyn.config";
 import type { ModulesToggle } from "../config/types";
 
@@ -15,9 +15,10 @@ const MODULE_NAV: Record<keyof ModulesToggle, { segment: string; label: string; 
 	categories: { segment: "kategorie", label: "Kategorie", icon: Tags },
 	emails: { segment: "maile", label: "E-maile", icon: Mail },
 	settings: { segment: "ustawienia", label: "Ustawienia sklepu", icon: Settings },
+	content: { segment: "cms", label: "CMS", icon: FileText },
 };
 
-const ORDER: Array<keyof ModulesToggle> = ["orders", "products", "categories", "emails", "settings"];
+const ORDER: Array<keyof ModulesToggle> = ["orders", "products", "categories", "content", "emails", "settings"];
 
 /** Buduje listę linków nawigacji z włączonych modułów (magazyn.config.ts). */
 export function buildNavItems(): NavItem[] {
