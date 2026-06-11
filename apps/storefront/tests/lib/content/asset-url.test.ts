@@ -67,8 +67,24 @@ describe("resolveCmsAssetUrl", () => {
 		expect(resolveCmsAssetUrl("/static/x.webp")).toBe("https://cdn.example.com/static/x.webp");
 	});
 
-	it("marks CMS CDN and cms-uploads as unoptimized for next/image", () => {
-		expect(isCmsImageUnoptimized("https://cdn.example.com/cms-uploads/hero.webp")).toBe(true);
-		expect(isCmsImageUnoptimized("https://pub-abc.r2.dev/cms-uploads/x.webp")).toBe(true);
+	it("optymalizuje zdalne obrazy R2/CDN przez next/image", () => {
+		expect(isCmsImageUnoptimized("https://cdn.example.com/cms-uploads/hero.webp")).toBe(false);
+		expect(isCmsImageUnoptimized("https://pub-abc.r2.dev/cms-uploads/x.webp")).toBe(false);
+	});
+
+	it("pomija optymalizację dla SVG i hostów lokalnych", () => {
+		expect(isCmsImageUnoptimized("https://cdn.example.com/logo.svg")).toBe(true);
+		expect(isCmsImageUnoptimized("http://localhost:9000/static/hero.webp")).toBe(true);
+		expect(isCmsImageUnoptimized("http://127.0.0.1:9000/static/hero.webp")).toBe(true);
+	});
+
+	it("optymalizuje lokalne assety z /public (poza SVG)", () => {
+		expect(isCmsImageUnoptimized("/images/hero.webp")).toBe(false);
+		expect(isCmsImageUnoptimized("/icons/logo.svg")).toBe(true);
+	});
+
+	it("pomija optymalizację dla ścieżek backendu bez pliku w public", () => {
+		expect(isCmsImageUnoptimized("/static/hero.webp")).toBe(true);
+		expect(isCmsImageUnoptimized("/uploads/x.webp")).toBe(true);
 	});
 });
