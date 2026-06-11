@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { getSiteSettings } from "@/lib/content";
+import { resolveSocialLinks } from "@/lib/content/cms-wiring";
 import {
   averageRatingFromReviews,
   type ProductReviewItem,
 } from "@/lib/products/product-reviews";
-import { SITE_CONTACT } from "@/lib/site-contact";
 
 interface ProductReviewsProps {
   reviews?: ProductReviewItem[];
@@ -27,7 +28,11 @@ function Stars({ rating = 0, max = 5 }: { rating?: number; max?: number }) {
   );
 }
 
-export function ProductReviews({ reviews = [] }: ProductReviewsProps) {
+export async function ProductReviews({ reviews = [] }: ProductReviewsProps) {
+  const settings = await getSiteSettings();
+  const social = resolveSocialLinks(settings);
+  const instagramUrl = social.instagram?.trim();
+
   const reviewCount = reviews.length;
   const averageRating =
     reviewCount > 0 ? averageRatingFromReviews(reviews) : 0;
@@ -73,13 +78,13 @@ export function ProductReviews({ reviews = [] }: ProductReviewsProps) {
           </ul>
         )}
 
-        {reviewCount === 0 && (
+        {reviewCount === 0 && instagramUrl ? (
           <div className="mt-8 rounded-xl border border-brand-100 bg-brand-50 px-6 py-8">
             <p className="text-sm text-brand-600">
               Bądź pierwszą osobą, która zostawi opinię o tym produkcie.
             </p>
             <Link
-              href={SITE_CONTACT.instagramUrl}
+              href={instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center justify-center rounded border border-brand-300 px-6 py-2.5 text-xs font-medium uppercase tracking-wider text-brand-700 transition-colors hover:bg-brand-100"
@@ -87,7 +92,7 @@ export function ProductReviews({ reviews = [] }: ProductReviewsProps) {
               Napisz do nas &rarr;
             </Link>
           </div>
-        )}
+        ) : null}
       </div>
     </section>
   );

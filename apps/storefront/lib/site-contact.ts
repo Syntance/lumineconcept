@@ -4,7 +4,4 @@ export const SITE_CONTACT = {
   hours: "Godziny otwarcia: pon.–pt.: 9:00–17:00",
   email: "kontakt@lumineconcept.pl",
   formHref: "/kontakt",
-  instagramHandle: "@lumine.concept",
-  instagramUrl: "https://www.instagram.com/lumine.concept/",
-  instagramDmUrl: "https://www.instagram.com/lumine.concept/",
 } as const;

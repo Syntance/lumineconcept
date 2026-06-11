@@ -9,7 +9,6 @@ import type {
 	Testimonial,
 	TrustBar,
 } from "./types";
-import { SITE_CONTACT } from "@/lib/site-contact";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 
 const DEFAULT_IG_ALT = "Lumine Concept na Instagramie";
@@ -71,7 +70,7 @@ export function resolveSocialLinks(settings: SiteSettings | null | undefined): S
 }
 
 export function resolveInstagramProfileUrl(social: SocialLinks): string {
-	return social.instagram?.trim() || SITE_CONTACT.instagramUrl;
+	return social.instagram?.trim() || DEFAULT_SITE_SETTINGS.socialLinks?.instagram || "";
 }
 
 export function mapShopCategoryTiles(
@@ -125,7 +124,7 @@ export const CMS_STOREFRONT_WIRING = {
 		announcementBar: "components/layout/AnnouncementBar.tsx",
 		trustBar: "HomeTrustMarquee + listing pages",
 		checkoutCallout: "ProductPageLayout",
-		socialLinks: "Footer + FooterCTA",
+		socialLinks: "Footer, FooterCTA, kontakt, JSON-LD, ProductReviews",
 		footerText: "Footer",
 		salonLogos: "HomeTrustMarquee",
 		instagramTiles: "FooterCTA",

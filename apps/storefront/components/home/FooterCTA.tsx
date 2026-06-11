@@ -7,9 +7,11 @@ import {
 	resolveInstagramTiles,
 	resolveSocialLinks,
 } from "@/lib/content/cms-wiring";
+import type { SocialLinks } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
 import { SITE_CONTACT } from "@/lib/site-contact";
+import { formatInstagramDisplayLabel } from "@/lib/social-links";
 import { cn } from "@/lib/utils";
 
 const BRANDING_BG_WIDTH = 2560;
@@ -49,28 +51,31 @@ function BrandingShopLink({ className = "" }: { className?: string }) {
 function BrandingContact({
   layout,
   className = "",
+  social,
 }: {
   layout: "stack" | "inline";
   className?: string;
+  social: SocialLinks;
 }) {
   const email = (
     <a
-      href="mailto:kontakt@lumineconcept.pl"
+      href={`mailto:${SITE_CONTACT.email}`}
       className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
     >
-      kontakt@lumineconcept.pl
+      {SITE_CONTACT.email}
     </a>
   );
-  const ig = (
+  const instagramUrl = social.instagram?.trim();
+  const ig = instagramUrl ? (
     <a
-      href={SITE_CONTACT.instagramUrl}
+      href={instagramUrl}
       target="_blank"
       rel="noopener noreferrer"
       className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
     >
-      {SITE_CONTACT.instagramHandle}
+      {formatInstagramDisplayLabel(instagramUrl)}
     </a>
-  );
+  ) : null;
 
   if (layout === "stack") {
     return (
@@ -85,8 +90,12 @@ function BrandingContact({
   return (
     <p className={`m-0 w-fit text-center text-brand-600 ${className}`}>
       Wolisz napisać? {email}
-      <span className="mx-1.5 text-brand-400">&middot;</span>
-      {ig}
+      {ig ? (
+        <>
+          <span className="mx-1.5 text-brand-400">&middot;</span>
+          {ig}
+        </>
+      ) : null}
     </p>
   );
 }
@@ -147,8 +156,9 @@ export async function FooterCTA() {
     getSiteSettings(),
     getPageContent("home"),
   ]);
+  const social = resolveSocialLinks(settings);
   const igPosts = resolveInstagramTiles(global);
-  const igProfile = resolveInstagramProfileUrl(resolveSocialLinks(settings));
+  const igProfile = resolveInstagramProfileUrl(social);
   const { desktopBackgroundUrl } = resolveBrandingCta(pageContent.brandingCta);
 
   return (
@@ -158,7 +168,7 @@ export async function FooterCTA() {
           <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 text-center">
             <BrandingHeading />
             <BrandingShopLink className="mt-10 w-full max-w-[17.5rem] whitespace-nowrap px-6 py-3.5" />
-            <BrandingContact layout="stack" />
+            <BrandingContact layout="stack" social={social} />
           </div>
         </div>
         <div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/645] lg:max-h-[645px]">
@@ -180,7 +190,7 @@ export async function FooterCTA() {
             <div className="flex w-fit max-w-full flex-col items-center text-center lg:ml-[16%]">
               <BrandingHeading />
               <BrandingShopLink className="mt-10 whitespace-nowrap px-7 py-3" />
-              <BrandingContact layout="inline" className="mt-8 text-sm" />
+              <BrandingContact layout="inline" className="mt-8 text-sm" social={social} />
             </div>
           </div>
         </div>

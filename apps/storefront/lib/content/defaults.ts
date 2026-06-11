@@ -1,4 +1,3 @@
-import { SITE_CONTACT } from "@/lib/site-contact";
 import type {
 	GlobalContent,
 	BrandingCtaContent,
@@ -25,7 +24,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 		confirmLabel: "Rozumiem, kontynuuj",
 	},
 	socialLinks: {
-		instagram: SITE_CONTACT.instagramUrl,
+		instagram: "https://www.instagram.com/lumine.concept/",
 		facebook: "https://www.facebook.com/lumineconcept/",
 	},
 };
