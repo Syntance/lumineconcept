@@ -175,9 +175,9 @@ function renderOrderItems(block: OrderItemsBlock, theme: EmailTheme, ctx: EmailR
 		.map((item) => {
 			const detailsHtml =
 				item.detailsLines && item.detailsLines.length > 0
-					? `<div style="margin-top:6px;font-size:12px;line-height:1.55;color:${muted}">${item.detailsLines.map((line) => esc(line)).join("<br/>")}</div>`
+					? `<div style="margin-top:6px;font-size:12px;line-height:1.55;color:${muted};word-break:break-word;overflow-wrap:anywhere">${item.detailsLines.map((line) => esc(line)).join("<br/>")}</div>`
 					: "";
-			const titleCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;font-family:${fontFamily};font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text}">${esc(item.title)}${item.quantity > 1 ? ` × ${item.quantity}` : ""}${detailsHtml}</td>`;
+			const titleCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;font-family:${fontFamily};font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text};word-break:break-word;overflow-wrap:anywhere">${esc(item.title)}${item.quantity > 1 ? ` × ${item.quantity}` : ""}${detailsHtml}</td>`;
 			const thumb =
 				block.showThumbnails && item.thumbnail
 					? `<td width="56" style="padding:10px 12px 10px 0;border-bottom:1px solid #e8dcc0"><img src="${esc(item.thumbnail)}" alt="" width="48" style="display:block;border-radius:6px" /></td>`
@@ -191,7 +191,7 @@ function renderOrderItems(block: OrderItemsBlock, theme: EmailTheme, ctx: EmailR
 		? `<tr><td${block.showThumbnails ? ' colspan="2"' : ""} style="padding:12px 0;font-family:${fontFamily};font-size:16px;font-weight:700;color:${theme.text};border-top:2px solid ${theme.text}">Razem</td><td style="padding:12px 0;font-family:${fontFamily};font-size:16px;font-weight:700;text-align:right;color:${theme.text};border-top:2px solid ${theme.text}">${esc(ctx.vars.suma ?? "")}</td></tr>`
 		: "";
 
-	return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:${block.style.paddingY ?? 12}px 0">${rows}${totalRow}</table>`;
+	return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:${block.style.paddingY ?? 12}px 0;width:100%;max-width:100%;table-layout:fixed">${rows}${totalRow}</table>`;
 }
 
 function renderLeaf(block: LeafBlock, theme: EmailTheme, vars: Record<string, string>): string {

@@ -48,7 +48,7 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 	const [leftPanelTab, setLeftPanelTab] = useState<"block" | "theme">("block");
 	const [addBlockOpen, setAddBlockOpen] = useState(false);
 	const addBlockAnchorRef = useRef<HTMLButtonElement>(null);
-	const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
+	const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("mobile");
 	const [testEmail, setTestEmail] = useState("");
 	const [feedback, setFeedback] = useState<Feedback>(null);
 	const [saving, startSave] = useTransition();
@@ -69,6 +69,11 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 	);
 
 	const mergeVariables = useMemo(() => getMergeVariablesForTemplate(activeType), [activeType]);
+
+	useEffect(() => {
+		const mq = window.matchMedia("(min-width: 1280px)");
+		setPreviewMode(mq.matches ? "desktop" : "mobile");
+	}, []);
 
 	const preview = useMemo(
 		() => renderTemplate(active, sampleRenderContextForTemplate(activeType)).html,
@@ -374,14 +379,14 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 					))}
 				</div>
 
-				<div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
-					<div className="flex flex-1 items-center gap-2">
+				<div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+					<div className="flex w-full min-w-0 items-center gap-2 sm:flex-1 sm:max-w-md">
 						<Input
 							type="email"
 							value={testEmail}
 							onChange={(e) => setTestEmail(e.target.value)}
 							placeholder="adres@do-testu.pl"
-							className="h-9 max-w-56"
+							className="h-9 min-w-0 flex-1"
 						/>
 						<Button
 							type="button"
@@ -395,7 +400,7 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 							Wyślij test
 						</Button>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex flex-wrap items-center gap-2">
 						<Button
 							type="button"
 							variant="ghost"
@@ -441,83 +446,88 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 				) : null}
 			</div>
 
-			<div className="grid gap-4 xl:grid-cols-[minmax(280px,320px)_minmax(0,1fr)]">
-				<div className="flex flex-col gap-3">
-					<div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
-						<div className={cn(segmentTrack, "w-full")}>
-							<button
-								type="button"
-								onClick={() => setLeftPanelTab("block")}
-								aria-pressed={leftPanelTab === "block"}
-								className={cn(
-									"flex-1 px-3 py-1.5 text-sm font-medium",
-									segmentItem,
-									leftPanelTab === "block" ? segmentItemActive : segmentItemIdle,
-								)}
-							>
-								Blok
-							</button>
-							<button
-								type="button"
-								onClick={() => setLeftPanelTab("theme")}
-								aria-pressed={leftPanelTab === "theme"}
-								className={cn(
-									"flex-1 px-3 py-1.5 text-sm font-medium",
-									segmentItem,
-									leftPanelTab === "theme" ? segmentItemActive : segmentItemIdle,
-								)}
-							>
-								Motyw
-							</button>
-						</div>
-
-						{leftPanelTab === "theme" ? (
-							<ThemePanel theme={active.theme} onChange={(theme) => updateActive((t) => ({ ...t, theme }))} />
-						) : selectedBlock ? (
-							<BlockInspector block={selectedBlock} onUpload={uploadImage} onChange={(next) => updateBlock(selectedBlock.id, next)} />
-						) : (
-							<p className="text-sm text-muted-foreground">Zaznacz blok na liście poniżej, aby edytować jego treść i styl.</p>
-						)}
-					</div>
-
-					<div className="rounded-xl border border-border bg-card p-3">
-						<div className="relative mb-2 flex items-center justify-between">
-							<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								Bloki ({active.blocks.length})
-							</h3>
-							<button
-								ref={addBlockAnchorRef}
-								type="button"
-								aria-label="Dodaj sekcję"
-								aria-expanded={addBlockOpen}
-								onClick={() => setAddBlockOpen((open) => !open)}
-								className={cn(
-									editorBtnRounded,
-									"inline-flex size-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-									addBlockOpen && "bg-muted text-foreground",
-								)}
-							>
-								<Plus className="size-4" aria-hidden />
-							</button>
-							<AddBlockCallout
-								open={addBlockOpen}
-								onClose={() => setAddBlockOpen(false)}
-								onAdd={addBlock}
-								anchorRef={addBlockAnchorRef}
-							/>
-						</div>
-						<EditorCanvas
-							blocks={active.blocks}
-							selectedId={selectedId}
-							onSelect={selectBlock}
-							onReorder={setBlocks}
-							onDuplicate={onDuplicate}
-							onDelete={onDelete}
+			<div
+				className={cn(
+					"flex flex-col gap-4",
+					"xl:grid xl:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] xl:grid-rows-[auto_minmax(0,1fr)] xl:items-start",
+				)}
+			>
+				<div className="order-1 min-w-0 rounded-xl border border-border bg-card p-3 xl:col-start-1 xl:row-start-2">
+					<div className="relative mb-2 flex items-center justify-between">
+						<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+							Bloki ({active.blocks.length})
+						</h3>
+						<button
+							ref={addBlockAnchorRef}
+							type="button"
+							aria-label="Dodaj sekcję"
+							aria-expanded={addBlockOpen}
+							onClick={() => setAddBlockOpen((open) => !open)}
+							className={cn(
+								editorBtnRounded,
+								"inline-flex size-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+								addBlockOpen && "bg-muted text-foreground",
+							)}
+						>
+							<Plus className="size-4" aria-hidden />
+						</button>
+						<AddBlockCallout
+							open={addBlockOpen}
+							onClose={() => setAddBlockOpen(false)}
+							onAdd={addBlock}
+							anchorRef={addBlockAnchorRef}
 						/>
 					</div>
+					<EditorCanvas
+						blocks={active.blocks}
+						selectedId={selectedId}
+						onSelect={selectBlock}
+						onReorder={setBlocks}
+						onDuplicate={onDuplicate}
+						onDelete={onDelete}
+					/>
 				</div>
 
-				<div className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-muted/20 p-3">
+				<div className="order-3 min-w-0 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 xl:col-start-1 xl:row-start-1">
+					<div className={cn(segmentTrack, "w-full")}>
+						<button
+							type="button"
+							onClick={() => setLeftPanelTab("block")}
+							aria-pressed={leftPanelTab === "block"}
+							className={cn(
+								"flex-1 px-3 py-1.5 text-sm font-medium",
+								segmentItem,
+								leftPanelTab === "block" ? segmentItemActive : segmentItemIdle,
+							)}
+						>
+							Blok
+						</button>
+						<button
+							type="button"
+							onClick={() => setLeftPanelTab("theme")}
+							aria-pressed={leftPanelTab === "theme"}
+							className={cn(
+								"flex-1 px-3 py-1.5 text-sm font-medium",
+								segmentItem,
+								leftPanelTab === "theme" ? segmentItemActive : segmentItemIdle,
+							)}
+						>
+							Motyw
+						</button>
+					</div>
+
+					{leftPanelTab === "theme" ? (
+						<ThemePanel theme={active.theme} onChange={(theme) => updateActive((t) => ({ ...t, theme }))} />
+					) : selectedBlock ? (
+						<BlockInspector block={selectedBlock} onUpload={uploadImage} onChange={(next) => updateBlock(selectedBlock.id, next)} />
+					) : (
+						<p className="text-sm text-muted-foreground">
+							Zaznacz blok na liście powyżej, aby edytować treść i styl.
+						</p>
+					)}
+				</div>
+
+				<div className="order-2 flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-muted/20 p-3 xl:col-start-2 xl:row-span-2 xl:row-start-1">
 					<div className="flex items-center justify-between">
 						<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 							Podgląd (
@@ -559,13 +569,17 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 							</button>
 						</div>
 					</div>
-					<div className="flex justify-center overflow-x-auto overflow-y-hidden">
+					<div className="w-full min-w-0 overflow-x-auto [-webkit-overflow-scrolling:touch]">
 						<iframe
 							title="Podgląd maila"
 							srcDoc={preview}
 							sandbox=""
-							className="h-[720px] shrink-0 rounded-lg border border-border bg-white transition-all"
-							style={{ width: previewMaxWidth, maxWidth: "100%" }}
+							className="h-[min(480px,52vh)] w-full rounded-lg border border-border bg-white transition-all xl:h-[min(720px,70vh)]"
+							style={
+								previewMode === "desktop"
+									? { width: "100%", maxWidth: previewMaxWidth }
+									: { width: "100%", maxWidth: "100%" }
+							}
 						/>
 					</div>
 				</div>
