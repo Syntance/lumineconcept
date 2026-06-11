@@ -255,22 +255,22 @@ export const EMAIL_TEMPLATE_TYPES: Array<{
 	},
 	{
 		type: "contact_confirmation",
-		label: "Formularz kontaktowy · do klienta",
-		description: "Potwierdzenie odbioru wiadomości z ogólnego formularza kontaktowego.",
+		label: "Formularz kontaktowy",
+		description: "E-mail po wysłaniu ogólnego formularza kontaktowego.",
 	},
 	{
 		type: "contact_notification",
-		label: "Formularz kontaktowy · do nas",
+		label: "Formularz kontaktowy · powiadomienie",
 		description: "Powiadomienie na kontakt@lumineconcept.pl z ogólnego formularza.",
 	},
 	{
 		type: "logo3d_confirmation",
-		label: "Tablica z logo · do klienta",
-		description: "Potwierdzenie zapytania o wycenę tablicy z logo.",
+		label: "Tablica z logo",
+		description: "E-mail po zapytaniu o wycenę tablicy z logo.",
 	},
 	{
 		type: "logo3d_notification",
-		label: "Tablica z logo · do nas",
+		label: "Tablica z logo · powiadomienie",
 		description: "Powiadomienie na kontakt@lumineconcept.pl z formularza tablicy z logo.",
 	},
 ];
@@ -290,9 +290,22 @@ export function getEmailTemplatesByCategory(
 	category: EmailTemplateCategoryId,
 ): typeof EMAIL_TEMPLATE_TYPES {
 	return EMAIL_TEMPLATE_TYPES.filter((entry) => {
-		if (category === "contact") return isContactEmailTemplateType(entry.type);
+		if (category === "contact") {
+			return isContactEmailTemplateType(entry.type) && !isShopInboxEmailTemplateType(entry.type);
+		}
 		return !isContactEmailTemplateType(entry.type) && !isInternalOrderEmailTemplateType(entry.type);
 	});
+}
+
+/** Typ szablonu formularza zgodny z aktualnym przełącznikiem „Do klienta / Do nas”. */
+export function resolveAudienceTemplateType(
+	baseType: EmailTemplateType,
+	audienceReferenceType: EmailTemplateType,
+): EmailTemplateType {
+	const clientType = getClientTemplateType(baseType);
+	return isInternalAudienceType(audienceReferenceType)
+		? getInternalTemplateType(clientType)
+		: clientType;
 }
 
 /** Zmienne danych zamówienia dostępne w treści jako {{token}}. */

@@ -305,24 +305,28 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 					</strong>
 					.
 				</p>
-				<div className={segmentTrack}>
+				<div className={cn(segmentTrack, "w-fit shrink-0")}>
 					<button
 						type="button"
+						aria-pressed={!isInternalAudienceType(activeType)}
+						onClick={() => switchAudience("client")}
 						className={cn(
+							"px-3 py-1.5 text-sm font-medium whitespace-nowrap",
 							segmentItem,
 							!isInternalAudienceType(activeType) ? segmentItemActive : segmentItemIdle,
 						)}
-						onClick={() => switchAudience("client")}
 					>
 						Do klienta
 					</button>
 					<button
 						type="button"
+						aria-pressed={isInternalAudienceType(activeType)}
+						onClick={() => switchAudience("internal")}
 						className={cn(
+							"px-3 py-1.5 text-sm font-medium whitespace-nowrap",
 							segmentItem,
 							isInternalAudienceType(activeType) ? segmentItemActive : segmentItemIdle,
 						)}
-						onClick={() => switchAudience("internal")}
 					>
 						Do nas
 					</button>
