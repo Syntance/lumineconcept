@@ -10,9 +10,9 @@ import { HeroPortalMobile } from "./HeroPortalMobile";
 const HERO_BG_WIDTH = 2560;
 const HERO_BG_HEIGHT = 966;
 
-/** Mobile crop 4:5 — 828×1035 px, ~53 KB quality=82 (stabilny LCP, dobra jakość). */
-const HERO_MOBILE_WIDTH = 828;
-const HERO_MOBILE_HEIGHT = 1035;
+/** Mobile crop 4:5 — 1080×1350 px, ~77 KB (oryginał, pełna jakość). */
+const HERO_MOBILE_WIDTH = 1080;
+const HERO_MOBILE_HEIGHT = 1350;
 
 /**
  * Hero — desktop: ultrawide + overlay; mobile: kompakt (bez pełnego ekranu).
