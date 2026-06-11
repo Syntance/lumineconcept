@@ -24,6 +24,15 @@ export function resolveHomeHero(hero?: HeroContent): {
 	const desktopImageUrl = resolveCmsAssetUrl(resolved.desktopImageUrl?.trim());
 	const mobileImageUrl =
 		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) || desktopImageUrl;
+	
+	// Debug: loguj finalne URL-e
+	if (resolved.desktopImageUrl && !desktopImageUrl) {
+		console.error("[Hero] Nie udało się zresolvować desktopImageUrl:", resolved.desktopImageUrl);
+	}
+	if (resolved.mobileImageUrl && !mobileImageUrl) {
+		console.error("[Hero] Nie udało się zresolvować mobileImageUrl:", resolved.mobileImageUrl);
+	}
+	
 	return {
 		portal: heroToPortalConfig(resolved),
 		...(desktopImageUrl ? { desktopImageUrl } : {}),

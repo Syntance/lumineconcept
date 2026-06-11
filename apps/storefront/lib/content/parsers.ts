@@ -185,15 +185,19 @@ const instagramTileSchema = z.object({
 function resolveSeoAssets(seo: SeoMeta | undefined): SeoMeta | undefined {
 	if (!seo) return seo;
 	const ogImageUrl = resolveCmsAssetUrl(seo.ogImageUrl);
-	return ogImageUrl ? { ...seo, ogImageUrl } : seo;
+	// Zachowaj oryginał jeśli resolve się nie powiódł
+	return ogImageUrl !== undefined ? { ...seo, ogImageUrl } : seo;
 }
 
 function resolveHeroAssets(hero: HeroContent | undefined): HeroContent | undefined {
 	if (!hero) return hero;
+	const desktopResolved = resolveCmsAssetUrl(hero.desktopImageUrl);
+	const mobileResolved = resolveCmsAssetUrl(hero.mobileImageUrl);
 	return {
 		...hero,
-		desktopImageUrl: resolveCmsAssetUrl(hero.desktopImageUrl),
-		mobileImageUrl: resolveCmsAssetUrl(hero.mobileImageUrl),
+		// Zachowaj oryginał jeśli resolve się nie powiódł
+		...(desktopResolved !== undefined ? { desktopImageUrl: desktopResolved } : {}),
+		...(mobileResolved !== undefined ? { mobileImageUrl: mobileResolved } : {}),
 	};
 }
 
@@ -202,37 +206,55 @@ function resolvePageContentAssets(content: PageContent): PageContent {
 		...content,
 		hero: resolveHeroAssets(content.hero),
 		brandingCta: content.brandingCta
-			? {
-					...content.brandingCta,
-					desktopBackgroundUrl: resolveCmsAssetUrl(content.brandingCta.desktopBackgroundUrl),
-				}
+			? (() => {
+					const resolved = resolveCmsAssetUrl(content.brandingCta.desktopBackgroundUrl);
+					return {
+						...content.brandingCta,
+						...(resolved !== undefined ? { desktopBackgroundUrl: resolved } : {}),
+					};
+				})()
 			: content.brandingCta,
-		testimonials: content.testimonials?.map((item) => ({
-			...item,
-			imageUrl: resolveCmsAssetUrl(item.imageUrl),
-		})),
-		gallery: content.gallery?.map((item) => ({
-			...item,
-			imageUrl: resolveCmsAssetUrl(item.imageUrl) ?? item.imageUrl,
-		})),
-		categoryTiles: content.categoryTiles?.map((item) => ({
-			...item,
-			imageUrl: resolveCmsAssetUrl(item.imageUrl) ?? item.imageUrl,
-		})),
+		testimonials: content.testimonials?.map((item) => {
+			const resolved = resolveCmsAssetUrl(item.imageUrl);
+			return {
+				...item,
+				...(resolved !== undefined ? { imageUrl: resolved } : {}),
+			};
+		}),
+		gallery: content.gallery?.map((item) => {
+			const resolved = resolveCmsAssetUrl(item.imageUrl);
+			return {
+				...item,
+				imageUrl: resolved ?? item.imageUrl,
+			};
+		}),
+		categoryTiles: content.categoryTiles?.map((item) => {
+			const resolved = resolveCmsAssetUrl(item.imageUrl);
+			return {
+				...item,
+				imageUrl: resolved ?? item.imageUrl,
+			};
+		}),
 	};
 }
 
 function resolveGlobalContentAssets(global: GlobalContent): GlobalContent {
 	return {
 		...global,
-		salonLogos: global.salonLogos?.map((logo) => ({
-			...logo,
-			logoUrl: resolveCmsAssetUrl(logo.logoUrl),
-		})),
-		instagramTiles: global.instagramTiles?.map((tile) => ({
-			...tile,
-			imageUrl: resolveCmsAssetUrl(tile.imageUrl) ?? tile.imageUrl,
-		})),
+		salonLogos: global.salonLogos?.map((logo) => {
+			const resolved = resolveCmsAssetUrl(logo.logoUrl);
+			return {
+				...logo,
+				...(resolved !== undefined ? { logoUrl: resolved } : {}),
+			};
+		}),
+		instagramTiles: global.instagramTiles?.map((tile) => {
+			const resolved = resolveCmsAssetUrl(tile.imageUrl);
+			return {
+				...tile,
+				imageUrl: resolved ?? tile.imageUrl,
+			};
+		}),
 	};
 }
 
