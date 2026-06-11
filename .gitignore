@@ -26,6 +26,7 @@ uploads/
 static/
 scripts/sync-medusa-product.env
 scripts/fill-product-dimensions.env
+scripts/r2.env
 .cache/
 sanity/.sanity/
 .vercel

@@ -46,6 +46,21 @@ const r2RemotePattern = (() => {
   }
 })();
 
+/**
+ * Origin R2 do CSP — wymagany w img-src, żeby przeglądarka mogła załadować
+ * zdjęcia produktów serwowane bezpośrednio z publicznego URL bucketa R2
+ * (custom domain lub *.r2.dev). Bez tego CSP blokuje <img src="https://...r2...">
+ * kodem "Content Security Policy directive".
+ */
+const r2CspOrigin = (() => {
+  if (!r2PublicUrl) return "";
+  try {
+    return ` ${new URL(r2PublicUrl).origin}`;
+  } catch {
+    return "";
+  }
+})();
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   compiler: {
