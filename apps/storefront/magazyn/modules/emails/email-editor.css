@@ -34,3 +34,19 @@
 	outline: none;
 	box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);
 }
+
+.rich-text-editor:empty::before {
+	content: attr(data-placeholder);
+	color: var(--muted-foreground);
+	pointer-events: none;
+}
+
+.rich-text-editor strong,
+.rich-text-editor b {
+	font-weight: 700;
+}
+
+.rich-text-editor em,
+.rich-text-editor i {
+	font-style: italic;
+}

@@ -42,13 +42,16 @@ export function TextAreaField({
 	value,
 	onChange,
 	rows = 4,
+	hint,
 }: {
 	label: string;
 	value: string;
 	onChange: (value: string) => void;
 	rows?: number;
+	hint?: string;
 }) {
 	const id = useId();
+
 	return (
 		<div className="flex flex-col gap-1.5">
 			<FieldLabel htmlFor={id}>{label}</FieldLabel>
@@ -59,6 +62,7 @@ export function TextAreaField({
 				onChange={(e) => onChange(e.target.value)}
 				className="w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
 			/>
+			{hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
 		</div>
 	);
 }

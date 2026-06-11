@@ -1,5 +1,6 @@
 import { formatPrice } from "@magazyn/core/lib/format";
 import { magazynConfig } from "@magazyn/magazyn.config";
+import { mergeRichHtml, mergeRichPlain } from "./email-inline-format";
 import { emailFontFaceCss } from "./email-fonts";
 import {
 	type Block,
@@ -32,6 +33,8 @@ export type EmailRenderItem = {
 	quantity: number;
 	total: string;
 	thumbnail: string | null;
+	/** Kolory, opcje konfiguratora, pola tekstowe, pliki i linki QR. */
+	detailsLines?: string[];
 };
 
 export type EmailRenderContext = {
@@ -57,6 +60,12 @@ export type OrderRenderSource = {
 	customerName: string;
 	address: string;
 	items: EmailRenderItem[];
+	expressDelivery?: boolean;
+	expressFeeMinor?: number;
+	orderNotes?: string;
+	orderMetadata?: Record<string, string>;
+	/** ISO 8601 — data złożenia zamówienia. */
+	createdAt?: string;
 };
 
 const MERGE_RE = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
@@ -120,17 +129,17 @@ function renderHeading(block: HeadingBlock, theme: EmailTheme, vars: Record<stri
 		bold: block.style.bold ?? true,
 		color: block.style.color ?? theme.heading,
 	};
-	return `<p style="${textStyleCss(style, theme)}">${mergeHtml(block.text, vars)}</p>`;
+	return `<p style="${textStyleCss(style, theme)}">${mergeRichHtml(block.text, vars)}</p>`;
 }
 
 function renderText(block: TextBlock, theme: EmailTheme, vars: Record<string, string>): string {
-	const html = mergeHtml(block.text, vars).replace(/\n/g, "<br>");
+	const html = mergeRichHtml(block.text, vars).replace(/\n/g, "<br>");
 	return `<p style="${textStyleCss(block.style, theme)}">${html}</p>`;
 }
 
 function renderFooter(block: FooterBlock, theme: EmailTheme, vars: Record<string, string>): string {
 	const style: BlockStyle = { color: theme.muted, fontSize: 11, ...block.style };
-	return `<p style="${textStyleCss(style, theme)}">${mergeHtml(block.text, vars).replace(/\n/g, "<br>")}</p>`;
+	return `<p style="${textStyleCss(style, theme)}">${mergeRichHtml(block.text, vars).replace(/\n/g, "<br>")}</p>`;
 }
 
 function renderImage(block: ImageBlock, vars: Record<string, string>): string {
@@ -148,7 +157,7 @@ function renderButton(block: ButtonBlock, theme: EmailTheme, vars: Record<string
 	const radius = block.radius ?? 8;
 	const href = mergeAttr(block.href, vars);
 	const fontFamily = resolveFontFamily(block.fontKey, theme);
-	return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:${block.paddingY ?? 10}px ${align(block.align) === "center" ? "auto" : "0"}"><tr><td style="background:${bg};border-radius:${radius}px"><a href="${href}" target="_blank" rel="noopener" style="display:inline-block;padding:12px 24px;color:${color};font-family:${fontFamily};font-weight:700;font-size:14px;text-decoration:none;border-radius:${radius}px">${mergeHtml(block.label, vars)}</a></td></tr></table>`;
+	return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:${block.paddingY ?? 10}px ${align(block.align) === "center" ? "auto" : "0"}"><tr><td style="background:${bg};border-radius:${radius}px"><a href="${href}" target="_blank" rel="noopener" style="display:inline-block;padding:12px 24px;color:${color};font-family:${fontFamily};font-weight:700;font-size:14px;text-decoration:none;border-radius:${radius}px">${mergeRichHtml(block.label, vars)}</a></td></tr></table>`;
 }
 
 function renderDivider(block: DividerBlock): string {
@@ -161,9 +170,14 @@ function renderSpacer(block: SpacerBlock): string {
 
 function renderOrderItems(block: OrderItemsBlock, theme: EmailTheme, ctx: EmailRenderContext): string {
 	const fontFamily = resolveFontFamily(block.style.fontKey, theme);
+	const muted = theme.muted;
 	const rows = ctx.items
 		.map((item) => {
-			const titleCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;font-family:${fontFamily};font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text}">${esc(item.title)}${item.quantity > 1 ? ` × ${item.quantity}` : ""}</td>`;
+			const detailsHtml =
+				item.detailsLines && item.detailsLines.length > 0
+					? `<div style="margin-top:6px;font-size:12px;line-height:1.55;color:${muted}">${item.detailsLines.map((line) => esc(line)).join("<br/>")}</div>`
+					: "";
+			const titleCell = `<td style="padding:10px 0;border-bottom:1px solid #e8dcc0;font-family:${fontFamily};font-size:${block.style.fontSize ?? 14}px;color:${block.style.color ?? theme.text}">${esc(item.title)}${item.quantity > 1 ? ` × ${item.quantity}` : ""}${detailsHtml}</td>`;
 			const thumb =
 				block.showThumbnails && item.thumbnail
 					? `<td width="56" style="padding:10px 12px 10px 0;border-bottom:1px solid #e8dcc0"><img src="${esc(item.thumbnail)}" alt="" width="48" style="display:block;border-radius:6px" /></td>`
@@ -325,9 +339,9 @@ function plainBlock(block: Block, ctx: EmailRenderContext): string[] {
 		case "heading":
 		case "text":
 		case "footer":
-			return [mergePlain(block.text, ctx.vars)];
+			return [mergeRichPlain(block.text, ctx.vars)];
 		case "button":
-			return [`${mergePlain(block.label, ctx.vars)}: ${mergePlain(block.href, ctx.vars)}`];
+			return [`${mergeRichPlain(block.label, ctx.vars)}: ${mergePlain(block.href, ctx.vars)}`];
 		case "image":
 			return block.alt ? [mergePlain(block.alt, ctx.vars)] : [];
 		case "divider":
@@ -335,9 +349,11 @@ function plainBlock(block: Block, ctx: EmailRenderContext): string[] {
 		case "spacer":
 			return [""];
 		case "orderItems": {
-			const lines = ctx.items.map(
-				(item) => `• ${item.title}${item.quantity > 1 ? ` × ${item.quantity}` : ""} — ${item.total}`,
-			);
+			const lines = ctx.items.flatMap((item) => {
+				const head = `• ${item.title}${item.quantity > 1 ? ` × ${item.quantity}` : ""} — ${item.total}`;
+				if (!item.detailsLines?.length) return [head];
+				return [head, ...item.detailsLines.map((line) => `    ${line}`)];
+			});
 			if (block.showTotal) lines.push(`Razem: ${ctx.vars.suma ?? ""}`);
 			return lines;
 		}
@@ -358,20 +374,52 @@ function renderPlainText(template: EmailTemplate, ctx: EmailRenderContext): stri
 /* Kontekst danych — z zamówienia oraz przykładowy   */
 /* ────────────────────────────────────────────── */
 
+function metaOrDash(meta: Record<string, string> | undefined, key: string): string {
+	const value = meta?.[key]?.trim();
+	return value || "—";
+}
+
+const ORDER_DATE_FORMAT = new Intl.DateTimeFormat(magazynConfig.locale, {
+	day: "2-digit",
+	month: "long",
+	year: "numeric",
+	hour: "2-digit",
+	minute: "2-digit",
+});
+
+function formatOrderDate(iso: string | undefined): string {
+	if (!iso?.trim()) return "—";
+	const date = new Date(iso);
+	if (Number.isNaN(date.getTime())) return "—";
+	return ORDER_DATE_FORMAT.format(date);
+}
+
 /** Buduje kontekst renderowania z realnego zamówienia (wysyłka). */
 export function buildOrderRenderContext(order: OrderRenderSource): EmailRenderContext {
 	const currency = order.currencyCode;
+	const meta = order.orderMetadata ?? {};
+	const express = order.expressDelivery ?? false;
+	const expressFee = order.expressFeeMinor ?? 0;
+
 	return {
 		vars: {
 			imie: order.customerName,
 			nrZamowienia: String(order.displayId),
+			dataZamowienia: formatOrderDate(order.createdAt),
 			suma: formatPrice(order.total, currency),
 			sumaProduktow: formatPrice(order.itemTotal, currency),
 			kosztWysylki: formatPrice(order.shippingTotal, currency),
 			wysylka: order.shippingMethodName ?? "—",
 			email: order.email,
-			telefon: order.phone,
-			adres: order.address,
+			telefon: order.phone || "—",
+			adres: order.address || "—",
+			realizacjaExpress: express ? "Express · do 3 dni roboczych" : "Standardowa",
+			doplataExpress:
+				express && expressFee > 0 ? formatPrice(expressFee, currency) : express ? "wliczona w sumę" : "—",
+			uwagiZamowienia: order.orderNotes?.trim() || "—",
+			nip: metaOrDash(meta, "nip"),
+			nazwaFirmy: metaOrDash(meta, "companyName"),
+			faktura: metaOrDash(meta, "invoice"),
 		},
 		items: order.items,
 	};
@@ -392,8 +440,24 @@ export function sampleRenderContext(): EmailRenderContext {
 			adres: "ul. Przykładowa 1, 00-000 Miasto",
 		},
 		items: [
-			{ title: "Produkt przykładowy A", quantity: 1, total: "420 zł", thumbnail: null },
-			{ title: "Produkt przykładowy B", quantity: 1, total: "170 zł", thumbnail: null },
+			{
+				title: "Tabliczka LED z logo",
+				quantity: 1,
+				total: "420 zł",
+				thumbnail: null,
+				detailsLines: [
+					"Tabliczka: biały (#FFFFFF)",
+					"Podstawka: czarny mat (mat)",
+					"Tekst 1: „SALON BEAUTY”",
+					"Plik 1: logo-salon.pdf (https://lumineconcept.pl/files/logo-salon.pdf)",
+				],
+			},
+			{
+				title: "Produkt przykładowy B",
+				quantity: 1,
+				total: "170 zł",
+				thumbnail: null,
+			},
 		],
 	};
 }
@@ -416,7 +480,17 @@ export function sampleRenderContextForTemplate(type: EmailTemplateType): EmailRe
 	}
 	if (type.endsWith("_internal")) {
 		const base = sampleRenderContext();
-		const vars: Record<string, string> = { ...base.vars, metodaPlatnosci: "Przelewy24" };
+		const vars: Record<string, string> = {
+			...base.vars,
+			metodaPlatnosci: "Przelewy24",
+			dataZamowienia: "11 czerwca 2026, 14:30",
+			realizacjaExpress: "Express · do 3 dni roboczych",
+			doplataExpress: "210 zł",
+			uwagiZamowienia: "Proszę o kontakt przed wysyłką.",
+			nip: "525-000-00-00",
+			nazwaFirmy: "Salon Beauty Sp. z o.o.",
+			faktura: "tak",
+		};
 		return { vars, items: base.items };
 	}
 	if (type === "bank_transfer_pending") {
