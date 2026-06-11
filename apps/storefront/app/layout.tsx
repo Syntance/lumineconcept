@@ -28,6 +28,7 @@ const chronicle = localFont({
   ],
   variable: "--font-chronicle",
   display: "optional",
+  preload: false,
 });
 
 const binerka = localFont({
