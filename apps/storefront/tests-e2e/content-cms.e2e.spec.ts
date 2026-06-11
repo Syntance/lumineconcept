@@ -11,13 +11,12 @@ async function dismissCookieBanner(page: Page) {
 }
 
 test.describe("CMS → storefront smoke", () => {
-  test("strona główna: hero + trust marquee z CMS defaults", async ({ page }) => {
+  test("strona główna: hero z CMS defaults", async ({ page }) => {
     await page.goto("/");
     await dismissCookieBanner(page);
     await expect(page.getByRole("link", { name: /zobacz produkty/i }).first()).toBeVisible();
     await expect(page.getByText(/CONCEPT|Wyróżnij swój salon/i).first()).toBeVisible();
-    await expect(page.getByText(/Zaufały nam/i)).toBeVisible();
-    await expect(page.getByText(/obserwujących/i).first()).toBeVisible();
+    await expect(page.getByText(/Zaufały nam/i)).toHaveCount(0);
   });
 
   test("/sklep: kafelki kategorii i trust bar", async ({ page }) => {

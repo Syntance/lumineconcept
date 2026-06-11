@@ -9,7 +9,7 @@ import type {
 	Testimonial,
 	TrustBar,
 } from "./types";
-import { DEFAULT_GLOBAL_CONTENT, DEFAULT_SITE_SETTINGS } from "./defaults";
+import { DEFAULT_SITE_SETTINGS } from "./defaults";
 
 const DEFAULT_IG_ALT = "Lumine Concept na Instagramie";
 
@@ -99,9 +99,8 @@ export type SalonMarqueeEntry =
 	| { type: "logo"; name: string; src: string };
 
 export function mapSalonLogosForMarquee(global: GlobalContent | null | undefined): SalonMarqueeEntry[] {
-	const logos = global?.salonLogos?.length
-		? global.salonLogos
-		: (DEFAULT_GLOBAL_CONTENT.salonLogos ?? []);
+	const logos = global?.salonLogos ?? [];
+	if (!logos.length) return [];
 	return logos.map((logo: SalonLogo) =>
 		logo.logoUrl
 			? { type: "logo" as const, name: logo.alt?.trim() || logo.name, src: logo.logoUrl }

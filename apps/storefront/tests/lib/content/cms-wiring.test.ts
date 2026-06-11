@@ -84,6 +84,11 @@ describe("cms-wiring", () => {
 		expect(entries[0]).toEqual({ type: "logo", name: "Logo salonu", src: "/logo.png" });
 	});
 
+	it("mapSalonLogosForMarquee returns empty without CMS logos", () => {
+		expect(mapSalonLogosForMarquee(null)).toEqual([]);
+		expect(mapSalonLogosForMarquee({})).toEqual([]);
+	});
+
 	it("resolveInstagramTiles limits to six posts", () => {
 		const tiles = resolveInstagramTiles({
 			instagramTiles: Array.from({ length: 8 }, (_, i) => ({
