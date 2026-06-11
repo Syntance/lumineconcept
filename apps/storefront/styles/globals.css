@@ -44,7 +44,13 @@
   /* Płynne przewijanie do #kotwic (np. „Zobacz więcej” → formularz). Wyłączone przy reduced motion. */
   /* Kotwice # — treść nie chowa się pod announcement + header (bez paska referencyjnego). */
   html {
-    scroll-padding-top: calc(2.35rem + var(--header-sticky-height) + 1px);
+    scroll-padding-top: calc(2.1rem + var(--header-sticky-height) + 1px);
+  }
+
+  @media (min-width: 640px) {
+    html {
+      scroll-padding-top: calc(2.35rem + var(--header-sticky-height) + 1px);
+    }
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -72,10 +78,20 @@
 
   /* Wysokość „chrome” nad treścią main — używana m.in. do sticky galerii produktu i scroll-padding. */
   #main-content {
-    --shop-chrome-h: calc(2.35rem + var(--header-sticky-height) + 1px);
+    --shop-chrome-h: calc(2.1rem + var(--header-sticky-height) + 1px);
+  }
+  @media (min-width: 640px) {
+    #main-content {
+      --shop-chrome-h: calc(2.35rem + var(--header-sticky-height) + 1px);
+    }
   }
   #main-content:has(.referral-banner-strip) {
-    --shop-chrome-h: calc(2.35rem + var(--header-sticky-height) + 1px + 2.75rem);
+    --shop-chrome-h: calc(2.1rem + var(--header-sticky-height) + 1px + 2.75rem);
+  }
+  @media (min-width: 640px) {
+    #main-content:has(.referral-banner-strip) {
+      --shop-chrome-h: calc(2.35rem + var(--header-sticky-height) + 1px + 2.75rem);
+    }
   }
 
   /* Nagłówki — kolor z brandbooka #725750 */

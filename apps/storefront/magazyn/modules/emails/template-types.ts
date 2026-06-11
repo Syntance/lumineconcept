@@ -111,17 +111,106 @@ export type OrderEmailTemplateType =
 	| "bank_transfer_pending"
 	| "payment_failed";
 
-/** Potwierdzenie dla klienta po wysłaniu formularza kontaktowego. */
-export type ContactEmailTemplateType = "contact_confirmation";
+/** Formularze kontaktowe — potwierdzenie klienta + powiadomienie do sklepu. */
+export type ContactEmailTemplateType =
+	| "contact_confirmation"
+	| "contact_notification"
+	| "logo3d_confirmation"
+	| "logo3d_notification";
 
-export type EmailTemplateType = OrderEmailTemplateType | ContactEmailTemplateType;
+/** Powiadomienia do kontakt@lumineconcept.pl po etapach zamówienia. */
+export type OrderInternalEmailTemplateType =
+	| "placed_internal"
+	| "realization_started_internal"
+	| "shipped_internal"
+	| "completed_internal"
+	| "cancelled_internal"
+	| "confirmation_internal"
+	| "bank_transfer_pending_internal"
+	| "payment_failed_internal";
 
-const CONTACT_EMAIL_TEMPLATE_TYPES: ContactEmailTemplateType[] = ["contact_confirmation"];
+export type EmailTemplateType =
+	| OrderEmailTemplateType
+	| ContactEmailTemplateType
+	| OrderInternalEmailTemplateType;
+
+export type ContactFormPreset = "contact" | "logo3d";
+
+const CONTACT_EMAIL_TEMPLATE_TYPES: ContactEmailTemplateType[] = [
+	"contact_confirmation",
+	"contact_notification",
+	"logo3d_confirmation",
+	"logo3d_notification",
+];
+
+export const ORDER_INTERNAL_TEMPLATE_TYPES: OrderInternalEmailTemplateType[] = [
+	"placed_internal",
+	"realization_started_internal",
+	"shipped_internal",
+	"completed_internal",
+	"cancelled_internal",
+	"confirmation_internal",
+	"bank_transfer_pending_internal",
+	"payment_failed_internal",
+];
 
 export function isContactEmailTemplateType(
 	type: EmailTemplateType,
 ): type is ContactEmailTemplateType {
 	return (CONTACT_EMAIL_TEMPLATE_TYPES as EmailTemplateType[]).includes(type);
+}
+
+export function isInternalOrderEmailTemplateType(
+	type: EmailTemplateType,
+): type is OrderInternalEmailTemplateType {
+	return (ORDER_INTERNAL_TEMPLATE_TYPES as EmailTemplateType[]).includes(type);
+}
+
+/** Mail do sklepu (kontakt@…) — powiadomienie wewnętrzne, nie do klienta. */
+export function isShopInboxEmailTemplateType(type: EmailTemplateType): boolean {
+	return (
+		isInternalOrderEmailTemplateType(type) ||
+		type === "contact_notification" ||
+		type === "logo3d_notification"
+	);
+}
+
+export function isInternalAudienceType(type: EmailTemplateType): boolean {
+	return isShopInboxEmailTemplateType(type);
+}
+
+/** Typ „klienta” dla pary szablonów (przełącznik w edytorze). */
+export function getClientTemplateType(type: EmailTemplateType): EmailTemplateType {
+	if (type === "contact_notification") return "contact_confirmation";
+	if (type === "logo3d_notification") return "logo3d_confirmation";
+	if (isInternalOrderEmailTemplateType(type)) {
+		return type.replace(/_internal$/, "") as OrderEmailTemplateType;
+	}
+	return type;
+}
+
+/** Typ powiadomienia do sklepu dla danego szablonu klienta. */
+export function getInternalTemplateType(clientType: EmailTemplateType): EmailTemplateType {
+	switch (clientType) {
+		case "contact_confirmation":
+			return "contact_notification";
+		case "logo3d_confirmation":
+			return "logo3d_notification";
+		case "contact_notification":
+		case "logo3d_notification":
+			return clientType;
+		default:
+			if (isInternalOrderEmailTemplateType(clientType)) return clientType;
+			return `${clientType}_internal` as OrderInternalEmailTemplateType;
+	}
+}
+
+export function getConfirmationTypeForPreset(preset: ContactFormPreset): ContactEmailTemplateType {
+	return preset === "logo3d" ? "logo3d_confirmation" : "contact_confirmation";
+}
+
+export function getNotificationTypeForPreset(preset: ContactFormPreset): ContactEmailTemplateType {
+	return preset === "logo3d" ? "logo3d_notification" : "contact_notification";
 }
 
 export type EmailTemplate = {
@@ -166,8 +255,23 @@ export const EMAIL_TEMPLATE_TYPES: Array<{
 	},
 	{
 		type: "contact_confirmation",
-		label: "Formularz kontaktowy · potwierdzenie",
-		description: "Potwierdzenie odbioru wiadomości z formularza kontaktowego.",
+		label: "Formularz kontaktowy · do klienta",
+		description: "Potwierdzenie odbioru wiadomości z ogólnego formularza kontaktowego.",
+	},
+	{
+		type: "contact_notification",
+		label: "Formularz kontaktowy · do nas",
+		description: "Powiadomienie na kontakt@lumineconcept.pl z ogólnego formularza.",
+	},
+	{
+		type: "logo3d_confirmation",
+		label: "Tablica z logo · do klienta",
+		description: "Potwierdzenie zapytania o wycenę tablicy z logo.",
+	},
+	{
+		type: "logo3d_notification",
+		label: "Tablica z logo · do nas",
+		description: "Powiadomienie na kontakt@lumineconcept.pl z formularza tablicy z logo.",
 	},
 ];
 
@@ -187,7 +291,7 @@ export function getEmailTemplatesByCategory(
 ): typeof EMAIL_TEMPLATE_TYPES {
 	return EMAIL_TEMPLATE_TYPES.filter((entry) => {
 		if (category === "contact") return isContactEmailTemplateType(entry.type);
-		return !isContactEmailTemplateType(entry.type);
+		return !isContactEmailTemplateType(entry.type) && !isInternalOrderEmailTemplateType(entry.type);
 	});
 }
 
@@ -225,7 +329,7 @@ export const BANK_TRANSFER_MERGE_VARIABLES: Array<{ token: string; label: string
 	{ token: "terminPlatnosci", label: "Termin płatności", sample: "5 dni roboczych" },
 ];
 
-/** Zmienne formularza kontaktowego ({{token}}) — szablon contact_confirmation. */
+/** Zmienne formularza kontaktowego ({{token}}) — potwierdzenie do klienta. */
 export const CONTACT_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
 	{ token: "imie", label: "Imię nadawcy", sample: "Anna" },
 	{ token: "email", label: "E-mail nadawcy", sample: "anna@przyklad.pl" },
@@ -239,8 +343,30 @@ export const CONTACT_MERGE_VARIABLES: Array<{ token: string; label: string; samp
 	},
 ];
 
+/** Powiadomienie do sklepu z formularza — pełna treść + telefon i załącznik. */
+export const CONTACT_NOTIFICATION_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
+	...CONTACT_MERGE_VARIABLES,
+	{ token: "telefon", label: "Telefon nadawcy", sample: "600 100 200" },
+	{
+		token: "wiadomoscPelna",
+		label: "Pełna treść wiadomości",
+		sample: "Interesuje mnie projekt oświetlenia do salonu beauty. Proszę o wycenę.",
+	},
+	{ token: "zalacznik", label: "Załącznik (nazwa pliku)", sample: "logo-salonu.pdf" },
+];
+
+/** Powiadomienia do sklepu po zamówieniu — dodatkowa metoda płatności. */
+export const INTERNAL_ORDER_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
+	...MERGE_VARIABLES,
+	{ token: "metodaPlatnosci", label: "Metoda płatności", sample: "Przelewy24" },
+];
+
 export function getMergeVariablesForTemplate(type: EmailTemplateType) {
+	if (type === "contact_notification" || type === "logo3d_notification") {
+		return CONTACT_NOTIFICATION_MERGE_VARIABLES;
+	}
 	if (isContactEmailTemplateType(type)) return CONTACT_MERGE_VARIABLES;
+	if (isInternalOrderEmailTemplateType(type)) return INTERNAL_ORDER_MERGE_VARIABLES;
 	if (type === "bank_transfer_pending") return BANK_TRANSFER_MERGE_VARIABLES;
 	if (type === "payment_failed") return PAYMENT_FAILED_MERGE_VARIABLES;
 	return MERGE_VARIABLES;
@@ -363,6 +489,116 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 			"Odpowiemy możliwie szybko — zwykle w ciągu 1–2 dni roboczych.",
 		],
 		withItems: false,
+	},
+	contact_notification: {
+		subject: `${SUBJECT_PREFIX} [Formularz] Wiadomość od {{imie}} — {{numerSprawy}}`,
+		preheader: "Nowa wiadomość z formularza kontaktowego.",
+		headline: "Nowa wiadomość z formularza",
+		paragraphs: [
+			"Nadawca: {{imie}}",
+			"E-mail: {{email}}",
+			"Telefon: {{telefon}}",
+			"Numer sprawy: {{numerSprawy}}",
+			"",
+			"{{wiadomoscPelna}}",
+			"Załącznik: {{zalacznik}}",
+		],
+		withItems: false,
+	},
+	logo3d_confirmation: {
+		subject: `${SUBJECT_PREFIX} Zapytanie o tablicę z logo — {{numerSprawy}}`,
+		preheader: "Potwierdzenie zapytania o wycenę tablicy z logo.",
+		headline: "Dziękujemy za zapytanie",
+		paragraphs: [
+			"Cześć {{imie}}, potwierdzamy odbiór zapytania o wycenę tablicy z logo.",
+			"Numer sprawy: {{numerSprawy}}.",
+			"Odezwiemy się z wyceną możliwie szybko — zwykle w ciągu 1–2 dni roboczych.",
+		],
+		withItems: false,
+	},
+	logo3d_notification: {
+		subject: `${SUBJECT_PREFIX} [Tablica z logo] Zapytanie od {{imie}} — {{numerSprawy}}`,
+		preheader: "Nowe zapytanie o wycenę tablicy z logo.",
+		headline: "Zapytanie o tablicę z logo",
+		paragraphs: [
+			"Nadawca: {{imie}}",
+			"E-mail: {{email}}",
+			"Numer sprawy: {{numerSprawy}}",
+			"",
+			"{{wiadomoscPelna}}",
+			"Załącznik (logo): {{zalacznik}}",
+		],
+		withItems: false,
+	},
+	placed_internal: {
+		subject: `${SUBJECT_PREFIX} Nowe zamówienie #{{nrZamowienia}} — {{suma}}`,
+		preheader: "Powiadomienie o nowym zamówieniu w sklepie.",
+		headline: "Nowe zamówienie #{{nrZamowienia}}",
+		paragraphs: [
+			"Klient: {{email}}",
+			"Telefon: {{telefon}}",
+			"Płatność: {{metodaPlatnosci}}",
+			"Kwota: {{suma}}",
+		],
+		withItems: true,
+	},
+	realization_started_internal: {
+		subject: `${SUBJECT_PREFIX} [SKLEP] Realizacja #{{nrZamowienia}}`,
+		preheader: "Zamówienie przekazane do realizacji.",
+		headline: "Start realizacji #{{nrZamowienia}}",
+		paragraphs: [
+			"Klient: {{email}}",
+			"Telefon: {{telefon}}",
+			"Kwota: {{suma}}",
+		],
+		withItems: true,
+	},
+	shipped_internal: {
+		subject: `${SUBJECT_PREFIX} [SKLEP] Wysłane #{{nrZamowienia}}`,
+		preheader: "Zamówienie zostało wysłane.",
+		headline: "Wysłane #{{nrZamowienia}}",
+		paragraphs: ["Klient: {{email}}", "Wysyłka: {{wysylka}}"],
+		withItems: false,
+	},
+	completed_internal: {
+		subject: `${SUBJECT_PREFIX} [SKLEP] Zakończone #{{nrZamowienia}}`,
+		preheader: "Zamówienie zakończone.",
+		headline: "Zakończone #{{nrZamowienia}}",
+		paragraphs: ["Klient: {{email}}", "Kwota: {{suma}}"],
+		withItems: false,
+	},
+	cancelled_internal: {
+		subject: `${SUBJECT_PREFIX} [SKLEP] Anulowane #{{nrZamowienia}}`,
+		preheader: "Zamówienie anulowane.",
+		headline: "Anulowane #{{nrZamowienia}}",
+		paragraphs: ["Klient: {{email}}", "Kwota: {{suma}}"],
+		withItems: true,
+	},
+	confirmation_internal: {
+		subject: `${SUBJECT_PREFIX} [SKLEP] Potwierdzenie #{{nrZamowienia}}`,
+		preheader: "Potwierdzenie zamówienia wysłane do klienta.",
+		headline: "Potwierdzenie #{{nrZamowienia}}",
+		paragraphs: ["Klient: {{email}}", "Kwota: {{suma}}"],
+		withItems: true,
+	},
+	bank_transfer_pending_internal: {
+		subject: `${SUBJECT_PREFIX} [SKLEP] Przelew #{{nrZamowienia}} — {{suma}}`,
+		preheader: "Nowe zamówienie z płatnością przelewem.",
+		headline: "Przelew tradycyjny #{{nrZamowienia}}",
+		paragraphs: [
+			"Klient: {{email}}",
+			"Telefon: {{telefon}}",
+			"Płatność: {{metodaPlatnosci}}",
+			"Kwota: {{suma}}",
+		],
+		withItems: true,
+	},
+	payment_failed_internal: {
+		subject: `${SUBJECT_PREFIX} [SKLEP] Płatność nieudana #{{nrZamowienia}}`,
+		preheader: "Nieudana płatność online.",
+		headline: "Płatność nieudana #{{nrZamowienia}}",
+		paragraphs: ["Klient: {{email}}", "Kwota: {{suma}}"],
+		withItems: true,
 	},
 };
 
@@ -572,7 +808,18 @@ export const emailTemplateTypeSchema = z.enum([
 	"confirmation",
 	"bank_transfer_pending",
 	"payment_failed",
+	"placed_internal",
+	"realization_started_internal",
+	"shipped_internal",
+	"completed_internal",
+	"cancelled_internal",
+	"confirmation_internal",
+	"bank_transfer_pending_internal",
+	"payment_failed_internal",
 	"contact_confirmation",
+	"contact_notification",
+	"logo3d_confirmation",
+	"logo3d_notification",
 ]);
 
 export const emailTemplateSchema = z.object({

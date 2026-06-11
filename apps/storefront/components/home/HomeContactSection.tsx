@@ -65,6 +65,7 @@ export function HomeContactSection() {
           email,
           phone: phone || undefined,
           message,
+          form_preset: "contact",
           website: honeypot,
         }),
       });

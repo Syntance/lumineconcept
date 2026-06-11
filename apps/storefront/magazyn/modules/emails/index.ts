@@ -11,6 +11,8 @@ export {
 } from "./store";
 export { sendOrderStageEmail } from "./send-order-email";
 export { sendContactConfirmationEmail } from "./send-contact-confirmation";
+export { sendContactNotificationEmail } from "./send-contact-notification";
+export { sendShopOrderNotificationEmail } from "./send-shop-order-notification";
 export { sendBankTransferPendingEmail } from "./send-bank-transfer-email";
 export { createContactCaseNumber } from "./contact-email-context";
 export { sendTransactionalEmail } from "./send-transactional";
@@ -32,4 +34,5 @@ export {
 	MERGE_VARIABLES,
 	type EmailTemplate,
 	type EmailTemplateType,
+	type ContactFormPreset,
 } from "./template-types";

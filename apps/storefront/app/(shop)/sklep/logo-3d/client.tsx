@@ -128,6 +128,7 @@ export function TablicaZLogoFormClient() {
       formData.set("name", derivedName);
       formData.set("email", email);
       formData.set("message", message);
+      formData.set("form_preset", "logo3d");
       formData.set("website", honeypot);
       if (logoFile) {
         formData.set("attachment", logoFile, logoFile.name);

@@ -8,6 +8,7 @@ import {
 	type ColumnsBlock,
 	BANK_TRANSFER_MERGE_VARIABLES,
 	CONTACT_MERGE_VARIABLES,
+	CONTACT_NOTIFICATION_MERGE_VARIABLES,
 	PAYMENT_FAILED_MERGE_VARIABLES,
 	type DividerBlock,
 	type EmailTemplate,
@@ -399,12 +400,24 @@ export function sampleRenderContext(): EmailRenderContext {
 
 /** Kontekst przykładowy — podgląd / test (zamówienia lub formularz). */
 export function sampleRenderContextForTemplate(type: EmailTemplateType): EmailRenderContext {
+	if (type === "contact_notification" || type === "logo3d_notification") {
+		const vars: Record<string, string> = {};
+		for (const v of CONTACT_NOTIFICATION_MERGE_VARIABLES) {
+			vars[v.token] = v.sample;
+		}
+		return { vars, items: [] };
+	}
 	if (isContactEmailTemplateType(type)) {
 		const vars: Record<string, string> = {};
 		for (const v of CONTACT_MERGE_VARIABLES) {
 			vars[v.token] = v.sample;
 		}
 		return { vars, items: [] };
+	}
+	if (type.endsWith("_internal")) {
+		const base = sampleRenderContext();
+		const vars: Record<string, string> = { ...base.vars, metodaPlatnosci: "Przelewy24" };
+		return { vars, items: base.items };
 	}
 	if (type === "bank_transfer_pending") {
 		const base = sampleRenderContext();

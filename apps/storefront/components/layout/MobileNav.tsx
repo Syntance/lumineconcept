@@ -24,6 +24,7 @@ interface MobileNavProps {
 
 export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
   const [panel, setPanel] = useState<"menu" | "contact">("menu");
+  const [contactPanelMode, setContactPanelMode] = useState<"info" | "form">("info");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -31,7 +32,10 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
   }, []);
 
   useEffect(() => {
-    if (!isOpen) setPanel("menu");
+    if (!isOpen) {
+      setPanel("menu");
+      setContactPanelMode("info");
+    }
   }, [isOpen]);
 
   useEffect(() => {
@@ -95,7 +99,12 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
         </div>
         <nav className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" aria-label="Menu mobilne">
           {panel === "contact" ? (
-            <ContactCalloutPanel onNavigate={onClose} />
+            <ContactCalloutPanel
+              mode={contactPanelMode}
+              onOpenForm={() => setContactPanelMode("form")}
+              onBackToInfo={() => setContactPanelMode("info")}
+              onNavigate={onClose}
+            />
           ) : (
             <ul className="space-y-1">
               {items.map((entry) =>

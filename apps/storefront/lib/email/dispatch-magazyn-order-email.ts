@@ -2,13 +2,13 @@ import "server-only";
 
 import { formatPrice } from "@magazyn/core/lib/format";
 import { serviceAdminFetch } from "@magazyn/core/medusa/client";
-import { magazynConfig } from "@magazyn/magazyn.config";
 import {
 	getAdminOrderForEmail,
 	orderToEmailSource,
 } from "@magazyn/modules/orders/store";
 import { sendBankTransferPendingEmail } from "@magazyn/modules/emails/send-bank-transfer-email";
 import { sendOrderStageEmail } from "@magazyn/modules/emails/send-order-email";
+import { sendShopOrderNotificationEmail } from "@magazyn/modules/emails/send-shop-order-notification";
 import type { OrderRenderSource } from "@magazyn/modules/emails/render-template";
 import type { OrderEmailTemplateType } from "@magazyn/modules/emails/template-types";
 import { sendTransactionalEmail, type SendEmailResult } from "@magazyn/modules/emails/send-transactional";
@@ -72,14 +72,6 @@ function wasEmailSent(metadata: Record<string, string>, type: OrderEmailTemplate
 	return Boolean(metadata[`${EMAIL_SENT_PREFIX}${emailSentContext(type)}`]?.trim());
 }
 
-function shopInbox(): string {
-	return (
-		process.env.SHOP_ORDER_NOTIFY_EMAIL?.replace(/\r\n/g, "").trim() ??
-		process.env.CONTACT_INBOX_EMAIL?.replace(/\r\n/g, "").trim() ??
-		magazynConfig.email.contactEmail
-	);
-}
-
 async function loadOrderSource(
 	orderId: string,
 	snapshot?: CheckoutOrderSnapshot,
@@ -121,23 +113,12 @@ async function loadOrderSource(
 	};
 }
 
-async function sendShopCopy(params: {
-	displayId: number;
-	email: string;
-	totalMinor: number;
-	currencyCode: string;
-	paymentLabel: string;
-}): Promise<void> {
-	const inbox = shopInbox();
-	if (!inbox) return;
-
-	const totalLabel = formatPrice(params.totalMinor, params.currencyCode);
-	await sendTransactionalEmail({
-		to: inbox,
-		subject: `Nowe zamówienie #${params.displayId} — ${totalLabel}`,
-		text: `Nowe zamówienie #${params.displayId}\nKlient: ${params.email}\nPłatność: ${params.paymentLabel}\nKwota: ${totalLabel}`,
-		html: `<p>Nowe zamówienie <strong>#${params.displayId}</strong></p><p>Klient: ${params.email}<br/>Płatność: ${params.paymentLabel}<br/>Kwota: ${totalLabel}</p>`,
-	}).catch(() => undefined);
+async function sendShopCopy(
+	type: OrderEmailTemplateType,
+	source: OrderRenderSource,
+	paymentLabel: string,
+): Promise<void> {
+	await sendShopOrderNotificationEmail(type, source, paymentLabel);
 }
 
 export type MagazynOrderEmailResult =
@@ -181,13 +162,7 @@ export async function dispatchMagazynOrderEmail(params: {
 	if (!params.skipShopCopy) {
 		const paymentLabel =
 			params.type === "bank_transfer_pending" ? "Przelew tradycyjny" : "Online";
-		void sendShopCopy({
-			displayId: source.displayId,
-			email: source.email,
-			totalMinor: source.total,
-			currencyCode: source.currencyCode,
-			paymentLabel,
-		});
+		void sendShopCopy(params.type, source, paymentLabel);
 	}
 
 	if (!result.skipped) {

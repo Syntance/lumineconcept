@@ -11,29 +11,33 @@ interface HeaderContactTriggerProps {
 
 export function HeaderContactTrigger({ className }: HeaderContactTriggerProps) {
   const [open, setOpen] = useState(false);
+  const [panelMode, setPanelMode] = useState<"info" | "form">("info");
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
 
-  const close = useCallback(() => setOpen(false), []);
+  const close = useCallback(() => {
+    setOpen(false);
+    setPanelMode("info");
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
       if (rootRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
+      close();
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+  }, [open, close]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, close]);
 
   return (
     <div className="relative inline-flex items-center" ref={rootRef}>
@@ -45,13 +49,14 @@ export function HeaderContactTrigger({ className }: HeaderContactTriggerProps) {
         aria-haspopup="dialog"
         onClick={() => {
           setOpen((v) => {
-            // Otwarcie calloutu = intencja kontaktu (Notion: Pixel `Contact`).
             if (!v) {
               trackCtaClick({
                 ctaLabel: "kontakt_callout_open",
                 position: "header",
                 contactIntent: true,
               });
+            } else {
+              setPanelMode("info");
             }
             return !v;
           });
@@ -62,12 +67,21 @@ export function HeaderContactTrigger({ className }: HeaderContactTriggerProps) {
       {open ? (
         <div
           id={panelId}
-          className="absolute right-0 top-full z-50 w-[min(calc(100vw-2rem),18.5rem)] pt-2"
+          className={`absolute right-0 top-full z-50 pt-2 ${
+            panelMode === "form"
+              ? "w-[min(calc(100vw-2rem),22rem)]"
+              : "w-[min(calc(100vw-2rem),18.5rem)]"
+          }`}
           role="dialog"
-          aria-label="Dane kontaktowe"
+          aria-label={panelMode === "form" ? "Formularz kontaktowy" : "Dane kontaktowe"}
         >
           <div className="rounded-lg border border-brand-100 bg-white p-5 shadow-lg">
-            <ContactCalloutPanel onNavigate={close} />
+            <ContactCalloutPanel
+              mode={panelMode}
+              onOpenForm={() => setPanelMode("form")}
+              onBackToInfo={() => setPanelMode("info")}
+              onNavigate={close}
+            />
           </div>
         </div>
       ) : null}

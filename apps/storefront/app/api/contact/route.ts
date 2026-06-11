@@ -3,22 +3,16 @@ import { getResendConfig } from "@/lib/resend/config";
 import {
 	createContactCaseNumber,
 	sendContactConfirmationEmail,
+	sendContactNotificationEmail,
+	type ContactFormPreset,
 } from "@magazyn/modules/emails";
 
 export const maxDuration = 30;
 
 const LIMITS = { name: 120, phone: 40, message: 4000 } as const;
 
-/**
- * Twardy limit pliku załącznika. Resend przyjmuje ~40 MB po base64, ale
- * skrzynki odbiorcze (Gmail/Outlook) bywają restrykcyjne na 25 MB; do tego
- * Vercel ma limit body funkcji ok. 4,5 MB. 4 MB to bezpieczny próg dla
- * pojedynczego loga (SVG/PNG/PDF) i wystarczająco mało, by nie obciążać
- * funkcji ani Resend.
- */
 const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 
-/** Rozszerzenia, których NIE przyjmujemy z formularza (niezależnie od MIME). */
 const DISALLOWED_EXTENSIONS = new Set([
   "exe",
   "bat",
@@ -39,14 +33,6 @@ const DISALLOWED_EXTENSIONS = new Set([
   "rb",
 ]);
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 function safeAttachmentFilename(name: string): string {
   const base = name.trim().replace(/^.*[/\\]/, "").slice(0, 200);
   return base || "zalacznik";
@@ -58,102 +44,9 @@ function getExtension(filename: string): string {
   return filename.slice(i + 1).toLowerCase();
 }
 
-type ContactPayload = {
-  name: string;
-  email: string;
-  phone: string;
-  message: string;
-  attachment?: { filename: string; contentBase64: string };
-};
-
-async function sendContactEmail(
-  payload: ContactPayload,
-): Promise<{ ok: true } | { ok: false; status: number; body: object }> {
-  const { name, email, phone, message, attachment } = payload;
-
-  const { apiKey, from, configured } = getResendConfig();
-  const to = process.env.CONTACT_INBOX_EMAIL?.replace(/\r\n/g, "").trim() ?? "kontakt@lumineconcept.pl";
-
-  if (!configured || !apiKey) {
-    console.error("[api/contact] Brak RESEND_API_KEY");
-    return {
-      ok: false,
-      status: 503,
-      body: {
-        success: false,
-        message: "Formularz jest chwilowo niedostępny. Napisz na kontakt@lumineconcept.pl.",
-      },
-    };
-  }
-
-  const safe = {
-    name: escapeHtml(name),
-    email: escapeHtml(email),
-    phone: phone ? escapeHtml(phone) : "",
-    message: escapeHtml(message),
-  };
-
-  const html = `
-      <p><strong>Nadawca:</strong> ${safe.name}</p>
-      <p><strong>E-mail:</strong> <a href="mailto:${safe.email}">${safe.email}</a></p>
-      ${safe.phone ? `<p><strong>Telefon:</strong> ${safe.phone}</p>` : ""}
-      ${attachment ? `<p><strong>Załącznik:</strong> ${escapeHtml(attachment.filename)}</p>` : ""}
-      <hr />
-      <p style="white-space:pre-wrap">${safe.message.replace(/\n/g, "<br/>")}</p>
-    `;
-
-  const textLines = [
-    `Nadawca: ${name}`,
-    `E-mail: ${email}`,
-    phone ? `Telefon: ${phone}` : null,
-    attachment ? `Załącznik: ${attachment.filename}` : null,
-    "",
-    message,
-  ].filter((line) => line !== null);
-
-  const text = textLines.join("\n");
-
-  const resendBody: Record<string, unknown> = {
-    from,
-    to: [to],
-    reply_to: email,
-    subject: `Lumine — wiadomość od ${name}`,
-    html,
-    text,
-  };
-
-  if (attachment) {
-    resendBody.attachments = [
-      {
-        filename: attachment.filename,
-        content: attachment.contentBase64,
-      },
-    ];
-  }
-
-  const resendRes = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(resendBody),
-  });
-
-  if (!resendRes.ok) {
-    const errBody = (await resendRes.json().catch(() => null)) as { message?: string } | null;
-    console.error("[api/contact] Resend:", resendRes.status, errBody);
-    return {
-      ok: false,
-      status: 502,
-      body: {
-        success: false,
-        message: "Nie udało się wysłać wiadomości. Spróbuj ponownie.",
-      },
-    };
-  }
-
-  return { ok: true };
+function parseFormPreset(raw: string | undefined | null): ContactFormPreset {
+  const v = String(raw ?? "").trim().toLowerCase();
+  return v === "logo3d" ? "logo3d" : "contact";
 }
 
 function validateCommon(name: string, email: string, phone: string, message: string): NextResponse | null {
@@ -191,8 +84,26 @@ function validateCommon(name: string, email: string, phone: string, message: str
   return null;
 }
 
+async function ensureResendConfigured(): Promise<NextResponse | null> {
+  const { apiKey, configured } = getResendConfig();
+  if (!configured || !apiKey) {
+    console.error("[api/contact] Brak RESEND_API_KEY");
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Formularz jest chwilowo niedostępny. Napisz na kontakt@lumineconcept.pl.",
+      },
+      { status: 503 },
+    );
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const resendErr = await ensureResendConfigured();
+    if (resendErr) return resendErr;
+
     const contentType = request.headers.get("content-type") ?? "";
 
     if (contentType.includes("multipart/form-data")) {
@@ -202,6 +113,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: "Dziękujemy za wiadomość." });
       }
 
+      const preset = parseFormPreset(String(formData.get("form_preset") ?? ""));
       const name = String(formData.get("name") ?? "").trim();
       const email = String(formData.get("email") ?? "").trim().toLowerCase();
       const phone = String(formData.get("phone") ?? "").trim();
@@ -211,7 +123,8 @@ export async function POST(request: NextRequest) {
       if (err) return err;
 
       const raw = formData.get("attachment");
-      let attachment: ContactPayload["attachment"];
+      let attachment: { filename: string; contentBase64: string } | undefined;
+      let attachmentFilename: string | undefined;
 
       if (raw instanceof File && raw.size > 0) {
         if (raw.size > MAX_ATTACHMENT_BYTES) {
@@ -235,18 +148,32 @@ export async function POST(request: NextRequest) {
 
         const buf = Buffer.from(await raw.arrayBuffer());
         attachment = { filename, contentBase64: buf.toString("base64") };
-      }
-
-      const send = await sendContactEmail({ name, email, phone, message, attachment });
-      if (!send.ok) {
-        return NextResponse.json(send.body, { status: send.status });
+        attachmentFilename = filename;
       }
 
       const caseNumber = createContactCaseNumber();
-      const confirmation = await sendContactConfirmationEmail(
-        { name, email, phone, message },
+      const payload = {
+        name,
+        email,
+        phone,
+        message,
+        attachmentFilename,
+      };
+
+      const notification = await sendContactNotificationEmail(
+        payload,
         caseNumber,
+        preset,
+        attachment,
       );
+      if (!notification.ok) {
+        return NextResponse.json(
+          { success: false, message: notification.message },
+          { status: 502 },
+        );
+      }
+
+      const confirmation = await sendContactConfirmationEmail(payload, caseNumber, preset);
       if (!confirmation.ok) {
         return NextResponse.json(
           { success: false, message: confirmation.message },
@@ -266,12 +193,14 @@ export async function POST(request: NextRequest) {
       phone?: string;
       message?: string;
       website?: string;
+      form_preset?: string;
     };
 
     if (body.website) {
       return NextResponse.json({ success: true, message: "Dziękujemy za wiadomość." });
     }
 
+    const preset = parseFormPreset(body.form_preset);
     const name = String(body.name ?? "").trim();
     const email = String(body.email ?? "").trim().toLowerCase();
     const phone = String(body.phone ?? "").trim();
@@ -280,16 +209,18 @@ export async function POST(request: NextRequest) {
     const jsonErr = validateCommon(name, email, phone, message);
     if (jsonErr) return jsonErr;
 
-    const send = await sendContactEmail({ name, email, phone, message });
-    if (!send.ok) {
-      return NextResponse.json(send.body, { status: send.status });
+    const caseNumber = createContactCaseNumber();
+    const payload = { name, email, phone, message };
+
+    const notification = await sendContactNotificationEmail(payload, caseNumber, preset);
+    if (!notification.ok) {
+      return NextResponse.json(
+        { success: false, message: notification.message },
+        { status: 502 },
+      );
     }
 
-    const caseNumber = createContactCaseNumber();
-    const confirmation = await sendContactConfirmationEmail(
-      { name, email, phone, message },
-      caseNumber,
-    );
+    const confirmation = await sendContactConfirmationEmail(payload, caseNumber, preset);
     if (!confirmation.ok) {
       return NextResponse.json(
         { success: false, message: confirmation.message },
