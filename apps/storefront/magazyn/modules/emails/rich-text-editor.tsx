@@ -195,7 +195,8 @@ export function RichTextEditor({
 			<div
 				className={cn(
 					segmentTrack,
-					"flex flex-wrap items-center gap-0.5 rounded-md border border-input bg-muted/30 p-1",
+					"flex max-w-full flex-wrap items-center gap-0.5 overflow-x-auto rounded-md border border-input bg-muted/30 p-1",
+					"[-webkit-overflow-scrolling:touch]",
 				)}
 				role="toolbar"
 				aria-label="Formatowanie tekstu"
