@@ -113,7 +113,7 @@ export function RichTextEditor({
 	const editorRef = useRef<HTMLDivElement>(null);
 	const sizeMenuRef = useRef<HTMLDivElement>(null);
 	const savedRangeRef = useRef<Range | null>(null);
-	const lastEmittedRef = useRef(value);
+	const lastEmittedRef = useRef<string | undefined>(undefined);
 	const [sizeMenuOpen, setSizeMenuOpen] = useState(false);
 
 	const emitChange = useCallback(() => {
@@ -145,9 +145,15 @@ export function RichTextEditor({
 	useEffect(() => {
 		const el = editorRef.current;
 		if (!el) return;
-		if (value === lastEmittedRef.current) return;
+
+		const displayHtml = toEditorDisplayHtml(value);
+		const sanitizedDisplay = sanitizeEmailInlineHtml(displayHtml);
+		const sanitizedCurrent = sanitizeEmailInlineHtml(el.innerHTML);
+
+		if (value === lastEmittedRef.current && sanitizedCurrent === sanitizedDisplay) return;
+
 		lastEmittedRef.current = value;
-		el.innerHTML = toEditorDisplayHtml(value);
+		el.innerHTML = displayHtml;
 	}, [value]);
 
 	useEffect(() => {
