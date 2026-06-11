@@ -1,4 +1,4 @@
-import { mediaCdnOrigin, resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
+import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
 
 /** Assety statyczne storefrontu w `public/` — nie prefiksuj backendem Medusa. */
 const STOREFRONT_PUBLIC_PREFIXES = ["/images/", "/icons/"] as const;
@@ -29,39 +29,54 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 	}
 
 	const resolved = resolveMedusaMediaUrl(trimmed);
-	
-	// Debug: jeśli URL jest, ale nie udało się zresolvować
+
 	if (!resolved && trimmed) {
 		console.warn("[Asset] Nie udało się zresolvować URL:", trimmed.substring(0, 100));
 	}
-	
+
 	return resolved ?? undefined;
 }
 
-function isMediaCdnOrigin(origin: string): boolean {
-	const cdn = mediaCdnOrigin();
-	if (!cdn) return false;
-	try {
-		return new URL(origin).origin === new URL(cdn).origin;
-	} catch {
-		return false;
-	}
-}
-
-/** next/image `unoptimized` — lokalne assety, R2/CDN CMS i Medusa (bez remotePatterns przy buildzie). */
+/**
+ * Czy `next/image` ma pominąć optymalizację (`unoptimized`).
+ *
+ * Domyślnie OPTYMALIZUJEMY (downscale do realnego rozmiaru + AVIF/WebP + cache 1 rok),
+ * bo to eliminuje wolne, wielomegabajtowe oryginały z R2 i daje natychmiastowe ładowanie.
+ *
+ * `unoptimized` zostaje tylko gdy optymalizator i tak by nie zadziałał:
+ * - SVG (Next pomija, wymaga `dangerouslyAllowSVG`),
+ * - hosty lokalne (optymalizator Vercela ich nie dosięgnie),
+ * - względne ścieżki backendu Medusa bez pliku w `public/` (optymalizator je 404-uje).
+ */
 export function isCmsImageUnoptimized(url: string): boolean {
-	if (isStorefrontPublicAssetPath(url)) return true;
-	if (url.startsWith("/static/") || url.startsWith("/uploads/")) return true;
-	if (url.includes("/cms-uploads/")) return true;
-	if (!url.startsWith("http")) return false;
-	try {
-		const parsed = new URL(url);
-		const host = parsed.hostname;
-		if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".r2.dev")) {
+	if (!url) return false;
+
+	const pathname = (url.split("?")[0] ?? "").toLowerCase();
+
+	// SVG — serwuj surowo (brak optymalizacji bez dangerouslyAllowSVG).
+	if (pathname.endsWith(".svg")) return true;
+
+	if (url.startsWith("http")) {
+		try {
+			const host = new URL(url).hostname;
+			if (host === "localhost" || host === "127.0.0.1") return true;
+		} catch {
 			return true;
 		}
-		return isMediaCdnOrigin(parsed.origin);
-	} catch {
+		// R2 / CDN / Medusa prod → przepuszczamy przez Next/Vercel Image Optimization.
 		return false;
 	}
+
+	// Ścieżki serwowane przez backend (brak pliku w `public/`) — nie da się zoptymalizować.
+	if (
+		pathname.startsWith("/static/") ||
+		pathname.startsWith("/uploads/") ||
+		pathname.startsWith("/products/") ||
+		pathname.includes("/cms-uploads/")
+	) {
+		return true;
+	}
+
+	// `/images/**`, `/icons/**` są w `public/` → optymalizuj (poza SVG obsłużonym wyżej).
+	return false;
 }
