@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getPageContent, getSiteSettings } from "@/lib/content";
+import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
 import { buildMetadata } from "@/lib/content/metadata";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
+import { HomeTrustMarquee } from "@/components/home/HomeTrustMarquee";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
@@ -12,10 +13,10 @@ import { HomeContactSection } from "@/components/home/HomeContactSection";
 
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSiteSettings();
+  const [pageSeo, settings] = await Promise.all([getPageSeo("home"), getSiteSettings()]);
 
   return buildMetadata({
-    seo: settings?.seo ?? undefined,
+    seo: pageSeo ?? settings?.seo ?? undefined,
     fallbackTitle:
       "Lumine Concept \u2014 branding z plexi dla salon\u00f3w beauty | Tablice z logo, cenniki, oznaczenia",
     fallbackDescription:
@@ -77,6 +78,10 @@ export default async function HomePage() {
       </Suspense>
 
       <SocialProofSection />
+
+      <Suspense fallback={null}>
+        <HomeTrustMarquee />
+      </Suspense>
 
       <Suspense fallback={null}>
         <FooterCTA />
