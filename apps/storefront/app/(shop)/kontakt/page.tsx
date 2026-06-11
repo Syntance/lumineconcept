@@ -5,14 +5,15 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { getSiteSettings } from "@/lib/content";
 import { resolveSocialLinks } from "@/lib/content/cms-wiring";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/content/defaults";
 import { SITE_CONTACT } from "@/lib/site-contact";
-import { formatInstagramDisplayLabel } from "@/lib/social-links";
+import { formatFacebookDisplayLabel, formatInstagramDisplayLabel } from "@/lib/social-links";
 import { SITE_URL } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Kontakt",
   description:
-    "Skontaktuj się z Lumine Concept — formularz, e-mail, Instagram. Pracownia w Ryczowie, godziny otwarcia pon.–pt. 9:00–17:00.",
+    "Skontaktuj się z Lumine Concept — formularz, e-mail, Instagram i Facebook. Pracownia w Ryczowie, godziny otwarcia pon.–pt. 9:00–17:00.",
   robots: { index: true, follow: true },
   alternates: {
     canonical: `${SITE_URL}/kontakt`,
@@ -46,6 +47,10 @@ const EXTERNAL_LINK_CLASS =
 
 export default async function KontaktPage() {
   const social = resolveSocialLinks(await getSiteSettings());
+  const instagramUrl =
+    social.instagram?.trim() || DEFAULT_SITE_SETTINGS.socialLinks?.instagram || "";
+  const facebookUrl =
+    social.facebook?.trim() || DEFAULT_SITE_SETTINGS.socialLinks?.facebook || "";
 
   return (
     <div className="border-b border-brand-100 bg-brand-50/30">
@@ -60,8 +65,8 @@ export default async function KontaktPage() {
             Kontakt
           </h1>
           <p className="mx-auto mb-12 max-w-2xl text-pretty text-center text-brand-700">
-            Pytania o produkty, wycena lub współpraca — odezwiemy się e-mailem. Możesz też napisać bezpośrednio lub
-            wysłać DM na Instagramie.
+            Pytania o produkty, wycena lub współpraca — odezwiemy się e-mailem. Możesz też napisać na Instagramie lub
+            Facebooku.
           </p>
 
           <div className="grid gap-10 lg:grid-cols-[1fr_minmax(20rem,26rem)] lg:gap-12">
@@ -100,27 +105,27 @@ export default async function KontaktPage() {
                       {SITE_CONTACT.email}
                     </a>
                   </ContactDetail>
-                  {social.instagram ? (
+                  {instagramUrl ? (
                     <ContactDetail icon={Instagram} label="Instagram">
                       <a
-                        href={social.instagram}
+                        href={instagramUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={EXTERNAL_LINK_CLASS}
                       >
-                        {formatInstagramDisplayLabel(social.instagram)}
+                        {formatInstagramDisplayLabel(instagramUrl)}
                       </a>
                     </ContactDetail>
                   ) : null}
-                  {social.facebook ? (
+                  {facebookUrl ? (
                     <ContactDetail icon={Share2} label="Facebook">
                       <a
-                        href={social.facebook}
+                        href={facebookUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={EXTERNAL_LINK_CLASS}
                       >
-                        Facebook
+                        {formatFacebookDisplayLabel(facebookUrl)}
                       </a>
                     </ContactDetail>
                   ) : null}

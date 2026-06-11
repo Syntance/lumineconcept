@@ -1,5 +1,20 @@
 import type { SocialLinks } from "@/lib/content/types";
 
+/** Wyświetlana nazwa profilu Facebook z URL CMS (np. lumineconcept). */
+export function formatFacebookDisplayLabel(url: string): string {
+	const trimmed = url.trim();
+	if (!trimmed) return "Facebook";
+
+	try {
+		const pathname = new URL(trimmed).pathname.replace(/\/$/, "");
+		const segment = pathname.split("/").filter(Boolean).pop();
+		if (!segment) return "Facebook";
+		return segment;
+	} catch {
+		return trimmed;
+	}
+}
+
 /** Wyświetlana nazwa profilu IG z URL CMS (np. @lumine.concept). */
 export function formatInstagramDisplayLabel(url: string): string {
 	const trimmed = url.trim();
