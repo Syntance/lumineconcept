@@ -18,8 +18,15 @@ export type RawStoreMetadataBlob = {
 };
 
 const REVALIDATE_SECONDS = 300;
+const FETCH_TIMEOUT_MS = 30_000;
+const RETRY_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 750;
 
 let cachedServiceToken: { token: string; at: number } | null = null;
+
+function sleep(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function getServiceTokenForRead(): Promise<string | null> {
 	const email = serverEnv.adminEmail;
@@ -30,13 +37,52 @@ async function getServiceTokenForRead(): Promise<string | null> {
 		return cachedServiceToken.token;
 	}
 
-	try {
-		const token = await loginWithEmailPassword(email, password);
-		cachedServiceToken = { token, at: Date.now() };
-		return token;
-	} catch {
-		return null;
+	for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+		try {
+			const token = await loginWithEmailPassword(email, password);
+			cachedServiceToken = { token, at: Date.now() };
+			return token;
+		} catch {
+			if (attempt < RETRY_ATTEMPTS - 1) {
+				await sleep(RETRY_DELAY_MS * (attempt + 1));
+			}
+		}
 	}
+
+	return null;
+}
+
+async function fetchStoreMetadataWithRetry(token: string): Promise<Response | null> {
+	const url = `${serverEnv.medusaBackendUrl}/admin/stores?limit=1&fields=id,metadata`;
+
+	for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+		try {
+			const res = await fetch(url, {
+				headers: { Authorization: `Bearer ${token}` },
+				next: {
+					revalidate: REVALIDATE_SECONDS,
+					tags: [MAGAZYN_CONTENT_CACHE_TAG, "site-settings"],
+				},
+				signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+			});
+
+			if (res.ok) return res;
+
+			if (res.status >= 500 && attempt < RETRY_ATTEMPTS - 1) {
+				await sleep(RETRY_DELAY_MS * (attempt + 1));
+				continue;
+			}
+
+			return res;
+		} catch {
+			if (attempt < RETRY_ATTEMPTS - 1) {
+				await sleep(RETRY_DELAY_MS * (attempt + 1));
+				continue;
+			}
+		}
+	}
+
+	return null;
 }
 
 /**
@@ -47,18 +93,10 @@ export const fetchStoreMetadataBlob = cache(async (): Promise<RawStoreMetadataBl
 	const token = await getServiceTokenForRead();
 	if (!token) return null;
 
+	const res = await fetchStoreMetadataWithRetry(token);
+	if (!res?.ok) return null;
+
 	try {
-		const res = await fetch(
-			`${serverEnv.medusaBackendUrl}/admin/stores?limit=1&fields=id,metadata`,
-			{
-				headers: { Authorization: `Bearer ${token}` },
-				next: {
-					revalidate: REVALIDATE_SECONDS,
-					tags: [MAGAZYN_CONTENT_CACHE_TAG, "site-settings"],
-				},
-			},
-		);
-		if (!res.ok) return null;
 		const data = (await res.json()) as {
 			stores: Array<{ metadata?: Record<string, unknown> | null }>;
 		};

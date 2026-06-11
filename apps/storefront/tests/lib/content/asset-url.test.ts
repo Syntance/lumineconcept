@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
 import {
+	isCmsImageUnoptimized,
 	isStorefrontPublicAssetPath,
 	resolveCmsAssetUrl,
 } from "@/lib/content/asset-url";
@@ -64,5 +65,10 @@ describe("resolveCmsAssetUrl", () => {
 	it("does not treat /static as storefront public", () => {
 		expect(isStorefrontPublicAssetPath("/static/x.webp")).toBe(false);
 		expect(resolveCmsAssetUrl("/static/x.webp")).toBe("https://cdn.example.com/static/x.webp");
+	});
+
+	it("marks CMS CDN and cms-uploads as unoptimized for next/image", () => {
+		expect(isCmsImageUnoptimized("https://cdn.example.com/cms-uploads/hero.webp")).toBe(true);
+		expect(isCmsImageUnoptimized("https://pub-abc.r2.dev/cms-uploads/x.webp")).toBe(true);
 	});
 });
