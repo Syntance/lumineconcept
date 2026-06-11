@@ -13,6 +13,7 @@ const FOOTER_LINKS = {
     { href: "/salony-beauty", label: "Salony Beauty" },
   ],
   Informacje: [
+    { href: "/kontakt", label: "Kontakt" },
     { href: "/regulamin", label: "Regulamin" },
     { href: "/polityka-prywatnosci", label: "Polityka prywatności" },
     { href: "/dostawa-i-platnosci", label: "Dostawa i płatności" },

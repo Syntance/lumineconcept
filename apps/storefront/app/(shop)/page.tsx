@@ -8,7 +8,6 @@ import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
 import { BestsellersSection } from "@/components/home/BestsellersSection";
-import { HomeContactSection } from "@/components/home/HomeContactSection";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -82,7 +81,6 @@ export default async function HomePage() {
         <FooterCTA />
       </Suspense>
 
-      <HomeContactSection />
     </>
   );
 }
