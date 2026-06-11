@@ -372,6 +372,21 @@ export const CONTACT_NOTIFICATION_MERGE_VARIABLES: Array<{ token: string; label:
 export const INTERNAL_ORDER_MERGE_VARIABLES: Array<{ token: string; label: string; sample: string }> = [
 	...MERGE_VARIABLES,
 	{ token: "metodaPlatnosci", label: "Metoda płatności", sample: "Przelewy24" },
+	{ token: "dataZamowienia", label: "Data zamówienia", sample: "11 czerwca 2026, 14:30" },
+	{
+		token: "realizacjaExpress",
+		label: "Realizacja (express / standard)",
+		sample: "Express · do 3 dni roboczych",
+	},
+	{ token: "doplataExpress", label: "Dopłata express", sample: "210 zł" },
+	{
+		token: "uwagiZamowienia",
+		label: "Uwagi / dodatkowe informacje",
+		sample: "Proszę o kontakt przed wysyłką.",
+	},
+	{ token: "nip", label: "NIP", sample: "525-000-00-00" },
+	{ token: "nazwaFirmy", label: "Nazwa firmy", sample: "Salon Beauty Sp. z o.o." },
+	{ token: "faktura", label: "Faktura VAT", sample: "tak" },
 ];
 
 export function getMergeVariablesForTemplate(type: EmailTemplateType) {
@@ -548,10 +563,15 @@ const STAGE_CONTENT: Record<EmailTemplateType, StageContent> = {
 		preheader: "Powiadomienie o nowym zamówieniu w sklepie.",
 		headline: "Nowe zamówienie #{{nrZamowienia}}",
 		paragraphs: [
-			"Klient: {{email}}",
+			"Data zamówienia: {{dataZamowienia}}",
+			"Klient: {{imie}} · {{email}}",
 			"Telefon: {{telefon}}",
-			"Płatność: {{metodaPlatnosci}}",
-			"Kwota: {{suma}}",
+			"Adres: {{adres}}",
+			"Dostawa: {{wysylka}} · Płatność: {{metodaPlatnosci}}",
+			"Realizacja: {{realizacjaExpress}} · Dopłata express: {{doplataExpress}}",
+			"Uwagi: {{uwagiZamowienia}}",
+			"Faktura: {{faktura}} · NIP: {{nip}} · Firma: {{nazwaFirmy}}",
+			"Produkty: {{sumaProduktow}} · Wysyłka: {{kosztWysylki}} · Razem: {{suma}}",
 		],
 		withItems: true,
 	},

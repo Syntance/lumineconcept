@@ -19,6 +19,7 @@ import type {
 } from "./template-types";
 import { editorBtnRounded } from "./editor-chrome";
 import { BLOCK_META, createBlock, LEAF_PALETTE } from "./block-meta";
+import { RichTextEditor } from "./rich-text-editor";
 import { FONT_OPTIONS } from "./email-fonts";
 import type { FontKey } from "./template-types";
 import {
@@ -37,10 +38,13 @@ function StyleEditor({
 	style,
 	onChange,
 	withColor = true,
+	hideMetrics = false,
 }: {
 	style: BlockStyle;
 	onChange: (next: BlockStyle) => void;
 	withColor?: boolean;
+	/** Rozmiar i odstęp Y — w toolbarze RichTextEditor. */
+	hideMetrics?: boolean;
 }) {
 	const patch = (p: Partial<BlockStyle>) => onChange({ ...style, ...p });
 	return (
@@ -59,10 +63,12 @@ function StyleEditor({
 			{withColor ? (
 				<ColorField label="Kolor tekstu" value={style.color ?? "#2a1f14"} onChange={(color) => patch({ color })} />
 			) : null}
-			<div className="grid grid-cols-2 gap-3">
-				<NumberField label="Rozmiar (px)" value={style.fontSize ?? 14} min={8} max={48} onChange={(fontSize) => patch({ fontSize })} />
-				<NumberField label="Odstęp Y (px)" value={style.paddingY ?? 6} min={0} max={64} onChange={(paddingY) => patch({ paddingY })} />
-			</div>
+			{hideMetrics ? null : (
+				<div className="grid grid-cols-2 gap-3">
+					<NumberField label="Rozmiar (px)" value={style.fontSize ?? 14} min={8} max={48} onChange={(fontSize) => patch({ fontSize })} />
+					<NumberField label="Odstęp Y (px)" value={style.paddingY ?? 6} min={0} max={64} onChange={(paddingY) => patch({ paddingY })} />
+				</div>
+			)}
 			<AlignField value={style.align ?? "left"} onChange={(align) => patch({ align })} />
 			<div className="flex gap-4">
 				<ToggleField label="Pogrubienie" checked={style.bold ?? false} onChange={(bold) => patch({ bold })} />
@@ -191,7 +197,16 @@ function LeafEditor({
 			const b = block as HeadingBlock;
 			return (
 				<div className="flex flex-col gap-3">
-					<TextField label="Treść" value={b.text} onChange={(text) => onChange({ ...b, text })} />
+					<RichTextEditor
+						label="Treść"
+						value={b.text}
+						singleLine
+						blockFontSize={b.style.fontSize ?? (b.level === 1 ? 22 : b.level === 2 ? 18 : 16)}
+						paddingY={b.style.paddingY ?? 8}
+						onChange={(text) => onChange({ ...b, text })}
+						onBlockFontSizeChange={(fontSize) => onChange({ ...b, style: { ...b.style, fontSize } })}
+						onPaddingYChange={(paddingY) => onChange({ ...b, style: { ...b.style, paddingY } })}
+					/>
 					<SelectField
 						label="Poziom"
 						value={String(b.level)}
@@ -202,7 +217,7 @@ function LeafEditor({
 						]}
 						onChange={(v) => onChange({ ...b, level: Number(v) as 1 | 2 | 3 })}
 					/>
-					<StyleEditor style={b.style} onChange={(style) => onChange({ ...b, style })} />
+					<StyleEditor style={b.style} hideMetrics onChange={(style) => onChange({ ...b, style })} />
 				</div>
 			);
 		}
@@ -210,8 +225,17 @@ function LeafEditor({
 			const b = block as TextBlock;
 			return (
 				<div className="flex flex-col gap-3">
-					<TextAreaField label="Treść" value={b.text} onChange={(text) => onChange({ ...b, text })} rows={5} />
-					<StyleEditor style={b.style} onChange={(style) => onChange({ ...b, style })} />
+					<RichTextEditor
+						label="Treść"
+						value={b.text}
+						rows={5}
+						blockFontSize={b.style.fontSize ?? 14}
+						paddingY={b.style.paddingY ?? 6}
+						onChange={(text) => onChange({ ...b, text })}
+						onBlockFontSizeChange={(fontSize) => onChange({ ...b, style: { ...b.style, fontSize } })}
+						onPaddingYChange={(paddingY) => onChange({ ...b, style: { ...b.style, paddingY } })}
+					/>
+					<StyleEditor style={b.style} hideMetrics onChange={(style) => onChange({ ...b, style })} />
 				</div>
 			);
 		}
@@ -341,13 +365,25 @@ export function BlockInspector({
 				</div>
 			) : block.type === "footer" ? (
 				<div className="flex flex-col gap-3">
-					<TextAreaField
+					<RichTextEditor
 						label="Treść stopki"
 						value={(block as FooterBlock).text}
 						rows={3}
+						blockFontSize={(block as FooterBlock).style.fontSize ?? 11}
+						paddingY={(block as FooterBlock).style.paddingY ?? 4}
 						onChange={(text) => onChange({ ...(block as FooterBlock), text })}
+						onBlockFontSizeChange={(fontSize) =>
+							onChange({ ...(block as FooterBlock), style: { ...(block as FooterBlock).style, fontSize } })
+						}
+						onPaddingYChange={(paddingY) =>
+							onChange({ ...(block as FooterBlock), style: { ...(block as FooterBlock).style, paddingY } })
+						}
 					/>
-					<StyleEditor style={(block as FooterBlock).style} onChange={(style) => onChange({ ...(block as FooterBlock), style })} />
+					<StyleEditor
+						style={(block as FooterBlock).style}
+						hideMetrics
+						onChange={(style) => onChange({ ...(block as FooterBlock), style })}
+					/>
 				</div>
 			) : block.type === "columns" ? (
 				<ColumnsEditor block={block as ColumnsBlock} onUpload={onUpload} onChange={(b) => onChange(b)} />

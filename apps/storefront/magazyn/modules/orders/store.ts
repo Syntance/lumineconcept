@@ -5,7 +5,8 @@ import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
 import { thumbnailFromMedusaProduct, resolveLineItemThumbnail } from "@/lib/medusa/product-thumbnail";
 import { formatPrice, toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
 import { magazynConfig } from "@magazyn/magazyn.config";
-import { isExpressDelivery } from "./order-express";
+import { formatLineItemDetailsLines } from "@/lib/cart/format-line-item-for-email";
+import { expressFeeMinor, isExpressDelivery } from "./order-express";
 import type {
 	AdminOrderDetail,
 	AdminOrderRow,
@@ -371,7 +372,9 @@ function mapMedusaOrderToDetail(
 		updatedAt: order.updated_at ?? "",
 		items: (order.items ?? []).map((item) => ({
 			id: item.id,
-			title: item.title ?? item.product_title ?? "Produkt",
+			title: [item.title ?? item.product_title ?? "Produkt", item.variant_title?.trim()]
+				.filter(Boolean)
+				.join(" — "),
 			quantity: item.quantity ?? 0,
 			unitPrice: toMinorUnits(item.unit_price),
 			total: toMinorUnits(item.total),
@@ -471,6 +474,8 @@ export function orderToEmailSource(order: AdminOrderDetail) {
 				.join(", ")
 		: "";
 
+	const express = isExpressDelivery(order.metadata);
+
 	return {
 		displayId: order.displayId,
 		email: order.email,
@@ -482,11 +487,17 @@ export function orderToEmailSource(order: AdminOrderDetail) {
 		shippingMethodName: order.shippingMethodName,
 		customerName,
 		address,
+		expressDelivery: express,
+		expressFeeMinor: expressFeeMinor(order.metadata, order.itemTotal),
+		orderNotes: order.metadata.order_notes,
+		orderMetadata: order.metadata,
+		createdAt: order.createdAt,
 		items: order.items.map((item) => ({
 			title: item.title,
 			quantity: item.quantity,
 			total: formatPrice(item.total, order.currencyCode),
 			thumbnail: item.thumbnail,
+			detailsLines: formatLineItemDetailsLines(item.metadata),
 		})),
 	};
 }
