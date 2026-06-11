@@ -9,6 +9,7 @@ import {
 } from "@/lib/content/cms-wiring";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
+import { SITE_CONTACT } from "@/lib/site-contact";
 import { cn } from "@/lib/utils";
 
 const BRANDING_BG_WIDTH = 2560;
@@ -62,12 +63,12 @@ function BrandingContact({
   );
   const ig = (
     <a
-      href="https://ig.me/m/lumineconcept"
+      href={SITE_CONTACT.instagramUrl}
       target="_blank"
       rel="noopener noreferrer"
       className="text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
     >
-      @lumineconcept
+      {SITE_CONTACT.instagramHandle}
     </a>
   );
 

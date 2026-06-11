@@ -9,6 +9,7 @@ import type {
 	Testimonial,
 	TrustBar,
 } from "./types";
+import { SITE_CONTACT } from "@/lib/site-contact";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 
 const DEFAULT_IG_ALT = "Lumine Concept na Instagramie";
@@ -70,7 +71,7 @@ export function resolveSocialLinks(settings: SiteSettings | null | undefined): S
 }
 
 export function resolveInstagramProfileUrl(social: SocialLinks): string {
-	return social.instagram?.trim() || "https://www.instagram.com/lumineconcept/";
+	return social.instagram?.trim() || SITE_CONTACT.instagramUrl;
 }
 
 export function mapShopCategoryTiles(
