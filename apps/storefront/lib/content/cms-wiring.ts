@@ -9,6 +9,7 @@ import type {
 	Testimonial,
 	TrustBar,
 } from "./types";
+import { normalizeFacebookUrl } from "@/lib/social-links";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 
 const DEFAULT_IG_ALT = "Lumine Concept na Instagramie";
@@ -62,9 +63,13 @@ export function resolveFooterText(settings: SiteSettings | null | undefined): st
 }
 
 export function resolveSocialLinks(settings: SiteSettings | null | undefined): SocialLinks {
+	const defaultFacebook = DEFAULT_SITE_SETTINGS.socialLinks?.facebook;
+	const rawFacebook =
+		settings?.socialLinks?.facebook?.trim() || defaultFacebook || "";
+
 	return {
 		instagram: settings?.socialLinks?.instagram?.trim() || DEFAULT_SITE_SETTINGS.socialLinks?.instagram,
-		facebook: settings?.socialLinks?.facebook?.trim() || DEFAULT_SITE_SETTINGS.socialLinks?.facebook,
+		facebook: normalizeFacebookUrl(rawFacebook, defaultFacebook),
 		tiktok: settings?.socialLinks?.tiktok?.trim(),
 	};
 }

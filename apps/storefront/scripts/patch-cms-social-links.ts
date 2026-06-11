@@ -15,7 +15,7 @@ const ROOT = resolve(import.meta.dirname ?? __dirname, "..");
 
 const TARGET_SOCIAL = {
 	instagram: "https://www.instagram.com/lumine.concept/",
-	facebook: "https://www.facebook.com/lumineconcept/",
+	facebook: "https://www.facebook.com/profile.php?id=100063769314849",
 } as const;
 
 function loadEnvLocal() {

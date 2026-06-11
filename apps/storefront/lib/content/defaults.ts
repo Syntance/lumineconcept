@@ -25,7 +25,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 	},
 	socialLinks: {
 		instagram: "https://www.instagram.com/lumine.concept/",
-		facebook: "https://www.facebook.com/lumineconcept/",
+		facebook: "https://www.facebook.com/profile.php?id=100063769314849",
 	},
 };
 
