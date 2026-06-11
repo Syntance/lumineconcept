@@ -3,6 +3,7 @@ import { adminFetch, serviceAdminFetch } from "@magazyn/core/medusa/client";
 import {
 	buildDefaultTemplate,
 	EMAIL_TEMPLATE_TYPES,
+	ORDER_INTERNAL_TEMPLATE_TYPES,
 	type EmailTemplate,
 	type EmailTemplateType,
 	emailTemplateSchema,
@@ -53,7 +54,11 @@ async function writeMap(store: MedusaStore, map: Record<string, EmailTemplate>):
 export async function getAllEmailTemplates(): Promise<EmailTemplate[]> {
 	const store = await getStore();
 	const map = parseMap(store.metadata?.[METADATA_KEY]);
-	return EMAIL_TEMPLATE_TYPES.map(({ type }) => map[type] ?? buildDefaultTemplate(type));
+	const allTypes: EmailTemplateType[] = [
+		...EMAIL_TEMPLATE_TYPES.map(({ type }) => type),
+		...ORDER_INTERNAL_TEMPLATE_TYPES,
+	];
+	return allTypes.map((type) => map[type] ?? buildDefaultTemplate(type));
 }
 
 /** Czy automatyczna wysyłka danego typu jest włączona (brak wpisu = włączone). */

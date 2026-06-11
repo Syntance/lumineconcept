@@ -1,5 +1,6 @@
 import "server-only";
 
+import { magazynConfig } from "@magazyn/magazyn.config";
 import {
 	buildContactEmailRenderVars,
 	type ContactEmailPayload,
@@ -9,21 +10,34 @@ import { getEmailTemplateForSend, isEmailTemplateEnabledForSend } from "./store"
 import { sendTransactionalEmail } from "./send-transactional";
 import {
 	buildDefaultTemplate,
-	getConfirmationTypeForPreset,
+	getNotificationTypeForPreset,
 	type ContactFormPreset,
 } from "./template-types";
 
-export type SendContactConfirmationResult =
+export type SendContactNotificationResult =
 	| { ok: true; skipped?: boolean }
 	| { ok: false; message: string };
 
-/** Potwierdzenie dla klienta — szablon z panelu magazynu. */
-export async function sendContactConfirmationEmail(
+function shopInbox(): string {
+	return (
+		process.env.SHOP_ORDER_NOTIFY_EMAIL?.replace(/\r\n/g, "").trim() ??
+		process.env.CONTACT_INBOX_EMAIL?.replace(/\r\n/g, "").trim() ??
+		magazynConfig.email.contactEmail
+	);
+}
+
+/** Powiadomienie na kontakt@lumineconcept.pl — szablon z panelu magazynu. */
+export async function sendContactNotificationEmail(
 	data: ContactEmailPayload,
 	caseNumber: string,
 	preset: ContactFormPreset = "contact",
-): Promise<SendContactConfirmationResult> {
-	const templateType = getConfirmationTypeForPreset(preset);
+	attachment?: { filename: string; contentBase64: string },
+): Promise<SendContactNotificationResult> {
+	const templateType = getNotificationTypeForPreset(preset);
+	const inbox = shopInbox();
+	if (!inbox) {
+		return { ok: false, message: "Brak adresu sklepu do powiadomień." };
+	}
 
 	if (!(await isEmailTemplateEnabledForSend(templateType).catch(() => true))) {
 		return { ok: true, skipped: true };
@@ -52,16 +66,20 @@ export async function sendContactConfirmationEmail(
 	}
 
 	const result = await sendTransactionalEmail({
-		to: data.email,
+		to: inbox,
 		subject,
 		text,
 		html,
+		replyTo: data.email,
+		attachments: attachment
+			? [{ filename: attachment.filename, content: attachment.contentBase64 }]
+			: undefined,
 	});
 
 	if (!result.ok) {
 		return {
 			ok: false,
-			message: "Nie udało się wysłać potwierdzenia na Twój e-mail. Spróbuj ponownie za chwilę.",
+			message: "Nie udało się wysłać powiadomienia do sklepu. Spróbuj ponownie.",
 		};
 	}
 

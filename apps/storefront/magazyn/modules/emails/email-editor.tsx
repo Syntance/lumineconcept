@@ -10,9 +10,12 @@ import {
 	type Block,
 	type EmailTemplate,
 	type EmailTemplateType,
+	getClientTemplateType,
+	getInternalTemplateType,
 	getMergeVariablesForTemplate,
 	isContactEmailTemplateType,
 	isEmailTemplateEnabled,
+	isInternalAudienceType,
 } from "./template-types";
 import {
 	resetTemplateAction,
@@ -188,6 +191,17 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 		setFeedback(null);
 	}, []);
 
+	const switchAudience = useCallback(
+		(audience: "client" | "internal") => {
+			const base = getClientTemplateType(activeType);
+			const nextType =
+				audience === "internal" ? getInternalTemplateType(base) : base;
+			if (nextType === activeType) return;
+			switchTemplate(nextType);
+		},
+		[activeType, switchTemplate],
+	);
+
 	const onToggleEnabled = useCallback((type: EmailTemplateType, enabled: boolean) => {
 		setFeedback(null);
 		setTogglingType(type);
@@ -282,6 +296,38 @@ export function EmailEditor({ initialTemplates }: { initialTemplates: EmailTempl
 				onToggleEnabled={onToggleEnabled}
 				togglingType={togglingType}
 			/>
+
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+				<p className="text-sm text-muted-foreground">
+					Edytujesz wersję maila dla{" "}
+					<strong className="text-foreground">
+						{isInternalAudienceType(activeType) ? "sklepu (kontakt@lumineconcept.pl)" : "klienta"}
+					</strong>
+					.
+				</p>
+				<div className={segmentTrack}>
+					<button
+						type="button"
+						className={cn(
+							segmentItem,
+							!isInternalAudienceType(activeType) ? segmentItemActive : segmentItemIdle,
+						)}
+						onClick={() => switchAudience("client")}
+					>
+						Do klienta
+					</button>
+					<button
+						type="button"
+						className={cn(
+							segmentItem,
+							isInternalAudienceType(activeType) ? segmentItemActive : segmentItemIdle,
+						)}
+						onClick={() => switchAudience("internal")}
+					>
+						Do nas
+					</button>
+				</div>
+			</div>
 
 			{!activeEnabled ? (
 				<p
