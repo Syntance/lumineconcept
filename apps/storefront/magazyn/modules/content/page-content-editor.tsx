@@ -10,6 +10,7 @@ import type {
 	FaqItem,
 	GalleryPhoto,
 	HeroContent,
+	BrandingCtaContent,
 	PageContent,
 	Testimonial,
 } from "@/lib/content/types";
@@ -53,6 +54,12 @@ export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 				<HeroEditor
 					value={content.hero}
 					onChange={(hero) => setContent((c) => ({ ...c, hero }))}
+				/>
+			) : null}
+			{blocks.includes("brandingCta") ? (
+				<BrandingCtaEditor
+					value={content.brandingCta}
+					onChange={(brandingCta) => setContent((c) => ({ ...c, brandingCta }))}
 				/>
 			) : null}
 			{blocks.includes("testimonials") ? (
@@ -106,6 +113,26 @@ function HeroEditor({ value, onChange }: { value?: HeroContent; onChange: (v: He
 			</div>
 			<OgImageField label="Tło desktop" value={hero.desktopImageUrl ?? ""} onChange={(url) => onChange({ ...hero, desktopImageUrl: url })} />
 			<OgImageField label="Tło mobile" value={hero.mobileImageUrl ?? ""} onChange={(url) => onChange({ ...hero, mobileImageUrl: url })} />
+		</fieldset>
+	);
+}
+
+function BrandingCtaEditor({
+	value,
+	onChange,
+}: {
+	value?: BrandingCtaContent;
+	onChange: (v: BrandingCtaContent) => void;
+}) {
+	const branding = value ?? {};
+	return (
+		<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
+			<legend className="px-1 text-sm font-medium">Sekcja branding (Footer CTA)</legend>
+			<OgImageField
+				label="Tło desktop"
+				value={branding.desktopBackgroundUrl ?? ""}
+				onChange={(url) => onChange({ ...branding, desktopBackgroundUrl: url })}
+			/>
 		</fieldset>
 	);
 }

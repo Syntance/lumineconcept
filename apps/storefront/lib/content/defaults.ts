@@ -1,5 +1,6 @@
 import type {
 	GlobalContent,
+	BrandingCtaContent,
 	HeroContent,
 	PageContentMap,
 	SiteSettings,
@@ -34,9 +35,9 @@ export const HOME_HERO_DEFAULT: HeroContent = {
 	description: "Tablice z logo, cenniki i oznaczenia z plexi",
 	ctaLabel: "Zobacz produkty",
 	ctaHref: "/sklep",
-	desktopImageUrl: "/images/hero-main-wall.webp",
-	mobileImageUrl: "/images/hero-main-wall-mobile.webp",
 };
+
+export const BRANDING_CTA_DEFAULT: BrandingCtaContent = {};
 
 export const LOGO_HERO_DEFAULT: HeroContent = {
 	headline: "Tablica z logo",
@@ -46,12 +47,10 @@ export const LOGO_HERO_DEFAULT: HeroContent = {
 	ctaHref: "#formularz",
 	ctaAriaLabel: "Przewiń do formularza — zamów tablicę z logo",
 	headlineUppercase: true,
-	desktopImageUrl: "/images/categories/logo-hero-bg.png",
-	mobileImageUrl: "/images/categories/logo-hero-bg.png",
 };
 
 export const DEFAULT_PAGE_CONTENT: PageContentMap = {
-	home: { hero: HOME_HERO_DEFAULT },
+	home: { hero: HOME_HERO_DEFAULT, brandingCta: BRANDING_CTA_DEFAULT },
 	"logo-3d": { hero: LOGO_HERO_DEFAULT },
 	shop: {
 		categoryTiles: [

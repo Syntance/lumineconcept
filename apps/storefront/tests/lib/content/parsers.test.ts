@@ -60,7 +60,7 @@ describe("content parsers", () => {
 		expect(globalContentSchema.safeParse(prepared).success).toBe(true);
 	});
 
-	it("mergeHeroWithDefaults keeps logo-3d background when CMS hero lacks images", () => {
+	it("mergeHeroWithDefaults does not inject hardcoded hero images", () => {
 		const map = parsePageContentMap(
 			JSON.stringify({
 				"logo-3d": {
@@ -73,7 +73,7 @@ describe("content parsers", () => {
 				},
 			}),
 		);
-		expect(map["logo-3d"]?.hero?.desktopImageUrl).toContain("logo-hero-bg");
+		expect(map["logo-3d"]?.hero?.desktopImageUrl).toBeUndefined();
 	});
 
 	it("parseProductSeoFromMetadata reads seo keys", () => {

@@ -37,7 +37,7 @@ export const magazynConfig: MagazynConfig = {
 				id: "home",
 				label: "Strona główna",
 				path: "/",
-				blocks: ["hero"],
+				blocks: ["hero", "brandingCta"],
 			},
 			{
 				id: "shop",

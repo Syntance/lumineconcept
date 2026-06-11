@@ -47,6 +47,7 @@ export type ModulesToggle = {
 /** Blok treści CMS przypisany do podstrony lub sekcji globalnej. */
 export type ContentBlockKey =
 	| "hero"
+	| "brandingCta"
 	| "testimonials"
 	| "faq"
 	| "gallery"

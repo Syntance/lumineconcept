@@ -103,9 +103,9 @@ describe("hero helpers", () => {
 		expect(portal.headlineUppercase).toBe(true);
 	});
 
-	it("resolveHomeHero falls back to defaults", () => {
+	it("resolveHomeHero falls back to copy defaults without image URLs", () => {
 		const { portal, desktopImageUrl } = resolveHomeHero(undefined);
 		expect(portal.headline).toBe("CONCEPT");
-		expect(desktopImageUrl).toContain("hero-main-wall");
+		expect(desktopImageUrl).toBeUndefined();
 	});
 });

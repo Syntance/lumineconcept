@@ -111,16 +111,7 @@ export default function RootLayout({
   return (
     <html lang="pl" className={`${gilroy.variable} ${chronicle.variable} ${binerka.variable}`}>
       <head>
-        {/* Mobile LCP: statyczny hero z /public (unoptimized) — jeden poprawny
-            preload z media query. Desktop hero ładuje się lazy (hidden na mobile).
-            Nie preloaduj fontów ani desktopowego hero — dublowało ~222 KB pasa. */}
-        <link
-          rel="preload"
-          as="image"
-          href="/images/hero-main-wall-mobile.webp"
-          media="(max-width: 1023px)"
-          fetchPriority="high"
-        />
+        {/* Hero preload generowany przez next/image priority w HeroSection (URL z CMS). */}
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
       </head>
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">

@@ -25,17 +25,21 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 			{/* Mobile — całe zdjęcie na pełną szerokość (bez cropu) */}
 			<div className="flex flex-col lg:hidden">
 				<div className="relative w-full overflow-hidden">
-					<Image
-						src={mobileImageUrl}
-						alt=""
-						width={LOGO_HERO_BG_WIDTH}
-						height={LOGO_HERO_BG_HEIGHT}
-						priority
-						fetchPriority="high"
-						sizes="100vw"
-						unoptimized={isCmsImageUnoptimized(mobileImageUrl)}
-						className="block h-auto w-full select-none"
-					/>
+					{mobileImageUrl ? (
+						<Image
+							src={mobileImageUrl}
+							alt=""
+							width={LOGO_HERO_BG_WIDTH}
+							height={LOGO_HERO_BG_HEIGHT}
+							priority
+							fetchPriority="high"
+							sizes="100vw"
+							unoptimized={isCmsImageUnoptimized(mobileImageUrl)}
+							className="block h-auto w-full select-none"
+						/>
+					) : (
+						<div className="aspect-[8/3] w-full bg-brand-800" aria-hidden />
+					)}
 					<div className={cn("absolute inset-x-0 top-0 z-20 pt-5", BREADCRUMBS_ALIGN_CLASS)}>
 						<Breadcrumbs
 							className="mb-0 text-sm [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white"
@@ -52,17 +56,21 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 
 			{/* Desktop */}
 			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
-				<Image
-					src={desktopImageUrl}
-					alt=""
-					width={LOGO_HERO_BG_WIDTH}
-					height={LOGO_HERO_BG_HEIGHT}
-					priority
-					fetchPriority="high"
-					sizes="100vw"
-					unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
-					className="absolute inset-0 h-full w-full select-none object-cover object-[48%_58%]"
-				/>
+				{desktopImageUrl ? (
+					<Image
+						src={desktopImageUrl}
+						alt=""
+						width={LOGO_HERO_BG_WIDTH}
+						height={LOGO_HERO_BG_HEIGHT}
+						priority
+						fetchPriority="high"
+						sizes="100vw"
+						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
+						className="absolute inset-0 h-full w-full select-none object-cover object-[48%_58%]"
+					/>
+				) : (
+					<div className="absolute inset-0 bg-brand-800" aria-hidden />
+				)}
 
 				<div
 					className="pointer-events-none absolute inset-0 bg-black/35"

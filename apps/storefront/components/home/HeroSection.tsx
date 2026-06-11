@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 import type { HeroContent } from "@/lib/content/types";
-import { isStorefrontPublicAssetPath } from "@/lib/content/asset-url";
+import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { resolveHomeHero } from "@/lib/content/hero";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";
@@ -31,33 +31,42 @@ export function HeroSection({
 			{/* Mobile — zdjęcie nad copy (niższy kadr niż 4:5) */}
 			<div className="flex flex-col lg:hidden">
 				<div className="relative h-96 w-full overflow-hidden sm:h-[26rem]">
-					<Image
-						src={mobileImageUrl}
-						alt=""
-						width={HERO_MOBILE_WIDTH}
-						height={HERO_MOBILE_HEIGHT}
-						priority
-						fetchPriority="high"
-						sizes="100vw"
-						unoptimized={isStorefrontPublicAssetPath(mobileImageUrl)}
-						className="absolute inset-0 h-full w-full select-none object-cover object-[63%_26%]"
-					/>
+					{mobileImageUrl ? (
+						<Image
+							src={mobileImageUrl}
+							alt=""
+							width={HERO_MOBILE_WIDTH}
+							height={HERO_MOBILE_HEIGHT}
+							priority
+							fetchPriority="high"
+							sizes="100vw"
+							unoptimized={isCmsImageUnoptimized(mobileImageUrl)}
+							className="absolute inset-0 h-full w-full select-none object-cover object-[63%_26%]"
+						/>
+					) : (
+						<div className="absolute inset-0 bg-brand-800" aria-hidden />
+					)}
 				</div>
 				<HeroPortalMobile content={portal} />
 			</div>
 
 			{/* Desktop — portal + overlay */}
 			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
-				<Image
-					src={desktopImageUrl}
-					alt=""
-					width={HERO_BG_WIDTH}
-					height={HERO_BG_HEIGHT}
-					loading="lazy"
-					fetchPriority="low"
-					sizes="100vw"
-					className="absolute inset-0 h-full w-full select-none object-cover object-[38%_center]"
-				/>
+				{desktopImageUrl ? (
+					<Image
+						src={desktopImageUrl}
+						alt=""
+						width={HERO_BG_WIDTH}
+						height={HERO_BG_HEIGHT}
+						loading="lazy"
+						fetchPriority="low"
+						sizes="100vw"
+						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
+						className="absolute inset-0 h-full w-full select-none object-cover object-[38%_center]"
+					/>
+				) : (
+					<div className="absolute inset-0 bg-brand-800" aria-hidden />
+				)}
 
 				<div
 					className="pointer-events-none absolute inset-0 bg-linear-to-r from-black/45 via-black/15 to-transparent"
