@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { GalleryPhoto } from "@/lib/content/types";
+import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 
 const PAGE_SIZE = 4;
 
@@ -22,6 +23,7 @@ function RealizationTile({ item }: { item: GalleryPhoto }) {
         height={600}
         sizes="(max-width: 1024px) 50vw, 25vw"
         className="h-auto w-full max-w-full"
+        unoptimized={isCmsImageUnoptimized(item.imageUrl)}
       />
     </div>
   );

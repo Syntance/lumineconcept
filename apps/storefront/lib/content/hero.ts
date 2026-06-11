@@ -1,7 +1,7 @@
 import type { HeroPortalContentConfig } from "@/components/home/hero-portal-config";
 import type { HeroContent } from "./types";
 import { HOME_HERO_DEFAULT, LOGO_HERO_DEFAULT } from "./defaults";
-import { normalizeLocalAssetUrl } from "./parsers";
+import { isStorefrontPublicAssetPath, resolveCmsAssetUrl } from "@/lib/content/asset-url";
 
 const LOGO_HERO_FALLBACK_DESKTOP = LOGO_HERO_DEFAULT.desktopImageUrl ?? "/images/categories/logo-hero-bg.png";
 
@@ -37,10 +37,10 @@ export function resolveLogoHero(hero?: HeroContent): {
 } {
 	const resolved: HeroContent = { ...LOGO_HERO_DEFAULT, ...hero };
 	const desktopImageUrl =
-		normalizeLocalAssetUrl(resolved.desktopImageUrl?.trim()) ||
+		resolveCmsAssetUrl(resolved.desktopImageUrl?.trim()) ||
 		LOGO_HERO_FALLBACK_DESKTOP;
 	const mobileImageUrl =
-		normalizeLocalAssetUrl(resolved.mobileImageUrl?.trim()) || desktopImageUrl;
+		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) || desktopImageUrl;
 
 	return {
 		portal: heroToPortalConfig(resolved),
@@ -93,5 +93,5 @@ export async function resolveLogoHeroWithFallback(hero?: HeroContent): Promise<{
 }
 
 export function isLocalPublicImage(url: string): boolean {
-	return url.startsWith("/");
+	return isStorefrontPublicAssetPath(url);
 }

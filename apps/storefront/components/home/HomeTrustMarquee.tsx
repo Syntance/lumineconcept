@@ -5,6 +5,7 @@ import {
 	mapSalonLogosForMarquee,
 	resolveTrustBarDisplay,
 } from "@/lib/content/cms-wiring";
+import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 
 export async function HomeTrustMarquee() {
 	const [global, settings] = await Promise.all([getGlobalContent(), getSiteSettings()]);
@@ -33,7 +34,7 @@ export async function HomeTrustMarquee() {
 									width={133}
 									height={43}
 									className="h-8 w-auto object-contain"
-									unoptimized={salon.src.startsWith("/")}
+									unoptimized={isCmsImageUnoptimized(salon.src)}
 								/>
 							) : (
 								<span className="whitespace-nowrap text-base font-medium uppercase tracking-[0.15em] text-brand-600">

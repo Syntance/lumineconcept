@@ -18,6 +18,7 @@ Jeden panel do zarządzania treściami witryny, SEO i FAQ produktów — bez zew
 
 4. ENV Medusa (obrazy):
    - `S3_*` / R2 — uploady z panelu trafiają na CDN
+   - **Storefront (Vercel):** `S3_FILE_URL` + `NEXT_PUBLIC_S3_FILE_URL` (ta sama publiczna baza R2) — `remotePatterns` i CSP przy buildzie
 
 ## Przechowywanie danych
 

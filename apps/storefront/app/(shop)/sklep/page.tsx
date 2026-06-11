@@ -8,6 +8,7 @@ import {
 	pickTestimonials,
 	resolveTrustBarDisplay,
 } from "@/lib/content/cms-wiring";
+import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { SITE_URL, cn } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -148,6 +149,7 @@ export default async function ShopHubPage() {
                           : "object-center group-hover:scale-105",
                       )}
                       sizes="(max-width: 640px) 0px, (max-width: 1280px) 33vw, 420px"
+                      unoptimized={isCmsImageUnoptimized(cat.image)}
                       aria-hidden
                     />
                   </div>
@@ -184,6 +186,7 @@ export default async function ShopHubPage() {
                     loading={index === 0 ? "eager" : "lazy"}
                     className="relative z-10 origin-center object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
                     sizes="(max-width: 640px) 50vw, 0px"
+                    unoptimized={isCmsImageUnoptimized(cat.image)}
                   />
                 </div>
               </Link>
