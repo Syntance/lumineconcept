@@ -13,9 +13,9 @@ import "@/styles/globals.css";
  */
 const gilroy = localFont({
   src: [
-    { path: "../public/fonts/Gilroy-Regular.ttf", weight: "400", style: "normal" },
-    { path: "../public/fonts/Gilroy-Medium.ttf", weight: "500", style: "normal" },
-    { path: "../public/fonts/Gilroy-Bold.ttf", weight: "700", style: "normal" },
+    { path: "../public/fonts/Gilroy-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../public/fonts/Gilroy-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../public/fonts/Gilroy-Bold.woff2", weight: "700", style: "normal" },
   ],
   variable: "--font-gilroy",
   display: "swap",
@@ -24,7 +24,7 @@ const gilroy = localFont({
 
 const chronicle = localFont({
   src: [
-    { path: "../public/fonts/ChronicleDisp-Roman.otf", weight: "400", style: "normal" },
+    { path: "../public/fonts/ChronicleDisp-Roman.woff2", weight: "400", style: "normal" },
   ],
   variable: "--font-chronicle",
   display: "optional",
@@ -32,7 +32,7 @@ const chronicle = localFont({
 });
 
 const binerka = localFont({
-  src: "../public/fonts/Binerka.otf",
+  src: "../public/fonts/Binerka.woff2",
   weight: "400",
   variable: "--font-binerka",
   display: "optional",
