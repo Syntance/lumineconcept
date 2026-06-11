@@ -110,28 +110,12 @@ export default function RootLayout({
   return (
     <html lang="pl" className={`${gilroy.variable} ${chronicle.variable} ${binerka.variable}`}>
       <head>
+        {/* next/font (self-host) i next/image priority generują własne, poprawne
+            preloady (hashowane URL-e + imagesrcset). Ręczny preload surowych
+            plików z /public dublował transfer (~222 KB zmarnowane na mobile),
+            konkurując o pasmo z faktycznym elementem LCP. Zostawiamy tylko
+            dns-prefetch do Cloudinary (miniatury produktów). */}
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-        <link
-          rel="preload"
-          href="/fonts/Gilroy-Regular.ttf"
-          as="font"
-          type="font/ttf"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/fonts/Gilroy-Medium.ttf"
-          as="font"
-          type="font/ttf"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/images/hero-main-wall.webp"
-          as="image"
-          type="image/webp"
-          fetchPriority="high"
-        />
       </head>
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">
         <CookieConsent />
