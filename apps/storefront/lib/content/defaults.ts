@@ -6,6 +6,13 @@ import type {
 	SiteSettings,
 } from "./types";
 
+// Static imports for blur placeholders
+import heroMainWallDesktop from "@/public/images/hero-main-wall.webp";
+import heroMainWallMobile from "@/public/images/hero-main-wall-mobile.webp";
+import categoryGotoweWzory from "@/public/images/categories/gotowe-wzory-personel.webp";
+import categoryLogo from "@/public/images/categories/logo-kategoria-nail-boss.webp";
+import categoryCertyfikat from "@/public/images/categories/certyfikat-kategoria.png";
+
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 	title: "Lumine Concept",
 	description:
@@ -35,8 +42,10 @@ export const HOME_HERO_DEFAULT: HeroContent = {
 	description: "Tablice z logo, cenniki i oznaczenia z plexi",
 	ctaLabel: "Zobacz produkty",
 	ctaHref: "/sklep",
-	desktopImageUrl: "/images/hero-main-wall.webp",
-	mobileImageUrl: "/images/hero-main-wall-mobile.webp",
+	desktopImageUrl: heroMainWallDesktop.src,
+	mobileImageUrl: heroMainWallMobile.src,
+	desktopBlurDataURL: heroMainWallDesktop.blurDataURL,
+	mobileBlurDataURL: heroMainWallMobile.blurDataURL,
 };
 
 export const BRANDING_CTA_DEFAULT: BrandingCtaContent = {};
@@ -60,19 +69,22 @@ export const DEFAULT_PAGE_CONTENT: PageContentMap = {
 				title: "Gotowe wzory",
 				cta: "PRZEGLĄDAJ WZORY",
 				href: "/sklep/gotowe-wzory",
-				imageUrl: "/images/categories/gotowe-wzory-personel.webp",
+				imageUrl: categoryGotoweWzory.src,
+				blurDataURL: categoryGotoweWzory.blurDataURL,
 			},
 			{
 				title: "Tablice z logo",
 				cta: "Uzyskaj wycenę",
 				href: "/sklep/logo-3d",
-				imageUrl: "/images/categories/logo-kategoria-nail-boss.webp",
+				imageUrl: categoryLogo.src,
+				blurDataURL: categoryLogo.blurDataURL,
 			},
 			{
 				title: "Certyfikaty",
 				cta: "Zobacz certyfikaty",
 				href: "/sklep/certyfikaty",
-				imageUrl: "/images/categories/certyfikat-kategoria.png",
+				imageUrl: categoryCertyfikat.src,
+				blurDataURL: categoryCertyfikat.blurDataURL,
 			},
 		],
 	},

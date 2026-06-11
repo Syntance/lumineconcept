@@ -74,6 +74,7 @@ export type SiteSettings = {
 export type BrandingCtaContent = {
 	/** Tło sekcji „Gotowa na branding” (desktop). */
 	desktopBackgroundUrl?: string;
+	desktopBlurDataURL?: string;
 };
 
 export type HeroContent = {
@@ -81,6 +82,8 @@ export type HeroContent = {
 	desktopImageUrl?: string;
 	/** URL tła mobile. */
 	mobileImageUrl?: string;
+	desktopBlurDataURL?: string;
+	mobileBlurDataURL?: string;
 	headline: string;
 	subtitle?: string;
 	description: string;
@@ -95,6 +98,7 @@ export type CategoryTile = {
 	cta: string;
 	href: string;
 	imageUrl: string;
+	blurDataURL?: string;
 };
 
 export type Testimonial = {

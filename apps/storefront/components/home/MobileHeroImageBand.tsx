@@ -11,7 +11,7 @@ type MobileHeroImageBandProps = {
 };
 
 /** Zdjęcie wypełnia obszar flex-1 rodzica — object-cover wyśrodkowany pionowo. */
-export function MobileHeroImageBand({ src, priority = true }: MobileHeroImageBandProps) {
+export function MobileHeroImageBand({ src, priority = true, blurDataURL }: MobileHeroImageBandProps & { blurDataURL?: string }) {
 	return (
 		<div className="relative h-full w-full">
 			{src ? (
@@ -24,6 +24,8 @@ export function MobileHeroImageBand({ src, priority = true }: MobileHeroImageBan
 					fetchPriority={priority ? "high" : undefined}
 					sizes="100vw"
 					unoptimized={isCmsImageUnoptimized(src)}
+					placeholder={blurDataURL ? "blur" : undefined}
+					blurDataURL={blurDataURL}
 					className="absolute inset-0 h-full w-full select-none object-cover object-center"
 				/>
 			) : (

@@ -3,9 +3,11 @@ import { resolveCmsAssetUrl } from "./asset-url";
 
 export function resolveBrandingCta(branding?: BrandingCtaContent): {
 	desktopBackgroundUrl?: string;
+	desktopBlurDataURL?: string;
 } {
 	if (!branding?.desktopBackgroundUrl?.trim()) return {};
 	return {
 		desktopBackgroundUrl: resolveCmsAssetUrl(branding.desktopBackgroundUrl.trim()),
+		...(branding.desktopBlurDataURL ? { desktopBlurDataURL: branding.desktopBlurDataURL } : {}),
 	};
 }

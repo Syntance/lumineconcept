@@ -22,8 +22,9 @@ const LOGO_HERO_MOBILE_HEIGHT = 937;
  * Desktop: ultrawide z portalem.
  */
 export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) {
-	const { portal, desktopImageUrl, mobileImageUrl } = await resolveLogoHeroWithFallback(hero);
+	const { portal, desktopImageUrl, mobileImageUrl, desktopBlurDataURL, mobileBlurDataURL } = await resolveLogoHeroWithFallback(hero);
 	const mobileDisplayUrl = mobileImageUrl ?? desktopImageUrl;
+	const mobileBlur = mobileBlurDataURL ?? desktopBlurDataURL;
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
@@ -39,6 +40,8 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 							fetchPriority="high"
 							sizes="100vw"
 							unoptimized={isCmsImageUnoptimized(mobileDisplayUrl)}
+							placeholder={mobileBlur ? "blur" : undefined}
+							blurDataURL={mobileBlur}
 							className="block h-auto w-full max-w-none select-none"
 						/>
 					) : (
@@ -69,6 +72,8 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 						fetchPriority="high"
 						sizes="100vw"
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
+						placeholder={desktopBlurDataURL ? "blur" : undefined}
+						blurDataURL={desktopBlurDataURL}
 						className="absolute inset-0 h-full w-full select-none object-cover object-top"
 					/>
 				) : (

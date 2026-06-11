@@ -30,6 +30,7 @@ export type ShopCategoryCard = {
 	cta: string;
 	href: string;
 	image: string;
+	blurDataURL?: string;
 };
 
 const DEFAULT_TRUST: TrustBarDisplay = {
@@ -88,6 +89,7 @@ export function mapShopCategoryTiles(
 		cta: t.cta,
 		href: t.href,
 		image: t.imageUrl,
+		...(t.blurDataURL ? { blurDataURL: t.blurDataURL } : {}),
 	}));
 }
 

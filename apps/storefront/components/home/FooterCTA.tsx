@@ -159,7 +159,7 @@ export async function FooterCTA() {
   const social = resolveSocialLinks(settings);
   const igPosts = resolveInstagramTiles(global);
   const igProfile = resolveInstagramProfileUrl(social);
-  const { desktopBackgroundUrl } = resolveBrandingCta(pageContent.brandingCta);
+  const { desktopBackgroundUrl, desktopBlurDataURL } = resolveBrandingCta(pageContent.brandingCta);
 
   return (
     <>
@@ -181,6 +181,8 @@ export async function FooterCTA() {
               sizes="100vw"
               priority={false}
               unoptimized={isCmsImageUnoptimized(desktopBackgroundUrl)}
+              placeholder={desktopBlurDataURL ? "blur" : undefined}
+              blurDataURL={desktopBlurDataURL}
               className="absolute inset-0 h-full w-full origin-[30%_80%] scale-[1.2] select-none object-cover object-[30%_80%]"
             />
           ) : (
