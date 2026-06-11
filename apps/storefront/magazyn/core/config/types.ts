@@ -41,6 +41,35 @@ export type ModulesToggle = {
 	categories: boolean;
 	emails: boolean;
 	settings: boolean;
+	content: boolean;
+};
+
+/** Blok treści CMS przypisany do podstrony lub sekcji globalnej. */
+export type ContentBlockKey =
+	| "hero"
+	| "testimonials"
+	| "faq"
+	| "gallery"
+	| "categoryTiles"
+	| "announcementBar"
+	| "trustBar"
+	| "socialLinks"
+	| "footerText"
+	| "checkoutCallout"
+	| "salonLogos"
+	| "instagramTiles";
+
+export type ContentPageConfig = {
+	/** Stabilny identyfikator — nie zmieniaj po wdrożeniu bez migracji danych. */
+	id: string;
+	label: string;
+	path: string;
+	blocks: ContentBlockKey[];
+};
+
+export type ContentConfig = {
+	pages: ContentPageConfig[];
+	globalBlocks: ContentBlockKey[];
 };
 
 export type BrandingConfig = {
@@ -93,6 +122,8 @@ export type MagazynConfig = {
 	branding: BrandingConfig;
 	auth: AuthConfig;
 	modules: ModulesToggle;
+	/** Konfiguracja CMS — podstrony i bloki treści (per sklep). */
+	content: ContentConfig;
 	email: EmailConfig;
 	/** Dane do przelewu tradycyjnego (checkout + mail). */
 	bankTransfer: BankTransferConfig;

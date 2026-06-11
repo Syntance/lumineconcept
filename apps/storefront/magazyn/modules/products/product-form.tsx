@@ -38,7 +38,9 @@ import {
 import { TextFieldsSection } from "./text-fields-section";
 import { ProductUploadSettingsSection } from "./product-upload-settings-section";
 import { ProductFormTabs } from "./product-form-tabs";
+import { ProductSeoPanel } from "./product-seo-panel";
 import type { ProductUploadSettings } from "@/lib/products/upload-settings";
+import type { ProductFaqItem, ProductSeoMeta } from "@/lib/content/types";
 
 type Props = {
 	product?: AdminProductDetail;
@@ -71,6 +73,8 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 		() =>
 			product?.uploadSettings ?? { enabled: false, required: false, count: 1, label: "" },
 	);
+	const [seo, setSeo] = useState<ProductSeoMeta>(() => product?.seo ?? {});
+	const [productFaq, setProductFaq] = useState<ProductFaqItem[]>(() => product?.productFaq ?? []);
 
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
@@ -245,6 +249,8 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				uploadsRequired: uploadSettings.required,
 				uploadsCount: uploadSettings.count,
 				uploadsLabel: uploadSettings.label,
+				seo,
+				productFaq: productFaq.filter((f) => f.question.trim() && f.answer.trim()),
 			});
 			if (result && !result.ok) {
 				setError(result.error);
@@ -380,6 +386,14 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 								}
 							/>
 						</div>
+					}
+					seoPanel={
+						<ProductSeoPanel
+							seo={seo}
+							productFaq={productFaq}
+							onSeoChange={setSeo}
+							onFaqChange={setProductFaq}
+						/>
 					}
 				/>
 			</div>

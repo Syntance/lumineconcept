@@ -18,6 +18,7 @@ const DEFAULT_TAGS = [
   "medusa-products",
   "medusa-categories",
   "global-product-config",
+  "magazyn-content",
 ];
 
 export async function POST(request: NextRequest) {

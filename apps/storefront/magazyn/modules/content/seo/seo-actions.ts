@@ -1,0 +1,76 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { magazynConfig } from "@magazyn/magazyn.config";
+import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
+import { siteSettingsSchema } from "@/lib/content/parsers";
+import type { SeoMeta } from "@/lib/content/types";
+import { revalidateContentCache } from "../revalidate-content";
+import { saveGlobalSeoSettings, savePageSeo } from "./seo-store";
+
+export type SaveSeoState = { ok: boolean; error: string | null };
+
+const seoFieldsSchema = z.object({
+	metaTitle: z.string().max(70).optional(),
+	metaDescription: z.string().max(160).optional(),
+	ogTitle: z.string().optional(),
+	ogDescription: z.string().optional(),
+	ogImageUrl: z.string().optional(),
+	canonicalUrl: z.string().optional(),
+	noIndex: z.boolean().optional(),
+	noFollow: z.boolean().optional(),
+});
+
+const globalSeoPayloadSchema = z.object({
+	title: z.string().min(1),
+	description: z.string(),
+	titleTemplate: z.string().optional(),
+	defaultOgImageUrl: z.string().optional(),
+	googleSiteVerification: z.string().optional(),
+	seo: seoFieldsSchema.optional(),
+});
+
+export async function saveGlobalSeoAction(payload: z.infer<typeof globalSeoPayloadSchema>): Promise<SaveSeoState> {
+	const parsed = globalSeoPayloadSchema.safeParse(payload);
+	if (!parsed.success) {
+		return { ok: false, error: parsed.error.issues[0]?.message ?? "Błędne dane." };
+	}
+
+	try {
+		const settings = siteSettingsSchema.parse({
+			...parsed.data,
+			seo: parsed.data.seo,
+		});
+		await saveGlobalSeoSettings(settings);
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminApiError) return { ok: false, error: error.message };
+		return { ok: false, error: "Nie udało się zapisać SEO. Spróbuj ponownie." };
+	}
+
+	await revalidateContentCache(["/"]);
+	return { ok: true, error: null };
+}
+
+export async function savePageSeoAction(
+	pageId: string,
+	seo: SeoMeta,
+	path: string,
+): Promise<SaveSeoState> {
+	const parsed = seoFieldsSchema.safeParse(seo);
+	if (!parsed.success) {
+		return { ok: false, error: parsed.error.issues[0]?.message ?? "Błędne dane SEO." };
+	}
+
+	try {
+		await savePageSeo(pageId, parsed.data);
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminApiError) return { ok: false, error: error.message };
+		return { ok: false, error: "Nie udało się zapisać SEO podstrony." };
+	}
+
+	await revalidateContentCache([path]);
+	return { ok: true, error: null };
+}

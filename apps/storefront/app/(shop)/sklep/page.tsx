@@ -1,24 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { getProductsByTag } from "@/lib/medusa/products";
-import { sanityClient, getSiteSettings } from "@/lib/sanity/client";
-import { TESTIMONIALS_BY_PAGE_QUERY } from "@/lib/sanity/queries";
-import type { Testimonial } from "@/lib/sanity/types";
+import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { buildMetadata } from "@/lib/content/metadata";
+import {
+	mapShopCategoryTiles,
+	pickTestimonials,
+	resolveTrustBarDisplay,
+} from "@/lib/content/cms-wiring";
+import { SITE_URL, cn } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { PRODUCT_IMAGE_ASPECT_CLASS } from "@/lib/products/product-image-aspect";
-import { cn, SITE_URL } from "@/lib/utils";
+import { getProductsByTag } from "@/lib/medusa/products";
 
-export const metadata: Metadata = {
-  title: "Sklep — cenniki, tabliczki, logo z plexi do salonu beauty | Lumine Concept",
-  description:
-    "Gotowe cenniki, tabliczki, logo i oznaczenia z plexi dla salonów beauty. Kup online — szybka wysyłka. 6 000+ realizacji. Sprawdź ceny.",
-  alternates: { canonical: `${SITE_URL}/sklep` },
-};
-
-export const revalidate = 60;
+export async function generateMetadata(): Promise<Metadata> {
+  const [seo, settings] = await Promise.all([getPageSeo("shop"), getSiteSettings()]);
+  return buildMetadata({
+    seo,
+    fallbackTitle: "Sklep — cenniki, tabliczki, logo z plexi do salonu beauty | Lumine Concept",
+    fallbackDescription:
+      "Gotowe cenniki, tabliczki, logo i oznaczenia z plexi dla salonów beauty. Kup online — szybka wysyłka. 6 000+ realizacji. Sprawdź ceny.",
+    siteSettings: settings,
+    path: "/sklep",
+  });
+}
 
 function extractBasePrice(metadata: Record<string, unknown> | undefined | null): number | null {
   const raw = metadata?.base_price;
@@ -35,7 +42,9 @@ function extractPrice(variant: unknown, metadata?: Record<string, unknown> | nul
   return extractBasePrice(metadata) ?? 0;
 }
 
-const CATEGORIES = [
+export const revalidate = 60;
+
+const FALLBACK_CATEGORIES = [
   {
     title: "Gotowe wzory",
     cta: "PRZEGLĄDAJ WZORY",
@@ -57,20 +66,15 @@ const CATEGORIES = [
 ] as const;
 
 export default async function ShopHubPage() {
-  const [bestsellers, settings, testimonials] = await Promise.all([
+  const [bestsellers, settings, pageContent] = await Promise.all([
     getProductsByTag("bestseller", 4).catch(() => []),
     getSiteSettings(),
-    sanityClient
-      .fetch<Testimonial[]>(
-        TESTIMONIALS_BY_PAGE_QUERY,
-        { page: "shop" },
-        { next: { revalidate: 300, tags: ["sanity"] } },
-      )
-      .catch(() => []),
+    getPageContent("shop"),
   ]);
 
-  const trustBar = settings?.trustBar;
-  const displayTestimonials = testimonials.slice(0, 3);
+  const categories = mapShopCategoryTiles(pageContent.categoryTiles, FALLBACK_CATEGORIES);
+  const displayTestimonials = pickTestimonials(pageContent.testimonials, 3);
+  const trustBar = resolveTrustBarDisplay(settings.trustBar);
 
   return (
     <>
@@ -84,7 +88,7 @@ export default async function ShopHubPage() {
             name: "Sklep Lumine Concept",
             url: `${SITE_URL}/sklep`,
             numberOfItems: 3,
-            itemListElement: CATEGORIES.map((c, i) => ({
+            itemListElement: categories.map((c, i) => ({
               "@type": "ListItem",
               position: i + 1,
               url: `${SITE_URL}${c.href}`,
@@ -124,7 +128,7 @@ export default async function ShopHubPage() {
       <section className="bg-brand-100 pb-16 pt-10 lg:pb-24 lg:pt-14">
         <nav className="container mx-auto max-w-[84rem] px-4">
           <div className="grid gap-[1.65rem] sm:grid-cols-3 sm:items-stretch sm:gap-[2.85rem]">
-            {CATEGORIES.map((cat, index) => (
+            {categories.map((cat, index) => (
               <Link
                 key={cat.href}
                 href={cat.href}
@@ -297,17 +301,17 @@ export default async function ShopHubPage() {
       <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
         <div className="container mx-auto max-w-4xl px-4 text-center">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-500">
-            <span>{trustBar?.followers ?? "25 000+"} obserwujących</span>
+            <span>{trustBar.followers} obserwujących</span>
             <span className="text-brand-300">·</span>
-            <span>{trustBar?.realizations ?? "6 000+"} realizacji</span>
+            <span>{trustBar.realizations} realizacji</span>
             <span className="text-brand-300">·</span>
-            <span>{trustBar?.shippingLabel ?? "Realizacja ok. 10 dni roboczych"}</span>
+            <span>{trustBar.shippingLabel}</span>
           </div>
 
           {displayTestimonials.length > 0 && (
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
               {displayTestimonials.map((t) => (
-                <blockquote key={t._id} className="text-center">
+                <blockquote key={t.id} className="text-center">
                   <p className="text-base italic leading-relaxed text-brand-800">
                     &ldquo;{t.quote}&rdquo;
                   </p>

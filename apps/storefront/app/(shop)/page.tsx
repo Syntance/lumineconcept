@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getSiteSettings } from "@/lib/sanity/client";
-import { buildMetadata } from "@/lib/sanity/metadata";
+import { getPageContent, getSiteSettings } from "@/lib/content";
+import { buildMetadata } from "@/lib/content/metadata";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
@@ -28,7 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Dłuższy ISR — mniejszy TTFB na cold request (PageSpeed, pierwsze wejście). */
 export const revalidate = 3600;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const pageContent = await getPageContent("home");
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -69,7 +70,7 @@ export default function HomePage() {
         <ReferralBanner />
       </Suspense>
 
-      <HeroSection />
+      <HeroSection hero={pageContent.hero} />
 
       <Suspense fallback={null}>
         <BestsellersSection />

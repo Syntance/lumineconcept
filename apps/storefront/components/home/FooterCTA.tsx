@@ -1,20 +1,16 @@
-import Link from "next/link";
 import Image from "next/image";
 import { Instagram } from "lucide-react";
-import { getSiteSettings } from "@/lib/sanity/client";
+import { getGlobalContent, getSiteSettings } from "@/lib/content";
 import {
-  homepageInstagramTilesFromSettings,
-  type HomepageInstagramTile,
-} from "@/lib/homepage-instagram-tiles";
+	resolveInstagramProfileUrl,
+	resolveInstagramTiles,
+	resolveSocialLinks,
+} from "@/lib/content/cms-wiring";
 import { BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
 import { cn } from "@/lib/utils";
 
-const IG_PROFILE = "https://instagram.com/lumineconcept";
-
-/** Wymiary `public/images/monia-branding-cta-bg.webp` — przy podmianie zdjęcia zaktualizuj. */
 const BRANDING_BG_WIDTH = 2560;
 const BRANDING_BG_HEIGHT = 922;
-/** Desktop: max-h 645px (= 70% wysokości pliku 922px). */
 
 const SHOP_CTA_CLASS =
   "inline-flex items-center justify-center rounded-none border font-gilroy font-medium uppercase tracking-[0.2em] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
@@ -38,12 +34,12 @@ function BrandingHeading({ className = "" }: { className?: string }) {
 
 function BrandingShopLink({ className = "" }: { className?: string }) {
   return (
-    <Link
+    <a
       href="/sklep"
       className={`${SHOP_CTA_CLASS} border-brand-800 bg-transparent text-[11px] leading-[1.15] text-brand-800 hover:bg-brand-800 hover:text-white lg:text-[13px] ${className}`}
     >
       Zobacz sklep &rarr;
-    </Link>
+    </a>
   );
 }
 
@@ -93,9 +89,11 @@ function BrandingContact({
 }
 
 function InstagramGrid({
-  posts,
+	posts,
+	profileUrl,
 }: {
-  posts: HomepageInstagramTile[];
+	posts: ReturnType<typeof resolveInstagramTiles>;
+	profileUrl: string;
 }) {
   return (
     <div className="mt-10 grid grid-cols-3 gap-2 max-w-xl mx-auto sm:grid-cols-6">
@@ -125,7 +123,7 @@ function InstagramGrid({
         return (
           <a
             key={`ig-placeholder-${i}`}
-            href={IG_PROFILE}
+            href={profileUrl}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Lumine Concept na Instagramie"
@@ -139,29 +137,21 @@ function InstagramGrid({
   );
 }
 
-/**
- * Footer CTA + sekcja „Jesteśmy na Instagramie”.
- * Desktop: tło jak hero (aspect + max-h + object-cover); mobile: sam blok treści.
- */
 export async function FooterCTA() {
-  const settings = await getSiteSettings();
-  const igPosts = homepageInstagramTilesFromSettings(settings);
+  const [global, settings] = await Promise.all([getGlobalContent(), getSiteSettings()]);
+  const igPosts = resolveInstagramTiles(global);
+  const igProfile = resolveInstagramProfileUrl(resolveSocialLinks(settings));
 
   return (
     <>
       <section id="footer-cta" className="relative isolate overflow-x-hidden">
-        {/* Mobile — bez zdjęcia tła */}
         <div className="bg-brand-50 px-4 py-12 lg:hidden">
           <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 text-center">
             <BrandingHeading />
-
             <BrandingShopLink className="mt-10 w-full max-w-[17.5rem] whitespace-nowrap px-6 py-3.5" />
-
             <BrandingContact layout="stack" />
           </div>
         </div>
-
-        {/* Desktop — tło jak hero + overlay */}
         <div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/645] lg:max-h-[645px]">
           <Image
             src="/images/monia-branding-cta-bg.webp"
@@ -172,13 +162,7 @@ export async function FooterCTA() {
             priority={false}
             className="absolute inset-0 h-full w-full origin-[30%_80%] scale-[1.2] select-none object-cover object-[30%_80%]"
           />
-
-          <div
-            className={cn(
-              "absolute inset-0 z-10 flex items-center",
-              BREADCRUMBS_ALIGN_CLASS,
-            )}
-          >
+          <div className={cn("absolute inset-0 z-10 flex items-center", BREADCRUMBS_ALIGN_CLASS)}>
             <div className="flex w-fit max-w-full flex-col items-center text-center lg:ml-[16%]">
               <BrandingHeading />
               <BrandingShopLink className="mt-10 whitespace-nowrap px-7 py-3" />
@@ -187,18 +171,15 @@ export async function FooterCTA() {
           </div>
         </div>
       </section>
-
       <section className="bg-white py-14 lg:py-20">
         <div className="container mx-auto px-4 text-center">
           <h2 className="font-display text-3xl tracking-widest text-brand-800 lg:text-4xl">
             Jesteśmy na Instagramie
           </h2>
           <div className="mt-3 mx-auto h-px w-12 bg-accent" />
-
-          <InstagramGrid posts={igPosts} />
-
+          <InstagramGrid posts={igPosts} profileUrl={igProfile} />
           <a
-            href={IG_PROFILE}
+            href={igProfile}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-6 inline-flex items-center gap-2 text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"

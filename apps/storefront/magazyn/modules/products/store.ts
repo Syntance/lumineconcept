@@ -24,6 +24,13 @@ import {
 	type ProductUploadSettings,
 } from "@/lib/products/upload-settings";
 import {
+	parseProductFaqFromMetadata,
+	parseProductSeoFromMetadata,
+	serializeProductFaqForMetadata,
+	serializeProductSeoForMetadata,
+} from "@/lib/content/parsers";
+import type { ProductFaqItem, ProductSeoMeta } from "@/lib/content/types";
+import {
 	findCategoryDefinition,
 	type ColorCategoryId,
 	normalizeHexInput,
@@ -76,6 +83,10 @@ export type ProductFormValues = {
 	textFields: TextFieldDef[];
 	/** Wgrywanie plików przez klienta (metadata.uploads_*). */
 	uploadSettings: ProductUploadSettings;
+	/** SEO produktu (metadata.seo_*). */
+	seo: ProductSeoMeta;
+	/** FAQ produktowe (metadata.product_faq). */
+	productFaq: ProductFaqItem[];
 };
 
 export type AdminProductRow = {
@@ -279,6 +290,8 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 				color_slot_names: values.colorSlotNames ? JSON.stringify(values.colorSlotNames) : undefined,
 				text_fields: JSON.stringify(serializeTextFieldsForMetadata(values.textFields)),
 				...serializeUploadSettingsForMetadata(values.uploadSettings),
+				...serializeProductSeoForMetadata(values.seo),
+				product_faq: values.productFaq.length > 0 ? serializeProductFaqForMetadata(values.productFaq) : undefined,
 			},
 		}),
 	});
@@ -409,6 +422,8 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		allowCustomColor: defaultAllowCustom,
 		textFields: parseTextFieldsFromMetadata(metadata),
 		uploadSettings: parseUploadSettingsFromMetadata(metadata),
+		seo: parseProductSeoFromMetadata(metadata) ?? {},
+		productFaq: parseProductFaqFromMetadata(metadata),
 		metadata,
 	};
 }

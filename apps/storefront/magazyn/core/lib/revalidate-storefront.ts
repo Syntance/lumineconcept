@@ -1,7 +1,7 @@
 import "server-only";
 import { serverEnv } from "../env";
 
-const DEFAULT_TAGS = ["medusa-products", "medusa-categories", "global-product-config"];
+const DEFAULT_TAGS = ["medusa-products", "medusa-categories", "global-product-config", "magazyn-content"];
 
 /**
  * Unieważnia cache storefrontu po mutacji produktu w Magazynie.

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
+import { getSiteSettings } from "@/lib/content";
+import { resolveFooterText, resolveSocialLinks } from "@/lib/content/cms-wiring";
 import { SITE_CONTACT } from "@/lib/site-contact";
 import { FooterCookieSettings } from "@/components/layout/FooterCookieSettings";
 
@@ -19,7 +21,11 @@ const FOOTER_LINKS = {
   ],
 } as const;
 
-export function Footer() {
+export async function Footer() {
+  const settings = await getSiteSettings();
+  const copyright = resolveFooterText(settings);
+  const social = resolveSocialLinks(settings);
+
   return (
     <footer className="bg-brand-800 text-brand-200" role="contentinfo">
       <div className="container mx-auto px-4 pb-2 pt-8 lg:px-8 lg:pb-3 lg:pt-10">
@@ -34,9 +40,34 @@ export function Footer() {
                 className="h-8 w-auto brightness-0 invert"
               />
             </Link>
-            <p className="mt-4 text-base text-brand-300 max-w-xs">
+            <p className="mt-4 max-w-xs text-base text-brand-300">
               Produkty plexi i branding dla salonów beauty. Tworzymy z pasją, dostarczamy z precyzją.
             </p>
+            {(social.instagram || social.facebook || social.tiktok) && (
+              <ul className="mt-4 flex flex-wrap gap-3 text-sm">
+                {social.instagram ? (
+                  <li>
+                    <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-brand-300 hover:text-white">
+                      Instagram
+                    </a>
+                  </li>
+                ) : null}
+                {social.facebook ? (
+                  <li>
+                    <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-brand-300 hover:text-white">
+                      Facebook
+                    </a>
+                  </li>
+                ) : null}
+                {social.tiktok ? (
+                  <li>
+                    <a href={social.tiktok} target="_blank" rel="noopener noreferrer" className="text-brand-300 hover:text-white">
+                      TikTok
+                    </a>
+                  </li>
+                ) : null}
+              </ul>
+            )}
           </div>
 
           {Object.entries(FOOTER_LINKS).map(([title, links]) => (
@@ -97,9 +128,7 @@ export function Footer() {
             <FooterCookieSettings />
           </div>
           <div className="flex flex-col items-center gap-2 text-sm text-brand-400 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-            <p className="text-center lg:text-left">
-              &copy; {new Date().getFullYear()} Lumine Concept. Wszelkie prawa zastrzeżone.
-            </p>
+            <p className="text-center lg:text-left">{copyright}</p>
             <p className="text-center lg:text-right">
               Wdrożenie strony:{" "}
               <a

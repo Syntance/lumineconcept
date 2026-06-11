@@ -198,7 +198,6 @@ function LeafEditor({
 			return (
 				<div className="flex flex-col gap-3">
 					<RichTextEditor
-						key={b.id}
 						label="Treść"
 						value={b.text}
 						singleLine
@@ -227,7 +226,6 @@ function LeafEditor({
 			return (
 				<div className="flex flex-col gap-3">
 					<RichTextEditor
-						key={b.id}
 						label="Treść"
 						value={b.text}
 						rows={5}
@@ -368,7 +366,6 @@ export function BlockInspector({
 			) : block.type === "footer" ? (
 				<div className="flex flex-col gap-3">
 					<RichTextEditor
-						key={(block as FooterBlock).id}
 						label="Treść stopki"
 						value={(block as FooterBlock).text}
 						rows={3}
