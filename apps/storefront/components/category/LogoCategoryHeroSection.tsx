@@ -10,25 +10,23 @@ import { cn } from "@/lib/utils";
 const LOGO_HERO_BG_WIDTH = 1024;
 const LOGO_HERO_BG_HEIGHT = 384;
 
-/** Mobile crop 4:5 — 750×937, kadr 48% (nie 63% ze strony głównej). */
-const LOGO_HERO_MOBILE_SRC = "/images/categories/logo-hero-bg-mobile.webp?v=3";
-const LOGO_HERO_MOBILE_WIDTH = 750;
-const LOGO_HERO_MOBILE_HEIGHT = 937;
+/** Mobile: ultrawide PNG w niskim kontenerze — crop 4:5 ucina okrągłą tablicę. */
+const LOGO_HERO_DESKTOP_SRC = "/images/categories/logo-hero-bg.png?v=4";
 
 /**
- * Hero kategorii „Tablice z logo” — desktop: portal; mobile: niższy kadr + brązowy blok (jak HP).
+ * Hero kategorii „Tablice z logo” — desktop: portal; mobile: niski kadr + brązowy blok (jak HP).
  */
 export function LogoCategoryHeroSection() {
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
 			{/* Mobile */}
 			<div className="flex flex-col lg:hidden">
-				<div className="relative h-64 w-full overflow-hidden sm:h-72">
+				<div className="relative h-44 w-full overflow-hidden sm:h-52">
 					<Image
-						src={LOGO_HERO_MOBILE_SRC}
+						src={LOGO_HERO_DESKTOP_SRC}
 						alt=""
-						width={LOGO_HERO_MOBILE_WIDTH}
-						height={LOGO_HERO_MOBILE_HEIGHT}
+						width={LOGO_HERO_BG_WIDTH}
+						height={LOGO_HERO_BG_HEIGHT}
 						priority
 						fetchPriority="high"
 						sizes="100vw"
@@ -52,7 +50,7 @@ export function LogoCategoryHeroSection() {
 			{/* Desktop */}
 			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
 				<Image
-					src="/images/categories/logo-hero-bg.png"
+					src={LOGO_HERO_DESKTOP_SRC}
 					alt=""
 					width={LOGO_HERO_BG_WIDTH}
 					height={LOGO_HERO_BG_HEIGHT}
