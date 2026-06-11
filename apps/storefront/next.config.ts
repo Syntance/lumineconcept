@@ -168,6 +168,8 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "100mb",
     },
+    /** Route Handlers (`/api/upload` — pliki klientów w koszyku). */
+    proxyClientMaxBodySize: "100mb",
     /**
      * Tree-shakuje „mega" pakiety, z których importujemy pojedyncze symbole.
      * Głównie lucide-react (~200 ikon), ale też radix i posthog — bez tego
