@@ -19,7 +19,7 @@ export function HeroPortalMobile({
   content = HOME_HERO_PORTAL,
 }: HeroPortalMobileProps) {
   return (
-    <div className="bg-brand-800 px-5 py-8 text-center sm:px-8 sm:py-9">
+    <div className="bg-brand-800 px-5 py-6 text-center sm:px-8 sm:py-7">
       <div className="mx-auto flex max-w-md flex-col items-center">
         <div className="flex w-full flex-col items-center gap-2.5">
           <h1
@@ -44,7 +44,7 @@ export function HeroPortalMobile({
         <Link
           href={content.ctaHref}
           aria-label={content.ctaAriaLabel}
-          className={`${SHOP_CTA_CLASS} mt-7 sm:mt-8`}
+          className={`${SHOP_CTA_CLASS} mt-5 sm:mt-6`}
         >
           {content.ctaLabel}
         </Link>
