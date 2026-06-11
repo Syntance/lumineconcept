@@ -59,10 +59,7 @@ async function fetchStoreMetadataWithRetry(token: string): Promise<Response | nu
 		try {
 			const res = await fetch(url, {
 				headers: { Authorization: `Bearer ${token}` },
-				next: {
-					revalidate: REVALIDATE_SECONDS,
-					tags: [MAGAZYN_CONTENT_CACHE_TAG, "site-settings"],
-				},
+				cache: "no-store",
 				signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
 			});
 
@@ -86,8 +83,11 @@ async function fetchStoreMetadataWithRetry(token: string): Promise<Response | nu
 }
 
 /**
- * Jeden cache'owany odczyt Store.metadata dla storefrontu.
- * Dedup w ramach renderu (`cache`) + ISR/tag dla webhooków.
+ * Jeden odczyt Store.metadata dla storefrontu.
+ * Dedup w ramach renderu (`cache`) + always-fresh (no-store) dla CMS.
+ * 
+ * WAŻNE: używamy cache: 'no-store' zamiast ISR, żeby po deployu Vercel
+ * (gdy backend może być chwilowo niedostępny) nie cache'ować pustych danych.
  */
 export const fetchStoreMetadataBlob = cache(async (): Promise<RawStoreMetadataBlob | null> => {
 	const token = await getServiceTokenForRead();
