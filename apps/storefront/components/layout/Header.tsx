@@ -97,7 +97,8 @@ export function Header() {
             width={204}
             height={46}
             className="h-[46.2px] w-auto"
-            priority
+            loading="eager"
+            fetchPriority="low"
           />
         </Link>
 
