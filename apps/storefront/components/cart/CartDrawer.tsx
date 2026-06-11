@@ -87,7 +87,7 @@ export function CartDrawer() {
 
       {/* Panel */}
       <div
-        className="fixed inset-y-0 right-0 flex h-full min-h-0 w-full max-w-[420px] flex-col bg-white shadow-2xl"
+        className="fixed inset-y-0 right-0 flex h-full min-h-0 w-screen flex-col bg-white shadow-2xl lg:w-full lg:max-w-[420px]"
         style={{ animation: "cartSlideIn 300ms ease-out" }}
       >
 

@@ -11,7 +11,7 @@ const LOGO_HERO_BG_WIDTH = 1024;
 const LOGO_HERO_BG_HEIGHT = 384;
 
 /** Ultrawide PNG — na mobile object-cover w kontenerze jak HP (bez cropu 4:5). */
-const LOGO_HERO_IMAGE_SRC = "/images/categories/logo-hero-bg.png?v=5";
+const LOGO_HERO_IMAGE_SRC = "/images/categories/logo-hero-bg.png";
 
 /** Mobile hero — te same wysokości co `HeroSection` na stronie głównej. */
 const LOGO_HERO_MOBILE_FRAME_CLASS = "relative h-96 w-full overflow-hidden sm:h-[26rem]";
@@ -60,6 +60,7 @@ export function LogoCategoryHeroSection() {
 					priority
 					fetchPriority="high"
 					sizes="100vw"
+					unoptimized
 					className="absolute inset-0 h-full w-full select-none object-cover object-[48%_58%]"
 				/>
 
