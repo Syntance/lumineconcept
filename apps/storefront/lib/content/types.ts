@@ -8,6 +8,7 @@ export type ContentPageId =
 
 export type ContentBlockKey =
 	| "hero"
+	| "brandingCta"
 	| "testimonials"
 	| "faq"
 	| "gallery"
@@ -68,6 +69,11 @@ export type SiteSettings = {
 	titleTemplate?: string;
 	defaultOgImageUrl?: string;
 	googleSiteVerification?: string;
+};
+
+export type BrandingCtaContent = {
+	/** Tło sekcji „Gotowa na branding” (desktop). */
+	desktopBackgroundUrl?: string;
 };
 
 export type HeroContent = {
@@ -136,6 +142,7 @@ export type InstagramTile = {
 
 export type PageContent = {
 	hero?: HeroContent;
+	brandingCta?: BrandingCtaContent;
 	testimonials?: Testimonial[];
 	faq?: FaqItem[];
 	gallery?: GalleryPhoto[];

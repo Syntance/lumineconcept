@@ -1,9 +1,7 @@
 import type { HeroPortalContentConfig } from "@/components/home/hero-portal-config";
 import type { HeroContent } from "./types";
 import { HOME_HERO_DEFAULT, LOGO_HERO_DEFAULT } from "./defaults";
-import { isStorefrontPublicAssetPath, resolveCmsAssetUrl } from "@/lib/content/asset-url";
-
-const LOGO_HERO_FALLBACK_DESKTOP = LOGO_HERO_DEFAULT.desktopImageUrl ?? "/images/categories/logo-hero-bg.png";
+import { resolveCmsAssetUrl } from "./asset-url";
 
 export function heroToPortalConfig(hero: HeroContent): HeroPortalContentConfig {
 	return {
@@ -19,33 +17,34 @@ export function heroToPortalConfig(hero: HeroContent): HeroPortalContentConfig {
 
 export function resolveHomeHero(hero?: HeroContent): {
 	portal: HeroPortalContentConfig;
-	desktopImageUrl: string;
-	mobileImageUrl: string;
+	desktopImageUrl?: string;
+	mobileImageUrl?: string;
 } {
 	const resolved = hero ?? HOME_HERO_DEFAULT;
+	const desktopImageUrl = resolveCmsAssetUrl(resolved.desktopImageUrl?.trim());
+	const mobileImageUrl =
+		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) || desktopImageUrl;
 	return {
 		portal: heroToPortalConfig(resolved),
-		desktopImageUrl: resolved.desktopImageUrl ?? HOME_HERO_DEFAULT.desktopImageUrl!,
-		mobileImageUrl: resolved.mobileImageUrl ?? HOME_HERO_DEFAULT.mobileImageUrl!,
+		...(desktopImageUrl ? { desktopImageUrl } : {}),
+		...(mobileImageUrl ? { mobileImageUrl } : {}),
 	};
 }
 
 export function resolveLogoHero(hero?: HeroContent): {
 	portal: HeroPortalContentConfig;
-	desktopImageUrl: string;
-	mobileImageUrl: string;
+	desktopImageUrl?: string;
+	mobileImageUrl?: string;
 } {
 	const resolved: HeroContent = { ...LOGO_HERO_DEFAULT, ...hero };
-	const desktopImageUrl =
-		resolveCmsAssetUrl(resolved.desktopImageUrl?.trim()) ||
-		LOGO_HERO_FALLBACK_DESKTOP;
+	const desktopImageUrl = resolveCmsAssetUrl(resolved.desktopImageUrl?.trim());
 	const mobileImageUrl =
 		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) || desktopImageUrl;
 
 	return {
 		portal: heroToPortalConfig(resolved),
-		desktopImageUrl,
-		mobileImageUrl,
+		...(desktopImageUrl ? { desktopImageUrl } : {}),
+		...(mobileImageUrl ? { mobileImageUrl } : {}),
 	};
 }
 
@@ -71,27 +70,33 @@ async function isHeroImageUrlAccessible(url: string): Promise<boolean> {
 	}
 }
 
-/** CMS URL + fallback gdy plik z Medusa/R2 zwraca 404 (np. po migracji). */
+/** CMS URL — bez fallbacku do /public; brak URL = brak tła. */
 export async function resolveLogoHeroWithFallback(hero?: HeroContent): Promise<{
 	portal: HeroPortalContentConfig;
-	desktopImageUrl: string;
-	mobileImageUrl: string;
+	desktopImageUrl?: string;
+	mobileImageUrl?: string;
 }> {
 	const resolved = resolveLogoHero(hero);
 
-	const desktopOk = await isHeroImageUrlAccessible(resolved.desktopImageUrl);
-	const desktopImageUrl = desktopOk ? resolved.desktopImageUrl : LOGO_HERO_FALLBACK_DESKTOP;
+	if (!resolved.desktopImageUrl) {
+		return resolved;
+	}
 
-	const mobileOk = await isHeroImageUrlAccessible(resolved.mobileImageUrl);
-	const mobileImageUrl = mobileOk ? resolved.mobileImageUrl : desktopImageUrl;
+	const desktopOk = await isHeroImageUrlAccessible(resolved.desktopImageUrl);
+	if (!desktopOk) {
+		return { portal: resolved.portal };
+	}
+
+	const mobileUrl = resolved.mobileImageUrl ?? resolved.desktopImageUrl;
+	const mobileOk = await isHeroImageUrlAccessible(mobileUrl);
 
 	return {
 		portal: resolved.portal,
-		desktopImageUrl,
-		mobileImageUrl,
+		desktopImageUrl: resolved.desktopImageUrl,
+		...(mobileOk ? { mobileImageUrl: mobileUrl } : { mobileImageUrl: resolved.desktopImageUrl }),
 	};
 }
 
 export function isLocalPublicImage(url: string): boolean {
-	return isStorefrontPublicAssetPath(url);
+	return url.startsWith("/images/") || url.startsWith("/icons/");
 }

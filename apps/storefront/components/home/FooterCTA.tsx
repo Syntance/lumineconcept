@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Instagram } from "lucide-react";
-import { getGlobalContent, getSiteSettings } from "@/lib/content";
+import { getGlobalContent, getPageContent, getSiteSettings } from "@/lib/content";
+import { resolveBrandingCta } from "@/lib/content/branding";
 import {
 	resolveInstagramProfileUrl,
 	resolveInstagramTiles,
@@ -140,9 +141,14 @@ function InstagramGrid({
 }
 
 export async function FooterCTA() {
-  const [global, settings] = await Promise.all([getGlobalContent(), getSiteSettings()]);
+  const [global, settings, pageContent] = await Promise.all([
+    getGlobalContent(),
+    getSiteSettings(),
+    getPageContent("home"),
+  ]);
   const igPosts = resolveInstagramTiles(global);
   const igProfile = resolveInstagramProfileUrl(resolveSocialLinks(settings));
+  const { desktopBackgroundUrl } = resolveBrandingCta(pageContent.brandingCta);
 
   return (
     <>
@@ -155,15 +161,20 @@ export async function FooterCTA() {
           </div>
         </div>
         <div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/645] lg:max-h-[645px]">
-          <Image
-            src="/images/monia-branding-cta-bg.webp"
-            alt=""
-            width={BRANDING_BG_WIDTH}
-            height={BRANDING_BG_HEIGHT}
-            sizes="100vw"
-            priority={false}
-            className="absolute inset-0 h-full w-full origin-[30%_80%] scale-[1.2] select-none object-cover object-[30%_80%]"
-          />
+          {desktopBackgroundUrl ? (
+            <Image
+              src={desktopBackgroundUrl}
+              alt=""
+              width={BRANDING_BG_WIDTH}
+              height={BRANDING_BG_HEIGHT}
+              sizes="100vw"
+              priority={false}
+              unoptimized={isCmsImageUnoptimized(desktopBackgroundUrl)}
+              className="absolute inset-0 h-full w-full origin-[30%_80%] scale-[1.2] select-none object-cover object-[30%_80%]"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-brand-50" aria-hidden />
+          )}
           <div className={cn("absolute inset-0 z-10 flex items-center", BREADCRUMBS_ALIGN_CLASS)}>
             <div className="flex w-fit max-w-full flex-col items-center text-center lg:ml-[16%]">
               <BrandingHeading />

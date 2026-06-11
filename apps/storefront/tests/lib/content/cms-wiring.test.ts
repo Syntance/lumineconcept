@@ -112,21 +112,34 @@ describe("cms-wiring", () => {
 		).toBe("https://instagram.com/custom");
 	});
 
-	it("hero merge provides logo-3d background defaults", () => {
+	it("hero merge keeps copy defaults without hardcoded image paths", () => {
 		const hero = mergeHeroWithDefaults(
 			{
 				headline: "Tablica z logo",
 				description: "d",
 				ctaLabel: "c",
 				ctaHref: "#x",
+				desktopImageUrl: "https://cdn.example/logo.webp",
 			},
 			"logo-3d",
 		);
-		expect(hero?.desktopImageUrl).toContain("logo-hero-bg");
-		expect(resolveLogoHero(hero).desktopImageUrl).toContain("logo-hero-bg");
-		expect(resolveHomeHero(mergeHeroWithDefaults(undefined, "home")).desktopImageUrl).toContain(
-			"hero-main-wall",
+		expect(hero?.desktopImageUrl).toBe("https://cdn.example/logo.webp");
+		expect(resolveLogoHero(hero).desktopImageUrl).toBe("https://cdn.example/logo.webp");
+		const home = resolveHomeHero(
+			mergeHeroWithDefaults(
+				{
+					headline: "CONCEPT",
+					description: "d",
+					ctaLabel: "c",
+					ctaHref: "/sklep",
+					desktopImageUrl: "https://cdn.example/hero.webp",
+					mobileImageUrl: "https://cdn.example/hero-mobile.webp",
+				},
+				"home",
+			),
 		);
+		expect(home.desktopImageUrl).toBe("https://cdn.example/hero.webp");
+		expect(home.mobileImageUrl).toBe("https://cdn.example/hero-mobile.webp");
 	});
 });
 

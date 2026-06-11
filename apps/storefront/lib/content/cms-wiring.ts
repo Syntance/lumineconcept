@@ -131,7 +131,7 @@ export const CMS_STOREFRONT_WIRING = {
 		instagramTiles: "FooterCTA",
 	},
 	pages: {
-		home: { hero: "HeroSection" },
+		home: { hero: "HeroSection", brandingCta: "FooterCTA" },
 		shop: { categoryTiles: "sklep/page.tsx", testimonials: "sklep/page.tsx" },
 		"logo-3d": { hero: "LogoCategoryHeroSection", gallery: "LogoBoardRealizations" },
 		"gotowe-wzory": { testimonials: "gotowe-wzory/page.tsx", faq: "PageFaqSection" },

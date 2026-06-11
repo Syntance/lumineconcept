@@ -151,8 +151,13 @@ const categoryTileSchema = z.object({
 	imageUrl: z.string().min(1),
 });
 
+const brandingCtaSchema = z.object({
+	desktopBackgroundUrl: cmsOptionalAssetUrlSchema.optional(),
+});
+
 export const pageContentSchema = z.object({
 	hero: heroSchema.optional(),
+	brandingCta: brandingCtaSchema.optional(),
 	testimonials: z.array(testimonialSchema).optional(),
 	faq: z.array(faqSchema).optional(),
 	gallery: z.array(galleryPhotoSchema).optional(),
@@ -196,6 +201,12 @@ function resolvePageContentAssets(content: PageContent): PageContent {
 	return {
 		...content,
 		hero: resolveHeroAssets(content.hero),
+		brandingCta: content.brandingCta
+			? {
+					...content.brandingCta,
+					desktopBackgroundUrl: resolveCmsAssetUrl(content.brandingCta.desktopBackgroundUrl),
+				}
+			: content.brandingCta,
 		testimonials: content.testimonials?.map((item) => ({
 			...item,
 			imageUrl: resolveCmsAssetUrl(item.imageUrl),
@@ -399,14 +410,17 @@ export function mergeHeroWithDefaults(
 		pageId === "home" ? HOME_HERO_DEFAULT : pageId === "logo-3d" ? LOGO_HERO_DEFAULT : undefined;
 	if (!defaults) return hero;
 	if (!hero) return defaults;
-	const desktopImageUrl = normalizeLocalAssetUrl(hero.desktopImageUrl) || defaults.desktopImageUrl;
+	const desktopImageUrl =
+		normalizeLocalAssetUrl(hero.desktopImageUrl) || normalizeLocalAssetUrl(defaults.desktopImageUrl);
 	const mobileImageUrl =
-		normalizeLocalAssetUrl(hero.mobileImageUrl) || desktopImageUrl || defaults.mobileImageUrl;
+		normalizeLocalAssetUrl(hero.mobileImageUrl) ||
+		desktopImageUrl ||
+		normalizeLocalAssetUrl(defaults.mobileImageUrl);
 	return {
 		...defaults,
 		...hero,
-		desktopImageUrl,
-		mobileImageUrl,
+		...(desktopImageUrl ? { desktopImageUrl } : {}),
+		...(mobileImageUrl ? { mobileImageUrl } : {}),
 	};
 }
 
@@ -421,6 +435,11 @@ export function preparePageContentForSave(_pageId: string, content: PageContent)
 		if (!hero.desktopImageUrl?.trim()) delete hero.desktopImageUrl;
 		if (!hero.mobileImageUrl?.trim()) delete hero.mobileImageUrl;
 		next.hero = hero;
+	}
+	if (next.brandingCta) {
+		const branding = { ...next.brandingCta };
+		if (!branding.desktopBackgroundUrl?.trim()) delete branding.desktopBackgroundUrl;
+		next.brandingCta = Object.keys(branding).length ? branding : undefined;
 	}
 	return next;
 }
