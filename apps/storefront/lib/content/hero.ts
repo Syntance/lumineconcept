@@ -31,6 +31,37 @@ export function resolveHomeHero(hero?: HeroContent): {
 	};
 }
 
+/** Weryfikuje dostępność URL-i z CMS (R2 / Medusa) — bez fallbacku do /public. */
+export async function resolveHomeHeroWithFallback(hero?: HeroContent): Promise<{
+	portal: HeroPortalContentConfig;
+	desktopImageUrl?: string;
+	mobileImageUrl?: string;
+}> {
+	const resolved = resolveHomeHero(hero);
+	const mobileUrl = resolved.mobileImageUrl ?? resolved.desktopImageUrl;
+
+	if (!mobileUrl) {
+		return resolved;
+	}
+
+	const mobileOk = await isHeroImageUrlAccessible(mobileUrl);
+	if (mobileOk) {
+		return resolved;
+	}
+
+	if (resolved.desktopImageUrl && resolved.desktopImageUrl !== mobileUrl) {
+		const desktopOk = await isHeroImageUrlAccessible(resolved.desktopImageUrl);
+		if (desktopOk) {
+			return { ...resolved, mobileImageUrl: resolved.desktopImageUrl };
+		}
+	}
+
+	return {
+		portal: resolved.portal,
+		...(resolved.desktopImageUrl ? { desktopImageUrl: resolved.desktopImageUrl } : {}),
+	};
+}
+
 export function resolveLogoHero(hero?: HeroContent): {
 	portal: HeroPortalContentConfig;
 	desktopImageUrl?: string;

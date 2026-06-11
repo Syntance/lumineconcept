@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { serverEnv } from "@magazyn/core/env";
-import { resolveMedusaAdminEmail } from "@magazyn/core/medusa/client";
+import { loginWithEmailPassword } from "@magazyn/core/medusa/client";
 import {
 	MAGAZYN_GLOBAL_CONTENT_KEY,
 	MAGAZYN_PAGE_CONTENT_KEY,
@@ -22,7 +22,7 @@ const REVALIDATE_SECONDS = 300;
 let cachedServiceToken: { token: string; at: number } | null = null;
 
 async function getServiceTokenForRead(): Promise<string | null> {
-	const email = serverEnv.adminEmail ? resolveMedusaAdminEmail(serverEnv.adminEmail) : undefined;
+	const email = serverEnv.adminEmail;
 	const password = serverEnv.adminPassword?.trim();
 	if (!email || !password) return null;
 
@@ -31,17 +31,9 @@ async function getServiceTokenForRead(): Promise<string | null> {
 	}
 
 	try {
-		const res = await fetch(`${serverEnv.medusaBackendUrl}/auth/user/emailpass`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ email, password }),
-			signal: AbortSignal.timeout(10_000),
-		});
-		if (!res.ok) return null;
-		const data = (await res.json()) as { token?: string };
-		if (!data.token) return null;
-		cachedServiceToken = { token: data.token, at: Date.now() };
-		return data.token;
+		const token = await loginWithEmailPassword(email, password);
+		cachedServiceToken = { token, at: Date.now() };
+		return token;
 	} catch {
 		return null;
 	}

@@ -2,55 +2,37 @@ import Image from "next/image";
 
 import type { HeroContent } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
-import { resolveHomeHero } from "@/lib/content/hero";
+import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";
+import { MobileHeroImageBand } from "./MobileHeroImageBand";
+import { MobileHeroViewport } from "./MobileHeroViewport";
 
-/** Wymiary pliku `public/images/hero-main-wall.webp` — przy podmianie grafiki zaktualizuj. */
 const HERO_BG_WIDTH = 2560;
 const HERO_BG_HEIGHT = 966;
 
-/** Mobile crop 4:5 — 1080×1350 px, ~77 KB (oryginał, pełna jakość). */
-const HERO_MOBILE_WIDTH = 1080;
-const HERO_MOBILE_HEIGHT = 1350;
-
 /**
- * Hero — desktop: ultrawide + overlay; mobile: kompakt (bez pełnego ekranu).
+ * Hero — desktop: ultrawide + overlay; mobile: zdjęcie + CTA w 80svh.
  */
-export function HeroSection({
+export async function HeroSection({
 	hero,
 	children,
 }: {
 	hero?: HeroContent;
 	children?: React.ReactNode;
 }) {
-	const { portal, desktopImageUrl, mobileImageUrl } = resolveHomeHero(hero);
+	const { portal, desktopImageUrl, mobileImageUrl } = await resolveHomeHeroWithFallback(hero);
+	const mobileDisplayUrl = mobileImageUrl ?? desktopImageUrl;
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
-			{/* Mobile — zdjęcie nad copy (niższy kadr niż 4:5) */}
-			<div className="flex flex-col lg:hidden">
-				<div className="relative h-96 w-full overflow-hidden sm:h-[26rem]">
-					{mobileImageUrl ? (
-						<Image
-							src={mobileImageUrl}
-							alt=""
-							width={HERO_MOBILE_WIDTH}
-							height={HERO_MOBILE_HEIGHT}
-							priority
-							fetchPriority="high"
-							sizes="100vw"
-							unoptimized={isCmsImageUnoptimized(mobileImageUrl)}
-							className="absolute inset-0 h-full w-full select-none object-cover object-[63%_26%]"
-						/>
-					) : (
-						<div className="absolute inset-0 bg-brand-800" aria-hidden />
-					)}
-				</div>
-				<HeroPortalMobile content={portal} />
+			<div className="lg:hidden">
+				<MobileHeroViewport
+					image={<MobileHeroImageBand src={mobileDisplayUrl} />}
+					portal={<HeroPortalMobile content={portal} />}
+				/>
 			</div>
 
-			{/* Desktop — portal + overlay */}
 			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
 				{desktopImageUrl ? (
 					<Image

@@ -11,9 +11,13 @@ import { getResendConfig } from "@/lib/resend/config";
 
 export const serverEnv = {
 	get medusaBackendUrl(): string {
-		const url = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL;
+		const url =
+			process.env.MEDUSA_BACKEND_URL?.trim() ||
+			process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL;
 		if (!url) {
-			throw new Error("Brak NEXT_PUBLIC_MEDUSA_BACKEND_URL w środowisku (patrz .env.example).");
+			throw new Error(
+				"Brak MEDUSA_BACKEND_URL / NEXT_PUBLIC_MEDUSA_BACKEND_URL w środowisku (patrz .env.example).",
+			);
 		}
 		return url.replace(/\/$/, "");
 	},
