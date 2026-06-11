@@ -17,7 +17,7 @@ export type RawStoreMetadataBlob = {
 	globalContent: unknown;
 };
 
-const REVALIDATE_SECONDS = 300;
+const REVALIDATE_SECONDS = 60;
 const FETCH_TIMEOUT_MS = 30_000;
 const RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 750;
@@ -59,7 +59,10 @@ async function fetchStoreMetadataWithRetry(token: string): Promise<Response | nu
 		try {
 			const res = await fetch(url, {
 				headers: { Authorization: `Bearer ${token}` },
-				cache: "no-store",
+				next: {
+					revalidate: REVALIDATE_SECONDS,
+					tags: [MAGAZYN_CONTENT_CACHE_TAG, "site-settings"],
+				},
 				signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
 			});
 
@@ -84,10 +87,8 @@ async function fetchStoreMetadataWithRetry(token: string): Promise<Response | nu
 
 /**
  * Jeden odczyt Store.metadata dla storefrontu.
- * Dedup w ramach renderu (`cache`) + always-fresh (no-store) dla CMS.
- * 
- * WAŻNE: używamy cache: 'no-store' zamiast ISR, żeby po deployu Vercel
- * (gdy backend może być chwilowo niedostępny) nie cache'ować pustych danych.
+ * Dedup w ramach renderu (`cache`) + ISR (60s) dla błyskawicznego response.
+ * Przy niepowodzeniu (np. build gdy backend niedostępny) zwraca null — defaults mają lokalne hero.
  */
 export const fetchStoreMetadataBlob = cache(async (): Promise<RawStoreMetadataBlob | null> => {
 	const token = await getServiceTokenForRead();
