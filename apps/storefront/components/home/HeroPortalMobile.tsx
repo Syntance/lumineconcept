@@ -19,7 +19,7 @@ export function HeroPortalMobile({
   content = HOME_HERO_PORTAL,
 }: HeroPortalMobileProps) {
   return (
-    <div className="bg-brand-800 px-5 py-6 text-center sm:px-8 sm:py-7">
+    <div className="shrink-0 bg-brand-800 px-5 py-6 text-center sm:px-8 sm:py-7">
       <div className="mx-auto flex max-w-md flex-col items-center">
         <div className="flex w-full flex-col items-center gap-2.5">
           <h1
