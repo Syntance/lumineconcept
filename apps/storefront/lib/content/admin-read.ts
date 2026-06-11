@@ -23,7 +23,7 @@ let cachedServiceToken: { token: string; at: number } | null = null;
 
 async function getServiceTokenForRead(): Promise<string | null> {
 	const email = serverEnv.adminEmail ? resolveMedusaAdminEmail(serverEnv.adminEmail) : undefined;
-	const password = serverEnv.adminPassword;
+	const password = serverEnv.adminPassword?.trim();
 	if (!email || !password) return null;
 
 	if (cachedServiceToken && Date.now() - cachedServiceToken.at < 60 * 60 * 1000) {
