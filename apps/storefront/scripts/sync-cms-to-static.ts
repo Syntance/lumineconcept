@@ -23,9 +23,12 @@ type StoreMetadata = {
 	magazyn_global_content?: Record<string, unknown>;
 };
 
-async function getAdminToken(): Promise<string> {
+async function getAdminToken(): Promise<string | null> {
 	if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-		throw new Error("MEDUSA_ADMIN_EMAIL and MEDUSA_ADMIN_PASSWORD required");
+		console.warn("⚠ MEDUSA_ADMIN_EMAIL and MEDUSA_ADMIN_PASSWORD not set");
+		console.warn("⚠ Skipping CMS sync - will use dynamic fetch on production");
+		console.warn("⚠ Add env vars to Vercel for static sync (PageSpeed 95+)");
+		return null;
 	}
 
 	const res = await fetch(`${MEDUSA_URL}/admin/auth`, {
@@ -150,6 +153,18 @@ async function main() {
 	try {
 		console.log("🔐 Authenticating...");
 		const token = await getAdminToken();
+		
+		if (!token) {
+			console.log("\n⚠ Skipping CMS sync (no credentials)");
+			console.log("⚠ Production will use dynamic fetch (slower)");
+			console.log("⚠ To enable static sync (PageSpeed 95+):");
+			console.log("   1. Go to Vercel project settings");
+			console.log("   2. Add MEDUSA_ADMIN_EMAIL");
+			console.log("   3. Add MEDUSA_ADMIN_PASSWORD");
+			console.log("   4. Redeploy\n");
+			process.exit(0); // Exit successfully, build will continue
+		}
+		
 		console.log("✓ Authenticated\n");
 		
 		console.log("📚 Fetching CMS content...");
@@ -165,7 +180,8 @@ async function main() {
 		console.log(`   PageSpeed ready 🚀\n`);
 	} catch (error) {
 		console.error("\n❌ Sync failed:", error);
-		process.exit(1);
+		console.error("⚠ Continuing with dynamic fetch fallback\n");
+		process.exit(0); // Don't fail the build
 	}
 }
 
