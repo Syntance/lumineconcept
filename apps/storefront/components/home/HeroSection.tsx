@@ -7,15 +7,25 @@ const HERO_BG_WIDTH = 2560;
 const HERO_BG_HEIGHT = 966;
 
 /**
- * Hero — desktop: portal + overlay z lewej; mobile: niższy blok, zdjęcie mniejsze i w prawo.
- * Desktop: max. wysokość = wysokość pliku źródłowego (ultrawide nie rozciąga hero w nieskończoność).
+ * Hero — desktop: ultrawide + portal; mobile: osobny crop 4:5 (dedicated asset).
+ * Mobile asset: `hero-main-wall-mobile.webp` (1080×1350), kadrowany ~50% szer. oryginału.
  */
 export function HeroSection({ children }: { children?: React.ReactNode }) {
   return (
     <section className="relative flex w-full flex-col overflow-x-hidden">
       <div
-        className="relative w-full overflow-x-hidden max-lg:aspect-[4/5] max-lg:max-h-[min(58vh,30rem)] max-lg:min-h-[17.5rem] lg:aspect-[2560/966] lg:max-h-[966px]"
+        className="relative w-full overflow-x-hidden max-lg:aspect-[4/5] max-lg:max-h-[min(62vh,32rem)] max-lg:min-h-[18rem] lg:aspect-[2560/966] lg:max-h-[966px]"
       >
+        <Image
+          src="/images/hero-main-wall-mobile.webp"
+          alt=""
+          width={1080}
+          height={1350}
+          priority
+          fetchPriority="high"
+          sizes="100vw"
+          className="absolute inset-0 h-full w-full select-none object-cover object-center lg:hidden"
+        />
         <Image
           src="/images/hero-main-wall.webp"
           alt=""
@@ -24,7 +34,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           priority
           fetchPriority="high"
           sizes="100vw"
-          className="block h-auto w-full select-none max-lg:absolute max-lg:inset-y-0 max-lg:right-0 max-lg:left-auto max-lg:h-full max-lg:w-[min(78%,19.5rem)] max-lg:object-cover max-lg:object-[62%_center] lg:absolute lg:inset-0 lg:h-full lg:w-full lg:object-cover lg:object-[38%_center]"
+          className="absolute inset-0 hidden h-full w-full select-none object-cover object-[38%_center] lg:block"
         />
 
         {/* Desktop — czytelność tekstu z lewej */}
@@ -33,9 +43,9 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           aria-hidden
         />
 
-        {/* Mobile — ciemniejsza lewa połowa pod wyśrodkowany tekst */}
+        {/* Mobile — gradient od dołu pod copy; góra kadru = produkt */}
         <div
-          className="pointer-events-none absolute inset-0 bg-linear-to-r from-brand-900/80 via-brand-900/55 to-brand-900/20 lg:hidden"
+          className="pointer-events-none absolute inset-0 bg-linear-to-t from-brand-900/85 via-brand-900/35 to-transparent lg:hidden"
           aria-hidden
         />
 
