@@ -18,10 +18,12 @@ export const serverEnv = {
 		return url.replace(/\/$/, "");
 	},
 	get adminEmail(): string | undefined {
-		return process.env.MEDUSA_ADMIN_EMAIL || undefined;
+		const raw = process.env.MEDUSA_ADMIN_EMAIL?.trim();
+		return raw || undefined;
 	},
 	get adminPassword(): string | undefined {
-		return process.env.MEDUSA_ADMIN_PASSWORD || undefined;
+		const raw = process.env.MEDUSA_ADMIN_PASSWORD?.trim();
+		return raw || undefined;
 	},
 	get resendApiKey(): string | undefined {
 		return getResendConfig().apiKey;
