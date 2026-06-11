@@ -44,7 +44,7 @@ export async function HeroSection({
 						fetchPriority="low"
 						sizes="100vw"
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
-						className="absolute inset-0 h-full w-full select-none object-cover object-[38%_center]"
+						className="absolute inset-0 h-full w-full select-none object-cover object-top"
 					/>
 				) : (
 					<div className="absolute inset-0 bg-brand-800" aria-hidden />
