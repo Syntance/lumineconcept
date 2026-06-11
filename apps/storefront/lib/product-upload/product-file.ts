@@ -118,6 +118,25 @@ async function uploadViaVercelBlob(file: File): Promise<ProductUploadResult> {
 
 let cachedR2: S3Client | null = null;
 
+const R2_UPLOAD_TIMEOUT_MS = 15_000;
+
+async function withUploadTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`${label}_TIMEOUT`)),
+          R2_UPLOAD_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function getR2Config() {
   const endpoint = process.env.S3_ENDPOINT?.trim();
   const accessKeyId = process.env.S3_ACCESS_KEY_ID?.trim();
@@ -161,13 +180,16 @@ async function uploadViaR2(
 
   const bytes = new Uint8Array(await file.arrayBuffer());
 
-  await cachedR2.send(
-    new PutObjectCommand({
-      Bucket: config.bucket,
-      Key: key,
-      Body: bytes,
-      ContentType: file.type || "application/octet-stream",
-    }),
+  await withUploadTimeout(
+    cachedR2.send(
+      new PutObjectCommand({
+        Bucket: config.bucket,
+        Key: key,
+        Body: bytes,
+        ContentType: file.type || "application/octet-stream",
+      }),
+    ),
+    "R2_UPLOAD",
   );
 
   const base = config.fileUrl.replace(/\/$/, "");
@@ -203,14 +225,27 @@ export function validateCmsUploadFile(file: File): string | null {
   return null;
 }
 
-/** Assety CMS (hero, galeria, OG) — bezpośrednio na R2, bez Medusa /static na Railway. */
+/** Assety CMS (hero, galeria, OG) — R2 z timeoutem; fallback Medusa gdy R2 niedostępne. */
 export async function uploadCmsAssetFile(file: File): Promise<ProductUploadResult> {
   const validationError = validateCmsUploadFile(file);
   if (validationError) throw new Error(validationError);
 
   const r2 = getR2Config();
   if (r2) {
-    return uploadViaR2(file, r2, "cms-uploads");
+    try {
+      return await uploadViaR2(file, r2, "cms-uploads");
+    } catch (error) {
+      try {
+        return await uploadViaMedusa(file);
+      } catch {
+        if (error instanceof Error && error.message === "R2_UPLOAD_TIMEOUT") {
+          throw new Error(
+            "Upload do R2 trwa zbyt długo. Sprawdź połączenie lub spróbuj mniejszego pliku (WebP/JPG).",
+          );
+        }
+        throw error instanceof Error ? error : new Error("R2_UPLOAD_FAILED");
+      }
+    }
   }
 
   return uploadViaMedusa(file);

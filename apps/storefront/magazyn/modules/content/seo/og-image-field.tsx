@@ -24,16 +24,21 @@ export function OgImageField({ label, value, onChange }: Props) {
 		if (!files?.length) return;
 		setUploading(true);
 		setError(null);
-		const formData = new FormData();
-		for (const file of Array.from(files)) formData.append("files", file);
-		const result = await uploadImagesAction(formData);
-		setUploading(false);
-		if (result.error) {
-			setError(result.error);
-			return;
+		try {
+			const formData = new FormData();
+			for (const file of Array.from(files)) formData.append("files", file);
+			const result = await uploadImagesAction(formData);
+			if (result.error) {
+				setError(result.error);
+				return;
+			}
+			const url = result.urls[0];
+			if (url) onChange(url);
+		} catch {
+			setError("Upload nie powiódł się. Spróbuj ponownie lub mniejszy plik (max 10 MB).");
+		} finally {
+			setUploading(false);
 		}
-		const url = result.urls[0];
-		if (url) onChange(url);
 	}
 
 	return (
@@ -79,7 +84,10 @@ export function OgImageField({ label, value, onChange }: Props) {
 					accept="image/*"
 					className="sr-only"
 					disabled={uploading}
-					onChange={(e) => onUpload(e.target.files)}
+					onChange={(e) => {
+						void onUpload(e.target.files);
+						e.target.value = "";
+					}}
 				/>
 			</div>
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}

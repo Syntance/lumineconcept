@@ -113,15 +113,20 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 		if (!files || files.length === 0) return;
 		setUploading(true);
 		setError(null);
-		const formData = new FormData();
-		for (const file of Array.from(files)) formData.append("files", file);
-		const result = await uploadImagesAction(formData);
-		setUploading(false);
-		if (result.error) {
-			setError(result.error);
-			return;
+		try {
+			const formData = new FormData();
+			for (const file of Array.from(files)) formData.append("files", file);
+			const result = await uploadImagesAction(formData);
+			if (result.error) {
+				setError(result.error);
+				return;
+			}
+			setImages((prev) => [...prev, ...result.urls]);
+		} catch {
+			setError("Upload nie powiódł się. Spróbuj ponownie.");
+		} finally {
+			setUploading(false);
 		}
-		setImages((prev) => [...prev, ...result.urls]);
 	}
 
 	function toggleColorForActiveSlot(id: string, enabled: boolean) {
