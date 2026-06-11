@@ -4,7 +4,8 @@ import { Breadcrumbs, BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadc
 import { HeroPortalDesktop } from "@/components/home/HeroPortalDesktop";
 import { HeroPortalMobile } from "@/components/home/HeroPortalMobile";
 import type { HeroContent } from "@/lib/content/types";
-import { isLocalPublicImage, resolveLogoHeroWithFallback } from "@/lib/content/hero";
+import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
+import { resolveLogoHeroWithFallback } from "@/lib/content/hero";
 import { cn } from "@/lib/utils";
 
 /** Wymiary `public/images/categories/logo-hero-bg.png` — przy podmianie grafiki zaktualizuj. */
@@ -32,7 +33,7 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 						priority
 						fetchPriority="high"
 						sizes="100vw"
-						unoptimized={isLocalPublicImage(mobileImageUrl)}
+						unoptimized={isCmsImageUnoptimized(mobileImageUrl)}
 						className="block h-auto w-full select-none"
 					/>
 					<div className={cn("absolute inset-x-0 top-0 z-20 pt-5", BREADCRUMBS_ALIGN_CLASS)}>
@@ -59,7 +60,7 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 					priority
 					fetchPriority="high"
 					sizes="100vw"
-					unoptimized={isLocalPublicImage(desktopImageUrl)}
+					unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
 					className="absolute inset-0 h-full w-full select-none object-cover object-[48%_58%]"
 				/>
 

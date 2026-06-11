@@ -7,6 +7,7 @@ import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
 import { adminUpload } from "@magazyn/core/medusa/client";
 import { resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
+import { uploadCmsAssetFile } from "@/lib/product-upload/product-file";
 import { slugify } from "@magazyn/core/lib/slug";
 import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
 import {
@@ -197,7 +198,23 @@ export async function uploadImagesAction(formData: FormData): Promise<UploadStat
 	if (files.length === 0) return { urls: [], error: "Nie wybrano plików." };
 
 	try {
-		const urls = resolveMedusaMediaUrls(await adminUpload(files));
+		const urls: string[] = [];
+		for (const file of files) {
+			try {
+				const result = await uploadCmsAssetFile(file);
+				urls.push(result.url);
+			} catch (inner) {
+				if (inner instanceof Error && inner.message === "MEDUSA_UPLOAD_UNAVAILABLE") {
+					const fallback = resolveMedusaMediaUrls(await adminUpload([file]));
+					if (fallback[0]) urls.push(fallback[0]);
+					continue;
+				}
+				if (inner instanceof Error && !inner.message.startsWith("MEDUSA_")) {
+					return { urls: [], error: inner.message };
+				}
+				throw inner;
+			}
+		}
 		return { urls, error: null };
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);

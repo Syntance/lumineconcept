@@ -139,6 +139,7 @@ function getR2Config() {
 async function uploadViaR2(
   file: File,
   config: NonNullable<ReturnType<typeof getR2Config>>,
+  keyPrefix: string,
 ): Promise<ProductUploadResult> {
   if (!cachedR2) {
     cachedR2 = new S3Client({
@@ -155,7 +156,8 @@ async function uploadViaR2(
   const timestamp = Date.now();
   const random = Math.random().toString(36).slice(2, 8);
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const key = `customer-uploads/${timestamp}-${random}-${safeName}`;
+  const prefix = keyPrefix.endsWith("/") ? keyPrefix : `${keyPrefix}/`;
+  const key = `${prefix}${timestamp}-${random}-${safeName}`;
 
   const bytes = new Uint8Array(await file.arrayBuffer());
 
@@ -182,6 +184,38 @@ export function validateProductUploadFile(file: File): string | null {
   return null;
 }
 
+const CMS_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+]);
+
+export function validateCmsUploadFile(file: File): string | null {
+  if (file.size > MAX_SIZE) {
+    return "Plik jest za duży (maks. 10 MB)";
+  }
+  const mime = inferMimeType(file) ?? (CMS_IMAGE_TYPES.has(file.type) ? file.type : null);
+  if (!mime || !CMS_IMAGE_TYPES.has(mime)) {
+    return "Dozwolone formaty: JPG, PNG, WEBP, GIF, AVIF.";
+  }
+  return null;
+}
+
+/** Assety CMS (hero, galeria, OG) — bezpośrednio na R2, bez Medusa /static na Railway. */
+export async function uploadCmsAssetFile(file: File): Promise<ProductUploadResult> {
+  const validationError = validateCmsUploadFile(file);
+  if (validationError) throw new Error(validationError);
+
+  const r2 = getR2Config();
+  if (r2) {
+    return uploadViaR2(file, r2, "cms-uploads");
+  }
+
+  return uploadViaMedusa(file);
+}
+
 export async function uploadProductFile(file: File): Promise<ProductUploadResult> {
   const validationError = validateProductUploadFile(file);
   if (validationError) throw new Error(validationError);
@@ -189,7 +223,7 @@ export async function uploadProductFile(file: File): Promise<ProductUploadResult
   // 1) Cloudflare R2 — preferowane na produkcji (trwałe, off-site).
   const r2 = getR2Config();
   if (r2) {
-    return uploadViaR2(file, r2);
+    return uploadViaR2(file, r2, "customer-uploads");
   }
 
   // 2) Vercel Blob — alternatywa, gdy R2 nieskonfigurowane.

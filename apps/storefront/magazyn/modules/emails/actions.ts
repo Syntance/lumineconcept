@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
-import { adminUpload } from "@magazyn/core/medusa/client";
+import { uploadCmsAssetFile } from "@/lib/product-upload/product-file";
 import { resetEmailTemplate, saveEmailTemplate, setEmailTemplateEnabled } from "./store";
 import { mergeSubject, renderTemplate, sampleRenderContextForTemplate } from "./render-template";
 import { sendTransactionalEmail } from "./send-transactional";
@@ -87,10 +87,8 @@ export async function uploadEmailImageAction(formData: FormData): Promise<Upload
 	}
 
 	try {
-		const urls = await adminUpload([file]);
-		const url = urls[0];
-		if (!url) return { ok: false, error: "Upload nie zwrócił adresu obrazu." };
-		return { ok: true, error: null, url };
+		const result = await uploadCmsAssetFile(file);
+		return { ok: true, error: null, url: result.url };
 	} catch (error) {
 		return handleError(error, "Upload obrazu nie powiódł się.");
 	}

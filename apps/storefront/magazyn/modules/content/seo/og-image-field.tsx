@@ -12,12 +12,13 @@ type Props = {
 	onChange: (url: string) => void;
 };
 
-import { isStorefrontPublicAssetPath } from "@/lib/content/asset-url";
+import { isCmsImageUnoptimized, resolveCmsAssetUrl } from "@/lib/content/asset-url";
 
 export function OgImageField({ label, value, onChange }: Props) {
 	const fileId = useId();
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const previewUrl = value ? resolveCmsAssetUrl(value) ?? value : "";
 
 	async function onUpload(files: FileList | null) {
 		if (!files?.length) return;
@@ -39,15 +40,15 @@ export function OgImageField({ label, value, onChange }: Props) {
 		<div className="flex flex-col gap-2">
 			<span className="text-sm font-medium">{label}</span>
 			<div className="flex flex-wrap items-start gap-3">
-				{value ? (
+				{previewUrl ? (
 					<div className="relative h-24 w-40 overflow-hidden rounded-lg border border-border bg-muted">
 						<Image
-							src={value}
+							src={previewUrl}
 							alt=""
 							fill
 							sizes="160px"
 							className="object-cover"
-							unoptimized={isStorefrontPublicAssetPath(value)}
+							unoptimized={isCmsImageUnoptimized(previewUrl)}
 						/>
 						<button
 							type="button"
