@@ -205,6 +205,16 @@
   to { transform: translateX(0); }
 }
 
+@keyframes cartFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes cartSlideOut {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
 @keyframes cartSlideInLeft {
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }
@@ -213,6 +223,10 @@
 @media (prefers-reduced-motion: reduce) {
   .trust-scroll {
     animation: none;
+  }
+
+  [data-cart-drawer] {
+    animation: none !important;
   }
 }
 

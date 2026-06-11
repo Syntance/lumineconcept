@@ -11,6 +11,9 @@ import { CartUpsell } from "./CartUpsell";
 import { ExpressToggle } from "./ExpressToggle";
 import { trackReferralApplied, trackCartViewed } from "@/lib/analytics/events";
 
+const CART_PANEL_MS = 300;
+const CART_OVERLAY_MS = 200;
+
 export function CartDrawer() {
   const { isOpen, closeCart, items, itemCount, applyDiscount } = useCart();
 
@@ -21,16 +24,34 @@ export function CartDrawer() {
   const [referralMessage, setReferralMessage] = useState("");
   const prevOpenRef = useRef(false);
   const [mounted, setMounted] = useState(false);
+  const [render, setRender] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!isOpen) {
-      prevOpenRef.current = false;
+    if (isOpen) {
+      setRender(true);
+      setIsClosing(false);
       return;
     }
+
+    if (!render) return;
+
+    setIsClosing(true);
+    const timer = window.setTimeout(() => {
+      setRender(false);
+      setIsClosing(false);
+      prevOpenRef.current = false;
+    }, CART_PANEL_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [isOpen, render]);
+
+  useEffect(() => {
+    if (!isOpen) return;
 
     if (!prevOpenRef.current) {
       trackCartViewed(items.map((i) => i.id));
@@ -38,18 +59,22 @@ export function CartDrawer() {
       if (savedCode && referralStatus === "idle") setReferralCode(savedCode);
       prevOpenRef.current = true;
     }
+  }, [isOpen, referralStatus, items]);
+
+  useEffect(() => {
+    if (!render) return;
 
     document.body.style.overflow = "hidden";
 
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeCart();
+      if (e.key === "Escape" && !isClosing) closeCart();
     };
     document.addEventListener("keydown", handleKey);
     return () => {
       document.body.style.overflow = "";
       document.removeEventListener("keydown", handleKey);
     };
-  }, [isOpen, closeCart, referralStatus, items]);
+  }, [render, isClosing, closeCart]);
 
   const handleApplyReferral = useCallback(async () => {
     if (!referralCode.trim()) return;
@@ -66,7 +91,7 @@ export function CartDrawer() {
     }
   }, [referralCode, applyDiscount]);
 
-  if (!isOpen || !mounted) return null;
+  if (!render || !mounted) return null;
 
   /**
    * Portal na `document.body`: header ma `backdrop-blur` / `sticky`, co tworzy
@@ -79,16 +104,26 @@ export function CartDrawer() {
         <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Koszyk">
       {/* Overlay */}
       <div
+        data-cart-drawer=""
         className="fixed inset-0 bg-brand-900/40"
-        style={{ animation: "cartFadeIn 200ms ease-out" }}
-        onClick={closeCart}
+        style={{
+          animation: isClosing
+            ? `cartFadeOut ${CART_OVERLAY_MS}ms ease-in forwards`
+            : `cartFadeIn ${CART_OVERLAY_MS}ms ease-out`,
+        }}
+        onClick={isClosing ? undefined : closeCart}
         aria-hidden="true"
       />
 
       {/* Panel */}
       <div
+        data-cart-drawer=""
         className="fixed inset-y-0 right-0 flex h-full min-h-0 w-screen flex-col bg-white shadow-2xl lg:w-full lg:max-w-[420px]"
-        style={{ animation: "cartSlideIn 300ms ease-out" }}
+        style={{
+          animation: isClosing
+            ? `cartSlideOut ${CART_PANEL_MS}ms ease-in forwards`
+            : `cartSlideIn ${CART_PANEL_MS}ms ease-out`,
+        }}
       >
 
         {/* Header */}
