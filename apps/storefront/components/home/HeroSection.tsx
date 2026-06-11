@@ -21,14 +21,15 @@ export async function HeroSection({
 	hero?: HeroContent;
 	children?: React.ReactNode;
 }) {
-	const { portal, desktopImageUrl, mobileImageUrl } = await resolveHomeHeroWithFallback(hero);
+	const { portal, desktopImageUrl, mobileImageUrl, desktopBlurDataURL, mobileBlurDataURL } = await resolveHomeHeroWithFallback(hero);
 	const mobileDisplayUrl = mobileImageUrl ?? desktopImageUrl;
+	const mobileBlur = mobileBlurDataURL ?? desktopBlurDataURL;
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
 			<div className="lg:hidden">
 				<MobileHeroViewport
-					image={<MobileHeroImageBand src={mobileDisplayUrl} />}
+					image={<MobileHeroImageBand src={mobileDisplayUrl} blurDataURL={mobileBlur} />}
 					portal={<HeroPortalMobile content={portal} />}
 				/>
 			</div>
@@ -44,6 +45,8 @@ export async function HeroSection({
 						fetchPriority="high"
 						sizes="100vw"
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
+						placeholder={desktopBlurDataURL ? "blur" : undefined}
+						blurDataURL={desktopBlurDataURL}
 						className="absolute inset-0 h-full w-full select-none object-cover object-top"
 					/>
 				) : (

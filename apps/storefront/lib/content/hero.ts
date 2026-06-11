@@ -19,6 +19,8 @@ export function resolveHomeHero(hero?: HeroContent): {
 	portal: HeroPortalContentConfig;
 	desktopImageUrl?: string;
 	mobileImageUrl?: string;
+	desktopBlurDataURL?: string;
+	mobileBlurDataURL?: string;
 } {
 	const resolved = hero ?? HOME_HERO_DEFAULT;
 	const desktopImageUrl = resolveCmsAssetUrl(resolved.desktopImageUrl?.trim());
@@ -37,6 +39,8 @@ export function resolveHomeHero(hero?: HeroContent): {
 		portal: heroToPortalConfig(resolved),
 		...(desktopImageUrl ? { desktopImageUrl } : {}),
 		...(mobileImageUrl ? { mobileImageUrl } : {}),
+		...(resolved.desktopBlurDataURL ? { desktopBlurDataURL: resolved.desktopBlurDataURL } : {}),
+		...(resolved.mobileBlurDataURL ? { mobileBlurDataURL: resolved.mobileBlurDataURL } : {}),
 	};
 }
 
@@ -48,6 +52,8 @@ export async function resolveHomeHeroWithFallback(hero?: HeroContent): Promise<{
 	portal: HeroPortalContentConfig;
 	desktopImageUrl?: string;
 	mobileImageUrl?: string;
+	desktopBlurDataURL?: string;
+	mobileBlurDataURL?: string;
 }> {
 	return resolveHomeHero(hero);
 }
@@ -56,6 +62,8 @@ export function resolveLogoHero(hero?: HeroContent): {
 	portal: HeroPortalContentConfig;
 	desktopImageUrl?: string;
 	mobileImageUrl?: string;
+	desktopBlurDataURL?: string;
+	mobileBlurDataURL?: string;
 } {
 	const resolved: HeroContent = { ...LOGO_HERO_DEFAULT, ...hero };
 	const desktopImageUrl = resolveCmsAssetUrl(resolved.desktopImageUrl?.trim());
@@ -66,6 +74,8 @@ export function resolveLogoHero(hero?: HeroContent): {
 		portal: heroToPortalConfig(resolved),
 		...(desktopImageUrl ? { desktopImageUrl } : {}),
 		...(mobileImageUrl ? { mobileImageUrl } : {}),
+		...(resolved.desktopBlurDataURL ? { desktopBlurDataURL: resolved.desktopBlurDataURL } : {}),
+		...(resolved.mobileBlurDataURL ? { mobileBlurDataURL: resolved.mobileBlurDataURL } : {}),
 	};
 }
 
@@ -74,6 +84,8 @@ export async function resolveLogoHeroWithFallback(hero?: HeroContent): Promise<{
 	portal: HeroPortalContentConfig;
 	desktopImageUrl?: string;
 	mobileImageUrl?: string;
+	desktopBlurDataURL?: string;
+	mobileBlurDataURL?: string;
 }> {
 	return resolveLogoHero(hero);
 }

@@ -7,6 +7,7 @@ import {
 	mapShopCategoryTiles,
 	pickTestimonials,
 	resolveTrustBarDisplay,
+	type ShopCategoryCard,
 } from "@/lib/content/cms-wiring";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { SITE_URL, cn } from "@/lib/utils";
@@ -45,7 +46,7 @@ function extractPrice(variant: unknown, metadata?: Record<string, unknown> | nul
 
 export const revalidate = 60;
 
-const FALLBACK_CATEGORIES = [
+const FALLBACK_CATEGORIES: readonly ShopCategoryCard[] = [
   {
     title: "Gotowe wzory",
     cta: "PRZEGLĄDAJ WZORY",
@@ -152,6 +153,8 @@ export default async function ShopHubPage() {
                       )}
                       sizes="(max-width: 640px) 0px, (max-width: 1280px) 33vw, 420px"
                       unoptimized={isCmsImageUnoptimized(cat.image)}
+                      placeholder={cat.blurDataURL ? "blur" : undefined}
+                      blurDataURL={cat.blurDataURL}
                       aria-hidden
                     />
                   </div>
@@ -189,6 +192,8 @@ export default async function ShopHubPage() {
                     className="relative z-10 origin-center object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
                     sizes="(max-width: 640px) 50vw, 0px"
                     unoptimized={isCmsImageUnoptimized(cat.image)}
+                    placeholder={cat.blurDataURL ? "blur" : undefined}
+                    blurDataURL={cat.blurDataURL}
                   />
                 </div>
               </Link>
