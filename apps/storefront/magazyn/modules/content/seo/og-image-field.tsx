@@ -12,9 +12,7 @@ type Props = {
 	onChange: (url: string) => void;
 };
 
-function isLocalPublicAsset(url: string): boolean {
-	return url.startsWith("/");
-}
+import { isStorefrontPublicAssetPath } from "@/lib/content/asset-url";
 
 export function OgImageField({ label, value, onChange }: Props) {
 	const fileId = useId();
@@ -49,7 +47,7 @@ export function OgImageField({ label, value, onChange }: Props) {
 							fill
 							sizes="160px"
 							className="object-cover"
-							unoptimized={isLocalPublicAsset(value)}
+							unoptimized={isStorefrontPublicAssetPath(value)}
 						/>
 						<button
 							type="button"

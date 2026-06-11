@@ -16,35 +16,34 @@ const SENTRY_CSP_HOSTS = process.env.NEXT_PUBLIC_SENTRY_DSN
   ? " https://*.ingest.sentry.io https://*.sentry.io"
   : "";
 
-const medusaUrl = new URL(MEDUSA_BACKEND_URL);
-
 /**
- * Publiczny host R2 (Cloudflare) — zdjęcia produktów serwowane z R2 muszą być
- * dozwolone w next/image. Derywujemy z S3_FILE_URL (custom domain lub r2.dev),
- * dostępnego przy buildzie. Brak = pomijamy.
+ * Publiczne hosty R2 / CDN — muszą być dostępne przy buildzie (Vercel ENV).
+ * S3_FILE_URL (server) + NEXT_PUBLIC_S3_FILE_URL (fallback dla next/image w CI).
  */
-const r2PublicUrl = process.env.S3_FILE_URL?.trim();
-const r2CspOrigin = (() => {
-  if (!r2PublicUrl) return "";
-  try {
-    return ` ${new URL(r2PublicUrl).origin}`;
-  } catch {
-    return "";
-  }
-})();
-const r2RemotePattern = (() => {
-  if (!r2PublicUrl) return null;
-  try {
-    const u = new URL(r2PublicUrl);
-    return {
-      protocol: u.protocol.replace(":", "") as "http" | "https",
-      hostname: u.hostname,
-      port: u.port || undefined,
-    };
-  } catch {
-    return null;
-  }
-})();
+function collectMediaCdnOrigins(): string[] {
+	const origins = new Set<string>();
+	for (const raw of [process.env.S3_FILE_URL, process.env.NEXT_PUBLIC_S3_FILE_URL]) {
+		if (!raw?.trim()) continue;
+		try {
+			origins.add(new URL(raw.trim()).origin);
+		} catch {
+			/* skip invalid */
+		}
+	}
+	return [...origins];
+}
+
+const medusaUrl = new URL(MEDUSA_BACKEND_URL);
+const mediaCdnOrigins = collectMediaCdnOrigins();
+const r2CspOrigin = mediaCdnOrigins.length > 0 ? ` ${mediaCdnOrigins.join(" ")}` : "";
+const r2RemotePatterns = mediaCdnOrigins.map((origin) => {
+	const u = new URL(origin);
+	return {
+		protocol: u.protocol.replace(":", "") as "http" | "https",
+		hostname: u.hostname,
+		port: u.port || undefined,
+	};
+});
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -75,7 +74,11 @@ const nextConfig: NextConfig = {
         hostname: medusaUrl.hostname,
         port: medusaUrl.port || undefined,
       },
-      ...(r2RemotePattern ? [r2RemotePattern] : []),
+      ...(r2RemotePatterns.length > 0 ? r2RemotePatterns : []),
+      {
+        protocol: "https",
+        hostname: "**.r2.dev",
+      },
     ],
   },
 

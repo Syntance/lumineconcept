@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveCmsAssetUrl } from "./asset-url";
 import {
 	DEFAULT_GLOBAL_CONTENT,
 	DEFAULT_PAGE_CONTENT,
@@ -176,22 +177,75 @@ const instagramTileSchema = z.object({
 	alt: z.string().optional(),
 });
 
-export function prepareGlobalContentForSave(global: GlobalContent): GlobalContent {
+function resolveSeoAssets(seo: SeoMeta | undefined): SeoMeta | undefined {
+	if (!seo) return seo;
+	const ogImageUrl = resolveCmsAssetUrl(seo.ogImageUrl);
+	return ogImageUrl ? { ...seo, ogImageUrl } : seo;
+}
+
+function resolveHeroAssets(hero: HeroContent | undefined): HeroContent | undefined {
+	if (!hero) return hero;
 	return {
+		...hero,
+		desktopImageUrl: resolveCmsAssetUrl(hero.desktopImageUrl),
+		mobileImageUrl: resolveCmsAssetUrl(hero.mobileImageUrl),
+	};
+}
+
+function resolvePageContentAssets(content: PageContent): PageContent {
+	return {
+		...content,
+		hero: resolveHeroAssets(content.hero),
+		testimonials: content.testimonials?.map((item) => ({
+			...item,
+			imageUrl: resolveCmsAssetUrl(item.imageUrl),
+		})),
+		gallery: content.gallery?.map((item) => ({
+			...item,
+			imageUrl: resolveCmsAssetUrl(item.imageUrl) ?? item.imageUrl,
+		})),
+		categoryTiles: content.categoryTiles?.map((item) => ({
+			...item,
+			imageUrl: resolveCmsAssetUrl(item.imageUrl) ?? item.imageUrl,
+		})),
+	};
+}
+
+function resolveGlobalContentAssets(global: GlobalContent): GlobalContent {
+	return {
+		...global,
+		salonLogos: global.salonLogos?.map((logo) => ({
+			...logo,
+			logoUrl: resolveCmsAssetUrl(logo.logoUrl),
+		})),
+		instagramTiles: global.instagramTiles?.map((tile) => ({
+			...tile,
+			imageUrl: resolveCmsAssetUrl(tile.imageUrl) ?? tile.imageUrl,
+		})),
+	};
+}
+
+export function prepareGlobalContentForSave(global: GlobalContent): GlobalContent {
+	const prepared = {
 		...global,
 		salonLogos: global.salonLogos
 			?.map((logo) => ({
 				...logo,
 				name: logo.name.trim(),
-				logoUrl: logo.logoUrl?.trim() || undefined,
+				logoUrl: resolveCmsAssetUrl(logo.logoUrl?.trim()) || undefined,
 				description: logo.description?.trim() || undefined,
 				alt: logo.alt?.trim() || undefined,
 			}))
 			.filter((logo) => logo.name.length > 0),
-		instagramTiles: global.instagramTiles?.filter(
-			(tile) => tile.postUrl.trim() !== "" && tile.imageUrl.trim() !== "",
-		),
+		instagramTiles: global.instagramTiles
+			?.map((tile) => ({
+				...tile,
+				postUrl: tile.postUrl.trim(),
+				imageUrl: resolveCmsAssetUrl(tile.imageUrl.trim()) ?? tile.imageUrl.trim(),
+			}))
+			.filter((tile) => tile.postUrl !== "" && tile.imageUrl.trim() !== ""),
 	};
+	return resolveGlobalContentAssets(prepared);
 }
 
 export const globalContentSchema = z.object({
@@ -231,11 +285,18 @@ export function parseSiteSettings(raw: unknown): SiteSettings {
 			...parsed.checkoutCallout,
 		},
 		socialLinks: { ...DEFAULT_SITE_SETTINGS.socialLinks, ...parsed.socialLinks },
+		defaultOgImageUrl: resolveCmsAssetUrl(parsed.defaultOgImageUrl),
+		seo: resolveSeoAssets(parsed.seo),
 	};
 }
 
 export function parsePageSeoMap(raw: unknown): PageSeoMap {
-	return parseJsonValue(raw, pageSeoMapSchema) ?? {};
+	const parsed = parseJsonValue(raw, pageSeoMapSchema) ?? {};
+	const resolved: PageSeoMap = {};
+	for (const [key, seo] of Object.entries(parsed)) {
+		resolved[key as keyof PageSeoMap] = resolveSeoAssets(seo);
+	}
+	return resolved;
 }
 
 export function parsePageContentMap(raw: unknown): PageContentMap {
@@ -244,11 +305,11 @@ export function parsePageContentMap(raw: unknown): PageContentMap {
 	for (const [key, value] of Object.entries(parsed)) {
 		const pageKey = key as keyof PageContentMap;
 		const defaults = DEFAULT_PAGE_CONTENT[pageKey];
-		merged[pageKey] = {
+		merged[pageKey] = resolvePageContentAssets({
 			...defaults,
 			...value,
 			hero: mergeHeroWithDefaults(value.hero, pageKey) ?? defaults?.hero,
-		};
+		});
 	}
 	return merged;
 }
@@ -256,10 +317,10 @@ export function parsePageContentMap(raw: unknown): PageContentMap {
 export function parseGlobalContent(raw: unknown): GlobalContent {
 	const parsed = parseJsonValue(raw, globalContentSchema);
 	if (!parsed) return DEFAULT_GLOBAL_CONTENT;
-	return {
+	return resolveGlobalContentAssets({
 		salonLogos: parsed.salonLogos?.length ? parsed.salonLogos : DEFAULT_GLOBAL_CONTENT.salonLogos,
 		instagramTiles: parsed.instagramTiles ?? [],
-	};
+	});
 }
 
 export function parseProductSeoFromMetadata(
@@ -276,7 +337,7 @@ export function parseProductSeoFromMetadata(
 	const ogDesc = metadata.seo_og_description;
 	if (typeof ogDesc === "string" && ogDesc.trim()) seo.ogDescription = ogDesc.trim();
 	const ogImage = metadata.seo_og_image;
-	if (typeof ogImage === "string" && ogImage.trim()) seo.ogImageUrl = ogImage.trim();
+	if (typeof ogImage === "string" && ogImage.trim()) seo.ogImageUrl = resolveCmsAssetUrl(ogImage.trim());
 	const canonical = metadata.seo_canonical_url;
 	if (typeof canonical === "string" && canonical.trim()) seo.canonicalUrl = canonical.trim();
 	if (metadata.seo_no_index === "true" || metadata.seo_no_index === true) seo.noIndex = true;
@@ -350,14 +411,11 @@ export function mergeHeroWithDefaults(
 }
 
 export function normalizeLocalAssetUrl(url: string | undefined): string | undefined {
-	if (!url?.trim()) return undefined;
-	const trimmed = url.trim();
-	if (!trimmed.startsWith("/")) return trimmed;
-	return trimmed.split("?")[0] || trimmed;
+	return resolveCmsAssetUrl(url);
 }
 
-export function preparePageContentForSave(pageId: string, content: PageContent): PageContent {
-	const next = { ...content };
+export function preparePageContentForSave(_pageId: string, content: PageContent): PageContent {
+	const next = resolvePageContentAssets({ ...content });
 	if (next.hero) {
 		const hero = { ...next.hero };
 		if (!hero.desktopImageUrl?.trim()) delete hero.desktopImageUrl;

@@ -6,6 +6,7 @@ import {
 	resolveInstagramTiles,
 	resolveSocialLinks,
 } from "@/lib/content/cms-wiring";
+import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
 import { cn } from "@/lib/utils";
 
@@ -116,6 +117,7 @@ function InstagramGrid({
                 sizes="(max-width: 640px) 34vw, 120px"
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 loading={i < 3 ? "eager" : "lazy"}
+                unoptimized={isCmsImageUnoptimized(post.imageUrl)}
               />
             </a>
           );

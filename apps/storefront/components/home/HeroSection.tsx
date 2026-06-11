@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import type { HeroContent } from "@/lib/content/types";
+import { isStorefrontPublicAssetPath } from "@/lib/content/asset-url";
 import { resolveHomeHero } from "@/lib/content/hero";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";
@@ -38,7 +39,7 @@ export function HeroSection({
 						priority
 						fetchPriority="high"
 						sizes="100vw"
-						unoptimized={mobileImageUrl.startsWith("/")}
+						unoptimized={isStorefrontPublicAssetPath(mobileImageUrl)}
 						className="absolute inset-0 h-full w-full select-none object-cover object-[63%_26%]"
 					/>
 				</div>
