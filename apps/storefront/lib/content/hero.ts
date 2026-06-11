@@ -12,6 +12,7 @@ export function heroToPortalConfig(hero: HeroContent): HeroPortalContentConfig {
 		ctaHref: hero.ctaHref,
 		ctaAriaLabel: hero.ctaAriaLabel,
 		headlineUppercase: hero.headlineUppercase,
+		ctaShowDownArrow: hero.ctaShowDownArrow,
 	};
 }
 

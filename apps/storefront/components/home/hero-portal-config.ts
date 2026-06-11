@@ -11,6 +11,8 @@ export type HeroPortalContentConfig = {
   ctaHref: string;
   ctaAriaLabel?: string;
   headlineUppercase?: boolean;
+  /** Strzałka w dół na końcu etykiety CTA (np. scroll do formularza). */
+  ctaShowDownArrow?: boolean;
 };
 
 export const HOME_HERO_PORTAL: HeroPortalContentConfig = {
@@ -29,4 +31,5 @@ export const LOGO_HERO_PORTAL: HeroPortalContentConfig = {
   ctaHref: "#formularz",
   ctaAriaLabel: "Przewiń do formularza — zamów tablicę z logo",
   headlineUppercase: true,
+  ctaShowDownArrow: true,
 };

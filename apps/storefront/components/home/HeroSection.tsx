@@ -53,9 +53,8 @@ export async function HeroSection({
 					alt=""
 					width={HERO_BG_WIDTH}
 					height={HERO_BG_HEIGHT}
-					priority
-					fetchPriority="high"
-					sizes="100vw"
+					loading="lazy"
+					unoptimized
 					placeholder="blur"
 					blurDataURL={desktopBlurDataURL}
 					className="absolute inset-0 h-full w-full select-none object-cover object-top"

@@ -117,6 +117,7 @@ const heroSchema = z.object({
 	ctaHref: z.string().min(1),
 	ctaAriaLabel: z.string().optional(),
 	headlineUppercase: z.boolean().optional(),
+	ctaShowDownArrow: z.boolean().optional(),
 });
 
 const testimonialSchema = z.object({
