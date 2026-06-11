@@ -1,1 +1,5 @@
 .vercel
+
+# CMS static sync - regenerated on each build
+/public/images/cms/
+/lib/content/static-cms-content.ts
