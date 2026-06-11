@@ -102,7 +102,7 @@ export default async function ShopHubPage() {
       <section className="relative overflow-x-hidden bg-brand-100">
         <div className="relative z-10 bg-white pt-10 lg:pt-12">
           <div className="container mx-auto max-w-4xl px-4">
-            <div className="flex flex-col max-lg:gap-24 lg:gap-3">
+            <div className="flex flex-col max-lg:gap-10 lg:gap-3">
               <Breadcrumbs
                 className="mb-0"
                 items={[
