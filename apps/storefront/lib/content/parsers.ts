@@ -339,7 +339,8 @@ export function mergeHeroWithDefaults(
 	if (!defaults) return hero;
 	if (!hero) return defaults;
 	const desktopImageUrl = normalizeLocalAssetUrl(hero.desktopImageUrl) || defaults.desktopImageUrl;
-	const mobileImageUrl = normalizeLocalAssetUrl(hero.mobileImageUrl) || defaults.mobileImageUrl;
+	const mobileImageUrl =
+		normalizeLocalAssetUrl(hero.mobileImageUrl) || desktopImageUrl || defaults.mobileImageUrl;
 	return {
 		...defaults,
 		...hero,
@@ -348,7 +349,7 @@ export function mergeHeroWithDefaults(
 	};
 }
 
-function normalizeLocalAssetUrl(url: string | undefined): string | undefined {
+export function normalizeLocalAssetUrl(url: string | undefined): string | undefined {
 	if (!url?.trim()) return undefined;
 	const trimmed = url.trim();
 	if (!trimmed.startsWith("/")) return trimmed;
