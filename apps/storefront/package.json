@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:webpack": "next dev --webpack",
+    "prebuild": "tsx scripts/sync-cms-to-static.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
