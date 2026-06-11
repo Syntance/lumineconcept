@@ -166,7 +166,7 @@ const nextConfig: NextConfig = {
 
   experimental: {
     serverActions: {
-      bodySizeLimit: "10mb",
+      bodySizeLimit: "100mb",
     },
     /**
      * Tree-shakuje „mega" pakiety, z których importujemy pojedyncze symbole.

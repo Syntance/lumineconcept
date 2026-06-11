@@ -35,7 +35,7 @@ export function OgImageField({ label, value, onChange }: Props) {
 			const url = result.urls[0];
 			if (url) onChange(url);
 		} catch {
-			setError("Upload nie powiódł się. Spróbuj ponownie lub mniejszy plik (max 10 MB).");
+			setError("Upload nie powiódł się. Spróbuj ponownie lub mniejszy plik.");
 		} finally {
 			setUploading(false);
 		}

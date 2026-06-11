@@ -3,7 +3,7 @@ import { put } from "@vercel/blob";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { resolveMedusaAdminEmail } from "@/magazyn/core/medusa/client";
 
-const MAX_SIZE = 10 * 1024 * 1024;
+const MAX_PRODUCT_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 const ALLOWED_TYPES = new Set([
   "image/png",
@@ -119,17 +119,19 @@ async function uploadViaVercelBlob(file: File): Promise<ProductUploadResult> {
 let cachedR2: S3Client | null = null;
 
 const R2_UPLOAD_TIMEOUT_MS = 15_000;
+const CMS_R2_UPLOAD_TIMEOUT_MS = 120_000;
 
-async function withUploadTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+async function withUploadTimeout<T>(
+  promise: Promise<T>,
+  label: string,
+  timeoutMs = R2_UPLOAD_TIMEOUT_MS,
+): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       promise,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(`${label}_TIMEOUT`)),
-          R2_UPLOAD_TIMEOUT_MS,
-        );
+        timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), timeoutMs);
       }),
     ]);
   } finally {
@@ -159,6 +161,7 @@ async function uploadViaR2(
   file: File,
   config: NonNullable<ReturnType<typeof getR2Config>>,
   keyPrefix: string,
+  timeoutMs = R2_UPLOAD_TIMEOUT_MS,
 ): Promise<ProductUploadResult> {
   if (!cachedR2) {
     cachedR2 = new S3Client({
@@ -190,6 +193,7 @@ async function uploadViaR2(
       }),
     ),
     "R2_UPLOAD",
+    timeoutMs,
   );
 
   const base = config.fileUrl.replace(/\/$/, "");
@@ -197,7 +201,7 @@ async function uploadViaR2(
 }
 
 export function validateProductUploadFile(file: File): string | null {
-  if (file.size > MAX_SIZE) {
+  if (file.size > MAX_PRODUCT_UPLOAD_BYTES) {
     return "Plik jest za duży (maks. 10 MB)";
   }
   if (!inferMimeType(file)) {
@@ -215,9 +219,6 @@ const CMS_IMAGE_TYPES = new Set([
 ]);
 
 export function validateCmsUploadFile(file: File): string | null {
-  if (file.size > MAX_SIZE) {
-    return "Plik jest za duży (maks. 10 MB)";
-  }
   const mime = inferMimeType(file) ?? (CMS_IMAGE_TYPES.has(file.type) ? file.type : null);
   if (!mime || !CMS_IMAGE_TYPES.has(mime)) {
     return "Dozwolone formaty: JPG, PNG, WEBP, GIF, AVIF.";
@@ -233,7 +234,7 @@ export async function uploadCmsAssetFile(file: File): Promise<ProductUploadResul
   const r2 = getR2Config();
   if (r2) {
     try {
-      return await uploadViaR2(file, r2, "cms-uploads");
+      return await uploadViaR2(file, r2, "cms-uploads", CMS_R2_UPLOAD_TIMEOUT_MS);
     } catch (error) {
       try {
         return await uploadViaMedusa(file);
