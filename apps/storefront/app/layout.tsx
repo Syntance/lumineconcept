@@ -111,11 +111,16 @@ export default function RootLayout({
   return (
     <html lang="pl" className={`${gilroy.variable} ${chronicle.variable} ${binerka.variable}`}>
       <head>
-        {/* next/font (self-host) i next/image priority generują własne, poprawne
-            preloady (hashowane URL-e + imagesrcset). Ręczny preload surowych
-            plików z /public dublował transfer (~222 KB zmarnowane na mobile),
-            konkurując o pasmo z faktycznym elementem LCP. Zostawiamy tylko
-            dns-prefetch do Cloudinary (miniatury produktów). */}
+        {/* Mobile LCP: statyczny hero z /public (unoptimized) — jeden poprawny
+            preload z media query. Desktop hero ładuje się lazy (hidden na mobile).
+            Nie preloaduj fontów ani desktopowego hero — dublowało ~222 KB pasa. */}
+        <link
+          rel="preload"
+          as="image"
+          href="/images/hero-main-wall-mobile.webp"
+          media="(max-width: 1023px)"
+          fetchPriority="high"
+        />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
       </head>
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">

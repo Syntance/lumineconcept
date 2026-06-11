@@ -25,7 +25,8 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export const revalidate = 60;
+/** Dłuższy ISR — mniejszy TTFB na cold request (PageSpeed, pierwsze wejście). */
+export const revalidate = 3600;
 
 export default function HomePage() {
   const orgJsonLd = {

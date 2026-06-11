@@ -7,28 +7,32 @@ import { HeroPortalMobile } from "./HeroPortalMobile";
 const HERO_BG_WIDTH = 2560;
 const HERO_BG_HEIGHT = 966;
 
-/** Mobile crop 4:5 — kadrowany ~62% szer. oryginału (v=10 bust cache). */
-const HERO_MOBILE_SRC = "/images/hero-main-wall-mobile.webp?v=10";
+/** Mobile crop 4:5 — 750×937 px, ~35 KB (public/, bez next/image — stabilny LCP). */
+const HERO_MOBILE_SRC = "/images/hero-main-wall-mobile.webp";
+const HERO_MOBILE_WIDTH = 750;
+const HERO_MOBILE_HEIGHT = 937;
 
 /**
- * Hero — desktop: ultrawide + overlay; mobile: zdjęcie, pod spodem brązowy blok z copy + CTA.
+ * Hero — desktop: ultrawide + overlay; mobile: kompakt (bez pełnego ekranu).
  */
 export function HeroSection({ children }: { children?: React.ReactNode }) {
   return (
     <section className="relative flex w-full flex-col overflow-x-hidden">
-      {/* Mobile — zdjęcie nad copy */}
+      {/* Mobile — zdjęcie nad copy (niższy kadr niż 4:5) */}
       <div className="flex flex-col lg:hidden">
-        <Image
-          src={HERO_MOBILE_SRC}
-          alt=""
-          width={1080}
-          height={1350}
-          priority
-          fetchPriority="high"
-          sizes="100vw"
-          unoptimized
-          className="block h-auto w-full select-none"
-        />
+        <div className="relative aspect-[3/2] w-full max-h-[min(40vh,15rem)] overflow-hidden sm:max-h-[min(38vh,16.5rem)]">
+          <Image
+            src={HERO_MOBILE_SRC}
+            alt=""
+            width={HERO_MOBILE_WIDTH}
+            height={HERO_MOBILE_HEIGHT}
+            priority
+            fetchPriority="high"
+            sizes="100vw"
+            unoptimized
+            className="absolute inset-0 h-full w-full select-none object-cover object-[50%_26%]"
+          />
+        </div>
         <HeroPortalMobile />
       </div>
 
@@ -39,8 +43,8 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           alt=""
           width={HERO_BG_WIDTH}
           height={HERO_BG_HEIGHT}
-          priority
-          fetchPriority="high"
+          loading="lazy"
+          fetchPriority="low"
           sizes="100vw"
           className="absolute inset-0 h-full w-full select-none object-cover object-[38%_center]"
         />
