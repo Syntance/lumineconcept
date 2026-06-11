@@ -31,35 +31,16 @@ export function resolveHomeHero(hero?: HeroContent): {
 	};
 }
 
-/** Weryfikuje dostępność URL-i z CMS (R2 / Medusa) — bez fallbacku do /public. */
+/**
+ * Zwraca URL-e z CMS bez sondy HTTP (HEAD/GET).
+ * Wcześniejszy probe do R2 po deployu często timeoutował i ukrywał hero do revalidacji cache.
+ */
 export async function resolveHomeHeroWithFallback(hero?: HeroContent): Promise<{
 	portal: HeroPortalContentConfig;
 	desktopImageUrl?: string;
 	mobileImageUrl?: string;
 }> {
-	const resolved = resolveHomeHero(hero);
-	const mobileUrl = resolved.mobileImageUrl ?? resolved.desktopImageUrl;
-
-	if (!mobileUrl) {
-		return resolved;
-	}
-
-	const mobileOk = await isHeroImageUrlAccessible(mobileUrl);
-	if (mobileOk) {
-		return resolved;
-	}
-
-	if (resolved.desktopImageUrl && resolved.desktopImageUrl !== mobileUrl) {
-		const desktopOk = await isHeroImageUrlAccessible(resolved.desktopImageUrl);
-		if (desktopOk) {
-			return { ...resolved, mobileImageUrl: resolved.desktopImageUrl };
-		}
-	}
-
-	return {
-		portal: resolved.portal,
-		...(resolved.desktopImageUrl ? { desktopImageUrl: resolved.desktopImageUrl } : {}),
-	};
+	return resolveHomeHero(hero);
 }
 
 export function resolveLogoHero(hero?: HeroContent): {
@@ -79,53 +60,13 @@ export function resolveLogoHero(hero?: HeroContent): {
 	};
 }
 
-async function isHeroImageUrlAccessible(url: string): Promise<boolean> {
-	if (url.startsWith("/")) return true;
-	try {
-		let res = await fetch(url, {
-			method: "HEAD",
-			signal: AbortSignal.timeout(5_000),
-			next: { revalidate: 300 },
-		});
-		if (res.status === 405) {
-			res = await fetch(url, {
-				method: "GET",
-				headers: { Range: "bytes=0-0" },
-				signal: AbortSignal.timeout(5_000),
-				next: { revalidate: 300 },
-			});
-		}
-		return res.ok || res.status === 206;
-	} catch {
-		return false;
-	}
-}
-
-/** CMS URL — bez fallbacku do /public; brak URL = brak tła. */
+/** Zwraca URL-e z CMS bez sondy HTTP — patrz `resolveHomeHeroWithFallback`. */
 export async function resolveLogoHeroWithFallback(hero?: HeroContent): Promise<{
 	portal: HeroPortalContentConfig;
 	desktopImageUrl?: string;
 	mobileImageUrl?: string;
 }> {
-	const resolved = resolveLogoHero(hero);
-
-	if (!resolved.desktopImageUrl) {
-		return resolved;
-	}
-
-	const desktopOk = await isHeroImageUrlAccessible(resolved.desktopImageUrl);
-	if (!desktopOk) {
-		return { portal: resolved.portal };
-	}
-
-	const mobileUrl = resolved.mobileImageUrl ?? resolved.desktopImageUrl;
-	const mobileOk = await isHeroImageUrlAccessible(mobileUrl);
-
-	return {
-		portal: resolved.portal,
-		desktopImageUrl: resolved.desktopImageUrl,
-		...(mobileOk ? { mobileImageUrl: mobileUrl } : { mobileImageUrl: resolved.desktopImageUrl }),
-	};
+	return resolveLogoHero(hero);
 }
 
 export function isLocalPublicImage(url: string): boolean {

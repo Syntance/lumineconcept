@@ -1,4 +1,4 @@
-import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
+import { mediaCdnOrigin, resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
 
 /** Assety statyczne storefrontu w `public/` — nie prefiksuj backendem Medusa. */
 const STOREFRONT_PUBLIC_PREFIXES = ["/images/", "/icons/"] as const;
@@ -31,14 +31,29 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 	return resolveMedusaMediaUrl(trimmed) ?? undefined;
 }
 
-/** next/image `unoptimized` — lokalne assety z `public/` oraz CDN R2/Medusa (bez podwójnej optymalizacji). */
+function isMediaCdnOrigin(origin: string): boolean {
+	const cdn = mediaCdnOrigin();
+	if (!cdn) return false;
+	try {
+		return new URL(origin).origin === new URL(cdn).origin;
+	} catch {
+		return false;
+	}
+}
+
+/** next/image `unoptimized` — lokalne assety, R2/CDN CMS i Medusa (bez remotePatterns przy buildzie). */
 export function isCmsImageUnoptimized(url: string): boolean {
 	if (isStorefrontPublicAssetPath(url)) return true;
 	if (url.startsWith("/static/") || url.startsWith("/uploads/")) return true;
+	if (url.includes("/cms-uploads/")) return true;
 	if (!url.startsWith("http")) return false;
 	try {
-		const h = new URL(url).hostname;
-		return h === "localhost" || h === "127.0.0.1" || h.endsWith(".r2.dev");
+		const parsed = new URL(url);
+		const host = parsed.hostname;
+		if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".r2.dev")) {
+			return true;
+		}
+		return isMediaCdnOrigin(parsed.origin);
 	} catch {
 		return false;
 	}
