@@ -40,8 +40,8 @@ export async function HeroSection({
 						alt=""
 						width={HERO_BG_WIDTH}
 						height={HERO_BG_HEIGHT}
-						loading="lazy"
-						fetchPriority="low"
+						priority
+						fetchPriority="high"
 						sizes="100vw"
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
 						className="absolute inset-0 h-full w-full select-none object-cover object-top"

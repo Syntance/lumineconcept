@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** Dłuższy ISR — mniejszy TTFB na cold request (PageSpeed, pierwsze wejście). */
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export default async function HomePage() {
   const [pageContent, settings] = await Promise.all([getPageContent("home"), getSiteSettings()]);

@@ -35,6 +35,8 @@ export const HOME_HERO_DEFAULT: HeroContent = {
 	description: "Tablice z logo, cenniki i oznaczenia z plexi",
 	ctaLabel: "Zobacz produkty",
 	ctaHref: "/sklep",
+	desktopImageUrl: "/images/hero-main-wall.webp",
+	mobileImageUrl: "/images/hero-main-wall-mobile.webp",
 };
 
 export const BRANDING_CTA_DEFAULT: BrandingCtaContent = {};
