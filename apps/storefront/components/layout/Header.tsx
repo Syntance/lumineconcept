@@ -3,7 +3,6 @@ import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 import { HeaderMobileToggle } from "./HeaderMobileToggle";
 import { HeaderIcons } from "./HeaderIcons";
-import { HeaderContactTrigger } from "./HeaderContactTrigger";
 import { SHOP_HUB_HREF, SHOP_NAV_DROPDOWN } from "./shop-nav";
 
 const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Tablice z logo" }] as const;
@@ -20,7 +19,7 @@ const HEADER_MOBILE_ITEMS = [
   },
   ...NAV_LEFT.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
   ...NAV_RIGHT_LINKS.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
-  { kind: "contact" as const, label: "Kontakt" },
+  { kind: "link" as const, href: "/kontakt", label: "Kontakt" },
 ];
 
 /** Jedna stała klasy (14px × 1.1) — ta sama w SSR i kliencie; unika hydratacji przy mieszanym cache .next. */
@@ -109,7 +108,9 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
-            <HeaderContactTrigger className={NAV_LINK_CLASS} />
+            <Link href="/kontakt" className={NAV_LINK_CLASS}>
+              Kontakt
+            </Link>
           </nav>
           <HeaderIcons />
         </div>
