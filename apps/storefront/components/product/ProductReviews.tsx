@@ -3,6 +3,7 @@ import {
   averageRatingFromReviews,
   type ProductReviewItem,
 } from "@/lib/products/product-reviews";
+import { SITE_CONTACT } from "@/lib/site-contact";
 
 interface ProductReviewsProps {
   reviews?: ProductReviewItem[];
@@ -78,7 +79,7 @@ export function ProductReviews({ reviews = [] }: ProductReviewsProps) {
               Bądź pierwszą osobą, która zostawi opinię o tym produkcie.
             </p>
             <Link
-              href="https://www.instagram.com/lumineconcept/"
+              href={SITE_CONTACT.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center justify-center rounded border border-brand-300 px-6 py-2.5 text-xs font-medium uppercase tracking-wider text-brand-700 transition-colors hover:bg-brand-100"

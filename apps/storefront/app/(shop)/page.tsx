@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
 import { buildMetadata } from "@/lib/content/metadata";
+import { SITE_CONTACT } from "@/lib/site-contact";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
@@ -37,7 +38,7 @@ export default async function HomePage() {
     logo: `${SITE_URL}/images/logo.png`,
     description: "Produkty z plexi: tablice z logo Twojej marki, cenniki i oznaczenia w technice 3D. Matowe UV, LED z pilotem, 15+ kolor\u00f3w.",
     sameAs: [
-      "https://www.instagram.com/lumineconcept/",
+      SITE_CONTACT.instagramUrl,
       "https://www.facebook.com/lumineconcept/",
     ],
   };
