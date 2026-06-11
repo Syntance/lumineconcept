@@ -1,31 +1,39 @@
 import Image from "next/image";
 
 import { HeroPortalContent } from "./HeroPortalContent";
+import { HeroPortalMobile } from "./HeroPortalMobile";
 
 /** Wymiary pliku `public/images/hero-main-wall.webp` — przy podmianie grafiki zaktualizuj. */
 const HERO_BG_WIDTH = 2560;
 const HERO_BG_HEIGHT = 966;
 
+/** Mobile crop 4:5 — kadrowany ~62% szer. oryginału (v=10 bust cache). */
+const HERO_MOBILE_SRC = "/images/hero-main-wall-mobile.webp?v=10";
+
 /**
- * Hero — desktop: ultrawide + portal; mobile: osobny crop 4:5 (dedicated asset).
- * Mobile asset: `hero-main-wall-mobile.webp` (1080×1350), kadrowany ~50% szer. oryginału.
+ * Hero — desktop: ultrawide + overlay; mobile: zdjęcie, pod spodem brązowy blok z copy + CTA.
  */
 export function HeroSection({ children }: { children?: React.ReactNode }) {
   return (
     <section className="relative flex w-full flex-col overflow-x-hidden">
-      <div
-        className="relative w-full overflow-x-hidden max-lg:aspect-[4/5] max-lg:max-h-[min(62vh,32rem)] max-lg:min-h-[18rem] lg:aspect-[2560/966] lg:max-h-[966px]"
-      >
+      {/* Mobile — zdjęcie nad copy */}
+      <div className="flex flex-col lg:hidden">
         <Image
-          src="/images/hero-main-wall-mobile.webp"
+          src={HERO_MOBILE_SRC}
           alt=""
           width={1080}
           height={1350}
           priority
           fetchPriority="high"
           sizes="100vw"
-          className="absolute inset-0 h-full w-full select-none object-cover object-center lg:hidden"
+          unoptimized
+          className="block h-auto w-full select-none"
         />
+        <HeroPortalMobile />
+      </div>
+
+      {/* Desktop — portal + overlay */}
+      <div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
         <Image
           src="/images/hero-main-wall.webp"
           alt=""
@@ -34,18 +42,11 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
           priority
           fetchPriority="high"
           sizes="100vw"
-          className="absolute inset-0 hidden h-full w-full select-none object-cover object-[38%_center] lg:block"
+          className="absolute inset-0 h-full w-full select-none object-cover object-[38%_center]"
         />
 
-        {/* Desktop — czytelność tekstu z lewej */}
         <div
-          className="pointer-events-none absolute inset-0 hidden bg-linear-to-r from-black/45 via-black/15 to-transparent lg:block"
-          aria-hidden
-        />
-
-        {/* Mobile — gradient od dołu pod copy; góra kadru = produkt */}
-        <div
-          className="pointer-events-none absolute inset-0 bg-linear-to-t from-brand-900/85 via-brand-900/35 to-transparent lg:hidden"
+          className="pointer-events-none absolute inset-0 bg-linear-to-r from-black/45 via-black/15 to-transparent"
           aria-hidden
         />
 
