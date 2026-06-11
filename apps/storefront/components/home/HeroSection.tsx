@@ -8,7 +8,7 @@ const HERO_BG_WIDTH = 2560;
 const HERO_BG_HEIGHT = 966;
 
 /** Mobile crop 4:5 — 750×937 px, ~35 KB (public/, bez next/image — stabilny LCP). */
-const HERO_MOBILE_SRC = "/images/hero-main-wall-mobile.webp";
+const HERO_MOBILE_SRC = "/images/hero-main-wall-mobile.webp?v=10";
 const HERO_MOBILE_WIDTH = 750;
 const HERO_MOBILE_HEIGHT = 937;
 
@@ -30,7 +30,7 @@ export function HeroSection({ children }: { children?: React.ReactNode }) {
             fetchPriority="high"
             sizes="100vw"
             unoptimized
-            className="absolute inset-0 h-full w-full select-none object-cover object-[65%_26%]"
+            className="absolute inset-0 h-full w-full select-none object-cover object-[63%_26%]"
           />
         </div>
         <HeroPortalMobile />
