@@ -31,13 +31,14 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 	return resolveMedusaMediaUrl(trimmed) ?? undefined;
 }
 
-/** next/image `unoptimized` — tylko lokalne assety z `public/`. */
+/** next/image `unoptimized` — lokalne assety z `public/` oraz CDN R2/Medusa (bez podwójnej optymalizacji). */
 export function isCmsImageUnoptimized(url: string): boolean {
 	if (isStorefrontPublicAssetPath(url)) return true;
+	if (url.startsWith("/static/") || url.startsWith("/uploads/")) return true;
 	if (!url.startsWith("http")) return false;
 	try {
 		const h = new URL(url).hostname;
-		return h === "localhost" || h === "127.0.0.1";
+		return h === "localhost" || h === "127.0.0.1" || h.endsWith(".r2.dev");
 	} catch {
 		return false;
 	}
