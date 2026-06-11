@@ -18,7 +18,7 @@ const gilroy = localFont({
     { path: "../public/fonts/Gilroy-Bold.ttf", weight: "700", style: "normal" },
   ],
   variable: "--font-gilroy",
-  display: "block",
+  display: "swap",
   fallback: ['system-ui', '-apple-system', 'sans-serif'],
 });
 
