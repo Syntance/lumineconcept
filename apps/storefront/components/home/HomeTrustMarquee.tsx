@@ -10,6 +10,7 @@ import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 export async function HomeTrustMarquee() {
 	const [global, settings] = await Promise.all([getGlobalContent(), getSiteSettings()]);
 	const salons = mapSalonLogosForMarquee(global);
+	if (salons.length === 0) return null;
 	const trust = resolveTrustBarDisplay(settings.trustBar);
 	const doubled = [...salons, ...salons];
 

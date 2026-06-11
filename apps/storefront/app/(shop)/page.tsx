@@ -4,7 +4,6 @@ import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
 import { buildMetadata } from "@/lib/content/metadata";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
-import { HomeTrustMarquee } from "@/components/home/HomeTrustMarquee";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
@@ -78,10 +77,6 @@ export default async function HomePage() {
       </Suspense>
 
       <SocialProofSection />
-
-      <Suspense fallback={null}>
-        <HomeTrustMarquee />
-      </Suspense>
 
       <Suspense fallback={null}>
         <FooterCTA />
