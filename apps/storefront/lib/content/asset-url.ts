@@ -28,7 +28,14 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 		return pathOnly.split("?")[0] || pathOnly;
 	}
 
-	return resolveMedusaMediaUrl(trimmed) ?? undefined;
+	const resolved = resolveMedusaMediaUrl(trimmed);
+	
+	// Debug: jeśli URL jest, ale nie udało się zresolvować
+	if (!resolved && trimmed) {
+		console.warn("[Asset] Nie udało się zresolvować URL:", trimmed.substring(0, 100));
+	}
+	
+	return resolved ?? undefined;
 }
 
 function isMediaCdnOrigin(origin: string): boolean {
