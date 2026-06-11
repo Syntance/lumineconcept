@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Clock, Instagram, Mail, MapPin, Share2 } from "lucide-react";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { FacebookIcon } from "@/components/icons/FacebookIcon";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { getSiteSettings } from "@/lib/content";
 import { resolveSocialLinks } from "@/lib/content/cms-wiring";
@@ -21,18 +22,18 @@ export const metadata: Metadata = {
 };
 
 function ContactDetail({
-  icon: Icon,
+  icon,
   label,
   children,
 }: {
-  icon: typeof MapPin;
+  icon: ReactNode;
   label: string;
   children: ReactNode;
 }) {
   return (
     <li className="flex items-start gap-3">
       <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-        <Icon className="h-4 w-4" aria-hidden />
+        {icon}
       </span>
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-500">{label}</p>
@@ -91,13 +92,13 @@ export default async function KontaktPage() {
               </h2>
               <div className="w-full rounded-lg border border-brand-200 bg-white p-5 shadow-sm sm:p-7">
                 <ul className="space-y-5">
-                  <ContactDetail icon={MapPin} label="Miejscowość">
+                  <ContactDetail icon={<MapPin className="h-4 w-4" aria-hidden />} label="Miejscowość">
                     {SITE_CONTACT.address}
                   </ContactDetail>
-                  <ContactDetail icon={Clock} label="Godziny otwarcia">
+                  <ContactDetail icon={<Clock className="h-4 w-4" aria-hidden />} label="Godziny otwarcia">
                     {SITE_CONTACT.hours.replace(/^Godziny otwarcia:\s*/i, "")}
                   </ContactDetail>
-                  <ContactDetail icon={Mail} label="E-mail">
+                  <ContactDetail icon={<Mail className="h-4 w-4" aria-hidden />} label="E-mail">
                     <a
                       href={`mailto:${SITE_CONTACT.email}`}
                       className="font-medium text-brand-800 underline-offset-2 transition-colors hover:text-brand-900 hover:underline"
@@ -106,7 +107,7 @@ export default async function KontaktPage() {
                     </a>
                   </ContactDetail>
                   {instagramUrl ? (
-                    <ContactDetail icon={Instagram} label="Instagram">
+                    <ContactDetail icon={<Instagram className="h-4 w-4" aria-hidden />} label="Instagram">
                       <a
                         href={instagramUrl}
                         target="_blank"
@@ -118,7 +119,7 @@ export default async function KontaktPage() {
                     </ContactDetail>
                   ) : null}
                   {facebookUrl ? (
-                    <ContactDetail icon={Share2} label="Facebook">
+                    <ContactDetail icon={<FacebookIcon />} label="Facebook">
                       <a
                         href={facebookUrl}
                         target="_blank"
@@ -130,7 +131,7 @@ export default async function KontaktPage() {
                     </ContactDetail>
                   ) : null}
                   {social.tiktok ? (
-                    <ContactDetail icon={Share2} label="TikTok">
+                    <ContactDetail icon={<Share2 className="h-4 w-4" aria-hidden />} label="TikTok">
                       <a
                         href={social.tiktok}
                         target="_blank"
