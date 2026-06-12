@@ -103,6 +103,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/dlaczego-lumine",
+        destination: "/o-nas",
+        permanent: true,
+      },
+      {
         source: "/realizacje",
         destination: "/sklep",
         permanent: true,

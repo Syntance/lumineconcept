@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     follow: false,
   },
   alternates: {
-    canonical: `${SITE_URL}/dlaczego-lumine`,
+    canonical: `${SITE_URL}/o-nas`,
   },
 };
 
-export default function DlaczegoLuminePage() {
+export default function ONasPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <Breadcrumbs

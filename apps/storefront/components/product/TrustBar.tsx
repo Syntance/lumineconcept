@@ -20,7 +20,7 @@ export function TrustBar({
   realizations = "6 000+",
   shippingLabel = "Realizacja ok. 10 dni roboczych",
   testimonials = [],
-  opinionsLink = "/dlaczego-lumine#opinie",
+  opinionsLink = "/o-nas#opinie",
 }: TrustBarProps) {
   const displayTestimonials = testimonials.slice(0, 3);
 
