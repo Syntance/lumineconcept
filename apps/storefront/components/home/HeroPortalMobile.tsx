@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { ArrowDown } from "lucide-react";
+
+import { HeroCtaLink } from "./HeroCtaLink";
 
 import {
   HOME_HERO_PORTAL,
@@ -42,7 +43,7 @@ export function HeroPortalMobile({
           </div>
         </div>
 
-        <Link
+        <HeroCtaLink
           href={content.ctaHref}
           aria-label={content.ctaAriaLabel}
           className={`${SHOP_CTA_CLASS} mt-5 sm:mt-6`}
@@ -51,7 +52,7 @@ export function HeroPortalMobile({
           {content.ctaShowDownArrow ? (
             <ArrowDown className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
           ) : null}
-        </Link>
+        </HeroCtaLink>
       </div>
     </div>
   );

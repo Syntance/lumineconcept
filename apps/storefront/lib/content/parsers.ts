@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { resolveCmsAssetUrl } from "./asset-url";
+import { normalizeHeroCtaHref } from "./cta-href";
 import {
 	DEFAULT_GLOBAL_CONTENT,
 	DEFAULT_PAGE_CONTENT,
@@ -454,7 +455,7 @@ export function normalizeLocalAssetUrl(url: string | undefined): string | undefi
 export function preparePageContentForSave(_pageId: string, content: PageContent): PageContent {
 	const next = resolvePageContentAssets({ ...content });
 	if (next.hero) {
-		const hero = { ...next.hero };
+		const hero = { ...next.hero, ctaHref: normalizeHeroCtaHref(next.hero.ctaHref) };
 		if (!hero.desktopImageUrl?.trim()) delete hero.desktopImageUrl;
 		if (!hero.mobileImageUrl?.trim()) delete hero.mobileImageUrl;
 		next.hero = hero;
