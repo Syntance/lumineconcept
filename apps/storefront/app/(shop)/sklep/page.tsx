@@ -102,7 +102,7 @@ export default async function ShopHubPage() {
 
       <section className="relative overflow-x-hidden bg-brand-100 pt-10 lg:pt-12">
         <div className="container mx-auto max-w-4xl px-4">
-          <div className="relative max-lg:mb-10 lg:mb-3">
+          <div className="relative max-lg:pb-10 lg:pb-3">
             <div
               className="pointer-events-none absolute bottom-0 left-1/2 top-[-2.5rem] w-screen -translate-x-1/2 bg-white lg:top-[-3rem]"
               aria-hidden
