@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useSearchParams } from "next/navigation";
 import {
 	forwardRef,
 	type AnchorHTMLAttributes,
@@ -9,17 +10,21 @@ import {
 
 import { normalizeHeroCtaHref } from "@/lib/content/cta-href";
 
-function scrollToHash(fragment: string): void {
-	const id = fragment.replace(/^#/, "");
+function scrollToElementId(id: string): void {
 	if (!id) return;
-
 	const el = document.getElementById(id);
 	if (el) {
 		el.scrollIntoView({ behavior: "smooth", block: "start" });
 	}
+}
 
-	const path = window.location.pathname + window.location.search;
-	history.replaceState(null, "", `${path}#${id}`);
+function hashFragment(href: string): string {
+	if (href.startsWith("#")) return href;
+	try {
+		return new URL(href, window.location.origin).hash;
+	} catch {
+		return "";
+	}
 }
 
 function isSamePageHashLink(href: string): boolean {
@@ -39,32 +44,42 @@ function shouldUseHashScroll(href: string): boolean {
 	return isSamePageHashLink(href);
 }
 
+/** href bez #fragment — czysty URL w pasku adresu. */
+function hrefWithoutFragment(href: string): string {
+	if (!href.includes("#")) return href;
+	return href.split("#")[0] || href;
+}
+
 type HeroCtaLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
 	href: string;
 	children?: ReactNode;
 };
 
 /**
- * CTA hero — scroll do kotwicy na tej samej stronie (bez Next Link),
- * żeby nie doklejać #fragment#fragment przy kolejnych klikach.
+ * CTA hero — scroll do kotwicy na tej samej stronie bez zmiany URL (#fragment).
  */
 export const HeroCtaLink = forwardRef<HTMLAnchorElement, HeroCtaLinkProps>(
 	function HeroCtaLink({ href, onClick, children, ...rest }, ref) {
 		const normalized = normalizeHeroCtaHref(href);
+		const pathname = usePathname();
+		const searchParams = useSearchParams();
+		const query = searchParams.toString();
+		const currentPath = query ? `${pathname}?${query}` : pathname;
+
+		const isHashScroll = shouldUseHashScroll(normalized);
+		const displayHref = isHashScroll ? currentPath : hrefWithoutFragment(normalized);
 
 		const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
-			if (shouldUseHashScroll(normalized)) {
+			if (isHashScroll) {
 				e.preventDefault();
-				const fragment = normalized.startsWith("#")
-					? normalized
-					: new URL(normalized, window.location.origin).hash;
-				scrollToHash(fragment);
+				const fragment = hashFragment(normalized);
+				scrollToElementId(fragment.replace(/^#/, ""));
 			}
 			onClick?.(e);
 		};
 
 		return (
-			<a ref={ref} href={normalized} onClick={handleClick} {...rest}>
+			<a ref={ref} href={displayHref} onClick={handleClick} {...rest}>
 				{children}
 			</a>
 		);
