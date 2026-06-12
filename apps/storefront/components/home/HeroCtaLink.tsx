@@ -10,12 +10,22 @@ import {
 
 import { normalizeHeroCtaHref } from "@/lib/content/cta-href";
 
+const MOBILE_MAX_QUERY = "(max-width: 1023px)";
+
 function scrollToElementId(id: string): void {
 	if (!id) return;
 	const el = document.getElementById(id);
-	if (el) {
-		el.scrollIntoView({ behavior: "smooth", block: "start" });
+	if (!el) return;
+
+	// Mobile: flush do góry kotwicy — bez scroll-padding html i scroll-margin,
+	// żeby hero (80svh) zniknęło w całości.
+	if (window.matchMedia(MOBILE_MAX_QUERY).matches) {
+		const top = el.getBoundingClientRect().top + window.scrollY;
+		window.scrollTo({ top, behavior: "smooth" });
+		return;
 	}
+
+	el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function hashFragment(href: string): string {

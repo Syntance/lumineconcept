@@ -41,15 +41,18 @@ export default async function TablicaZLogoPage() {
 
 function CustomQuoteSection() {
   return (
-    <section className="relative overflow-x-clip bg-brand-50 pb-16 lg:pb-24">
+    <section
+      id="formularz"
+      className="relative scroll-mt-0 overflow-x-clip bg-brand-50 pb-16 lg:scroll-mt-[calc(var(--header-sticky-height)+2.5rem)] lg:pb-24"
+    >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden bg-white lg:block lg:h-(--logo3d-white-h,15rem)"
       />
       <div className="relative z-1 mx-auto w-full max-w-[min(102rem,calc(100vw-2rem))] px-4 pt-16 lg:px-8 lg:pt-24">
         <div
-          id="formularz"
-          className="scroll-mt-[calc(var(--header-sticky-height)+2.5rem)] grid gap-12 lg:grid-cols-2 lg:items-stretch lg:gap-x-20 xl:gap-x-24"
+          data-logo3d-grid
+          className="grid gap-12 lg:grid-cols-2 lg:items-stretch lg:gap-x-20 xl:gap-x-24"
         >
           <QuoteImageCtaAlign>
             <LogoQuoteArchImage />

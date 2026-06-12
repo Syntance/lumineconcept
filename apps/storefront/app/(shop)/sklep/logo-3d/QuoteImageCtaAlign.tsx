@@ -160,7 +160,7 @@ export function QuoteImageCtaAlign({ children }: { children: ReactNode }) {
     const column = columnRef.current;
     if (!column) return;
 
-    const grid = column.closest<HTMLElement>("#formularz");
+    const grid = column.closest<HTMLElement>("[data-logo3d-grid]");
     if (!grid) return;
 
     const mq = window.matchMedia(LG_QUERY);
