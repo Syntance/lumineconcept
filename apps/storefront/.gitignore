@@ -3,3 +3,4 @@
 # CMS static sync - regenerated on each build
 /public/images/cms/
 /lib/content/static-cms-content.ts
+/lib/content/static-cms-media-map.ts

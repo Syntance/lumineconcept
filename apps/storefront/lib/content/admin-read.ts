@@ -17,7 +17,7 @@ export type RawStoreMetadataBlob = {
 	globalContent: unknown;
 };
 
-const REVALIDATE_SECONDS = 60;
+const REVALIDATE_SECONDS = 3600;
 const FETCH_TIMEOUT_MS = 30_000;
 const RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 750;
@@ -108,27 +108,6 @@ export const fetchStoreMetadataBlob = cache(async (): Promise<RawStoreMetadataBl
 			stores: Array<{ metadata?: Record<string, unknown> | null }>;
 		};
 		const metadata = data.stores[0]?.metadata ?? {};
-		
-		// Debug: sprawdź czy pageContent istnieje
-		const pageContentRaw = metadata[MAGAZYN_PAGE_CONTENT_KEY];
-		if (pageContentRaw) {
-			try {
-				const parsed = typeof pageContentRaw === "string" ? JSON.parse(pageContentRaw) : pageContentRaw;
-				const homeHero = parsed?.home?.hero;
-				if (homeHero) {
-					console.log("[CMS] Hero z metadata:", {
-						desktop: homeHero.desktopImageUrl?.substring(0, 80),
-						mobile: homeHero.mobileImageUrl?.substring(0, 80),
-					});
-				} else {
-					console.warn("[CMS] Brak home.hero w pageContent");
-				}
-			} catch (e) {
-				console.error("[CMS] Nie można sparsować pageContent:", e);
-			}
-		} else {
-			console.warn("[CMS] Brak magazyn_page_content w Store.metadata");
-		}
 
 		return {
 			siteSettings: metadata[MAGAZYN_SITE_SETTINGS_KEY],

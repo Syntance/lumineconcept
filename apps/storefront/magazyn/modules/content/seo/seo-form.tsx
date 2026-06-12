@@ -6,6 +6,7 @@ import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import type { SeoMeta, SiteSettings } from "@/lib/content/types";
 import { saveGlobalSeoAction, savePageSeoAction } from "./seo-actions";
+import { cmsSaveSuccessMessage } from "../cms-save-feedback";
 import { OgImageField } from "./og-image-field";
 
 const inputClass =
@@ -32,7 +33,7 @@ function GlobalSeoForm({ initial }: { initial: SiteSettings }) {
 	const [defaultOg, setDefaultOg] = useState(initial.defaultOgImageUrl ?? "");
 	const [seo, setSeo] = useState<SeoMeta>(initial.seo ?? {});
 	const [error, setError] = useState<string | null>(null);
-	const [saved, setSaved] = useState(false);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
 
 	function updateSeo(patch: Partial<SeoMeta>) {
@@ -42,7 +43,7 @@ function GlobalSeoForm({ initial }: { initial: SiteSettings }) {
 	function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError(null);
-		setSaved(false);
+		setSuccessMessage(null);
 		startTransition(async () => {
 			const result = await saveGlobalSeoAction({
 				title: title.trim(),
@@ -56,7 +57,7 @@ function GlobalSeoForm({ initial }: { initial: SiteSettings }) {
 				setError(result.error);
 				return;
 			}
-			setSaved(true);
+			setSuccessMessage(cmsSaveSuccessMessage(result.mediaPublishQueued));
 		});
 	}
 
@@ -85,7 +86,7 @@ function GlobalSeoForm({ initial }: { initial: SiteSettings }) {
 			</div>
 			<OgImageField label="Domyślne zdjęcie OG" value={defaultOg} onChange={setDefaultOg} />
 			<SeoFields seo={seo} onChange={updateSeo} />
-			<FormFooter error={error} saved={saved} pending={pending} />
+			<FormFooter error={error} successMessage={successMessage} pending={pending} />
 		</form>
 	);
 }
@@ -101,7 +102,7 @@ function PageSeoForm({
 }) {
 	const [seo, setSeo] = useState<SeoMeta>(initial ?? {});
 	const [error, setError] = useState<string | null>(null);
-	const [saved, setSaved] = useState(false);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
 
 	function updateSeo(patch: Partial<SeoMeta>) {
@@ -111,14 +112,14 @@ function PageSeoForm({
 	function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError(null);
-		setSaved(false);
+		setSuccessMessage(null);
 		startTransition(async () => {
 			const result = await savePageSeoAction(pageId, seo, path);
 			if (!result.ok) {
 				setError(result.error);
 				return;
 			}
-			setSaved(true);
+			setSuccessMessage(cmsSaveSuccessMessage(result.mediaPublishQueued));
 		});
 	}
 
@@ -128,7 +129,7 @@ function PageSeoForm({
 				SEO dla podstrony. Puste pola korzystają z domyślnych wartości witryny.
 			</p>
 			<SeoFields seo={seo} onChange={updateSeo} />
-			<FormFooter error={error} saved={saved} pending={pending} />
+			<FormFooter error={error} successMessage={successMessage} pending={pending} />
 		</form>
 	);
 }
@@ -176,11 +177,23 @@ function SeoFields({
 	);
 }
 
-function FormFooter({ error, saved, pending }: { error: string | null; saved: boolean; pending: boolean }) {
+function FormFooter({
+	error,
+	successMessage,
+	pending,
+}: {
+	error: string | null;
+	successMessage: string | null;
+	pending: boolean;
+}) {
 	return (
 		<div className="flex flex-col gap-2">
 			{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-			{saved ? <p role="status" className="text-sm text-emerald-600">Zapisano.</p> : null}
+			{successMessage ? (
+				<p role="status" className="text-sm text-emerald-600">
+					{successMessage}
+				</p>
+			) : null}
 			<Button type="submit" disabled={pending} className="h-10 w-fit gap-1.5">
 				{pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
 				{pending ? "Zapisywanie…" : "Zapisz SEO"}

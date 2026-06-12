@@ -3,7 +3,9 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useId, useState } from "react";
+import { isCmsImageUnoptimized, resolveCmsAssetUrl } from "@/lib/content/asset-url";
 import { uploadImagesAction } from "@magazyn/modules/products/actions";
+import { queueCmsMediaPublishAction } from "@magazyn/modules/content/content-actions";
 import { cn } from "@magazyn/core/lib/cn";
 
 type Props = {
@@ -11,8 +13,6 @@ type Props = {
 	value: string;
 	onChange: (url: string) => void;
 };
-
-import { isCmsImageUnoptimized, resolveCmsAssetUrl } from "@/lib/content/asset-url";
 
 export function OgImageField({ label, value, onChange }: Props) {
 	const fileId = useId();
@@ -33,7 +33,10 @@ export function OgImageField({ label, value, onChange }: Props) {
 				return;
 			}
 			const url = result.urls[0];
-			if (url) onChange(url);
+			if (url) {
+				onChange(url);
+				void queueCmsMediaPublishAction();
+			}
 		} catch {
 			setError("Upload nie powiódł się. Spróbuj ponownie lub mniejszy plik.");
 		} finally {
@@ -91,7 +94,10 @@ export function OgImageField({ label, value, onChange }: Props) {
 				/>
 			</div>
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}
-			<p className="text-xs text-muted-foreground">Zalecane 1200×630 px (WebP lub JPG).</p>
+			<p className="text-xs text-muted-foreground">
+				Zalecane 1200×630 px (WebP lub JPG). Po zapisie formularza obraz widać od razu (CDN). Pełna
+				optymalizacja LCP po publikacji (~2–3 min).
+			</p>
 		</div>
 	);
 }

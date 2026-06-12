@@ -1,129 +1,88 @@
-# CMS Static Sync System
+# CMS Hybrid Sync (tekst live + obrazy static)
 
-## Jak to działa
+## Model
 
-### Problem
-- CMS fetch podczas runtime = opóźnienie 200-500ms
-- Obrazy z R2/CDN = dodatkowe requesty
-- ISR revalidation = niestabilne hero images
-- PageSpeed < 90 przez external fetches
+| Typ zmiany | Publikacja | Czas na prod |
+|------------|------------|--------------|
+| Tekst, SEO, linki, FAQ, trust bar, announcement | `revalidateTag('magazyn-content')` + webhook | sekundy |
+| Obrazy (hero, galerie, OG, logotypy, Instagram) | deploy hook → `prebuild` → `/public/images/cms/` | ~2–3 min |
 
-### Rozwiązanie: Static Pre-Build Sync
+**Runtime:** storefront zawsze czyta treść **live** z Medusa (`lib/content/admin-read.ts`).
+Obrazy z R2/CDN są opcjonalnie **nadpisywane** mapą z prebuildu (`static-cms-media-map.ts`)
+→ lokalne `/images/cms/…` dla LCP i PageSpeed.
 
-Przed każdym buildem (`prebuild` hook):
-
-1. **Script `sync-cms-to-static.ts`**:
-   - Łączy się z Medusa CMS
-   - Ściąga CAŁĄ zawartość (settings, pages, global)
-   - Download WSZYSTKICH obrazów do `/public/images/cms/`
-   - Generuje `static-cms-content.ts` z hardcoded content
-
-2. **Next.js build**:
-   - Optimizuje lokalne obrazy (blur placeholders)
-   - Tree-shake nieużywany content
-   - Bundle size minimal
-
-3. **Runtime**:
-   - `lib/content/index.ts` używa static content
-   - Zero external fetches
-   - Instant load < 100ms
-   - PageSpeed 95+ ✨
-
-## Flow
+## Flow zapisu w panelu
 
 ```
-┌─────────────────────────────────────────────────┐
-│  CMS (Medusa)                                   │
-│  - Upload/edit content                          │
-│  - Save                                         │
-└──────────────────┬──────────────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────────────┐
-│  Deploy trigger (Vercel/GitHub)                 │
-└──────────────────┬──────────────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────────────┐
-│  prebuild: sync-cms-to-static.ts                │
-│  ├─ Auth with Medusa                            │
-│  ├─ Fetch Store.metadata                        │
-│  ├─ Download all images → /public/images/cms/   │
-│  └─ Generate static-cms-content.ts              │
-└──────────────────┬──────────────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────────────┐
-│  next build                                     │
-│  ├─ Optimize images (blur placeholders)        │
-│  ├─ SSG pages (zero ISR)                       │
-│  └─ Bundle static content                      │
-└──────────────────┬──────────────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────────────┐
-│  Production                                     │
-│  ✓ Instant load (<100ms)                       │
-│  ✓ Zero external requests                      │
-│  ✓ PageSpeed 95+                               │
-│  ✓ Perfect LCP/CLS                             │
-└─────────────────────────────────────────────────┘
+Edycja w Magazyn → Save
+        │
+        ├─ tylko tekst/SEO?
+        │     └─ revalidateTag + webhook → live od razu
+        │
+        └─ zmieniono URL obrazu?
+              └─ + deploy hook (VERCEL_DEPLOY_HOOK_URL)
+                    └─ prebuild: sync-cms-to-static.ts
+                          ├─ download obrazów → public/images/cms/
+                          └─ generate static-cms-media-map.ts
+                                └─ next build → prod
 ```
 
-## Zmiana content w CMS
+Upload obrazu w polu (np. OG) może od razu wywołać `queueCmsMediaPublish()` —
+deploy hook bez czekania na Save całego formularza.
 
-1. Edytuj w Magazyn panel
-2. Kliknij **Save**
-3. Deploy (manual trigger lub auto via webhook)
-4. Script ściągnie nowy content
-5. Build z fresh content
-6. Deploy na prod
+## Prebuild (`scripts/sync-cms-to-static.ts`)
 
-**Czas: ~2-3 min** od save do live
+Uruchamiany w `prebuild` (prod build):
+
+1. Auth do Medusa (`MEDUSA_ADMIN_EMAIL` / `MEDUSA_ADMIN_PASSWORD`)
+2. Fetch `Store.metadata` (settings, pages, global)
+3. Download wszystkich URL-i CMS media → `/public/images/cms/`
+4. Generuje `lib/content/static-cms-media-map.ts` (CDN URL → lokalna ścieżka)
+
+Plik `static-cms-content.ts` jest **deprecated** — pełny snapshot treści nie jest już
+używany w runtime.
 
 ## Dev vs Prod
 
 ### Dev (`pnpm dev`)
-- NIE uruchamia sync (za wolno dla hot reload)
-- Używa dynamic fetch z Medusa (ISR)
-- Obrazy z R2/CDN (wolniejsze ale editable)
+- Brak prebuild sync (hot reload)
+- Treść live z Medusa
+- Obrazy z R2/CDN (bez overlay mapy, chyba że ręcznie uruchomiono sync)
 
 ### Prod (`pnpm build`)
-- Uruchamia `prebuild` → sync
-- Wszystko static
-- Ultra-fast
+- `prebuild` → sync mediów + mapa URL
+- Treść nadal live (tag ISR 3600s + revalidate po zapisie)
+- Hero/LCP z lokalnych plików po overlay
+
+## ENV
+
+| Zmienna | Rola |
+|---------|------|
+| `MEDUSA_ADMIN_EMAIL` / `MEDUSA_ADMIN_PASSWORD` | Odczyt CMS (runtime + prebuild) |
+| `STOREFRONT_REVALIDATE_URL` + `MEDUSA_REVALIDATE_SECRET` | Webhook rewalidacji |
+| `VERCEL_DEPLOY_HOOK_URL` | Deploy po zmianie mediów |
+| `S3_FILE_URL` / `NEXT_PUBLIC_S3_FILE_URL` | Publiczne URL-e uploadów |
 
 ## Troubleshooting
 
-### "Auth failed" podczas build
-→ Sprawdź `MEDUSA_ADMIN_EMAIL` i `MEDUSA_ADMIN_PASSWORD` w env
+### Tekst się nie aktualizuje
+→ Sprawdź webhook `/api/revalidate/medusa` i tag `magazyn-content`.
 
-### Brak obrazów po deploy
-→ Sprawdź logi build, czy sync zakończył się sukcesem
+### Obrazy stare / z CDN zamiast lokalnych
+→ Sprawdź czy deploy hook poszedł po zapisie z obrazem; logi buildu prebuild.
 
-### Stary content po deploy
-→ Clear Next.js cache: `pnpm clean && pnpm build`
+### „Auth failed” w prebuild
+→ Credentials Medusa w env buildu (Vercel).
 
-### PageSpeed < 90
-→ Sprawdź Network tab - jeśli widzisz fetche do Medusa/R2, sync nie zadziałał
+### PageSpeed — nadal fetch do R2 na hero
+→ Mapa mediów pusta lub sync nie zakończył się; `pnpm exec tsx scripts/sync-cms-to-static.ts` lokalnie.
 
-## Performance Metrics
+## Pliki
 
-**Przed (dynamic CMS)**:
-- LCP: 2.5s
-- FCP: 1.8s
-- CLS: 0.15
-- PageSpeed: 78
-
-**Po (static sync)**:
-- LCP: 0.8s ✨
-- FCP: 0.4s ✨
-- CLS: 0.02 ✨
-- PageSpeed: 96+ ✨
-
-## Files
-
-- `scripts/sync-cms-to-static.ts` - główny script
-- `lib/content/static-cms-content.ts` - generated (gitignored)
-- `public/images/cms/` - downloaded images (gitignored)
-- `lib/content/index.ts` - adapter (static first, fallback dynamic)
+- `scripts/sync-cms-to-static.ts` — prebuild sync
+- `lib/content/index.ts` — live fetch + overlay mapy
+- `lib/content/static-cms-media-map.ts` — generowana mapa (stub w repo)
+- `lib/content/media-overlay.ts` — podmiana URL w blobie
+- `lib/content/media-publish.ts` — wykrywanie zmian mediów przy zapisie
+- `magazyn/modules/content/revalidate-content.ts` — hybrid revalidation
+- `public/images/cms/` — pobrane obrazy (gitignored w prod flow)

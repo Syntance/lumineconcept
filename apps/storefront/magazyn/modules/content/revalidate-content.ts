@@ -4,7 +4,27 @@ import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-st
 import { triggerVercelDeploy } from "@magazyn/core/lib/trigger-vercel-deploy";
 import { MAGAZYN_CONTENT_CACHE_TAG } from "@/lib/content/metadata-keys";
 
-export async function revalidateContentCache(paths: string[] = []): Promise<void> {
+export type RevalidateContentOptions = {
+	/** Uruchom deploy hook → prebuild sync obrazów do `/public/images/cms/`. */
+	publishMedia?: boolean;
+};
+
+export type RevalidateContentResult = {
+	/** Tekst/SEO odświeżone tagiem (live na prod w sekundach). */
+	live: true;
+	/** Deploy hook wysłany — obrazy zostaną zlokalizowane po buildzie. */
+	mediaPublishQueued: boolean;
+};
+
+/**
+ * Rewalidacja CMS (hybrid):
+ * - zawsze: tag + webhook (tekst live),
+ * - opcjonalnie: deploy hook tylko gdy zmieniono media (prebuild sync obrazów).
+ */
+export async function revalidateContentCache(
+	paths: string[] = [],
+	options: RevalidateContentOptions = {},
+): Promise<RevalidateContentResult> {
 	revalidateTag(MAGAZYN_CONTENT_CACHE_TAG, "max");
 	revalidateTag("site-settings", "max");
 	await revalidateStorefrontMedusaCache([MAGAZYN_CONTENT_CACHE_TAG, "site-settings"]);
@@ -12,10 +32,17 @@ export async function revalidateContentCache(paths: string[] = []): Promise<void
 		if (path) revalidatePath(path);
 	}
 
-	/**
-	 * Auto-deploy: po zapisie CMS odpalamy produkcyjny build na Vercel.
-	 * `prebuild` ściągnie świeży CMS → static files → instant load na prod.
-	 * No-op gdy `VERCEL_DEPLOY_HOOK_URL` nie jest ustawiony (np. dev/preview).
-	 */
-	await triggerVercelDeploy(`CMS save: ${paths.join(", ") || "global"}`);
+	let mediaPublishQueued = false;
+	if (options.publishMedia) {
+		await triggerVercelDeploy(`CMS media: ${paths.join(", ") || "global"}`);
+		mediaPublishQueued = Boolean(process.env.VERCEL_DEPLOY_HOOK_URL?.trim());
+	}
+
+	return { live: true, mediaPublishQueued };
+}
+
+/** Po uploadzie obrazu w panelu — kolejkuje prebuild sync (bez czekania na Save formularza). */
+export async function queueCmsMediaPublish(reason = "CMS image upload"): Promise<boolean> {
+	await triggerVercelDeploy(reason);
+	return Boolean(process.env.VERCEL_DEPLOY_HOOK_URL?.trim());
 }
