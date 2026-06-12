@@ -42,8 +42,7 @@ const STATUS_OPTIONS = [
 	{ value: "all", label: "Wszystkie statusy" },
 	{ value: "pending", label: "W toku" },
 	{ value: "completed", label: "Zrealizowane" },
-	{ value: "canceled", label: "Anulowane" },
-	{ value: "archived", label: "Zarchiwizowane" },
+	{ value: "requires_action", label: "Wymaga działania" },
 ] as const;
 
 const PAYMENT_OPTIONS = [

@@ -47,7 +47,7 @@ export function OverviewOrdersSummary({ summary }: { summary: AdminOrdersOvervie
 				<div>
 					<h2 className="font-serif text-lg text-foreground">Zamówienia</h2>
 					<p className="mt-0.5 text-sm text-muted-foreground">
-						Podsumowanie wszystkich zamówień ze sklepu (bez anulowanych i szkiców).
+						Aktywne zamówienia ze sklepu (bez archiwizowanych i anulowanych).
 					</p>
 				</div>
 				<Link
@@ -86,11 +86,6 @@ export function OverviewOrdersSummary({ summary }: { summary: AdminOrdersOvervie
 				/>
 			</div>
 
-			{summary.canceledCount > 0 ? (
-				<p className="text-xs text-muted-foreground">
-					Poza podsumowaniem: {orderCountLabel(summary.canceledCount)} anulowanych lub zarchiwizowanych.
-				</p>
-			) : null}
 		</section>
 	);
 }
