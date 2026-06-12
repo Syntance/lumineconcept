@@ -49,7 +49,7 @@ function CustomQuoteSection() {
       <div className="relative z-1 mx-auto w-full max-w-[min(102rem,calc(100vw-2rem))] px-4 pt-16 lg:px-8 lg:pt-24">
         <div
           id="formularz"
-          className="grid gap-12 lg:grid-cols-2 lg:items-stretch lg:gap-x-20 xl:gap-x-24"
+          className="scroll-mt-[calc(var(--header-sticky-height)+2.5rem)] grid gap-12 lg:grid-cols-2 lg:items-stretch lg:gap-x-20 xl:gap-x-24"
         >
           <QuoteImageCtaAlign>
             <LogoQuoteArchImage />

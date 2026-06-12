@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowDown } from "lucide-react";
+
+import { HeroCtaLink } from "./HeroCtaLink";
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 import {
@@ -132,7 +133,7 @@ function PortalContentBlock({
         </div>
       </div>
 
-      <Link
+      <HeroCtaLink
         ref={ctaRef}
         href={content.ctaHref}
         aria-label={content.ctaAriaLabel}
@@ -142,7 +143,7 @@ function PortalContentBlock({
         {content.ctaShowDownArrow ? (
           <ArrowDown className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
         ) : null}
-      </Link>
+      </HeroCtaLink>
     </div>
   );
 }

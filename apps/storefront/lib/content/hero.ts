@@ -1,4 +1,5 @@
 import type { HeroPortalContentConfig } from "@/components/home/hero-portal-config";
+import { normalizeHeroCtaHref } from "./cta-href";
 import type { HeroContent } from "./types";
 import { HOME_HERO_DEFAULT, LOGO_HERO_DEFAULT } from "./defaults";
 import { resolveCmsAssetUrl } from "./asset-url";
@@ -9,7 +10,7 @@ export function heroToPortalConfig(hero: HeroContent): HeroPortalContentConfig {
 		subtitle: hero.subtitle,
 		description: hero.description,
 		ctaLabel: hero.ctaLabel,
-		ctaHref: hero.ctaHref,
+		ctaHref: normalizeHeroCtaHref(hero.ctaHref),
 		ctaAriaLabel: hero.ctaAriaLabel,
 		headlineUppercase: hero.headlineUppercase,
 		ctaShowDownArrow: hero.ctaShowDownArrow,
