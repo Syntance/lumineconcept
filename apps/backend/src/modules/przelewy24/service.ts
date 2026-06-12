@@ -168,30 +168,25 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
   async initiatePayment(
     input: InitiatePaymentInput,
   ): Promise<InitiatePaymentOutput> {
-    let amountGrosz = this.toGrosz(input.amount);
+    // SECURITY (CRITICAL): kwota płatności pochodzi WYŁĄCZNIE z `input.amount`,
+    // które Medusa wylicza i weryfikuje z bazy (suma line items + dostawa) w
+    // ramach payment_collection. NIGDY nie doliczamy tu kwot z metadata koszyka
+    // ani z `input.data` — oba są kontrolowane przez klienta
+    // (`POST /store/carts/:id`, `initiatePaymentSession(cart, { data })`), więc
+    // doklejanie z nich opłaty pozwalałoby zapłacić mniej niż należność.
+    //
+    // Wcześniej dopłata „express" była czytana z `input.context.cart.metadata`,
+    // ale Medusa nie przekazuje `context.cart` do providera (route store ignoruje
+    // `context`), więc był to martwy, a zarazem niebezpieczny kod. Ewentualna
+    // dopłata (np. realizacja ekspresowa) MUSI być częścią totalu koszyka
+    // (osobny line item lub metoda dostawy), żeby Medusa ją zweryfikowała.
+    const amountGrosz = this.toGrosz(input.amount);
     const currency = (input.currency_code ?? "pln").toUpperCase();
 
     const ctx = (input.data ?? {}) as Record<string, unknown>;
     const customerCtx = (input.context?.customer ?? {}) as {
       email?: string;
     };
-
-    // Express fee z metadata koszyka — pobieramy metadata przez context.cart
-    // (Medusa przekazuje cart object w kontekście płatności).
-    const cartCtx = (input.context as { cart?: { metadata?: Record<string, string> } } | undefined)?.cart;
-    const metadata = cartCtx?.metadata ?? {};
-    const expressEnabled = metadata.express_delivery === "true" || metadata.express_delivery === "1";
-    let expressFeeGrosz = 0;
-    if (expressEnabled) {
-      const raw = metadata.express_fee_minor?.trim();
-      if (raw) {
-        const n = Number(raw.replace(",", "."));
-        if (Number.isFinite(n) && n > 0) {
-          expressFeeGrosz = Math.round(n * 100);
-        }
-      }
-    }
-    amountGrosz += expressFeeGrosz;
 
     const sessionId = `p24_${crypto.randomUUID()}`;
     const email =
@@ -506,6 +501,21 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
     if (expectedSign !== receivedSign) {
       this.logger_.error(
         `[przelewy24] webhook: niezgodny podpis dla sessionId=${sessionId}`,
+      );
+      return { action: PaymentActions.FAILED };
+    }
+
+    // Defense-in-depth: notyfikacja MUSI dotyczyć naszego konta P24.
+    // (Podpis liczony jest z merchantId/posId z body + naszym CRC, ale jawne
+    // porównanie z konfiguracją chroni przed pomyłką/cross-account.)
+    const configuredMerchantId = Number(this.options_.merchantId);
+    const configuredPosId = Number(this.options_.posId);
+    if (
+      (Number.isFinite(configuredMerchantId) && merchantId !== configuredMerchantId) ||
+      (Number.isFinite(configuredPosId) && posId !== configuredPosId)
+    ) {
+      this.logger_.error(
+        `[przelewy24] webhook: merchantId/posId niezgodny z konfiguracją (sessionId=${sessionId})`,
       );
       return { action: PaymentActions.FAILED };
     }

@@ -499,30 +499,13 @@ export async function notifyOrderPlacedAwait(
 		console.warn("[mail] notify-order-placed storefront error", e);
 	}
 
-	const base = resolveMedusaFetchBase();
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json",
-		Accept: "application/json",
-		...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
-			? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
-			: {}),
-	};
-
-	try {
-		const res = await fetch(`${base}/store/custom/notify-order-placed`, {
-			method: "POST",
-			headers,
-			body: JSON.stringify({
-				order_id: orderId,
-				...(snapshot?.email ? { email: snapshot.email } : {}),
-			}),
-			signal: AbortSignal.timeout(20_000),
-		});
-		return res.ok;
-	} catch (e) {
-		console.warn("[mail] notify-order-placed backend error", e);
-		return false;
-	}
+	/**
+	 * Brak publicznego fallbacku na backendowe `/store/custom/notify-order-placed`
+	 * — to endpoint server-to-server (wymaga sekretu). Dostarczenie maila gwarantuje
+	 * subscriber `order.placed` (idempotentny) oraz storefrontowy
+	 * `/api/checkout/notify-order-placed` powyżej.
+	 */
+	return false;
 }
 
 const CHECKOUT_DRAFT_STORAGE_KEY = "lumine_checkout_draft_v1";
@@ -748,39 +731,12 @@ export async function notifyBankTransferPending(input: {
     }
   }
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
-      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
-      : {}),
-  };
-
-  const backendPayload = JSON.stringify({
-    order_id: orderId,
-    email: email.trim(),
-    payment_provider_id: providerId,
-  });
-
-  const base = resolveMedusaFetchBase();
-  const backendUrl = `${base}/store/custom/notify-bank-transfer`;
-
-  for (let attempt = 0; attempt < 4; attempt++) {
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 400 * attempt));
-    }
-    try {
-      const res = await fetch(backendUrl, {
-        method: "POST",
-        headers,
-        body: backendPayload,
-      });
-      if (res.ok) return true;
-    } catch (e) {
-      console.warn("[mail] notify-bank-transfer error", e);
-    }
-  }
-
+  /**
+   * Brak publicznego fallbacku na backendowe `/store/custom/notify-bank-transfer`
+   * — to endpoint server-to-server (wymaga sekretu). Mail z danymi do przelewu
+   * dostarcza subscriber `order.placed` (gałąź bank-transfer) oraz storefrontowy
+   * `/api/checkout/send-bank-transfer-email` powyżej.
+   */
   return false;
 }
 

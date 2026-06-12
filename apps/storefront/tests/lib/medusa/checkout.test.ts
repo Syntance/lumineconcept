@@ -234,6 +234,15 @@ describe("prefetchPaymentReadiness — priorytet providerów", () => {
       .mockResolvedValueOnce({ payment_providers: [] })
       .mockResolvedValueOnce({ payment_providers: [] });
 
+    // Bootstrap (`ensureLuminePaymentBootstrap`) robi surowy `fetch` — mockujemy
+    // go na sukces, żeby przepływ dotarł do właściwego błędu „brak metod".
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
     await expect(prefetchPaymentReadiness(getRegionId)).rejects.toThrow(
       /brak skonfigurowanych metod płatności/i,
     );

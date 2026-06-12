@@ -31,7 +31,13 @@ export async function storeApiFetch(
   if (key && !headers.has("x-publishable-api-key")) {
     headers.set("x-publishable-api-key", key);
   }
-  return fetch(`${base}${normalizedPath}`, { ...init, headers });
+  // Reguła ecom-core: żaden fetch Medusy bez limitu czasu. Domyślnie 30s;
+  // caller może nadpisać własnym `signal` (np. krótszym dla prefetchy).
+  return fetch(`${base}${normalizedPath}`, {
+    ...init,
+    signal: init.signal ?? AbortSignal.timeout(30_000),
+    headers,
+  });
 }
 
 export function cartFieldsSearchParams(): URLSearchParams {

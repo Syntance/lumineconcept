@@ -79,19 +79,19 @@ describe("initiatePayment — rejestracja transakcji", () => {
     expect(body.waitForResult).toBe(false);
   });
 
-  it("dodaje Express fee (+50%) do kwoty rejestracji P24 z cart.metadata", async () => {
+  it("NIE dolicza opłaty z metadata koszyka — kwota = zweryfikowane input.amount (bezpieczeństwo)", async () => {
     mockFetchJsonOnce(fetchMock, { data: { token: "tok_express" } });
 
     const service = makeService();
     await service.initiatePayment({
-      amount: 100, // produkty + dostawa = 100 PLN
+      amount: 100, // produkty + dostawa = 100 PLN (zweryfikowane przez Medusę)
       currency_code: "pln",
       data: { cart_id: "cart_express" },
       context: {
         cart: {
           metadata: {
             express_delivery: "true",
-            express_fee_minor: "50", // 50 PLN (50% z 100 PLN produktów)
+            express_fee_minor: "50", // próba doliczenia 50 PLN z metadata klienta
           },
         },
       },
@@ -99,7 +99,8 @@ describe("initiatePayment — rejestracja transakcji", () => {
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(String(init.body));
-    expect(body.amount).toBe(15000); // (100 + 50) * 100 groszy
+    // SECURITY: metadata klienta NIE może wpływać na kwotę — wyłącznie input.amount.
+    expect(body.amount).toBe(10000);
   });
 
   it("ignoruje Express gdy express_delivery=false w metadata", async () => {

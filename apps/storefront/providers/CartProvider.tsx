@@ -306,6 +306,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, [getOrCreateCart]);
 
+  /**
+   * Trwające operacje add-to-cart, kluczowane `variantId + fingerprint opcji`.
+   * Pozwala scalić równoległe/double-click dodania tej samej konfiguracji w
+   * jeden request (Medusa nie scala równoległych `createLineItem` po metadata,
+   * więc bez tego powstawały zdublowane pozycje).
+   */
+  const inFlightAddsRef = useRef<Map<string, Promise<void>>>(new Map());
+
   const addItem = useCallback(
     async (
       variantId: string,
@@ -313,9 +321,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       metadata?: Record<string, string>,
       openDrawer = true,
       preview?: { title: string; thumbnail?: string; unit_price: number },
-    ) => {
+    ): Promise<void> => {
       if (!cart.id) return;
+      // Zawężenie do `string` zachowane w domknięciu `run` (cart.id to string|null).
+      const cartId = cart.id;
 
+      // Idempotencja / tolerancja na double-click — dołącz do trwającej operacji
+      // dla tej samej konfiguracji zamiast wysyłać drugi request.
+      const dedupeKey = `${variantId}:${cartLineConfigFingerprint(metadata)}`;
+      const pendingAdd = inFlightAddsRef.current.get(dedupeKey);
+      if (pendingAdd) {
+        if (openDrawer) setIsOpen(true);
+        return pendingAdd;
+      }
+
+      const run = async (): Promise<void> => {
       /**
        * Klient dodaje nowy produkt = chce kupować dalej. Kasujemy flagę
        * „zamówienie złożone", żeby /checkout nie cofał go na potwierdzenie
@@ -401,7 +421,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         try {
           const updated = await cartApi.addLineItem(
-            cart.id,
+            cartId,
             variantId,
             quantity,
             metadata,
@@ -476,6 +496,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         throw e;
       } finally {
         setIsLoading(false);
+      }
+      };
+
+      const op = run();
+      inFlightAddsRef.current.set(dedupeKey, op);
+      try {
+        await op;
+      } finally {
+        inFlightAddsRef.current.delete(dedupeKey);
       }
     },
     [cart.id, updateCartState],

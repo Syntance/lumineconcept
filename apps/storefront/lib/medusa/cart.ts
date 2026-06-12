@@ -6,6 +6,7 @@ import {
   storeApiFetch,
 } from "./store-fetch";
 import { resolveMedusaFetchBase } from "./resolve-fetch-base";
+import { withMedusaTimeout } from "./with-timeout";
 
 /**
  * Medusa 2 domyślnie nie zwraca `items.total` w koszyku — bez tego UI pokazuje „NaN zł”.
@@ -64,6 +65,7 @@ export async function addLineItem(
         quantity,
         metadata,
       }),
+      signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { message?: string };
@@ -73,14 +75,18 @@ export async function addLineItem(
     return data.cart;
   }
 
-  const response = await medusa.store.cart.createLineItem(
-    cartId,
-    {
-      variant_id: variantId,
-      quantity,
-      ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
-    },
-    CART_RETRIEVE_QUERY,
+  const response = await withMedusaTimeout(
+    medusa.store.cart.createLineItem(
+      cartId,
+      {
+        variant_id: variantId,
+        quantity,
+        ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
+      },
+      CART_RETRIEVE_QUERY,
+    ),
+    30_000,
+    "cart.createLineItem",
   );
   return response.cart;
 }
@@ -90,29 +96,41 @@ export async function updateLineItem(
   lineItemId: string,
   quantity: number,
 ) {
-  const response = await medusa.store.cart.updateLineItem(
-    cartId,
-    lineItemId,
-    {
-      quantity,
-    },
-    CART_RETRIEVE_QUERY,
+  const response = await withMedusaTimeout(
+    medusa.store.cart.updateLineItem(
+      cartId,
+      lineItemId,
+      {
+        quantity,
+      },
+      CART_RETRIEVE_QUERY,
+    ),
+    30_000,
+    "cart.updateLineItem",
   );
   return response.cart;
 }
 
 export async function removeLineItem(cartId: string, lineItemId: string) {
-  const response = await medusa.store.cart.deleteLineItem(cartId, lineItemId);
+  const response = await withMedusaTimeout(
+    medusa.store.cart.deleteLineItem(cartId, lineItemId),
+    30_000,
+    "cart.deleteLineItem",
+  );
   return response;
 }
 
 export async function applyPromotionCode(cartId: string, code: string) {
-  const response = await medusa.store.cart.update(
-    cartId,
-    {
-      promo_codes: [code],
-    },
-    CART_RETRIEVE_QUERY,
+  const response = await withMedusaTimeout(
+    medusa.store.cart.update(
+      cartId,
+      {
+        promo_codes: [code],
+      },
+      CART_RETRIEVE_QUERY,
+    ),
+    30_000,
+    "cart.update",
   );
   return response.cart;
 }
@@ -150,6 +168,7 @@ export async function updateCartMetadata(
           cart_id: cartId,
           express_delivery: metadataPatch.express_delivery === "true",
         }),
+        signal: AbortSignal.timeout(30_000),
       });
       if (expressRes.ok) {
         const data = (await expressRes.json()) as { cart?: unknown };
@@ -170,6 +189,7 @@ export async function updateCartMetadata(
         method: "POST",
         headers,
         body: JSON.stringify({ metadata: metadataPatch }),
+        signal: AbortSignal.timeout(30_000),
       });
       if (res.ok) {
         const data = (await res.json()) as { cart?: unknown };

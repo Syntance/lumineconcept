@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { medusa } from "./client";
 import { getPolishRegionId } from "./region";
 import { isProductionBuild, isTransientMedusaError, sleep } from "./transient-error";
+import { withMedusaTimeout } from "./with-timeout";
 
 /** Łańcuch `parent_category` jak w backendzie `certificate-line-item` (max głębokość). */
 function medusaCategoryAncestorFields(depth: number): string {
@@ -39,15 +40,19 @@ async function _getProducts(params?: {
   const offset = params?.offset ?? 0;
   try {
     const regionId = await getPolishRegionId();
-    return await medusa.store.product.list({
-      limit,
-      offset,
-      category_id: params?.category_id,
-      order: params?.order,
-      region_id: regionId,
-      fields:
-        "+variants.calculated_price,+variants.metadata,+options,+tags,*images,+thumbnail,+metadata,+description",
-    });
+    return await withMedusaTimeout(
+      medusa.store.product.list({
+        limit,
+        offset,
+        category_id: params?.category_id,
+        order: params?.order,
+        region_id: regionId,
+        fields:
+          "+variants.calculated_price,+variants.metadata,+options,+tags,*images,+thumbnail,+metadata,+description",
+      }),
+      30_000,
+      "product.list",
+    );
   } catch (e) {
     logMedusaFailure("getProducts", e);
     if (isProductionBuild() && isTransientMedusaError(e)) {
@@ -60,7 +65,8 @@ async function _getProducts(params?: {
 export const getProducts = unstable_cache(
   _getProducts,
   ["medusa-products"],
-  { revalidate: 60, tags: ["medusa-products"] },
+  // TTL 1h — inwalidacja natychmiastowa przez webhook (tag `medusa-products`).
+  { revalidate: 3600, tags: ["medusa-products"] },
 );
 
 /**
@@ -88,13 +94,17 @@ async function _getProductByHandle(handle: string) {
       await sleep(pause);
     }
     try {
-      const response = await medusa.store.product.list({
-        handle,
-        region_id: regionId,
-        fields:
-          "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options,+tags,+collection.handle,+collection.title,+categories.handle,+categories.name,+description" +
-          medusaCategoryAncestorFields(8),
-      });
+      const response = await withMedusaTimeout(
+        medusa.store.product.list({
+          handle,
+          region_id: regionId,
+          fields:
+            "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options,+tags,+collection.handle,+collection.title,+categories.handle,+categories.name,+description" +
+            medusaCategoryAncestorFields(8),
+        }),
+        30_000,
+        "product.list(handle)",
+      );
       return response.products[0] ?? null;
     } catch (e) {
       lastErr = e;
@@ -117,7 +127,8 @@ async function _getProductByHandle(handle: string) {
 export const getProductByHandle = unstable_cache(
   _getProductByHandle,
   ["medusa-product-by-handle"],
-  { revalidate: 120, tags: ["medusa-products"] },
+  // TTL 1h — inwalidacja natychmiastowa przez webhook (tag `medusa-products`).
+  { revalidate: 3600, tags: ["medusa-products"] },
 );
 
 /**

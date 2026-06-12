@@ -12,6 +12,15 @@ import type { OrderEmailPayload } from "./email-templates";
 import { getResendConfig } from "./resend-defaults";
 import { captureError } from "./sentry";
 
+/** Maskuje e-mail do logów: `jan.kowalski@x.pl` → `ja***@x.pl` (PII hygiene). */
+function maskEmail(email: string | undefined | null): string {
+  if (!email) return "[brak]";
+  const [local, domain] = email.split("@");
+  if (!domain || !local) return "[masked]";
+  const head = local.slice(0, 2);
+  return `${head}***@${domain}`;
+}
+
 /**
  * Bezpośrednia wysyłka przez Resend (ten sam kontrakt co `notification-resend`).
  * Używana gdy moduł `@medusajs/medusa/notification` nie jest załadowany
@@ -50,7 +59,7 @@ async function sendViaResendApi(params: {
       return false;
     }
     console.info(
-      `[mail:${params.context}] Resend (direct) id=${data?.id} → ${params.to}`,
+      `[mail:${params.context}] Resend (direct) id=${data?.id} → ${maskEmail(params.to)}`,
     );
     return true;
   } catch (e) {
@@ -121,10 +130,10 @@ export async function sendTransactionalEmail(
           }
         : {}),
     });
-    console.info(`[mail:${context}] wysłano do ${to}`);
+    console.info(`[mail:${context}] wysłano do ${maskEmail(to)}`);
     return true;
   } catch (err) {
-    console.error(`[mail:${context}] błąd createNotifications do ${to}:`, err);
+    console.error(`[mail:${context}] błąd createNotifications do ${maskEmail(to)}:`, err);
     captureError(err, { mail: context, orderId, to });
     return false;
   }

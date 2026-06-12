@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, Check, CreditCard, Package, type LucideIcon, Truck } from "lucide-react";
+import { Ban, Check, CreditCard, Package, PackageCheck, type LucideIcon, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cn } from "@magazyn/core/lib/cn";
@@ -22,11 +22,12 @@ type Props = {
 	/** P24 + captured — pomijamy księgowanie, od razu realizacja. */
 	p24ConfirmedPaid?: boolean;
 	canShip: boolean;
+	canDeliver: boolean;
 	canComplete: boolean;
 	canCancel: boolean;
 };
 
-export function OrderActions({ orderId, canCapture, p24ConfirmedPaid = false, canShip, canComplete, canCancel }: Props) {
+export function OrderActions({ orderId, canCapture, p24ConfirmedPaid = false, canShip, canDeliver, canComplete, canCancel }: Props) {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [activeAction, setActiveAction] = useState<OrderActionType | null>(null);
@@ -42,6 +43,7 @@ export function OrderActions({ orderId, canCapture, p24ConfirmedPaid = false, ca
 			available: canCapture,
 		},
 		{ type: "ship", label: "Przesyłka wysłana", icon: Truck, variant: "neutral", available: canShip },
+		{ type: "deliver", label: "Oznacz jako dostarczone", icon: PackageCheck, variant: "neutral", available: canDeliver },
 		{ type: "complete", label: "Zakończ zamówienie", icon: Check, variant: "neutral", available: canComplete },
 		{
 			type: "cancel",

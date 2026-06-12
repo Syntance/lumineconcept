@@ -6,6 +6,8 @@ import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
 import { adminUpload } from "@magazyn/core/medusa/client";
+import { requireAdminSession } from "@magazyn/core/auth/require-session";
+import { recordAudit } from "@magazyn/core/audit/audit-log";
 import { resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
 import { uploadCmsAssetFile } from "@/lib/product-upload/product-file";
 import { slugify } from "@magazyn/core/lib/slug";
@@ -182,6 +184,7 @@ export async function saveProductAction(payload: ProductPayload): Promise<SavePr
 export async function deleteProductAction(id: string): Promise<void> {
 	try {
 		await deleteAdminProduct(id);
+		await recordAudit("product.delete", { target: id });
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
 		throw error;
@@ -198,6 +201,7 @@ export async function uploadImagesAction(formData: FormData): Promise<UploadStat
 	if (files.length === 0) return { urls: [], error: "Nie wybrano plików." };
 
 	try {
+		await requireAdminSession();
 		const urls: string[] = [];
 		for (const file of files) {
 			try {

@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { dispatchBankTransferPendingEmail } from "../../../../lib/order-email-dispatch";
+import { hasValidInternalSecret } from "../../../../lib/internal-auth";
 
 type Body = {
   order_id?: string;
@@ -10,10 +11,16 @@ type Body = {
 /**
  * POST /store/custom/notify-bank-transfer
  *
- * Wysyła mail z danymi do przelewu tradycyjnego. Storefront woła po completeCart.
- * Akceptuje `email` z checkoutu jako fallback, gdy Medusa jeszcze nie ma go na order.
+ * Server-to-server kanał maila z danymi do przelewu tradycyjnego. Wymaga
+ * sekretu `x-order-email-secret` — bez niego endpoint był publiczny i pozwalał
+ * wysyłać maile do dowolnego `order_id` (spam / enumeracja). Pierwszorzędne
+ * kanały: subscriber `order.placed` + storefront `/api/checkout/send-bank-transfer-email`.
  */
 export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
+  if (!hasValidInternalSecret(req)) {
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+  }
+
   const body = (req.body ?? {}) as Body;
   const orderId =
     body.order_id?.trim() ??

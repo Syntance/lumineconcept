@@ -16,6 +16,18 @@ export default async function productRevalidateHandler({
     return;
   }
 
+  const productId = event.data?.id;
+  const tags = [
+    "medusa-products",
+    "medusa-categories",
+    "global-product-config",
+  ];
+  // Per-produktowy tag konfiguratora (global-config.ts) — bez niego zmiana
+  // produktu nie odświeżała `product-config-{id}` na PDP (cache do TTL).
+  if (productId) {
+    tags.push(`product-config-${productId}`);
+  }
+
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -24,9 +36,9 @@ export default async function productRevalidateHandler({
         "x-webhook-secret": secret,
       },
       body: JSON.stringify({
-        tags: ["medusa-products", "medusa-categories", "global-product-config"],
+        tags,
         reason: event.name,
-        id: event.data?.id,
+        id: productId,
       }),
       signal: AbortSignal.timeout(10_000),
     });

@@ -256,27 +256,77 @@ export async function ProductPageLayout({
     ...breadcrumbContext,
   });
 
+  // Marka sklepu — używana w Product (brand) i Offer (seller) JSON-LD.
+  const BRAND_NAME = "Lumine Concept";
+
+  // Opis dla JSON-LD jako czysty tekst (bez HTML) — Google nie chce znaczników.
+  const plainDescription = product.description
+    ? stripHtmlForDimensions(product.description).replace(/\s+/g, " ").trim()
+    : undefined;
+
+  // SKU: preferuj sku wariantu (Medusa), fallback na id produktu.
+  const sku =
+    (firstVariant as { sku?: string } | undefined)?.sku?.trim() || product.id;
+
+  // Ceny ofert (już dziesiętne w PLN) — zgodnie z logiką `extractPrice`.
+  // Medusa v2: `calculated_amount` / `metadata.base_price` to złotówki, nie grosze.
+  const offerPrices = variants
+    .map((v) => extractPrice(v, metadata))
+    .filter((p) => p > 0);
+  const effectivePrices = offerPrices.length > 0 ? offerPrices : price > 0 ? [price] : [];
+  const lowPrice = effectivePrices.length ? Math.min(...effectivePrices) : 0;
+  const highPrice = effectivePrices.length ? Math.max(...effectivePrices) : 0;
+
+  // Produkcja na zamówienie (`manage_inventory === false`) traktujemy jak dostępne.
+  const inStock = variants.some(
+    (v) => v.manage_inventory === false || (v.inventory_quantity ?? 0) > 0,
+  );
+  const availability = inStock
+    ? "https://schema.org/InStock"
+    : "https://schema.org/OutOfStock";
+  // Google zaleca `priceValidUntil` — ustawiamy +1 rok (rolling).
+  const priceValidUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+
+  const sellerOrg = { "@type": "Organization", name: BRAND_NAME };
+  const offers =
+    lowPrice === highPrice
+      ? {
+          "@type": "Offer",
+          price: lowPrice,
+          priceCurrency: "PLN",
+          availability,
+          itemCondition: "https://schema.org/NewCondition",
+          url: productUrl,
+          priceValidUntil,
+          seller: sellerOrg,
+        }
+      : {
+          "@type": "AggregateOffer",
+          lowPrice,
+          highPrice,
+          offerCount: effectivePrices.length,
+          priceCurrency: "PLN",
+          availability,
+          itemCondition: "https://schema.org/NewCondition",
+          url: productUrl,
+          priceValidUntil,
+          seller: sellerOrg,
+        };
+
   const productJsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
-    description: product.description,
+    ...(plainDescription ? { description: plainDescription } : {}),
     image: images.map((img) => img.url),
     url: productUrl,
-    offers: variants.map((v) => ({
-      "@type": "Offer",
-      // Medusa v2: `calculated_amount` i `metadata.base_price` to już
-      // dziesiętne w PLN — JSON-LD oczekuje tego samego formatu.
-      price:
-        (v.calculated_price?.calculated_amount ?? 0) > 0
-          ? (v.calculated_price?.calculated_amount ?? 0)
-          : (extractBasePrice(metadata) ?? 0),
-      priceCurrency: "PLN",
-      availability:
-        v.manage_inventory === false || v.inventory_quantity > 0
-          ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
-    })),
+    sku,
+    brand: { "@type": "Brand", name: BRAND_NAME },
+    offers,
+    // Uwaga: świadomie NIE dodajemy aggregateRating/review — brak realnych
+    // danych ocen; fabrykowanie łamałoby wytyczne Google i grozi karą.
   };
 
   return (

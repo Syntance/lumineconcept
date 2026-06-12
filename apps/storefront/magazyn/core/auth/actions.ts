@@ -6,6 +6,8 @@ import { serverEnv } from "../env";
 import { AdminApiError, AdminUnauthorizedError } from "../medusa/errors";
 import { loginWithEmailPassword } from "../medusa/client";
 import { clearSessionToken, setSessionToken } from "../medusa/session";
+import { isAdminEmailAllowed } from "./allowlist";
+import { checkLoginRateLimit } from "./login-rate-limit";
 
 export type LoginState = { error: string | null };
 
@@ -17,6 +19,18 @@ export async function loginEmailAction(
 	const password = String(formData.get("password") ?? "");
 
 	if (!email || !password) return { error: "Podaj email i hasło." };
+
+	// Rate-limit logowania (brute-force) — per IP, fail-open bez Upstash.
+	const rl = await checkLoginRateLimit();
+	if (!rl.ok) {
+		return { error: "Za dużo prób logowania. Odczekaj chwilę i spróbuj ponownie." };
+	}
+
+	// Allowlista e-maili (MAGAZYN_ADMIN_ALLOWLIST) — gdy ustawiona, tylko wskazane
+	// konta mogą wejść do panelu, nawet z poprawnymi danymi Medusa Admin.
+	if (!isAdminEmailAllowed(email)) {
+		return { error: "To konto nie ma dostępu do panelu." };
+	}
 
 	try {
 		const token = await loginWithEmailPassword(email, password);

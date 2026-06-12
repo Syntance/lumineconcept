@@ -22,8 +22,11 @@ import type {
 
 function isAbsoluteUrl(value: string): boolean {
 	try {
-		new URL(value);
-		return true;
+		const url = new URL(value);
+		// SECURITY: dopuszczamy WYŁĄCZNIE http/https. `new URL` akceptuje też
+		// `javascript:`, `data:`, `vbscript:` — które w atrybucie href są
+		// wektorem XSS. Treść CMS może być edytowana w panelu, więc walidujemy.
+		return url.protocol === "http:" || url.protocol === "https:";
 	} catch {
 		return false;
 	}
@@ -31,7 +34,27 @@ function isAbsoluteUrl(value: string): boolean {
 
 /** Obraz z public/ (/images/...) lub pełny URL CDN. */
 function isCmsAssetUrl(value: string): boolean {
+	if (value.startsWith("//")) return false; // protocol-relative → traktuj jak zewnętrzny
 	return value.startsWith("/") || isAbsoluteUrl(value);
+}
+
+/**
+ * Bezpieczny link nawigacyjny CMS: ścieżka wewnętrzna (`/...`, `#...`),
+ * `mailto:`/`tel:` albo absolutny URL http(s). Blokuje `javascript:`, `data:`
+ * i protocol-relative (`//evil.com`) — wektory XSS/phishingu w atrybucie href.
+ */
+function isSafeCmsLink(value: string): boolean {
+	const v = value.trim();
+	if (v === "") return true;
+	if (v.startsWith("//")) return false;
+	if (v.startsWith("/") || v.startsWith("#")) return true;
+	if (/^mailto:/i.test(v) || /^tel:/i.test(v)) return true;
+	return isAbsoluteUrl(v);
+}
+
+/** Link gdy bezpieczny, inaczej „#" (neutralizuje niebezpieczny href). */
+function sanitizeCmsHref(value: string): string {
+	return isSafeCmsLink(value) ? value.trim() : "#";
 }
 
 const cmsOptionalAssetUrlSchema = z
@@ -74,7 +97,11 @@ export const siteSettingsSchema = z.object({
 		.object({
 			enabled: z.boolean(),
 			text: z.string(),
-			link: z.string().optional(),
+			// Neutralizujemy niebezpieczne schematy (javascript:/data:) → undefined.
+			link: z
+				.string()
+				.optional()
+				.transform((v) => (v && isSafeCmsLink(v) ? v.trim() : undefined)),
 		})
 		.optional(),
 	trustBar: z
@@ -115,7 +142,7 @@ const heroSchema = z.object({
 	subtitle: z.string().optional(),
 	description: z.string(),
 	ctaLabel: z.string().min(1),
-	ctaHref: z.string().min(1),
+	ctaHref: z.string().min(1).transform(sanitizeCmsHref),
 	ctaAriaLabel: z.string().optional(),
 	headlineUppercase: z.boolean().optional(),
 	ctaShowDownArrow: z.boolean().optional(),
@@ -149,7 +176,7 @@ const galleryPhotoSchema = z.object({
 const categoryTileSchema = z.object({
 	title: z.string().min(1),
 	cta: z.string().min(1),
-	href: z.string().min(1),
+	href: z.string().min(1).transform(sanitizeCmsHref),
 	imageUrl: z.string().min(1),
 });
 

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
+import { recordAudit } from "@magazyn/core/audit/audit-log";
 import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
 import { slugify } from "@magazyn/core/lib/slug";
 import { type CategoryInput, createCategory, deleteCategory, reorderCategories, updateCategory } from "./store";
@@ -69,6 +70,7 @@ export async function saveCategoryAction(payload: CategoryPayload): Promise<Cate
 export async function deleteCategoryAction(id: string): Promise<CategoryActionState> {
 	try {
 		await deleteCategory(id);
+		await recordAudit("category.delete", { target: id });
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };

@@ -66,6 +66,9 @@ function actionFlags(order: AdminOrderDetail) {
 			!closed && !shipped && !inRealization && ["not_fulfilled", "partially_fulfilled"].includes(order.fulfillmentStatus),
 		p24ConfirmedPaid: isP24PaymentConfirmed(order),
 		canShip: !closed && !shipped && (inRealization || order.fulfillments.some((f) => !f.canceledAt && !f.shippedAt)),
+		canDeliver:
+			!closed &&
+			order.fulfillments.some((f) => !f.canceledAt && f.shippedAt != null && !f.deliveredAt),
 		canComplete: !closed && shipped,
 		canCancel: !closed,
 	};

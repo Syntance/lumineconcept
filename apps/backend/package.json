@@ -13,6 +13,7 @@
     "sync-storefront-categories:link": "medusa exec ./src/scripts/sync-storefront-product-categories.ts -- --link-products",
     "setup-shipping": "medusa exec ./src/scripts/ensure-lumine-shipping.ts",
     "setup-payment": "medusa exec ./src/scripts/ensure-lumine-payment.ts",
+    "restore:verify": "medusa exec ./src/scripts/restore-from-r2.ts",
     "test": "vitest run",
     "test:p24-smoke": "npx tsx ./src/scripts/test-p24-smoke.ts",
     "db:migrate": "medusa db:migrate",
