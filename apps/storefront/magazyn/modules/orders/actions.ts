@@ -8,6 +8,7 @@ import {
 	cancelOrder,
 	completeOrder,
 	getAdminOrderForEmail,
+	markOrderDelivered,
 	markOrderShipped,
 	orderToEmailSource,
 	startOrderRealization,
@@ -15,17 +16,20 @@ import {
 
 export type OrderActionState = { error: string | null; ok: boolean };
 
-export type OrderActionType = "capture" | "ship" | "complete" | "cancel";
+export type OrderActionType = "capture" | "ship" | "deliver" | "complete" | "cancel";
 
 const HANDLERS: Record<OrderActionType, (orderId: string) => Promise<void>> = {
 	capture: startOrderRealization,
 	ship: markOrderShipped,
+	deliver: markOrderDelivered,
 	complete: completeOrder,
 	cancel: cancelOrder,
 };
 
-/** Mapowanie akcji → etap maila (zob. moduł emails). */
-const ACTION_EMAIL: Record<OrderActionType, "realization_started" | "shipped" | "completed" | "cancelled"> = {
+/** Mapowanie akcji → etap maila (zob. moduł emails). Akcje bez maila pomijamy. */
+const ACTION_EMAIL: Partial<
+	Record<OrderActionType, "realization_started" | "shipped" | "completed" | "cancelled">
+> = {
 	capture: "realization_started",
 	ship: "shipped",
 	complete: "completed",
@@ -37,11 +41,13 @@ const ORDERS_PATH = `${magazynConfig.basePath}/panel/zamowienia`;
 /** Wysyła mail etapu — best-effort, tylko gdy moduł emails jest włączony. */
 async function notifyStage(orderId: string, action: OrderActionType): Promise<void> {
 	if (!magazynConfig.modules.emails) return;
+	const stage = ACTION_EMAIL[action];
+	if (!stage) return; // akcja bez powiadomienia mailowego (np. „dostarczone")
 	try {
 		const order = await getAdminOrderForEmail(orderId);
 		if (!order) return;
 		const { sendOrderStageEmail } = await import("@magazyn/modules/emails/send-order-email");
-		await sendOrderStageEmail(ACTION_EMAIL[action], orderToEmailSource(order));
+		await sendOrderStageEmail(stage, orderToEmailSource(order));
 	} catch {
 		// Mail to powiadomienie — nie blokujemy operacji na zamówieniu.
 	}

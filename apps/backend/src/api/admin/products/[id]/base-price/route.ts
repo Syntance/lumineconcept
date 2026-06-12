@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { IProductModuleService } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 import { syncProductVariantPricesPln } from "../../../../../lib/sync-product-variant-prices"
+import { captureError } from "../../../../../lib/sentry"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const productService: IProductModuleService =
@@ -42,13 +43,10 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       : null
   const price = raw !== null && raw > 0 ? Math.round(raw * 100) / 100 : null
 
-  await productService.updateProducts(id, {
-    metadata: {
-      ...existingMeta,
-      base_price: price !== null ? String(price) : "",
-    },
-  })
-
+  // Najpierw synchronizujemy ceny WARIANTÓW (źródło prawdy dla storefrontu),
+  // a metadata.base_price (fallback) zapisujemy DOPIERO po sukcesie. Bez tego
+  // przy cichym faliu syncu metadata mówiła jedną cenę, a warianty inną
+  // (rozjazd). Błąd syncu jest teraz widoczny w panelu (502), nie połykany.
   let variantPricesUpdated = 0
   if (price !== null) {
     try {
@@ -58,13 +56,22 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
         price,
       )
     } catch (e) {
-      console.error(
-        "[base-price] syncProductVariantPricesPln failed",
-        id,
-        e,
-      )
+      console.error("[base-price] syncProductVariantPricesPln failed", id, e)
+      captureError(e, { route: "admin/products/base-price", productId: id })
+      return res.status(502).json({
+        code: "price_sync_failed",
+        message:
+          "Nie udało się zsynchronizować cen wariantów. Cena NIE została zapisana — spróbuj ponownie.",
+      })
     }
   }
+
+  await productService.updateProducts(id, {
+    metadata: {
+      ...existingMeta,
+      base_price: price !== null ? String(price) : "",
+    },
+  })
 
   res.json({ base_price: price, variant_prices_updated: variantPricesUpdated })
 }

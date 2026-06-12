@@ -53,8 +53,40 @@ export default async function KontaktPage() {
   const facebookUrl =
     social.facebook?.trim() || DEFAULT_SITE_SETTINGS.socialLinks?.facebook || "";
 
+  // LocalBusiness (NAP) — lokalne SEO + dane encji dla wyszukiwarek/AI.
+  const localBusinessJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    name: "Lumine Concept",
+    image: `${SITE_URL}/images/logo.png`,
+    url: `${SITE_URL}/kontakt`,
+    email: SITE_CONTACT.email,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Jana Pawła II 93",
+      addressLocality: "Ryczów",
+      postalCode: "34-115",
+      addressCountry: "PL",
+    },
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        opens: "09:00",
+        closes: "17:00",
+      },
+    ],
+    sameAs: [instagramUrl, facebookUrl, social.tiktok?.trim()].filter(
+      (url): url is string => Boolean(url),
+    ),
+  };
+
   return (
     <div className="border-b border-brand-100 bg-brand-50/30">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
+      />
       <div className="container mx-auto px-4 py-8 pb-16 sm:py-12">
         <Breadcrumbs items={[{ label: "Strona główna", href: "/" }, { label: "Kontakt" }]} />
 

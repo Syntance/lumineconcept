@@ -141,14 +141,16 @@ async function _fetchGlobalConfig(productId?: string): Promise<GlobalProductConf
 export const getGlobalProductConfig = unstable_cache(
   _fetchGlobalConfig,
   ["global-product-config"],
-  { revalidate: 60, tags: ["global-product-config"] },
+  // TTL 1h — webhook produktu inwaliduje tag `global-product-config`.
+  { revalidate: 3600, tags: ["global-product-config"] },
 )
 
 export function getGlobalProductConfigForProduct(productId: string) {
   return unstable_cache(
     () => _fetchGlobalConfig(productId),
     ["global-product-config", productId],
-    { revalidate: 60, tags: ["global-product-config", `product-config-${productId}`] },
+    // TTL 1h — webhook produktu inwaliduje `product-config-{id}` (i globalny tag).
+    { revalidate: 3600, tags: ["global-product-config", `product-config-${productId}`] },
   )()
 }
 

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
+import { requireAdminSession } from "@magazyn/core/auth/require-session";
 import { uploadCmsAssetFile } from "@/lib/product-upload/product-file";
 import { resetEmailTemplate, saveEmailTemplate, setEmailTemplateEnabled } from "./store";
 import { mergeSubject, renderTemplate, sampleRenderContextForTemplate } from "./render-template";
@@ -87,6 +88,7 @@ export async function uploadEmailImageAction(formData: FormData): Promise<Upload
 	}
 
 	try {
+		await requireAdminSession();
 		const result = await uploadCmsAssetFile(file);
 		return { ok: true, error: null, url: result.url };
 	} catch (error) {
@@ -103,19 +105,19 @@ export async function sendTestEmailAction(input: unknown): Promise<EmailActionSt
 	const parsed = testSchema.safeParse(input);
 	if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Błędne dane." };
 
-	const template = parsed.data.template as EmailTemplate;
-	const ctx = sampleRenderContextForTemplate(template.type);
-	const { html, text } = renderTemplate(template, ctx);
-	const subject = `[TEST] ${mergeSubject(template.subject, ctx.vars)}`;
-
 	try {
+		await requireAdminSession();
+		const template = parsed.data.template as EmailTemplate;
+		const ctx = sampleRenderContextForTemplate(template.type);
+		const { html, text } = renderTemplate(template, ctx);
+		const subject = `[TEST] ${mergeSubject(template.subject, ctx.vars)}`;
 		const result = await sendTransactionalEmail({ to: parsed.data.to, subject, text, html });
 		if (!result.ok) return { ok: false, error: result.message };
 		if (result.skipped) {
 			return { ok: false, error: "Brak RESEND_API_KEY — test pominięty (skonfiguruj klucz)." };
 		}
 		return { ok: true, error: null };
-	} catch {
-		return { ok: false, error: "Nie udało się wysłać testu." };
+	} catch (error) {
+		return handleError(error, "Nie udało się wysłać testu.");
 	}
 }

@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { dispatchOrderPlacedEmails } from "../../../../lib/order-email-dispatch";
+import { hasValidInternalSecret } from "../../../../lib/internal-auth";
 
 type Body = {
   order_id?: string;
@@ -10,9 +11,17 @@ type Body = {
 /**
  * POST /store/custom/notify-order-placed
  *
- * Awaryjny kanał wysyłki maila po completeCart (gdy subscriber milczy).
+ * Awaryjny, server-to-server kanał wysyłki maila po completeCart (gdy subscriber
+ * `order.placed` milczy). Wymaga sekretu `x-order-email-secret` — bez niego
+ * każdy znający `order_id` mógłby spamować mailami (enumeracja zamówień).
+ * Pierwszorzędne kanały: subscriber `order.placed` + storefront
+ * `/api/checkout/notify-order-placed`.
  */
 export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
+  if (!hasValidInternalSecret(req)) {
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+  }
+
   const body = (req.body ?? {}) as Body;
   const orderId =
     body.order_id?.trim() ??

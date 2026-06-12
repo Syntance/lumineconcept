@@ -60,7 +60,7 @@ export default async function orderPlacedHandler({
     container.resolve(Modules.ORDER);
 
   let order: Awaited<ReturnType<typeof orderService.retrieveOrder>>;
-  let orderForEmail: Record<string, unknown> | null = null;
+  let orderForEmail: Record<string, unknown> | null;
   try {
     order = await orderService.retrieveOrder(event.data.id, {
       relations: ["items", "shipping_address", "shipping_methods"],
@@ -199,7 +199,12 @@ async function sendPostHogEvent(order: any): Promise<void> {
   const posthogKey = process.env.POSTHOG_API_KEY;
   if (!posthogKey) return;
 
-  const distinctId: string = order?.email ?? order?.id ?? "anonymous";
+  // PII: nie wysyłamy surowego e-maila jako distinct_id. Hashujemy (SHA-256,
+  // jak Meta CAPI), zachowując spójną tożsamość użytkownika bez ujawniania PII.
+  const email: string | undefined = order?.email;
+  const distinctId: string = email
+    ? crypto.createHash("sha256").update(email.toLowerCase().trim()).digest("hex")
+    : (order?.id ?? "anonymous");
 
   await withTimeout("posthog", 3000, (signal) =>
     fetch("https://eu.posthog.com/capture/", {

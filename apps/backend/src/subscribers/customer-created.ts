@@ -49,6 +49,7 @@ async function syncToMailerLite(customer: { email: string; first_name: string | 
           : [],
         status: "active",
       }),
+      signal: AbortSignal.timeout(30_000),
     });
   } catch (error) {
     console.error("MailerLite sync error:", error);

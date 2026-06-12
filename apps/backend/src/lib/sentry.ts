@@ -40,10 +40,29 @@ const PII_KEYS = new Set<string>(
     "setCookie",
     "x-publishable-api-key",
     "x-webhook-secret",
+    "x-order-email-secret",
     "stripe_key",
     "p24_crc",
+    // Odbiorcy maili (np. kontekst captureError w send-email.ts) — to też PII.
+    "to",
+    "cc",
+    "bcc",
+    "replyto",
+    "reply_to",
+    // IP klienta.
+    "ip",
+    "ip_address",
+    "x-forwarded-for",
+    "x-real-ip",
+    "remoteaddress",
   ].map((k) => k.toLowerCase()),
 );
+
+/** Maskuje adresy e-mail w wolnym tekście (message/breadcrumb). */
+const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+function redactEmails(text: string): string {
+  return text.replace(EMAIL_RE, "[redacted-email]");
+}
 
 function redactDeep(value: unknown, depth = 0): unknown {
   if (depth > 6) return "[truncated]";
@@ -101,7 +120,25 @@ export function initSentry(): void {
         event.extra = redactDeep(event.extra) as typeof event.extra;
       }
       if (event.user) {
+        // Tylko id — żadnego email/ip/username.
         event.user = { id: event.user.id };
+      }
+      // Maskujemy e-maile w komunikacie błędu.
+      if (typeof event.message === "string") {
+        event.message = redactEmails(event.message);
+      }
+      // Scrubbing breadcrumbs (dane strukturalne + e-maile w wiadomościach).
+      if (Array.isArray(event.breadcrumbs)) {
+        event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => ({
+          ...breadcrumb,
+          message:
+            typeof breadcrumb.message === "string"
+              ? redactEmails(breadcrumb.message)
+              : breadcrumb.message,
+          data: breadcrumb.data
+            ? (redactDeep(breadcrumb.data) as typeof breadcrumb.data)
+            : breadcrumb.data,
+        }));
       }
       return event;
     },

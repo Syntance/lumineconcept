@@ -26,8 +26,33 @@ export async function getSeoSettingsBundle(): Promise<SeoSettingsBundle> {
 	};
 }
 
+/**
+ * Pola zarządzane przez formularz GLOBALNEGO SEO. Pozostałe pola `SiteSettings`
+ * (announcementBar, trustBar, checkoutCallout, socialLinks, footerText) NIE są
+ * częścią tego formularza i muszą zostać zachowane przy zapisie.
+ */
+const GLOBAL_SEO_FIELDS = [
+	"title",
+	"description",
+	"titleTemplate",
+	"defaultOgImageUrl",
+	"googleSiteVerification",
+	"seo",
+] as const;
+
 export async function saveGlobalSeoSettings(settings: SiteSettings): Promise<void> {
-	const parsed = siteSettingsSchema.parse(settings);
+	// Read-modify-write: czytamy aktualne ustawienia witryny i nakładamy WYŁĄCZNIE
+	// pola SEO. Bez tego zapis SEO nadpisywał cały `magazyn_site_settings`
+	// wartościami domyślnymi, kasując pasek zapowiedzi, trust bar, social i stopkę.
+	const store = await getMedusaStore();
+	const current = parseSiteSettings(readMetadataJson(store, MAGAZYN_SITE_SETTINGS_KEY));
+
+	const merged: SiteSettings = { ...current };
+	for (const field of GLOBAL_SEO_FIELDS) {
+		(merged as Record<string, unknown>)[field] = (settings as Record<string, unknown>)[field];
+	}
+
+	const parsed = siteSettingsSchema.parse(merged);
 	await mergeStoreMetadata({
 		[MAGAZYN_SITE_SETTINGS_KEY]: JSON.stringify(parsed),
 	});

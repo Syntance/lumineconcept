@@ -46,12 +46,19 @@ export function buildMetadata({
 	return {
 		title,
 		description,
-		alternates: canonical ? { canonical } : undefined,
+		// hreflang: na razie jednojęzyczny PL (przygotowanie pod i18n — przy
+		// dodaniu locale rozszerzamy mapę `languages`).
+		alternates: canonical
+			? { canonical, languages: { "pl-PL": canonical } }
+			: undefined,
 		robots,
 		openGraph: {
 			title: ogTitle,
 			description: ogDescription,
 			type,
+			siteName: "Lumine Concept",
+			locale: "pl_PL",
+			...(canonical ? { url: canonical } : {}),
 			...(publishedTime && type === "article" ? { publishedTime } : {}),
 			...(ogImageUrl ? { images: [{ url: ogImageUrl, width: 1200, height: 630 }] } : {}),
 		},

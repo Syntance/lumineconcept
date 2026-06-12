@@ -15,12 +15,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 	const loginUrl = new URL(magazynConfig.basePath, origin);
 	const dashboardUrl = new URL(`${magazynConfig.basePath}/panel`, origin);
 
-	const directToken = searchParams.get("token");
-	if (directToken) {
-		await setSessionToken(directToken);
-		return NextResponse.redirect(dashboardUrl);
-	}
-
+	// SECURITY: NIE akceptujemy tokenu z query (`?token=`). Wcześniej callback
+	// zapisywał dowolny token z URL jako sesję bez weryfikacji — to umożliwiało
+	// session fixation/podszycie oraz wyciek JWT do historii przeglądarki, logów
+	// serwera i nagłówka Referer. Token pozyskujemy WYŁĄCZNIE z wymiany
+	// code↔token server-to-server z backendem Medusa (poniżej).
 	const query = searchParams.toString();
 	if (!query) {
 		loginUrl.searchParams.set("error", "google");

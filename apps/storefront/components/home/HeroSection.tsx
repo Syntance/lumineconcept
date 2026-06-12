@@ -56,13 +56,23 @@ export async function HeroSection({
 			</div>
 
 			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
+				{/*
+				 * Desktopowe tło hero to element LCP. `eager` + `fetchPriority="high"`
+				 * zamiast `lazy` — element LCP nie może być leniwie ładowany (flaga
+				 * Lighthouse). Świadomie NIE używamy `priority`: dodałby bezwarunkowy
+				 * `<link rel=preload>`, który na mobile (gdzie ten obraz jest `hidden`)
+				 * ściągałby ultraszerokie tło z wysokim priorytetem, konkurując z LCP
+				 * wersji mobilnej.
+				 */}
 				{desktopImageUrl ? (
 					<Image
 						src={desktopImageUrl}
 						alt=""
 						width={HERO_BG_WIDTH}
 						height={HERO_BG_HEIGHT}
-						loading="lazy"
+						loading="eager"
+						fetchPriority="high"
+						sizes="100vw"
 						unoptimized
 						placeholder={desktopBlurDataURL ? "blur" : "empty"}
 						blurDataURL={desktopBlurDataURL}
