@@ -248,6 +248,17 @@ const SUMMARY_LIST_FIELDS = ["id", "status", "payment_status", "total", "currenc
 
 const SUMMARY_PAGE_SIZE = 100;
 
+/** Zamówienia widoczne w Magazynie — bez archiwizowanych, anulowanych i szkiców. */
+const MAGAZYN_VISIBLE_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set([
+	"pending",
+	"completed",
+	"requires_action",
+]);
+
+function isMagazynVisibleOrder(status: OrderStatus | string): boolean {
+	return MAGAZYN_VISIBLE_ORDER_STATUSES.has(status as OrderStatus);
+}
+
 function isPaidPaymentStatus(status: OrderPaymentStatus): boolean {
 	return (
 		status === "captured" ||
@@ -281,14 +292,10 @@ export async function getAdminOrdersOverviewSummary(): Promise<AdminOrdersOvervi
 
 		for (const order of data.orders ?? []) {
 			const status = order.status ?? "pending";
+			if (!isMagazynVisibleOrder(status)) continue;
+
 			const paymentStatus = order.payment_status ?? "not_paid";
 			const totalMinor = toMinorUnits(order.total);
-
-			if (status === "canceled" || status === "archived") {
-				summary.canceledCount += 1;
-				continue;
-			}
-			if (status === "draft") continue;
 
 			summary.orderCount += 1;
 			summary.totalMinor += totalMinor;
@@ -314,23 +321,25 @@ export async function listAdminOrders(): Promise<AdminOrderRow[]> {
 		`/admin/orders?limit=100&order=-created_at&fields=${LIST_FIELDS}`,
 	);
 
-	return data.orders.map((order) => {
-		const metadata = normalizeMetadata(order.metadata);
-		return {
-			id: order.id,
-			displayId: order.display_id ?? 0,
-			status: order.status ?? "pending",
-			paymentStatus: order.payment_status ?? "not_paid",
-			fulfillmentStatus: order.fulfillment_status ?? "not_fulfilled",
-			email: order.email ?? "",
-			customerName: customerNameFrom(order),
-			currencyCode: (order.currency_code ?? "pln").toUpperCase(),
-			total: toMinorUnits(order.total),
-			itemCount: (order.items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0),
-			createdAt: order.created_at ?? "",
-			expressDelivery: isExpressDelivery(metadata),
-		};
-	});
+	return data.orders
+		.filter((order) => isMagazynVisibleOrder(order.status ?? "pending"))
+		.map((order) => {
+			const metadata = normalizeMetadata(order.metadata);
+			return {
+				id: order.id,
+				displayId: order.display_id ?? 0,
+				status: order.status ?? "pending",
+				paymentStatus: order.payment_status ?? "not_paid",
+				fulfillmentStatus: order.fulfillment_status ?? "not_fulfilled",
+				email: order.email ?? "",
+				customerName: customerNameFrom(order),
+				currencyCode: (order.currency_code ?? "pln").toUpperCase(),
+				total: toMinorUnits(order.total),
+				itemCount: (order.items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0),
+				createdAt: order.created_at ?? "",
+				expressDelivery: isExpressDelivery(metadata),
+			};
+		});
 }
 
 function mapMedusaOrderToDetail(
