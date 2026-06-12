@@ -100,30 +100,32 @@ export default async function ShopHubPage() {
         }}
       />
 
-      <section className="relative overflow-x-hidden bg-brand-100">
-        <div className="relative z-10 bg-white pt-10 lg:pt-12">
-          <div className="container mx-auto max-w-4xl px-4">
-            <div className="flex flex-col max-lg:gap-10 lg:gap-3">
-              <Breadcrumbs
-                className="mb-0"
-                items={[
-                  { label: "Strona główna", href: "/" },
-                  { label: "Sklep" },
-                ]}
+      <section className="relative overflow-x-hidden bg-brand-100 pt-10 lg:pt-12">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="relative max-lg:mb-10 lg:mb-3">
+            <div
+              className="pointer-events-none absolute bottom-0 left-1/2 top-[-2.5rem] w-screen -translate-x-1/2 bg-white lg:top-[-3rem]"
+              aria-hidden
+            />
+            <Breadcrumbs
+              className="relative z-10 mb-0"
+              items={[
+                { label: "Strona główna", href: "/" },
+                { label: "Sklep" },
+              ]}
+            />
+          </div>
+          <div className="text-center">
+            <div className="relative isolate inline-block">
+              <div
+                className="pointer-events-none absolute left-1/2 top-0 z-0 h-[58%] w-screen -translate-x-1/2 bg-white"
+                aria-hidden
               />
-              <div className="text-center">
-                <div className="relative inline-block">
-                  <div
-                    className="pointer-events-none absolute left-1/2 top-0 z-0 h-[calc(100%+2.5rem)] w-screen -translate-x-1/2 bg-[linear-gradient(to_bottom,white_0%,white_50%,var(--color-brand-100)_50%,var(--color-brand-100)_100%)]"
-                    aria-hidden
-                  />
-                  <h1 className="relative z-10 mt-0 font-display text-4xl tracking-widest text-brand-800 lg:text-5xl">
-                    Sklep
-                  </h1>
-                </div>
-                <div className="relative z-10 mx-auto mt-1 h-px w-12 bg-accent" />
-              </div>
+              <h1 className="relative z-10 mt-0 font-display text-4xl leading-none tracking-widest text-brand-800 lg:text-5xl">
+                Sklep
+              </h1>
             </div>
+            <div className="relative z-10 mx-auto mt-1 h-px w-12 bg-accent" />
           </div>
         </div>
       </section>
