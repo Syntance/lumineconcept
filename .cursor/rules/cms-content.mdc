@@ -33,11 +33,13 @@ w **`Store.metadata`** Medusy. Edycja w panelu `magazyn`, odczyt przez RSC store
   zewnętrzne przepuszczaj przez walidację `isSafeCmsLink`/`isAbsoluteUrl` — dozwolone
   `http(s)`, `/ścieżka`, `#kotwica`, `mailto:`/`tel:`. Blokuj `javascript:`, `data:`,
   protocol-relative `//`. (Anty-XSS — treść jest edytowalna w panelu.)
-- **Rewalidacja po zapisie**: `revalidateTag('magazyn-content')` + webhook
-  `/api/revalidate/medusa`. W trybie static-snapshot dodatkowo deploy hook (publikacja
-  ≈ redeploy — komunikuj to w UI).
-- **Odczyt cache'owany**: jeden blob `Store.metadata` na render (`lib/content/admin-read.ts`,
-  `React.cache`, tag `magazyn-content`). PDP: SEO/FAQ z już pobranego produktu (0 extra fetchy).
+- **Rewalidacja hybrid po zapisie**: zawsze `revalidateTag('magazyn-content')` + webhook
+  (tekst live w sekundach). Deploy hook (`VERCEL_DEPLOY_HOOK_URL`) **tylko** gdy
+  `mediaUrlsChanged(before, after)` — sync obrazów w prebuild. Komunikaty UI:
+  `cmsSaveSuccessMessage(mediaPublishQueued)`.
+- **Odczyt cache'owany**: live blob `Store.metadata` na render (`admin-read.ts`, tag
+  `magazyn-content`, ISR 3600s) + `applyMediaUrlOverlay` z `static-cms-media-map.ts`.
+  PDP: SEO/FAQ z już pobranego produktu (0 extra fetchy).
 - Renderowanie treści jako **React text nodes**. `dangerouslySetInnerHTML` tylko dla
   JSON-LD (`JSON.stringify`) lub treści przepuszczonej przez sanitizer (DOMPurify/sanitize-html).
 
@@ -45,9 +47,9 @@ w **`Store.metadata`** Medusy. Edycja w panelu `magazyn`, odczyt przez RSC store
 - Nie nadpisuj całego `magazyn_site_settings` payloadem z jednego formularza (utrata danych).
 - Nie renderuj surowego HTML z CMS bez sanityzacji.
 - Nie fetchuj `Store.metadata` per komponent — jeden cache'owany odczyt na render.
-- Nie zakładaj natychmiastowej publikacji w trybie static (snapshot z buildu) — bez deploy
-  hooka zmiany nie trafią live.
-- Nie duplikuj źródła treści (jedno źródło zapisu = `Store.metadata`; snapshot to tylko cache).
+- Nie wołaj deploy hooka przy każdym zapisie tekstu — tylko przy zmianie URL mediów
+  lub uploadzie obrazu (`queueCmsMediaPublish`).
+- Nie duplikuj źródła treści (zapis = `Store.metadata`; mapa mediów to cache buildu, nie źródło).
 
 ## SEO przez CMS
 - Globalne: `siteSettings` (title/template/description/OG/weryfikacja Google) → root layout.
@@ -56,9 +58,10 @@ w **`Store.metadata`** Medusy. Edycja w panelu `magazyn`, odczyt przez RSC store
   Organization/WebSite, LocalBusiness (`/kontakt`).
 
 ## Wydajność (cele)
-- Prod: `scripts/sync-cms-to-static.ts` w `prebuild` → snapshot, zero fetchy CMS w runtime.
-- ISR + tagi zamiast krótkich TTL; po zmianie produktu webhook rewaliduje też
-  `product-config-{id}`.
+- Hybrid: treść live z Medusa; `sync-cms-to-static.ts` w `prebuild` → tylko mapa mediów +
+  pliki w `/public/images/cms/` (LCP). Pełny `static-cms-content` deprecated.
+- ISR 3600s + tagi; po zapisie tekstu revalidate; po mediach deploy hook.
+- Po zmianie produktu webhook rewaliduje też `product-config-{id}`.
 
 ## Roadmap (gdy potrzebne)
 - Wersjonowanie + draft/preview/publish, harmonogram publikacji, media library,

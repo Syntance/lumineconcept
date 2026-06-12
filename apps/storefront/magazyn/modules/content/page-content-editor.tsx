@@ -15,6 +15,7 @@ import type {
 	Testimonial,
 } from "@/lib/content/types";
 import { savePageContentAction } from "./content-actions";
+import { cmsSaveSuccessMessage } from "./cms-save-feedback";
 import { newCmsId } from "./cms-id";
 import { OgImageField } from "./seo/og-image-field";
 
@@ -31,20 +32,20 @@ type Props = {
 export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 	const [content, setContent] = useState<PageContent>(initial);
 	const [error, setError] = useState<string | null>(null);
-	const [saved, setSaved] = useState(false);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
 
 	function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError(null);
-		setSaved(false);
+		setSuccessMessage(null);
 		startTransition(async () => {
 			const result = await savePageContentAction(pageId, path, content);
 			if (!result.ok) {
 				setError(result.error);
 				return;
 			}
-			setSaved(true);
+			setSuccessMessage(cmsSaveSuccessMessage(result.mediaPublishQueued));
 		});
 	}
 
@@ -84,7 +85,11 @@ export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 				/>
 			) : null}
 			{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-			{saved ? <p role="status" className="text-sm text-emerald-600">Zapisano.</p> : null}
+			{successMessage ? (
+				<p role="status" className="text-sm text-emerald-600">
+					{successMessage}
+				</p>
+			) : null}
 			<Button type="submit" disabled={pending} className="h-10 w-fit gap-1.5">
 				{pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
 				Zapisz treści

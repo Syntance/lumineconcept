@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { fetchStoreMetadataBlob } from "./admin-read";
+import { applyMediaUrlOverlay } from "./media-overlay";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import {
 	getPageContentWithDefaults,
@@ -17,38 +18,31 @@ import type {
 	SiteSettings,
 } from "./types";
 
-// Static CMS content - używane na production dla ultra-szybkiego loadingu
-let STATIC_CACHE: any = null;
+let mediaUrlMapCache: Record<string, string> | null = null;
 
-function getStaticContent() {
-	if (STATIC_CACHE) return STATIC_CACHE;
-	
+function getStaticMediaUrlMap(): Record<string, string> {
+	if (mediaUrlMapCache) return mediaUrlMapCache;
 	try {
-		const { STATIC_CMS_CONTENT } = require("./static-cms-content");
-		// Check if it's real content (not dev fallback)
-		if (STATIC_CMS_CONTENT && Object.keys(STATIC_CMS_CONTENT.magazyn_site_settings || {}).length > 0) {
-			STATIC_CACHE = {
-				siteSettings: STATIC_CMS_CONTENT.magazyn_site_settings,
-				pageContent: STATIC_CMS_CONTENT.magazyn_page_content,
-				globalContent: STATIC_CMS_CONTENT.magazyn_global_content,
-				pageSeo: STATIC_CMS_CONTENT.magazyn_page_seo,
-			};
-			console.log("✓ Using static CMS content (ultra-fast mode)");
-		}
+		const { STATIC_CMS_MEDIA_URL_MAP } = require("./static-cms-media-map") as {
+			STATIC_CMS_MEDIA_URL_MAP?: Record<string, string>;
+		};
+		mediaUrlMapCache = STATIC_CMS_MEDIA_URL_MAP ?? {};
 	} catch {
-		// File doesn't exist or error - fallback to dynamic
+		mediaUrlMapCache = {};
 	}
-	
-	return STATIC_CACHE;
+	return mediaUrlMapCache;
 }
 
+/**
+ * Hybryda CMS:
+ * - tekst / SEO → live z Medusa (tag `magazyn-content`, revalidate po zapisie),
+ * - obrazy → opcjonalny overlay z prebuild (`/images/cms/…`) dla LCP po deployu.
+ */
 async function getContentBlob() {
-	// Try static first (production builds)
-	const staticContent = getStaticContent();
-	if (staticContent) return staticContent;
-	
-	// Fallback to dynamic fetch (dev mode)
-	return await fetchStoreMetadataBlob();
+	const live = await fetchStoreMetadataBlob();
+	if (!live) return null;
+	const map = getStaticMediaUrlMap();
+	return applyMediaUrlOverlay(live, map);
 }
 
 export const getSiteSettings = cache(async (): Promise<SiteSettings> => {

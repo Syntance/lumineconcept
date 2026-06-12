@@ -137,10 +137,11 @@ Reguły maszynowe: [`.cursor/rules/magazyn-panel.mdc`](../../../.cursor/rules/ma
 
 ## 9. Wydajność
 
-- Prod: snapshot CMS w buildzie (`scripts/sync-cms-to-static.ts`) → zero fetchy w runtime.
-- Dev/fallback: 1 cache'owany fetch `Store.metadata` (`lib/content/admin-read.ts`, tag
-  `magazyn-content`).
-- Po zapisie: `revalidateTag('magazyn-content')` + webhook + (tryb static) deploy hook.
+- **Hybrid CMS:** tekst live (tag `magazyn-content` + webhook po zapisie); obrazy przez
+  prebuild (`sync-cms-to-static.ts`) i deploy hook tylko przy zmianie mediów.
+- Runtime: 1 cache'owany fetch `Store.metadata` (`lib/content/admin-read.ts`, ISR 3600s) +
+  overlay lokalnych obrazów z mapy prebuildu.
+- Szczegóły: [`docs/CMS_STATIC_SYNC.md`](../docs/CMS_STATIC_SYNC.md).
 - Wszystkie fetch do Medusy z `AbortSignal.timeout`/`withMedusaTimeout`.
 
 ## 10. Niezawodność / DR

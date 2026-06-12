@@ -9,6 +9,7 @@ import {
 	saveGlobalContentAction,
 	saveGlobalSiteSettingsAction,
 } from "./content-actions";
+import { cmsSaveSuccessMessage } from "./cms-save-feedback";
 import { newCmsId } from "./cms-id";
 import { SalonLogosEditor } from "./salon-logos-editor";
 import { OgImageField } from "./seo/og-image-field";
@@ -25,13 +26,19 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 	const [settings, setSettings] = useState(initialSettings);
 	const [global, setGlobal] = useState(initialGlobal);
 	const [error, setError] = useState<string | null>(null);
-	const [saved, setSaved] = useState(false);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
 
 	function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError(null);
-		setSaved(false);
+		setSuccessMessage(null);
+
+		if (settings.announcementBar?.enabled && !settings.announcementBar.text?.trim()) {
+			setError("Pasek informacyjny: wpisz tekst lub odznacz „Włączony”.");
+			return;
+		}
+
 		startTransition(async () => {
 			const settingsResult = await saveGlobalSiteSettingsAction(settings);
 			if (!settingsResult.ok) {
@@ -43,7 +50,9 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 				setError(globalResult.error);
 				return;
 			}
-			setSaved(true);
+			const mediaQueued =
+				Boolean(settingsResult.mediaPublishQueued) || Boolean(globalResult.mediaPublishQueued);
+			setSuccessMessage(cmsSaveSuccessMessage(mediaQueued));
 		});
 	}
 
@@ -51,6 +60,10 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 		<form onSubmit={onSubmit} className="flex max-w-3xl flex-col gap-6">
 			<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
 				<legend className="px-1 text-sm font-medium">Pasek informacyjny</legend>
+				<p className="text-xs text-muted-foreground">
+					Tekst publikuje się od razu po zapisie (revalidate cache). Redeploy Vercel nie jest
+					potrzebny.
+				</p>
 				<label className="flex items-center gap-2 text-sm">
 					<input
 						type="checkbox"
@@ -165,7 +178,11 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 			</fieldset>
 
 			{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-			{saved ? <p role="status" className="text-sm text-emerald-600">Zapisano.</p> : null}
+			{successMessage ? (
+				<p role="status" className="text-sm text-emerald-600">
+					{successMessage}
+				</p>
+			) : null}
 			<Button type="submit" disabled={pending} className="h-10 w-fit gap-1.5">
 				{pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
 				Zapisz treści globalne
