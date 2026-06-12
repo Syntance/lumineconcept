@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 interface Testimonial {
   _id: string;
   quote: string;
@@ -12,7 +10,6 @@ interface TrustBarProps {
   realizations?: string;
   shippingLabel?: string;
   testimonials?: Testimonial[];
-  opinionsLink?: string;
 }
 
 export function TrustBar({
@@ -20,7 +17,6 @@ export function TrustBar({
   realizations = "6 000+",
   shippingLabel = "Realizacja ok. 10 dni roboczych",
   testimonials = [],
-  opinionsLink = "/o-nas#opinie",
 }: TrustBarProps) {
   const displayTestimonials = testimonials.slice(0, 3);
 
@@ -50,12 +46,6 @@ export function TrustBar({
           </div>
         )}
 
-        <Link
-          href={opinionsLink}
-          className="mt-8 inline-block text-[11px] font-medium uppercase tracking-[0.2em] text-brand-500 hover:text-brand-900 transition-colors"
-        >
-          Więcej opinii &rarr;
-        </Link>
       </div>
     </section>
   );

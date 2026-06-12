@@ -335,12 +335,6 @@ export default async function ShopHubPage() {
             </div>
           )}
 
-          <Link
-            href="/o-nas#opinie"
-            className="mt-8 inline-block text-sm font-medium uppercase tracking-[0.2em] text-brand-500 hover:text-brand-900 transition-colors"
-          >
-            Więcej opinii &rarr;
-          </Link>
         </div>
       </section>
     </>
