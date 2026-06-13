@@ -181,7 +181,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
               onTouchEnd={handleTouchEnd}
             >
               <div
-                className="relative h-full w-full transition-transform duration-200"
+                className="relative z-0 h-full w-full transition-transform duration-200"
                 style={
                   zoomed
                     ? {
@@ -197,19 +197,27 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                   priority={selectedIndex === 0}
                 />
               </div>
-              <Image
-                src="/images/watermark.png"
-                alt=""
-                aria-hidden="true"
-                width={128}
-                height={128}
-                loading="lazy"
-                sizes="128px"
-                quality={85}
-                className="pointer-events-none absolute right-4 -top-0.5 h-32 w-auto select-none opacity-100"
-                style={{ filter: "brightness(0) invert(1)" }}
-                draggable={false}
-              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute top-0 right-0 z-20 pt-4 pr-4"
+              >
+                <Image
+                  src="/images/watermark.png"
+                  alt=""
+                  width={421}
+                  height={134}
+                  unoptimized
+                  loading="eager"
+                  sizes="(max-width: 1024px) 3.5rem, 4.5rem"
+                  quality={85}
+                  className="block h-14 w-auto max-w-none select-none sm:h-16 lg:h-[4.5rem]"
+                  style={{
+                    filter:
+                      "brightness(0) invert(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.55)) drop-shadow(0 0 1px rgb(0 0 0 / 0.75))",
+                  }}
+                  draggable={false}
+                />
+              </div>
               {images.length > 1 && (
                 <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 lg:hidden">
                   {images.map((_, i) => (

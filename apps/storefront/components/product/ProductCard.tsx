@@ -148,19 +148,27 @@ export function ProductCard({
               sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
               unoptimized={thumbnail.startsWith("http://localhost")}
             />
-            <Image
-              src="/images/watermark.png"
-              alt=""
-              aria-hidden="true"
-              width={24}
-              height={24}
-              loading="lazy"
-              sizes="24px"
-              quality={85}
-              className="pointer-events-none absolute right-2 top-2 z-20 h-5 w-auto select-none opacity-30"
-              style={{ filter: "brightness(0) invert(1)" }}
-              draggable={false}
-            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-0 right-0 z-20 pt-2 pr-2"
+            >
+              <Image
+                src="/images/watermark.png"
+                alt=""
+                width={421}
+                height={134}
+                unoptimized
+                loading={priority ? "eager" : "lazy"}
+                sizes="1.75rem"
+                quality={85}
+                className="block h-7 w-auto max-w-none select-none sm:h-8"
+                style={{
+                  filter:
+                    "brightness(0) invert(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.55)) drop-shadow(0 0 1px rgb(0 0 0 / 0.75))",
+                }}
+                draggable={false}
+              />
+            </div>
           </>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-brand-400">
