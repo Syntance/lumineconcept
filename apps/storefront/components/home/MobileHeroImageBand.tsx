@@ -28,7 +28,7 @@ export function MobileHeroImageBand({
 				height={MOBILE_HERO_BAND_HEIGHT}
 				priority={priority}
 				fetchPriority={priority ? "high" : undefined}
-				unoptimized
+				sizes="100vw"
 				placeholder={blurDataURL ? "blur" : "empty"}
 				blurDataURL={blurDataURL}
 				className={`absolute inset-0 h-full w-full select-none object-cover ${objectPositionClass}`}
