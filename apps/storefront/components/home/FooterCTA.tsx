@@ -119,17 +119,19 @@ function InstagramGrid({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Otwórz post na Instagramie"
-              className="group relative aspect-square block overflow-hidden bg-brand-100 outline-none ring-brand-800 transition-[transform,box-shadow] hover:z-1 hover:shadow-md focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="group relative aspect-square block overflow-hidden bg-white outline-none ring-brand-800 transition-[transform,box-shadow] hover:z-1 hover:shadow-md focus-visible:ring-2 focus-visible:ring-offset-2"
             >
-              <Image
-                src={post.imageUrl}
-                alt={post.alt}
-                fill
-                sizes="(max-width: 640px) 50vw, 240px"
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                loading={i < 3 ? "eager" : "lazy"}
-                unoptimized={isCmsImageUnoptimized(post.imageUrl)}
-              />
+              <div className="absolute inset-0 overflow-hidden">
+                <Image
+                  src={post.imageUrl}
+                  alt={post.alt}
+                  fill
+                  sizes="(max-width: 640px) 50vw, 240px"
+                  className="object-cover object-center scale-[1.03] transition-transform duration-300 group-hover:scale-105"
+                  loading={i < 3 ? "eager" : "lazy"}
+                  unoptimized={isCmsImageUnoptimized(post.imageUrl)}
+                />
+              </div>
             </a>
           );
         }
