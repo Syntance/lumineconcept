@@ -108,7 +108,7 @@ function InstagramGrid({
 	profileUrl: string;
 }) {
   return (
-    <div className="mt-10 grid grid-cols-3 gap-2 max-w-xl mx-auto sm:grid-cols-6">
+    <div className="mt-10 grid grid-cols-2 gap-4 max-w-2xl mx-auto sm:grid-cols-3">
       {Array.from({ length: IG_GRID_SLOTS }, (_, i) => {
         const post = posts[i];
         if (post) {
@@ -125,7 +125,7 @@ function InstagramGrid({
                 src={post.imageUrl}
                 alt={post.alt}
                 fill
-                sizes="(max-width: 640px) 34vw, 120px"
+                sizes="(max-width: 640px) 50vw, 240px"
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 loading={i < 3 ? "eager" : "lazy"}
                 unoptimized={isCmsImageUnoptimized(post.imageUrl)}
@@ -142,7 +142,7 @@ function InstagramGrid({
             aria-label="Lumine Concept na Instagramie"
             className="aspect-square bg-brand-100 hover:bg-brand-200 transition-colors flex items-center justify-center"
           >
-            <Instagram className="h-4 w-4 text-brand-400" />
+            <Instagram className="h-5 w-5 text-brand-400" />
           </a>
         );
       })}
