@@ -407,9 +407,29 @@ async function syncProductColorOptions(
 }
 
 function thumbnailOf(product: MedusaProduct): string | null {
-	const fromImages = resolveMedusaMediaUrls((product.images ?? []).map((i) => i.url));
-	const resolved = [resolveMedusaMediaUrl(product.thumbnail), ...fromImages].filter((u): u is string => Boolean(u));
-	return resolved[0] ?? null;
+	const ordered = orderedProductImages(product);
+	return ordered[0] ?? null;
+}
+
+/** Kolejność z Medusy — thumbnail na początku (zgodnie z magazynem). */
+function orderedProductImages(product: MedusaProduct): string[] {
+	const urls = resolveMedusaMediaUrls((product.images ?? []).map((i) => i.url));
+	const thumb = resolveMedusaMediaUrl(product.thumbnail);
+	if (!thumb) return urls;
+	const rest = urls.filter((u) => u !== thumb);
+	return [thumb, ...rest];
+}
+
+function productImagesPayload(urls: string[]): {
+	thumbnail: string | null;
+	images: Array<{ url: string }>;
+} {
+	const resolved = resolveMedusaMediaUrls(urls);
+	const thumbnail = resolved[0] ?? null;
+	return {
+		thumbnail,
+		images: resolved.map((url) => ({ url })),
+	};
 }
 
 /** Domyślny sales channel + shipping profile — wymagane przy tworzeniu produktu. */
@@ -496,7 +516,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		categoryIds: (product.categories ?? []).map((c) => c.id),
 		description: product.description ?? "",
 		price: priceOf(variant, CURRENCY),
-		images: resolveMedusaMediaUrls((product.images ?? []).map((i) => i.url)),
+		images: orderedProductImages(product),
 		disabledConfigIds: legacyDisabled,
 		disabledConfigIdsBySlot: noStandDisabled,
 		disabledColorCategoriesBySlot: noStandCategories,
@@ -565,12 +585,15 @@ export async function createAdminProduct(values: ProductFormValues): Promise<str
 	const colorTitles = buildColorOptionTitles(values.colorSlotCount, values.colorSlotNames);
 	const colorOptionsRecord = Object.fromEntries(colorTitles.map((t) => [t, "Standard"]));
 
+	const imagePayload = productImagesPayload(values.images);
+
 	const body: Record<string, unknown> = {
 		title: values.title.trim(),
 		handle: values.handle.trim(),
 		status: values.status,
 		description: values.description.trim(),
-		images: resolveMedusaMediaUrls(values.images).map((url) => ({ url })),
+		thumbnail: imagePayload.thumbnail,
+		images: imagePayload.images,
 		options: colorTitles.map((title) => ({ title, values: ["Standard"] })),
 		variants: [
 			{
@@ -605,11 +628,14 @@ export async function updateAdminProduct(
 	values: ProductFormValues,
 	existingHandle?: string | null,
 ): Promise<void> {
+	const imagePayload = productImagesPayload(values.images);
+
 	const body: Record<string, unknown> = {
 		title: values.title.trim(),
 		status: values.status,
 		description: values.description.trim(),
-		images: resolveMedusaMediaUrls(values.images).map((url) => ({ url })),
+		thumbnail: imagePayload.thumbnail,
+		images: imagePayload.images,
 	};
 
 	/** Nie nadpisuj handle przy edycji — slug z tytułu mógłby złamać URL produktu. */
