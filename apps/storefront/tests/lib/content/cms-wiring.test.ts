@@ -164,8 +164,4 @@ describe("CMS config ↔ storefront wiring contract", () => {
 			}
 		}
 	});
-
-	it("default shop category tiles exist for fallback", () => {
-		expect(DEFAULT_PAGE_CONTENT.shop?.categoryTiles?.length).toBeGreaterThan(0);
-	});
 });

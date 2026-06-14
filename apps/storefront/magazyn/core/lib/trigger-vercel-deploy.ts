@@ -4,14 +4,14 @@ import "server-only";
  * Uruchamia produkcyjny deploy na Vercel (Deploy Hook).
  * Po deployu `prebuild` ściąga CMS → static files → instant load.
  */
-export async function triggerVercelDeploy(reason?: string): Promise<void> {
+export async function triggerVercelDeploy(reason?: string): Promise<boolean> {
 	const hookUrl = process.env.VERCEL_DEPLOY_HOOK_URL?.trim();
 	if (!hookUrl) {
 		console.warn(
 			"[Deploy] VERCEL_DEPLOY_HOOK_URL nie ustawiony — pomijam auto-deploy.",
 			reason ? `(${reason})` : "",
 		);
-		return;
+		return false;
 	}
 
 	try {
@@ -22,11 +22,13 @@ export async function triggerVercelDeploy(reason?: string): Promise<void> {
 
 		if (!res.ok) {
 			console.error(`[Deploy] Hook failed: ${res.status} ${res.statusText}`);
-			return;
+			return false;
 		}
 
 		console.log("[Deploy] Vercel deploy triggered", reason ? `(${reason})` : "");
+		return true;
 	} catch (error) {
 		console.error("[Deploy] Hook error:", error);
+		return false;
 	}
 }

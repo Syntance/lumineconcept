@@ -13,10 +13,9 @@ const HERO_BG_HEIGHT = 966;
 /**
  * Hero — desktop: ultrawide + overlay; mobile: zdjęcie + CTA w 80svh.
  *
- * Tło pochodzi z CMS. Na produkcji `prebuild` (sync-cms-to-static) ściąga
- * obraz do `/public/images/cms/…`, więc serwujemy go jako statyczny plik
- * (`unoptimized`) — instant z edge CDN, bez cold-startu optymalizatora.
- * Gdy CMS nie ma obrazu, `resolveHomeHero` daje lokalny fallback (z blur).
+ * Tło wyłącznie z CMS. Po deployu prebuild (`sync-cms-to-static`) kopiuje
+ * obraz do `/public/images/cms/…` — serwowany statycznie z edge (unoptimized).
+ * Bez obrazu w CMS: placeholder (brand-800), bez fallbacku z repo.
  */
 export async function HeroSection({
 	hero,

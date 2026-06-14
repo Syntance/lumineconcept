@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useCallback, useId, useState } from "react";
 import { isCmsImageUnoptimized, resolveCmsAssetUrl } from "@/lib/content/asset-url";
 import { uploadImagesAction } from "@magazyn/modules/products/actions";
-import { queueCmsMediaPublishAction } from "@magazyn/modules/content/content-actions";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
 
@@ -55,7 +54,6 @@ export function OgImageField({
 					const url = result.urls[0];
 					if (url) onChange(url);
 				}
-				void queueCmsMediaPublishAction();
 			} catch {
 				setError("Upload nie powiódł się. Spróbuj ponownie lub mniejsze pliki.");
 			} finally {
@@ -142,7 +140,7 @@ export function OgImageField({
 			<p className="text-xs text-muted-foreground">
 				{batchMode
 					? "Możesz dodać wiele zdjęć naraz — przeciągnij na pole lub wybierz z dysku (WebP, JPG, PNG)."
-					: "Przeciągnij zdjęcie na pole lub kliknij, aby wybrać plik. Zalecane 1200×630 px (WebP lub JPG). Po zapisie formularza obraz widać od razu (CDN). Pełna optymalizacja LCP po publikacji (~2–3 min)."}
+					: "Przeciągnij zdjęcie na pole lub wybierz plik. Zapisz formularz, potem Redeploy u góry panelu (~2–3 min na prod)."}
 			</p>
 		</div>
 	);

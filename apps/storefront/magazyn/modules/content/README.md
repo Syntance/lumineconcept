@@ -36,7 +36,7 @@ Produkty: `product.metadata.seo_*`, `product.metadata.product_faq`.
 - **Tekst / SEO:** live z Medusa — jeden cache'owany fetch na render (`admin-read.ts`, tag
   `magazyn-content`, ISR 3600s). Po zapisie: `revalidateTag` + webhook (sekundy do prod).
 - **Obrazy:** prebuild sync → `/public/images/cms/` + mapa URL (`static-cms-media-map.ts`).
-  Deploy hook tylko gdy `mediaUrlsChanged()` — ok. 2–3 min. Szczegóły: [`docs/CMS_STATIC_SYNC.md`](../../../docs/CMS_STATIC_SYNC.md).
+  **Redeploy ręczny** z panelu CMS/SEO (`triggerCmsRedeployAction`) — ok. 2–3 min. Szczegóły: [`docs/CMS_STATIC_SYNC.md`](../../../docs/CMS_STATIC_SYNC.md).
 - PDP: SEO i FAQ z już pobranego produktu — zero dodatkowych requestów.
 
 ## Migracja z Sanity

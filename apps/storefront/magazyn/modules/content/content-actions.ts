@@ -3,11 +3,10 @@
 import { redirect } from "next/navigation";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
-import { mediaUrlsChanged } from "@/lib/content/media-publish";
+import { requireAdminSession } from "@magazyn/core/auth/require-session";
 import type { GlobalContent, PageContent, SiteSettings } from "@/lib/content/types";
-import { revalidateContentCache, queueCmsMediaPublish } from "./revalidate-content";
+import { revalidateContentCache, triggerCmsRedeploy } from "./revalidate-content";
 import {
-	getContentBundle,
 	getPageContentForAdmin,
 	saveGlobalContent,
 	savePageContent,
@@ -24,8 +23,6 @@ import {
 export type SaveContentState = {
 	ok: boolean;
 	error: string | null;
-	/** Deploy hook wysłany — sync obrazów w prebuild (~2–3 min). */
-	mediaPublishQueued?: boolean;
 };
 
 export async function savePageContentAction(
@@ -39,9 +36,7 @@ export async function savePageContentAction(
 		return { ok: false, error: parsed.error.issues[0]?.message ?? "Błędne dane CMS." };
 	}
 
-	let previous: PageContent = {};
 	try {
-		previous = await getPageContentForAdmin(pageId);
 		await savePageContent(pageId, parsed.data);
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
@@ -49,9 +44,8 @@ export async function savePageContentAction(
 		return { ok: false, error: "Nie udało się zapisać treści podstrony." };
 	}
 
-	const publishMedia = mediaUrlsChanged(previous, parsed.data);
-	const rev = await revalidateContentCache([path], { publishMedia });
-	return { ok: true, error: null, mediaPublishQueued: rev.mediaPublishQueued };
+	await revalidateContentCache([path]);
+	return { ok: true, error: null };
 }
 
 export async function saveGlobalContentAction(
@@ -67,10 +61,7 @@ export async function saveGlobalContentAction(
 		};
 	}
 
-	let previous: GlobalContent = {};
 	try {
-		const bundle = await getContentBundle();
-		previous = bundle.globalContent;
 		await saveGlobalContent(parsed.data);
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
@@ -78,9 +69,8 @@ export async function saveGlobalContentAction(
 		return { ok: false, error: "Nie udało się zapisać treści globalnych." };
 	}
 
-	const publishMedia = mediaUrlsChanged(previous, parsed.data);
-	const rev = await revalidateContentCache(paths, { publishMedia });
-	return { ok: true, error: null, mediaPublishQueued: rev.mediaPublishQueued };
+	await revalidateContentCache(paths);
+	return { ok: true, error: null };
 }
 
 export async function saveGlobalSiteSettingsAction(
@@ -91,10 +81,7 @@ export async function saveGlobalSiteSettingsAction(
 		return { ok: false, error: parsed.error.issues[0]?.message ?? "Błędne ustawienia." };
 	}
 
-	let previous: SiteSettings | null = null;
 	try {
-		const bundle = await getContentBundle();
-		previous = bundle.siteSettings;
 		await saveSiteSettingsPartial(parsed.data);
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
@@ -102,13 +89,37 @@ export async function saveGlobalSiteSettingsAction(
 		return { ok: false, error: "Nie udało się zapisać ustawień." };
 	}
 
-	const publishMedia = mediaUrlsChanged(previous, parsed.data);
-	const rev = await revalidateContentCache(["/"], { publishMedia });
-	return { ok: true, error: null, mediaPublishQueued: rev.mediaPublishQueued };
+	await revalidateContentCache(["/"]);
+	return { ok: true, error: null };
 }
 
-/** Kolejkuje prebuild sync obrazów (np. zaraz po uploadzie w polu OG). */
-export async function queueCmsMediaPublishAction(): Promise<{ queued: boolean }> {
-	const queued = await queueCmsMediaPublish();
-	return { queued };
+export type RedeployContentState = {
+	ok: boolean;
+	error: string | null;
+	/** Deploy hook wysłany — sync obrazów w prebuild (~2–3 min). */
+	queued: boolean;
+};
+
+/** Ręczny redeploy storefrontu (sync obrazów CMS → `/public/images/cms/`). */
+export async function triggerCmsRedeployAction(): Promise<RedeployContentState> {
+	try {
+		await requireAdminSession();
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		return { ok: false, error: "Brak sesji administratora.", queued: false };
+	}
+
+	const hookConfigured = Boolean(process.env.VERCEL_DEPLOY_HOOK_URL?.trim());
+	const queued = await triggerCmsRedeploy("CMS manual redeploy (panel)");
+	if (!queued) {
+		return {
+			ok: false,
+			error: hookConfigured
+				? "Nie udało się uruchomić redeploy na Vercel. Spróbuj ponownie za chwilę."
+				: "Deploy hook nie jest skonfigurowany (VERCEL_DEPLOY_HOOK_URL).",
+			queued: false,
+		};
+	}
+
+	return { ok: true, error: null, queued: true };
 }

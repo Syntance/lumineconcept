@@ -50,9 +50,7 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 				setError(globalResult.error);
 				return;
 			}
-			const mediaQueued =
-				Boolean(settingsResult.mediaPublishQueued) || Boolean(globalResult.mediaPublishQueued);
-			setSuccessMessage(cmsSaveSuccessMessage(mediaQueued));
+			setSuccessMessage(cmsSaveSuccessMessage());
 		});
 	}
 
@@ -61,8 +59,7 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 			<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
 				<legend className="px-1 text-sm font-medium">Pasek informacyjny</legend>
 				<p className="text-xs text-muted-foreground">
-					Tekst publikuje się od razu po zapisie (revalidate cache). Redeploy Vercel nie jest
-					potrzebny.
+					Tekst publikuje się od razu po zapisie. Zdjęcia — po przycisku Redeploy u góry.
 				</p>
 				<label className="flex items-center gap-2 text-sm">
 					<input

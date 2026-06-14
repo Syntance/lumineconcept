@@ -461,17 +461,18 @@ export function mergeHeroWithDefaults(
 		pageId === "home" ? HOME_HERO_DEFAULT : pageId === "logo-3d" ? LOGO_HERO_DEFAULT : undefined;
 	if (!defaults) return hero;
 	if (!hero) return defaults;
-	const desktopImageUrl =
-		normalizeLocalAssetUrl(hero.desktopImageUrl) || normalizeLocalAssetUrl(defaults.desktopImageUrl);
+
+	const desktopImageUrl = normalizeLocalAssetUrl(hero.desktopImageUrl);
 	const mobileImageUrl =
-		normalizeLocalAssetUrl(hero.mobileImageUrl) ||
-		desktopImageUrl ||
-		normalizeLocalAssetUrl(defaults.mobileImageUrl);
+		normalizeLocalAssetUrl(hero.mobileImageUrl) || desktopImageUrl;
+
 	return {
 		...defaults,
 		...hero,
 		...(desktopImageUrl ? { desktopImageUrl } : {}),
 		...(mobileImageUrl ? { mobileImageUrl } : {}),
+		...(hero.desktopBlurDataURL ? { desktopBlurDataURL: hero.desktopBlurDataURL } : {}),
+		...(hero.mobileBlurDataURL ? { mobileBlurDataURL: hero.mobileBlurDataURL } : {}),
 	};
 }
 

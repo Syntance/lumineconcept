@@ -45,7 +45,7 @@ export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 				setError(result.error);
 				return;
 			}
-			setSuccessMessage(cmsSaveSuccessMessage(result.mediaPublishQueued));
+			setSuccessMessage(cmsSaveSuccessMessage());
 		});
 	}
 

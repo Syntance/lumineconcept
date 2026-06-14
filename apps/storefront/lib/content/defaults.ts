@@ -6,13 +6,11 @@ import type {
 	SiteSettings,
 } from "./types";
 
-// Static imports for blur placeholders
-import heroMainWallDesktop from "@/public/images/hero-main-wall.webp";
-import heroMainWallMobile from "@/public/images/hero-main-wall-mobile.webp";
-import categoryGotoweWzory from "@/public/images/categories/gotowe-wzory-personel.webp";
-import categoryLogo from "@/public/images/categories/logo-kategoria-nail-boss.webp";
-import categoryCertyfikat from "@/public/images/categories/certyfikat-kategoria.png";
-
+/**
+ * Fallbacki TYLKO na copy / strukturę — bez URL-i obrazów.
+ * Wszystkie media (hero, galerie, kafelki, OG…) pochodzą z CMS → R2 przy zapisie,
+ * a na produkcji są lokalizowane w prebuild do `/public/images/cms/` (mapa URL).
+ */
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 	title: "Lumine Concept",
 	description:
@@ -42,10 +40,6 @@ export const HOME_HERO_DEFAULT: HeroContent = {
 	description: "Tablice z logo, cenniki i oznaczenia z plexi",
 	ctaLabel: "Zobacz produkty",
 	ctaHref: "/sklep",
-	desktopImageUrl: heroMainWallDesktop.src,
-	mobileImageUrl: heroMainWallMobile.src,
-	desktopBlurDataURL: heroMainWallDesktop.blurDataURL,
-	mobileBlurDataURL: heroMainWallMobile.blurDataURL,
 };
 
 export const BRANDING_CTA_DEFAULT: BrandingCtaContent = {};
@@ -64,31 +58,7 @@ export const LOGO_HERO_DEFAULT: HeroContent = {
 export const DEFAULT_PAGE_CONTENT: PageContentMap = {
 	home: { hero: HOME_HERO_DEFAULT, brandingCta: BRANDING_CTA_DEFAULT },
 	"logo-3d": { hero: LOGO_HERO_DEFAULT },
-	shop: {
-		categoryTiles: [
-			{
-				title: "Gotowe wzory",
-				cta: "PRZEGLĄDAJ WZORY",
-				href: "/sklep/gotowe-wzory",
-				imageUrl: categoryGotoweWzory.src,
-				blurDataURL: categoryGotoweWzory.blurDataURL,
-			},
-			{
-				title: "Tablice z logo",
-				cta: "Uzyskaj wycenę",
-				href: "/sklep/logo-3d",
-				imageUrl: categoryLogo.src,
-				blurDataURL: categoryLogo.blurDataURL,
-			},
-			{
-				title: "Certyfikaty",
-				cta: "Zobacz certyfikaty",
-				href: "/sklep/certyfikaty",
-				imageUrl: categoryCertyfikat.src,
-				blurDataURL: categoryCertyfikat.blurDataURL,
-			},
-		],
-	},
+	shop: {},
 };
 
 export const DEFAULT_GLOBAL_CONTENT: GlobalContent = {

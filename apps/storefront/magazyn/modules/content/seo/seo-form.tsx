@@ -57,7 +57,7 @@ function GlobalSeoForm({ initial }: { initial: SiteSettings }) {
 				setError(result.error);
 				return;
 			}
-			setSuccessMessage(cmsSaveSuccessMessage(result.mediaPublishQueued));
+			setSuccessMessage(cmsSaveSuccessMessage());
 		});
 	}
 
@@ -119,7 +119,7 @@ function PageSeoForm({
 				setError(result.error);
 				return;
 			}
-			setSuccessMessage(cmsSaveSuccessMessage(result.mediaPublishQueued));
+			setSuccessMessage(cmsSaveSuccessMessage());
 		});
 	}
 
