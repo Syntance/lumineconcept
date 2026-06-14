@@ -215,6 +215,16 @@ const instagramTileSchema = z.object({
 function resolvePublishedImageUrl(raw: string | undefined): string | undefined {
 	if (!raw?.trim()) return undefined;
 	const resolved = resolveCmsAssetUrl(raw);
+	
+	// DEBUG: Log resolution
+	if (raw.startsWith("http")) {
+		console.log("[CMS DEBUG] resolvePublishedImageUrl:", {
+			input: raw.substring(0, 80),
+			resolved,
+			isCmsAsset: isCmsMediaAssetUrl(raw),
+		});
+	}
+	
 	if (resolved) return resolved;
 	if (isCmsMediaAssetUrl(raw)) return undefined;
 	return raw;

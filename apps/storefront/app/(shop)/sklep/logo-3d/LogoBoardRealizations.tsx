@@ -5,7 +5,7 @@ import Image from "next/image";
 import type { GalleryPhoto } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 6;
 
 type Props = {
   items: GalleryPhoto[];
@@ -15,14 +15,13 @@ function RealizationTile({ item }: { item: GalleryPhoto }) {
   const alt = item.alt?.trim() || "Realizacja tablicy z logo — Lumine Concept";
 
   return (
-    <div className="min-w-0 overflow-hidden bg-brand-100 ring-1 ring-brand-200/80">
+    <div className="relative aspect-square min-w-0 overflow-hidden bg-brand-100 ring-1 ring-brand-200/80">
       <Image
         src={item.imageUrl}
         alt={alt}
-        width={800}
-        height={600}
-        sizes="(max-width: 1024px) 50vw, 25vw"
-        className="h-auto w-full max-w-full"
+        fill
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        className="object-cover object-center"
         unoptimized={isCmsImageUnoptimized(item.imageUrl)}
       />
     </div>
@@ -46,7 +45,7 @@ export function LogoBoardRealizations({ items }: Props) {
           Realizacje
         </h2>
         <div className="mt-3 mx-auto h-px w-12 bg-accent" />
-        <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+        <div className="mt-10 grid grid-cols-2 gap-5 lg:grid-cols-3 lg:gap-8">
           {shown.map((item) => (
             <RealizationTile key={item.id} item={item} />
           ))}
