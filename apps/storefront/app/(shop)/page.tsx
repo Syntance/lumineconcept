@@ -10,6 +10,7 @@ import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
 import { BestsellersSection } from "@/components/home/BestsellersSection";
+import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,6 +33,10 @@ export const revalidate = 60;
 export default async function HomePage() {
   const [pageContent, settings] = await Promise.all([getPageContent("home"), getSiteSettings()]);
   const socialSameAs = resolveSocialSameAs(resolveSocialLinks(settings));
+  
+  // Preload hero images dla LCP optimization
+  const heroData = await resolveHomeHeroWithFallback(pageContent.hero);
+  
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -56,6 +61,30 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Preload hero images dla LCP - desktop i mobile */}
+      {heroData.desktopImageUrl && (
+        <link
+          rel="preload"
+          as="image"
+          href={heroData.desktopImageUrl}
+          fetchPriority="high"
+          // @ts-expect-error - imageSrcSet nie jest w typach Next.js, ale działa
+          imageSrcSet={heroData.desktopImageUrl}
+          media="(min-width: 1024px)"
+        />
+      )}
+      {heroData.mobileImageUrl && heroData.mobileImageUrl !== heroData.desktopImageUrl && (
+        <link
+          rel="preload"
+          as="image"
+          href={heroData.mobileImageUrl}
+          fetchPriority="high"
+          // @ts-expect-error - imageSrcSet nie jest w typach Next.js, ale działa
+          imageSrcSet={heroData.mobileImageUrl}
+          media="(max-width: 1023px)"
+        />
+      )}
+      
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
