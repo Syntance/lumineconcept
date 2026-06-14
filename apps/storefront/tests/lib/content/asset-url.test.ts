@@ -64,7 +64,12 @@ describe("resolveCmsAssetUrl", () => {
 
 	it("does not treat /static as storefront public", () => {
 		expect(isStorefrontPublicAssetPath("/static/x.webp")).toBe(false);
-		expect(resolveCmsAssetUrl("/static/x.webp")).toBe("https://cdn.example.com/static/x.webp");
+		expect(resolveCmsAssetUrl("/static/x.webp")).toBeUndefined();
+	});
+
+	it("blokuje zdalne uploady CMS poza /images/cms/", () => {
+		expect(resolveCmsAssetUrl("https://pub-abc.r2.dev/cms-uploads/x.webp")).toBeUndefined();
+		expect(resolveCmsAssetUrl("/images/cms/x.webp")).toBe("/images/cms/x.webp");
 	});
 
 	it("optymalizuje zdalne obrazy R2/CDN przez next/image", () => {

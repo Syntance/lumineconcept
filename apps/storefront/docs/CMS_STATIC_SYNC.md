@@ -44,15 +44,18 @@ używany w runtime.
 
 ## Dev vs Prod
 
-### Dev (`pnpm dev`)
-- Brak prebuild sync (hot reload)
-- Treść live z Medusa
-- Obrazy z R2/CDN (bez overlay mapy, chyba że ręcznie uruchomiono sync)
+Ten sam model gate mediów wszędzie (localhost, preview, prod): **nieopublikowane** uploady CMS
+(R2, `/static/`, Medusa) nie trafiają na storefront — tylko wpisy z mapy prebuild → `/images/cms/…`.
 
-### Prod (`pnpm build`)
+### Lokalnie (`pnpm dev`)
+- Treść tekstowa live z Medusa (jak prod)
+- Obrazy CMS: po zapisie w panelu **niewidoczne** na sklepie, dopóki nie zsyncujesz mediów:
+  `pnpm exec tsx scripts/sync-cms-to-static.ts` (lub pełny `pnpm build`)
+- Panel Magazyn nadal pokazuje podgląd z R2 (`resolveCmsAssetUrl ?? rawUrl`)
+
+### Prod (`pnpm build` / Redeploy)
 - `prebuild` → sync mediów + mapa URL
-- Treść nadal live (tag ISR 3600s + revalidate po zapisie)
-- Hero/LCP z lokalnych plików po overlay
+- Po Redeploy z panelu CMS — nowe obrazy w `/images/cms/`
 
 ## ENV
 

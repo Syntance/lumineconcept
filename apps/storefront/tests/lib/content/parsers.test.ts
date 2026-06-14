@@ -60,6 +60,30 @@ describe("content parsers", () => {
 		expect(globalContentSchema.safeParse(prepared).success).toBe(true);
 	});
 
+	it("parsePageContentMap ukrywa nieopublikowane obrazy galerii (R2)", () => {
+		const remote = "https://pub-abc.r2.dev/cms-uploads/realizacja.webp";
+		const map = parsePageContentMap(
+			JSON.stringify({
+				"logo-3d": {
+					gallery: [{ id: "1", imageUrl: remote, order: 0 }],
+				},
+			}),
+		);
+		expect(map["logo-3d"]?.gallery).toEqual([]);
+	});
+
+	it("parsePageContentMap serwuje opublikowane obrazy z /images/cms/", () => {
+		const local = "/images/cms/realizacja.webp";
+		const map = parsePageContentMap(
+			JSON.stringify({
+				"logo-3d": {
+					gallery: [{ id: "1", imageUrl: local, order: 0 }],
+				},
+			}),
+		);
+		expect(map["logo-3d"]?.gallery?.[0]?.imageUrl).toBe(local);
+	});
+
 	it("mergeHeroWithDefaults does not inject hardcoded hero images", () => {
 		const map = parsePageContentMap(
 			JSON.stringify({

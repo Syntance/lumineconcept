@@ -1,4 +1,4 @@
-const IMAGE_EXT = /\.(jpe?g|png|webp|gif|avif|svg)$/i;
+import { isCmsMediaAssetUrl } from "./cms-media-gate";
 
 const MEDIA_URL_KEYS = new Set([
 	"desktopImageUrl",
@@ -9,16 +9,9 @@ const MEDIA_URL_KEYS = new Set([
 	"ogImageUrl",
 ]);
 
-/** Zdalny URL obrazu CMS wymagający sync/prebuild (R2/CDN), nie lokalny asset. */
+/** Zdalny URL obrazu CMS wymagający sync/prebuild (R2/CDN/Medusa), nie lokalny asset. */
 export function isRemoteCmsMediaUrl(value: unknown): value is string {
-	if (typeof value !== "string" || !value.trim()) return false;
-	const trimmed = value.trim();
-	if (trimmed.startsWith("/images/cms/")) return false;
-	if (trimmed.startsWith("/images/") || trimmed.startsWith("/icons/")) return false;
-	if (trimmed.startsWith("data:")) return false;
-	if (!/^https?:\/\//i.test(trimmed)) return false;
-	const pathOnly = trimmed.split("?")[0] ?? trimmed;
-	return IMAGE_EXT.test(pathOnly);
+	return isCmsMediaAssetUrl(value);
 }
 
 /** Zbiera URL-e mediów z payloadu CMS (do porównania przed/po zapisie). */
