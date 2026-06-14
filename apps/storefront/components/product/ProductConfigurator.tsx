@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { ReactNode } from "react";
 import { ColorStepPanel } from "./ColorStepPanel";
 import { FileUploadSection, type UploadedFile } from "./FileUploadSection";
 import {
@@ -80,6 +81,8 @@ interface ProductConfiguratorProps {
     }>
   >;
   schemaImageUrl?: string | null;
+  /** Sekcja nad polami tekstowymi (np. opcja podstawki). */
+  beforeTextFields?: ReactNode;
 }
 
 export function ProductConfigurator({
@@ -114,6 +117,7 @@ export function ProductConfigurator({
   productColorsBySlot = {},
   colorCategories = [],
   schemaImageUrl,
+  beforeTextFields,
 }: ProductConfiguratorProps) {
   const categoryByColorName = buildColorNameCategoryMap(globalColors);
   const nonColorOptions = options.filter((o) => !isColorOption(o.title));
@@ -341,6 +345,8 @@ export function ProductConfigurator({
           </div>
         </div>
       )}
+
+      {beforeTextFields}
 
       {hasEditableContent && textFields.length > 0 && onTextFieldChange && (
         <div className="space-y-4">

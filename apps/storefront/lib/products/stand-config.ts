@@ -2,6 +2,7 @@ import {
 	emptyProductColorsByCategory,
 	flattenProductColorsForSlot,
 	getEnabledColorNamesForSlot,
+	buildColorNameCategoryMap,
 	type ProductCustomColor,
 } from "@/lib/products/color-slot-config";
 
@@ -223,20 +224,25 @@ export function buildStandColorMaps(
 	colorMap: Record<string, string>;
 	matDisabledSet: Set<string>;
 	allowCustom: boolean;
+	categoryByColorName: Record<string, string>;
+	customCategoryEnabled: boolean;
 } {
 	const values = getStandEnabledColorNames(globalColors, standProductColors, meta);
 	const disabledIds = new Set(parseStandDisabledConfigIds(meta));
 	const matOverrides = parseStandMatOverrides(meta);
 	const colorMap: Record<string, string> = {};
 	const matDisabledSet = new Set<string>();
+	const valueKeys = new Set(values.map((v) => v.toLowerCase()));
 
 	for (const c of globalColors) {
 		if (disabledIds.has(c.id)) continue;
+		if (!valueKeys.has(c.name.toLowerCase())) continue;
 		if (c.hex_color) colorMap[c.name.toLowerCase()] = c.hex_color;
 		const matAllowed = matOverrides[c.id] ?? c.mat_allowed !== false;
 		if (!matAllowed) matDisabledSet.add(c.name.toLowerCase());
 	}
 	for (const c of standProductColors) {
+		if (!valueKeys.has(c.name.toLowerCase())) continue;
 		colorMap[c.name.toLowerCase()] = c.hex_color;
 		if (!c.mat_allowed) matDisabledSet.add(c.name.toLowerCase());
 	}
@@ -244,6 +250,24 @@ export function buildStandColorMaps(
 	const disabledCats = parseStandDisabledCategories(meta);
 	const allowCustom =
 		parseStandAllowCustom(meta) && !disabledCats.includes("custom");
+	const customCategoryEnabled = !disabledCats.includes("custom");
 
-	return { values, colorMap, matDisabledSet, allowCustom };
+	const colorsForCategories: Array<{ name: string; color_category?: string | null }> =
+		[];
+	for (const c of globalColors) {
+		if (disabledIds.has(c.id)) continue;
+		if (valueKeys.has(c.name.toLowerCase())) colorsForCategories.push(c);
+	}
+	for (const c of standProductColors) {
+		if (valueKeys.has(c.name.toLowerCase())) colorsForCategories.push(c);
+	}
+
+	return {
+		values,
+		colorMap,
+		matDisabledSet,
+		allowCustom,
+		categoryByColorName: buildColorNameCategoryMap(colorsForCategories),
+		customCategoryEnabled,
+	};
 }

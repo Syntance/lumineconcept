@@ -599,6 +599,57 @@ export function ProductPageClient({
     !!selectedVariant && (!tracksInventory || stockQty > 0);
   const maxOrderQty = !tracksInventory ? 99 : stockQty;
 
+  const standSection =
+    certificateStandAvailable ? (
+      <div className="space-y-3">
+        <label className="flex cursor-pointer items-start gap-3 rounded-none border border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 shadow-sm transition-colors hover:border-brand-300">
+          <input
+            type="checkbox"
+            checked={includeCertificateStand}
+            onChange={(e) => setIncludeCertificateStand(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-brand-300 accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
+          />
+          <span className="font-semibold">
+            Dodaj podstawkę (+{STAND_SURCHARGE_PLN.toFixed(2).replace(".", ",")} zł)
+          </span>
+        </label>
+        {includeCertificateStand && standColorConfig.values.length > 0 ? (
+          <ColorStepPanel
+            option={{
+              id: "stand-color",
+              title: STAND_COLOR_OPTION_TITLE,
+              values: standColorConfig.values,
+            }}
+            selectedColor={standSelectedColor}
+            onColorChange={setStandSelectedColor}
+            customColor={standColorCustomization.customColor}
+            onCustomColorChange={(hex) =>
+              setStandColorCustomization((prev) => ({
+                ...prev,
+                customColor: hex,
+              }))
+            }
+            matFinish={standColorCustomization.matFinish}
+            onMatFinishChange={(enabled) =>
+              setStandColorCustomization((prev) => ({
+                ...prev,
+                matFinish: enabled,
+              }))
+            }
+            colorMap={standColorConfig.colorMap}
+            coloredSet={coloredSet}
+            mirrorSet={mirrorSet}
+            customSet={customSet}
+            matDisabledSet={standColorConfig.matDisabledSet}
+            allowCustomColor={standColorConfig.allowCustom}
+            customCategoryEnabled={standColorConfig.customCategoryEnabled}
+            colorCategories={colorCategories}
+            categoryByColorName={standColorConfig.categoryByColorName}
+          />
+        ) : null}
+      </div>
+    ) : null;
+
   return (
     <>
       <div className="space-y-6">
@@ -639,6 +690,7 @@ export function ProductPageClient({
             productColorsBySlot={productColorsBySlotFlat}
             colorCategories={colorCategories}
             schemaImageUrl={schemaImageUrl}
+            beforeTextFields={standSection}
           />
         </div>
 
@@ -662,54 +714,6 @@ export function ProductPageClient({
         )}
 
         <div ref={ctaRef} className="space-y-4">
-          {certificateStandAvailable && (
-            <div className="space-y-3">
-              <label className="flex cursor-pointer items-start gap-3 rounded-none border border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 shadow-sm transition-colors hover:border-brand-300">
-                <input
-                  type="checkbox"
-                  checked={includeCertificateStand}
-                  onChange={(e) => setIncludeCertificateStand(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-brand-300 accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
-                />
-                <span className="font-semibold">
-                  Dodaj podstawkę (+{STAND_SURCHARGE_PLN.toFixed(2).replace(".", ",")} zł)
-                </span>
-              </label>
-              {includeCertificateStand && standColorConfig.values.length > 0 ? (
-                <ColorStepPanel
-                  option={{
-                    id: "stand-color",
-                    title: STAND_COLOR_OPTION_TITLE,
-                    values: standColorConfig.values,
-                  }}
-                  selectedColor={standSelectedColor}
-                  onColorChange={setStandSelectedColor}
-                  customColor={standColorCustomization.customColor}
-                  onCustomColorChange={(hex) =>
-                    setStandColorCustomization((prev) => ({
-                      ...prev,
-                      customColor: hex,
-                    }))
-                  }
-                  matFinish={standColorCustomization.matFinish}
-                  onMatFinishChange={(enabled) =>
-                    setStandColorCustomization((prev) => ({
-                      ...prev,
-                      matFinish: enabled,
-                    }))
-                  }
-                  colorMap={standColorConfig.colorMap}
-                  coloredSet={new Set(standColorConfig.values)}
-                  mirrorSet={new Set()}
-                  customSet={new Set()}
-                  matDisabledSet={standColorConfig.matDisabledSet}
-                  allowCustomColor={standColorConfig.allowCustom}
-                  customCategoryEnabled={standColorConfig.allowCustom}
-                  colorCategories={colorCategories}
-                />
-              ) : null}
-            </div>
-          )}
           <ExpressToggle />
           <AddToCartButton
             variantId={selectedVariant?.id ?? null}
