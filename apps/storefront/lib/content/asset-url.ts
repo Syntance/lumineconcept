@@ -24,14 +24,15 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 	if (!url?.trim()) return undefined;
 	const trimmed = url.trim();
 
-	// Nie serwuj nieopublikowanych uploadów CMS (tylko `/images/cms/` po sync/prebuild).
-	if (isCmsMediaAssetUrl(trimmed)) {
-		return undefined;
-	}
-
+	// Opublikowane `/images/cms/…` i assety z repo — zawsze lokalnie.
 	if (isStorefrontPublicAssetPath(trimmed)) {
 		const pathOnly = trimmed.startsWith("/") ? trimmed : new URL(trimmed).pathname;
 		return pathOnly.split("?")[0] || pathOnly;
+	}
+
+	// Nieopublikowane uploady CMS (R2, Medusa `/static/` itd.).
+	if (isCmsMediaAssetUrl(trimmed)) {
+		return undefined;
 	}
 
 	const resolved = resolveMedusaMediaUrl(trimmed);
