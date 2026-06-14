@@ -1,17 +1,16 @@
 "use client";
 
-import { ImagePlus, Loader2, Save, X } from "lucide-react";
-import Image from "next/image";
+import { Loader2, Save, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useId, useMemo, useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import { cn } from "@magazyn/core/lib/cn";
-import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import type { ColorCategoryDefinition, ColorCategoryId } from "./color-categories";
 import type { AdminProductDetail, CategoryOption, ConfigOption } from "./store";
 import { saveProductAction, uploadImagesAction } from "./actions";
+import { ProductImagesEditor } from "./product-images-editor";
 import { ProductConfigSection } from "./product-config-section";
 import {
 	addColorSlot,
@@ -59,7 +58,6 @@ const inputClass =
 export function ProductForm({ product, categories, configOptions, colorCategories }: Props) {
 	const router = useRouter();
 	const titleId = useId();
-	const fileId = useId();
 
 	const [title, setTitle] = useState(product?.title ?? "");
 	const [status, setStatus] = useState<"draft" | "published">(product?.status ?? "draft");
@@ -142,14 +140,6 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 		},
 		[],
 	);
-
-	const { isDragging, dropZoneProps } = useFileDropZone({
-		disabled: uploading,
-		accept: isImageFile,
-		onDropFiles: (files) => {
-			void uploadFiles(files);
-		},
-	});
 
 	function updateActiveSlotDisabled(updater: (current: Set<string>) => Set<string>) {
 		setColorSlotState((prev) => {
@@ -420,50 +410,14 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 
 				<div className="flex flex-col gap-2">
 					<span className="text-sm font-medium">Zdjęcia</span>
-					<div
-						{...dropZoneProps}
-						className={cn(
-							"flex flex-wrap gap-3 rounded-lg p-2 transition-colors",
-							isDragging && "bg-primary/5 ring-2 ring-primary ring-offset-2",
-						)}
-					>
-						{images.map((url) => (
-							<div key={url} className="relative size-24 overflow-hidden rounded-lg border border-border bg-muted">
-								<Image src={url} alt="" fill sizes="96px" className="object-cover" />
-								<button
-									type="button"
-									aria-label="Usuń zdjęcie"
-									onClick={() => setImages((prev) => prev.filter((u) => u !== url))}
-									className="absolute right-1 top-1 grid size-6 place-items-center rounded-md bg-background/80 text-muted-foreground hover:text-destructive"
-								>
-									<X className="size-3.5" aria-hidden />
-								</button>
-							</div>
-						))}
-						<label
-							htmlFor={fileId}
-							className={cn(
-								"grid size-24 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:bg-muted",
-								isDragging && "border-primary bg-primary/5",
-								uploading && "pointer-events-none opacity-60",
-							)}
-						>
-							{uploading ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <ImagePlus className="size-5" aria-hidden />}
-						</label>
-						<input
-							id={fileId}
-							type="file"
-							accept="image/*"
-							multiple
-							className="sr-only"
-							disabled={uploading}
-							onChange={(e) => {
-								void uploadFiles(Array.from(e.target.files ?? []));
-								e.target.value = "";
-							}}
-						/>
-					</div>
-					<p className="text-xs text-muted-foreground">Przeciągnij zdjęcia na pole lub kliknij, aby wybrać pliki.</p>
+					<ProductImagesEditor
+						images={images}
+						onChange={setImages}
+						uploading={uploading}
+						onUploadFiles={(files) => {
+							void uploadFiles(files);
+						}}
+					/>
 				</div>
 
 				<ProductFormTabs
