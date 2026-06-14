@@ -183,7 +183,7 @@ export function CartDrawer() {
               <div className="mx-6 mt-4 space-y-3">
                 <ExpressToggle compact />
 
-                <div className="rounded-lg border border-brand-100 p-4">
+                <div className="rounded-none border border-brand-100 p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <Gift className="h-4 w-4 text-brand-400" />
                     <span className="text-xs font-medium tracking-wide text-brand-600">
@@ -199,7 +199,7 @@ export function CartDrawer() {
                         if (referralStatus !== "idle") setReferralStatus("idle");
                       }}
                       placeholder="Wpisz kod..."
-                      className="flex-1 rounded-md border border-brand-200 bg-transparent px-3 py-2 text-xs text-brand-700 placeholder:text-brand-300 focus:border-brand-400 focus:outline-none"
+                      className="flex-1 rounded-none border border-brand-200 bg-transparent px-3 py-2 text-xs text-brand-700 placeholder:text-brand-300 focus:border-brand-400 focus:outline-none"
                     />
                     <button
                       type="button"
@@ -207,7 +207,7 @@ export function CartDrawer() {
                       disabled={
                         referralStatus === "loading" || referralStatus === "success"
                       }
-                      className="shrink-0 rounded-md bg-brand-800 px-4 py-2 text-xs font-medium tracking-wide text-white transition-colors hover:bg-brand-700 disabled:opacity-40"
+                      className="shrink-0 rounded-none bg-brand-800 px-4 py-2 text-xs font-medium tracking-wide text-white transition-colors hover:bg-brand-700 disabled:opacity-40"
                     >
                       {referralStatus === "loading" ? "..." : "Zastosuj"}
                     </button>
@@ -238,7 +238,7 @@ export function CartDrawer() {
                 <Link
                   href="/checkout"
                   onClick={closeCart}
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-brand-900 py-3.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-800"
+                  className="flex w-full items-center justify-center gap-2 rounded-none bg-brand-900 py-3.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-800"
                 >
                   Zamów teraz
                   <ArrowRight className="h-4 w-4" />

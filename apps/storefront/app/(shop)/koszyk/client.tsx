@@ -44,7 +44,7 @@ export function KoszykClient() {
             ))}
           </div>
           <div className="lg:col-span-5">
-            <div className="sticky top-24 rounded-lg border border-brand-200 bg-brand-50/50 p-6 lg:p-7">
+            <div className="sticky top-24 rounded-none border border-brand-200 bg-brand-50/50 p-6 lg:p-7">
               <CartSummary />
               <div className="mt-4">
                 <PayPoPromo price={grandTotal} />
@@ -54,7 +54,7 @@ export function KoszykClient() {
               </div>
               <Link
                 href="/checkout"
-                className="mt-6 block w-full rounded-md bg-brand-900 py-3 text-center text-sm font-semibold text-white hover:bg-brand-800 transition-colors"
+                className="mt-6 block w-full rounded-none bg-brand-900 py-3 text-center text-sm font-semibold text-white hover:bg-brand-800 transition-colors"
               >
                 Przejdź do płatności
               </Link>

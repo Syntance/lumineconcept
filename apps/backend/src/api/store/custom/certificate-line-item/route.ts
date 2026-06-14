@@ -16,9 +16,17 @@ import {
 } from "../../../../lib/certificate-product-eligibility";
 
 const STAND_AVAILABLE_META_KEY = "stand_available";
+const STAND_PAID_META_KEY = "stand_paid";
+const STAND_SURCHARGE_GROSZE_KEY = "stand_surcharge_grosze";
 
-/** Synchronizuj z PDP (`ProductPageClient`) — dopłata za podstawkę w kolorze certyfikatu. */
-const CERTIFICATE_STAND_SURCHARGE_PLN = 10;
+function standSurchargePlnFromProduct(
+  meta: Record<string, unknown> | null | undefined,
+): number {
+  if (meta?.[STAND_PAID_META_KEY] !== "true") return 0;
+  const grosze = num(meta?.[STAND_SURCHARGE_GROSZE_KEY]);
+  if (grosze == null || grosze <= 0) return 0;
+  return Math.round(grosze) / 100;
+}
 
 /** Snapshot koszyka bez joina `region.*` (remoteQuery potrafi go odrzucić). */
 const CART_SNAPSHOT_FIELDS = [
@@ -120,8 +128,8 @@ function stringifyMetadata(
  * POST /store/custom/certificate-line-item
  *
  * Dodaje pozycję do koszyka z **ustawioną ceną jednostkową** (workflow
- * `addToCartWorkflow`), żeby bezpiecznie doliczyć dopłatę za podstawkę
- * (+10 PLN / szt.) tylko dla produktów oznaczonych tagiem `certyfikaty`.
+ * `addToCartWorkflow`), żeby bezpiecznie doliczyć opcjonalną dopłatę za podstawkę
+ * (gdy `stand_paid` w metadata produktu).
  *
  * Wymaga `metadata.certificate_stand === "true"` (jak na PDP).
  */
@@ -259,12 +267,13 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     });
   }
 
-  const unitPrice = Math.round((baseUnit + CERTIFICATE_STAND_SURCHARGE_PLN) * 100) / 100;
+  const standSurchargePln = standSurchargePlnFromProduct(row.product?.metadata);
+  const unitPrice = Math.round((baseUnit + standSurchargePln) * 100) / 100;
 
   const lineMetadata: Record<string, string> = {
     ...rawMeta,
     certificate_stand: "true",
-    certificate_stand_pln: String(CERTIFICATE_STAND_SURCHARGE_PLN),
+    certificate_stand_pln: String(standSurchargePln),
   };
 
   await addToCartWorkflow(scope).run({

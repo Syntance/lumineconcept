@@ -241,8 +241,17 @@ function GalleryEditor({
 	value: GalleryPhoto[];
 	onChange: (v: GalleryPhoto[]) => void;
 }) {
-	function add(url: string) {
-		onChange([...value, { id: newCmsId("g"), imageUrl: url, order: value.length }]);
+	function addMany(urls: string[]) {
+		if (urls.length === 0) return;
+		const startOrder = value.length;
+		onChange([
+			...value,
+			...urls.map((imageUrl, index) => ({
+				id: newCmsId("g"),
+				imageUrl,
+				order: startOrder + index,
+			})),
+		]);
 	}
 
 	function remove(index: number) {
@@ -262,7 +271,13 @@ function GalleryEditor({
 					</div>
 				))}
 			</div>
-			<OgImageField label="Dodaj zdjęcie" value="" onChange={(url) => { if (url) add(url); }} />
+			<OgImageField
+				label="Dodaj zdjęcia"
+				value=""
+				onChange={() => {}}
+				multiple
+				onMultipleChange={addMany}
+			/>
 		</fieldset>
 	);
 }

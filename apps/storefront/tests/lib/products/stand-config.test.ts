@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
 	getStandEnabledColorNames,
 	parseStandAvailable,
+	parseStandPaid,
+	getStandSurchargeGrosze,
+	formatStandSurchargePln,
 	parseDisabledConfigIdsBySlotWithStand,
 	STAND_COLOR_OPTION_TITLE,
 } from "@/lib/products/stand-config";
@@ -13,6 +16,27 @@ describe("stand-config", () => {
 		expect(parseStandAvailable({ stand_available: "true" })).toBe(true);
 		expect(parseStandAvailable({ stand_available: "false" })).toBe(false);
 		expect(parseStandAvailable(null)).toBe(false);
+	});
+
+	it("getStandSurchargeGrosze defaults to free", () => {
+		expect(getStandSurchargeGrosze({ stand_available: "true" })).toBe(0);
+		expect(getStandSurchargeGrosze({ stand_paid: "false" })).toBe(0);
+	});
+
+	it("getStandSurchargeGrosze reads paid price in grosze", () => {
+		expect(
+			getStandSurchargeGrosze({
+				stand_paid: "true",
+				stand_surcharge_grosze: "1500",
+			}),
+		).toBe(1500);
+		expect(formatStandSurchargePln(1500)).toBe("15,00");
+	});
+
+	it("parseStandPaid reads metadata flag", () => {
+		expect(parseStandPaid({ stand_paid: "true" })).toBe(true);
+		expect(parseStandPaid({ stand_paid: "false" })).toBe(false);
+		expect(parseStandPaid(null)).toBe(false);
 	});
 
 	it("parseDisabledConfigIdsBySlotWithStand falls back to no-stand config", () => {

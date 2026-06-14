@@ -31,6 +31,8 @@ import {
 	parseStandDisabledCategories,
 	parseStandDisabledConfigIds,
 	parseStandMatOverrides,
+	parseStandPaid,
+	getStandSurchargeGrosze,
 	parseStandProductColors,
 } from "@/lib/products/stand-config";
 import type { AdminProductDetail, ConfigOption } from "./store";
@@ -39,6 +41,8 @@ export type ProductColorMode = "no_stand" | "with_stand";
 
 export type ColorSlotFormState = {
 	standAvailable: boolean;
+	standPaid: boolean;
+	standSurchargeGrosze: number;
 	productColorMode: ProductColorMode;
 	disabledBySlotWithStand: Record<string, Set<string>>;
 	disabledCategoriesBySlotWithStand: Record<string, Set<string>>;
@@ -124,6 +128,9 @@ export function createInitialColorSlotState(
 
 	return {
 		standAvailable: product?.standAvailable ?? metadata.stand_available === "true",
+		standPaid: product?.standPaid ?? parseStandPaid(metadata),
+		standSurchargeGrosze:
+			product?.standSurchargeGrosze ?? getStandSurchargeGrosze(metadata),
 		productColorMode: "no_stand",
 		disabledBySlotWithStand: setsFromRecord(withStandDisabled),
 		disabledCategoriesBySlotWithStand: setsFromRecord(withStandCategories),
@@ -462,6 +469,8 @@ export function serializeColorSlotState(state: ColorSlotFormState): {
 	matOverridesBySlotWithStand: Record<string, Record<string, boolean>>;
 	allowCustomColor: boolean;
 	standAvailable: boolean;
+	standPaid: boolean;
+	standSurchargeGrosze: number;
 	standDisabledConfigIds: string[];
 	standDisabledColorCategories: string[];
 	standProductColors: Record<string, ProductCustomColor[]>;
@@ -497,6 +506,8 @@ export function serializeColorSlotState(state: ColorSlotFormState): {
 		matOverridesBySlotWithStand: state.matOverridesBySlotWithStand,
 		allowCustomColor: Object.values(state.allowCustomBySlot).some(Boolean),
 		standAvailable: state.standAvailable,
+		standPaid: state.standPaid,
+		standSurchargeGrosze: state.standPaid ? state.standSurchargeGrosze : 0,
 		standDisabledConfigIds: Array.from(state.standDisabledColorIds),
 		standDisabledColorCategories: Array.from(state.standDisabledCategories),
 		standProductColors: state.standProductColors,

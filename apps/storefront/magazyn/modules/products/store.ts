@@ -45,8 +45,12 @@ import {
 	parseDisabledConfigIdsBySlotWithStand,
 	parseDisabledColorCategoriesBySlotWithStand,
 	parseStandAvailable,
+	parseStandPaid,
+	getStandSurchargeGrosze,
 	STAND_ALLOW_CUSTOM_KEY,
 	STAND_AVAILABLE_META_KEY,
+	STAND_PAID_META_KEY,
+	STAND_SURCHARGE_GROSZE_KEY,
 	STAND_DISABLED_CATEGORIES_KEY,
 	STAND_DISABLED_CONFIG_IDS_KEY,
 	STAND_MAT_OVERRIDES_KEY,
@@ -108,8 +112,12 @@ export type ProductFormValues = {
 	seo: ProductSeoMeta;
 	/** FAQ produktowe (metadata.product_faq). */
 	productFaq: ProductFaqItem[];
-	/** Opcja podstawki (+10 zł) na PDP. */
+	/** Opcja podstawki na PDP. */
 	standAvailable: boolean;
+	/** Podstawka płatna (domyślnie gratis). */
+	standPaid: boolean;
+	/** Dopłata za podstawkę w groszach (gdy standPaid). */
+	standSurchargeGrosze: number;
 	/** Wyłączone globalne kolory dla pola „Podstawka”. */
 	standDisabledConfigIds: string[];
 	standDisabledColorCategories: string[];
@@ -328,6 +336,12 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 				...serializeProductSeoForMetadata(values.seo),
 				product_faq: values.productFaq.length > 0 ? serializeProductFaqForMetadata(values.productFaq) : undefined,
 				[STAND_AVAILABLE_META_KEY]: values.standAvailable ? "true" : "false",
+				[STAND_PAID_META_KEY]:
+					values.standAvailable && values.standPaid ? "true" : "false",
+				[STAND_SURCHARGE_GROSZE_KEY]:
+					values.standAvailable && values.standPaid && values.standSurchargeGrosze > 0
+						? String(values.standSurchargeGrosze)
+						: "0",
 				[STAND_DISABLED_CONFIG_IDS_KEY]: JSON.stringify(values.standDisabledConfigIds),
 				[STAND_DISABLED_CATEGORIES_KEY]: JSON.stringify(values.standDisabledColorCategories),
 				[STAND_PRODUCT_COLORS_KEY]: JSON.stringify(values.standProductColors),
@@ -493,6 +507,8 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		seo: parseProductSeoFromMetadata(metadata) ?? {},
 		productFaq: parseProductFaqFromMetadata(metadata),
 		standAvailable: parseStandAvailable(metadata),
+		standPaid: parseStandPaid(metadata),
+		standSurchargeGrosze: getStandSurchargeGrosze(metadata),
 		standDisabledConfigIds: parseStandDisabledConfigIds(metadata),
 		standDisabledColorCategories: parseStandDisabledCategories(metadata),
 		standProductColors: parseStandProductColors(metadata),

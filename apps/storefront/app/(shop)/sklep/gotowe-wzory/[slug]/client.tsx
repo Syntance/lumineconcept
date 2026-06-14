@@ -48,8 +48,8 @@ import {
   parseDisabledColorCategoriesBySlotWithStand,
   parseDisabledConfigIdsBySlotWithStand,
   parseStandProductColors,
+  formatStandSurchargePln,
   STAND_COLOR_OPTION_TITLE,
-  STAND_SURCHARGE_PLN,
 } from "@/lib/products/stand-config";
 import { ColorStepPanel } from "@/components/product/ColorStepPanel";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
@@ -57,9 +57,6 @@ import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { trackProductViewed } from "@/lib/analytics/events";
 import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
 import { DeliveryTrustBadges } from "@/components/product/DeliveryTrustBadges";
-
-/** @deprecated — użyj STAND_SURCHARGE_PLN */
-const CERTIFICATE_STAND_PRICE_PLN = STAND_SURCHARGE_PLN;
 
 interface CheckoutCallout {
   enabled?: boolean;
@@ -90,6 +87,8 @@ interface ProductPageClientProps {
   colorCategories?: ColorCategoryDefinition[];
   schemaImageUrl?: string | null;
   certificateStandAvailable?: boolean;
+  /** Dopłata za podstawkę w groszach (0 = gratis). */
+  standSurchargeGrosze?: number;
   isVoucher?: boolean;
 }
 
@@ -106,6 +105,7 @@ export function ProductPageClient({
   colorCategories = [],
   schemaImageUrl,
   certificateStandAvailable = false,
+  standSurchargeGrosze = 0,
   isVoucher = false,
 }: ProductPageClientProps) {
   const colorOptionTitles = useMemo(
@@ -413,9 +413,9 @@ export function ProductPageClient({
 
   const variantHasPrice = selectedVariant?.price != null && selectedVariant.price > 0;
   const baseDisplayPrice = variantHasPrice ? selectedVariant.price : (basePrice ?? 0);
-  const standAddon =
-    certificateStandAvailable && includeCertificateStand ? STAND_SURCHARGE_PLN : 0;
-  const displayPrice = Math.round((baseDisplayPrice + standAddon) * 100) / 100;
+  const standAddonPln =
+    certificateStandAvailable && includeCertificateStand ? standSurchargeGrosze / 100 : 0;
+  const displayPrice = Math.round((baseDisplayPrice + standAddonPln) * 100) / 100;
 
   useEffect(() => {
     trackProductViewed({
@@ -607,10 +607,12 @@ export function ProductPageClient({
             type="checkbox"
             checked={includeCertificateStand}
             onChange={(e) => setIncludeCertificateStand(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-brand-300 accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded-none border-brand-300 accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
           />
           <span className="font-semibold">
-            Dodaj podstawkę (+{STAND_SURCHARGE_PLN.toFixed(2).replace(".", ",")} zł)
+            {standSurchargeGrosze > 0
+              ? `Dodaj podstawkę (+${formatStandSurchargePln(standSurchargeGrosze)} zł)`
+              : "Dodaj podstawkę (gratis)"}
           </span>
         </label>
         {includeCertificateStand && standColorConfig.values.length > 0 ? (
@@ -749,7 +751,7 @@ export function ProductPageClient({
           aria-labelledby="incomplete-config-title"
         >
           <div
-            className="w-full max-w-md rounded-lg border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-brand-50/80 px-5 py-5 shadow-xl"
+            className="w-full max-w-md rounded-none border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-brand-50/80 px-5 py-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <p
@@ -780,7 +782,7 @@ export function ProductPageClient({
             <button
               type="button"
               onClick={handleFinishConfigNavigation}
-              className="mt-5 w-full rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="mt-5 w-full rounded-none bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               Dokończ konfigurację
             </button>
@@ -797,7 +799,7 @@ export function ProductPageClient({
           aria-label={checkoutCallout?.title ?? "Informacja"}
         >
           <div
-            className="mx-4 w-full max-w-md rounded-xl border border-brand-200 bg-white p-8 shadow-xl"
+            className="mx-4 w-full max-w-md rounded-none border border-brand-200 bg-white p-8 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {checkoutCallout?.title && (
@@ -827,7 +829,7 @@ export function ProductPageClient({
                     window.dispatchEvent(new Event("callout-confirmed-cart"));
                   }
                 }}
-                className="w-full rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+                className="w-full rounded-none bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
               >
                 {checkoutCallout?.confirmLabel ?? "Rozumiem, kontynuuj"}
               </button>
@@ -837,7 +839,7 @@ export function ProductPageClient({
                   setCalloutAction(null);
                   window.dispatchEvent(new Event("callout-cancelled"));
                 }}
-                className="w-full rounded-md border border-brand-200 px-6 py-2.5 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50"
+                className="w-full rounded-none border border-brand-200 px-6 py-2.5 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50"
               >
                 Anuluj
               </button>
