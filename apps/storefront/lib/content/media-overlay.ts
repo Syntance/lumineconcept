@@ -1,5 +1,10 @@
 import type { RawStoreMetadataBlob } from "./admin-read";
-import { isRemoteCmsMediaUrl } from "./media-publish";
+import {
+	isCmsMediaAssetUrl,
+	isRuntimeCmsMediaGateEnabled,
+	lookupPublishedMediaUrl,
+	shouldStripUnpublishedCmsMedia,
+} from "./cms-media-gate";
 
 function isMediaRowWithoutImage(node: Record<string, unknown>): boolean {
 	if (!("imageUrl" in node) || typeof node.imageUrl !== "string" || node.imageUrl.trim()) {
@@ -11,25 +16,25 @@ function isMediaRowWithoutImage(node: Record<string, unknown>): boolean {
 function applyMediaGate(
 	node: unknown,
 	urlMap: Readonly<Record<string, string>>,
-	gateUnmappedRemote: boolean,
+	gateEnabled: boolean,
 ): unknown {
 	if (typeof node === "string") {
-		const mapped = urlMap[node];
-		if (mapped) return mapped;
-		if (gateUnmappedRemote && isRemoteCmsMediaUrl(node)) return "";
+		const published = lookupPublishedMediaUrl(node, urlMap);
+		if (published) return published;
+		if (gateEnabled && shouldStripUnpublishedCmsMedia(node, urlMap)) return "";
 		return node;
 	}
 
 	if (Array.isArray(node)) {
 		return node
-			.map((item) => applyMediaGate(item, urlMap, gateUnmappedRemote))
+			.map((item) => applyMediaGate(item, urlMap, gateEnabled))
 			.filter((item) => item !== null);
 	}
 
 	if (node && typeof node === "object") {
 		const out: Record<string, unknown> = {};
 		for (const [key, val] of Object.entries(node)) {
-			out[key] = applyMediaGate(val, urlMap, gateUnmappedRemote);
+			out[key] = applyMediaGate(val, urlMap, gateEnabled);
 		}
 
 		if (isMediaRowWithoutImage(out)) {
@@ -63,20 +68,21 @@ function applyMediaGate(
 
 /**
  * Live blob z Medusy + mapa z prebuildu:
- * - URL w mapie → lokalny `/images/cms/…` (LCP),
- * - zdalny CMS bez wpisu w mapie → ukryty do redeploy (nie pokazuj R2 live),
- * - brak mapy (dev bez sync) → zostaw zdalne URL-e.
+ * - opublikowany URL → `/images/cms/…`,
+ * - nieopublikowany upload CMS → ukryty do sync/prebuild + Redeploy (localhost = prod).
  */
 export function applyMediaUrlOverlay(
 	blob: RawStoreMetadataBlob,
 	urlMap: Readonly<Record<string, string>>,
 ): RawStoreMetadataBlob {
-	const gateUnmappedRemote = Object.keys(urlMap).length > 0;
+	const gateEnabled = isRuntimeCmsMediaGateEnabled(urlMap);
 
 	return {
-		siteSettings: applyMediaGate(blob.siteSettings, urlMap, gateUnmappedRemote),
-		pageSeo: applyMediaGate(blob.pageSeo, urlMap, gateUnmappedRemote),
-		pageContent: applyMediaGate(blob.pageContent, urlMap, gateUnmappedRemote),
-		globalContent: applyMediaGate(blob.globalContent, urlMap, gateUnmappedRemote),
+		siteSettings: applyMediaGate(blob.siteSettings, urlMap, gateEnabled),
+		pageSeo: applyMediaGate(blob.pageSeo, urlMap, gateEnabled),
+		pageContent: applyMediaGate(blob.pageContent, urlMap, gateEnabled),
+		globalContent: applyMediaGate(blob.globalContent, urlMap, gateEnabled),
 	};
 }
+
+export { isCmsMediaAssetUrl };

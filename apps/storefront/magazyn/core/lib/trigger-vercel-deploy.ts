@@ -15,7 +15,9 @@ export async function triggerVercelDeploy(reason?: string): Promise<boolean> {
 	}
 
 	try {
-		const res = await fetch(hookUrl, {
+		const target = new URL(hookUrl);
+		target.searchParams.set("buildCache", "false");
+		const res = await fetch(target.toString(), {
 			method: "POST",
 			signal: AbortSignal.timeout(30_000),
 		});

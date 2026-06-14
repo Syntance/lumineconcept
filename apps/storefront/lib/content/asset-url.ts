@@ -1,4 +1,5 @@
 import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
+import { isCmsMediaAssetUrl } from "./cms-media-gate";
 
 /** Assety statyczne storefrontu w `public/` — nie prefiksuj backendem Medusa. */
 const STOREFRONT_PUBLIC_PREFIXES = ["/images/", "/icons/"] as const;
@@ -23,12 +24,21 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 	if (!url?.trim()) return undefined;
 	const trimmed = url.trim();
 
+	// Nie serwuj nieopublikowanych uploadów CMS (tylko `/images/cms/` po sync/prebuild).
+	if (isCmsMediaAssetUrl(trimmed)) {
+		return undefined;
+	}
+
 	if (isStorefrontPublicAssetPath(trimmed)) {
 		const pathOnly = trimmed.startsWith("/") ? trimmed : new URL(trimmed).pathname;
 		return pathOnly.split("?")[0] || pathOnly;
 	}
 
 	const resolved = resolveMedusaMediaUrl(trimmed);
+
+	if (resolved && isCmsMediaAssetUrl(resolved)) {
+		return undefined;
+	}
 
 	if (!resolved && trimmed) {
 		console.warn("[Asset] Nie udało się zresolvować URL:", trimmed.substring(0, 100));

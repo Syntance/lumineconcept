@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { resolveCmsAssetUrl } from "./asset-url";
+import { isCmsMediaAssetUrl } from "./cms-media-gate";
 import { normalizeHeroCtaHref } from "./cta-href";
 import {
 	DEFAULT_GLOBAL_CONTENT,
@@ -211,22 +212,28 @@ const instagramTileSchema = z.object({
 	alt: z.string().optional(),
 });
 
+function resolvePublishedImageUrl(raw: string | undefined): string | undefined {
+	if (!raw?.trim()) return undefined;
+	const resolved = resolveCmsAssetUrl(raw);
+	if (resolved) return resolved;
+	if (isCmsMediaAssetUrl(raw)) return undefined;
+	return raw;
+}
+
 function resolveSeoAssets(seo: SeoMeta | undefined): SeoMeta | undefined {
 	if (!seo) return seo;
-	const ogImageUrl = resolveCmsAssetUrl(seo.ogImageUrl);
-	// Zachowaj oryginał jeśli resolve się nie powiódł
-	return ogImageUrl !== undefined ? { ...seo, ogImageUrl } : seo;
+	const ogImageUrl = resolvePublishedImageUrl(seo.ogImageUrl);
+	return ogImageUrl ? { ...seo, ogImageUrl } : seo;
 }
 
 function resolveHeroAssets(hero: HeroContent | undefined): HeroContent | undefined {
 	if (!hero) return hero;
-	const desktopResolved = resolveCmsAssetUrl(hero.desktopImageUrl);
-	const mobileResolved = resolveCmsAssetUrl(hero.mobileImageUrl);
+	const desktopImageUrl = resolvePublishedImageUrl(hero.desktopImageUrl);
+	const mobileImageUrl = resolvePublishedImageUrl(hero.mobileImageUrl);
 	return {
 		...hero,
-		// Zachowaj oryginał jeśli resolve się nie powiódł
-		...(desktopResolved !== undefined ? { desktopImageUrl: desktopResolved } : {}),
-		...(mobileResolved !== undefined ? { mobileImageUrl: mobileResolved } : {}),
+		...(desktopImageUrl ? { desktopImageUrl } : {}),
+		...(mobileImageUrl ? { mobileImageUrl } : {}),
 	};
 }
 
@@ -236,65 +243,67 @@ function resolvePageContentAssets(content: PageContent): PageContent {
 		hero: resolveHeroAssets(content.hero),
 		brandingCta: content.brandingCta
 			? (() => {
-					const resolved = resolveCmsAssetUrl(content.brandingCta.desktopBackgroundUrl);
+					const desktopBackgroundUrl = resolvePublishedImageUrl(
+						content.brandingCta.desktopBackgroundUrl,
+					);
 					return {
 						...content.brandingCta,
-						...(resolved !== undefined ? { desktopBackgroundUrl: resolved } : {}),
+						...(desktopBackgroundUrl ? { desktopBackgroundUrl } : {}),
 					};
 				})()
 			: content.brandingCta,
 		testimonials: content.testimonials?.map((item) => {
-			const resolved = resolveCmsAssetUrl(item.imageUrl);
-			return {
-				...item,
-				...(resolved !== undefined ? { imageUrl: resolved } : {}),
-			};
+			if (!item.imageUrl?.trim()) return item;
+			const imageUrl = resolvePublishedImageUrl(item.imageUrl);
+			if (imageUrl) return { ...item, imageUrl };
+			const { imageUrl: _removed, ...rest } = item;
+			return rest;
 		}),
-		gallery: content.gallery?.map((item) => {
-			const resolved = resolveCmsAssetUrl(item.imageUrl);
-			return {
-				...item,
-				imageUrl: resolved ?? item.imageUrl,
-			};
-		}),
-		categoryTiles: content.categoryTiles?.map((item) => {
-			const resolved = resolveCmsAssetUrl(item.imageUrl);
-			return {
-				...item,
-				imageUrl: resolved ?? item.imageUrl,
-			};
-		}),
+		gallery: content.gallery
+			?.map((item) => {
+				const imageUrl = resolvePublishedImageUrl(item.imageUrl);
+				if (!imageUrl) return null;
+				return { ...item, imageUrl };
+			})
+			.filter((item): item is NonNullable<typeof item> => item !== null),
+		categoryTiles: content.categoryTiles
+			?.map((item) => {
+				const imageUrl = resolvePublishedImageUrl(item.imageUrl);
+				if (!imageUrl) return null;
+				return { ...item, imageUrl };
+			})
+			.filter((item): item is NonNullable<typeof item> => item !== null),
 	};
 }
 
 function resolveGlobalContentAssets(global: GlobalContent): GlobalContent {
 	return {
 		...global,
-		salonLogos: global.salonLogos?.map((logo) => {
-			const resolved = resolveCmsAssetUrl(logo.logoUrl);
-			return {
-				...logo,
-				...(resolved !== undefined ? { logoUrl: resolved } : {}),
-			};
-		}),
-		instagramTiles: global.instagramTiles?.map((tile) => {
-			const resolved = resolveCmsAssetUrl(tile.imageUrl);
-			return {
-				...tile,
-				imageUrl: resolved ?? tile.imageUrl,
-			};
-		}),
+		salonLogos: global.salonLogos
+			?.map((logo) => {
+				const logoUrl = resolvePublishedImageUrl(logo.logoUrl);
+				if (!logoUrl) return null;
+				return { ...logo, logoUrl };
+			})
+			.filter((item): item is NonNullable<typeof item> => item !== null),
+		instagramTiles: global.instagramTiles
+			?.map((tile) => {
+				const imageUrl = resolvePublishedImageUrl(tile.imageUrl);
+				if (!imageUrl) return null;
+				return { ...tile, imageUrl };
+			})
+			.filter((item): item is NonNullable<typeof item> => item !== null),
 	};
 }
 
 export function prepareGlobalContentForSave(global: GlobalContent): GlobalContent {
-	const prepared = {
+	return {
 		...global,
 		salonLogos: global.salonLogos
 			?.map((logo) => ({
 				...logo,
 				name: logo.name.trim(),
-				logoUrl: resolveCmsAssetUrl(logo.logoUrl?.trim()) || undefined,
+				logoUrl: logo.logoUrl?.trim() || undefined,
 				description: logo.description?.trim() || undefined,
 				alt: logo.alt?.trim() || undefined,
 			}))
@@ -303,11 +312,10 @@ export function prepareGlobalContentForSave(global: GlobalContent): GlobalConten
 			?.map((tile) => ({
 				...tile,
 				postUrl: tile.postUrl.trim(),
-				imageUrl: resolveCmsAssetUrl(tile.imageUrl.trim()) ?? tile.imageUrl.trim(),
+				imageUrl: tile.imageUrl.trim(),
 			}))
 			.filter((tile) => tile.postUrl !== "" && tile.imageUrl.trim() !== ""),
 	};
-	return resolveGlobalContentAssets(prepared);
 }
 
 export const globalContentSchema = z.object({
@@ -481,17 +489,25 @@ export function normalizeLocalAssetUrl(url: string | undefined): string | undefi
 }
 
 export function preparePageContentForSave(_pageId: string, content: PageContent): PageContent {
-	const next = resolvePageContentAssets({ ...content });
+	const next: PageContent = { ...content };
 	if (next.hero) {
 		const hero = { ...next.hero, ctaHref: normalizeHeroCtaHref(next.hero.ctaHref) };
 		if (!hero.desktopImageUrl?.trim()) delete hero.desktopImageUrl;
+		else hero.desktopImageUrl = hero.desktopImageUrl.trim();
 		if (!hero.mobileImageUrl?.trim()) delete hero.mobileImageUrl;
+		else hero.mobileImageUrl = hero.mobileImageUrl.trim();
 		next.hero = hero;
 	}
 	if (next.brandingCta) {
 		const branding = { ...next.brandingCta };
 		if (!branding.desktopBackgroundUrl?.trim()) delete branding.desktopBackgroundUrl;
+		else branding.desktopBackgroundUrl = branding.desktopBackgroundUrl.trim();
 		next.brandingCta = Object.keys(branding).length ? branding : undefined;
+	}
+	if (next.gallery) {
+		next.gallery = next.gallery
+			.map((item) => ({ ...item, imageUrl: item.imageUrl.trim(), alt: item.alt?.trim() }))
+			.filter((item) => item.imageUrl.length > 0);
 	}
 	return next;
 }

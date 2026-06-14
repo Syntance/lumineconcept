@@ -49,7 +49,7 @@ describe("applyMediaUrlOverlay", () => {
 		expect(gallery?.[0]?.id).toBe("1");
 	});
 
-	it("bez mapy prebuild zostawia zdalne URL-e (dev)", () => {
+	it("bez mapy prebuild ukrywa zdalne URL-e (localhost = prod)", () => {
 		const out = applyMediaUrlOverlay(
 			{
 				siteSettings: null,
@@ -64,8 +64,8 @@ describe("applyMediaUrlOverlay", () => {
 			{},
 		);
 
-		const gallery = (out.pageContent as Record<string, { gallery?: Array<{ imageUrl: string }> }>)["logo-3d"]
+		const gallery = (out.pageContent as Record<string, { gallery?: Array<{ id: string }> }>)["logo-3d"]
 			?.gallery;
-		expect(gallery?.[0]?.imageUrl).toBe(remoteB);
+		expect(gallery).toHaveLength(0);
 	});
 });
