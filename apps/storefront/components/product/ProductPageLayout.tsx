@@ -33,6 +33,7 @@ import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
 import { variantOptionsRecord } from "@/lib/products/variant-options";
 import { parseStandAvailable, getStandSurchargeGrosze, formatStandSurchargePln } from "@/lib/products/stand-config";
 import { resolvePdpCalloutDisplay } from "@/lib/products/pdp-callout";
+import { resolveMinOrderQuantity } from "@/lib/products/min-order-quantity";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
@@ -93,7 +94,7 @@ function productIsCertyfikaty(
 
 /**
  * Voucher podarunkowy — wykrywa przez tag "voucher", handle lub tytuł.
- * Dla voucherów: min 5 sztuk + BRAK opcji podstawki.
+ * Dla voucherów: domyślnie min. 5 szt. (gdy brak min_order_quantity w CMS), brak opcji podstawki.
  */
 function productIsVoucher(
   product: NonNullable<Awaited<ReturnType<typeof getProductByHandle>>>,
@@ -161,8 +162,8 @@ interface ProductPageLayoutProps {
     certificateStandAvailable?: boolean;
     /** Dopłata za podstawkę w groszach (0 = gratis). */
     standSurchargeGrosze?: number;
-    /** Voucher podarunkowy — min 5 sztuk, brak opcji podstawki */
-    isVoucher?: boolean;
+    /** Minimalna liczba sztuk w zamówieniu */
+    minOrderQuantity?: number;
   }>;
 }
 
@@ -221,6 +222,9 @@ export async function ProductPageLayout({
     values: Array<{ value: string }>;
   }>;
   const metadata = (product.metadata ?? {}) as Record<string, unknown>;
+  const minOrderQuantity = resolveMinOrderQuantity(metadata, {
+    fallbackWhenUnset: isVoucher ? 5 : 1,
+  });
   const certificateStandAvailable =
     !isVoucher && (parseStandAvailable(metadata) || productIsCertyfikaty(product));
   const standSurchargeGrosze = getStandSurchargeGrosze(metadata);
@@ -461,7 +465,7 @@ export async function ProductPageLayout({
               schemaImageUrl={schemaImageUrl}
               certificateStandAvailable={certificateStandAvailable}
               standSurchargeGrosze={standSurchargeGrosze}
-              isVoucher={isVoucher}
+              minOrderQuantity={minOrderQuantity}
             />
           </div>
         </div>

@@ -83,6 +83,9 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 		() => product?.pdpCalloutEnabled ?? false,
 	);
 	const [pdpCallout, setPdpCallout] = useState(() => product?.pdpCallout ?? "");
+	const [minOrderQuantity, setMinOrderQuantity] = useState(
+		() => product?.minOrderQuantity ?? 1,
+	);
 
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
@@ -377,6 +380,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				standSurchargeGrosze: colorConfig.standSurchargeGrosze,
 				pdpCalloutEnabled,
 				pdpCallout,
+				minOrderQuantity,
 				standDisabledConfigIds: colorConfig.standDisabledConfigIds,
 				standDisabledColorCategories: colorConfig.standDisabledColorCategories,
 				standProductColors: colorConfig.standProductColors,
@@ -756,6 +760,32 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				<div className="flex flex-col gap-1.5">
 					<label htmlFor="product-price" className="text-sm font-medium">Cena ({magazynConfig.currency.toUpperCase()})</label>
 					<Input id="product-price" type="number" min={0} step="0.01" value={priceMajor} onChange={(e) => setPriceMajor(e.target.value)} placeholder="0.00" className="h-10" required />
+				</div>
+
+				<div className="flex flex-col gap-1.5">
+					<label htmlFor="product-min-qty" className="text-sm font-medium">
+						Minimalna ilość (szt.)
+					</label>
+					<Input
+						id="product-min-qty"
+						type="number"
+						min={1}
+						max={99}
+						step={1}
+						value={minOrderQuantity}
+						onChange={(e) => {
+							const raw = Number.parseInt(e.target.value, 10);
+							if (!Number.isFinite(raw)) {
+								setMinOrderQuantity(1);
+								return;
+							}
+							setMinOrderQuantity(Math.min(99, Math.max(1, raw)));
+						}}
+						className="h-10"
+					/>
+					<p className="text-xs text-muted-foreground">
+						Klient nie zamówi mniej sztuk na raz (np. 5 dla voucherów).
+					</p>
 				</div>
 
 				{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}

@@ -64,6 +64,11 @@ import {
 	parsePdpCallout,
 	parsePdpCalloutEnabled,
 } from "@/lib/products/pdp-callout";
+import {
+	parseMinOrderQuantity,
+	serializeMinOrderQuantityForMetadata,
+	MIN_ORDER_QUANTITY_META_KEY,
+} from "@/lib/products/min-order-quantity";
 import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
 
 export { buildColorOptionTitles } from "@/lib/products/color-slot-config";
@@ -126,6 +131,8 @@ export type ProductFormValues = {
 	/** Opcjonalny callout pod „Skonfiguruj swój produkt” na PDP. */
 	pdpCalloutEnabled: boolean;
 	pdpCallout: string;
+	/** Minimalna liczba sztuk w zamówieniu (metadata.min_order_quantity). */
+	minOrderQuantity: number;
 	/** Wyłączone globalne kolory dla pola „Podstawka”. */
 	standDisabledConfigIds: string[];
 	standDisabledColorCategories: string[];
@@ -351,6 +358,9 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 						? String(values.standSurchargeGrosze)
 						: "0",
 				...serializePdpCalloutForMetadata(values.pdpCalloutEnabled, values.pdpCallout),
+				[MIN_ORDER_QUANTITY_META_KEY]: serializeMinOrderQuantityForMetadata(
+					values.minOrderQuantity,
+				),
 				[STAND_DISABLED_CONFIG_IDS_KEY]: JSON.stringify(values.standDisabledConfigIds),
 				[STAND_DISABLED_CATEGORIES_KEY]: JSON.stringify(values.standDisabledColorCategories),
 				[STAND_PRODUCT_COLORS_KEY]: JSON.stringify(values.standProductColors),
@@ -520,6 +530,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		standSurchargeGrosze: getStandSurchargeGrosze(metadata),
 		pdpCalloutEnabled: parsePdpCalloutEnabled(metadata),
 		pdpCallout: parsePdpCallout(metadata),
+		minOrderQuantity: parseMinOrderQuantity(metadata),
 		standDisabledConfigIds: parseStandDisabledConfigIds(metadata),
 		standDisabledColorCategories: parseStandDisabledCategories(metadata),
 		standProductColors: parseStandProductColors(metadata),

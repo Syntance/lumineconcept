@@ -39,6 +39,10 @@ export function AddToCartButton({
   const [isAdding, setIsAdding] = useState(false);
   const [quantity, setQuantity] = useState(minQuantity);
   const [pendingFromCallout, setPendingFromCallout] = useState(false);
+
+  useEffect(() => {
+    setQuantity((q) => Math.max(minQuantity, Math.min(maxQuantity, q)));
+  }, [minQuantity, maxQuantity]);
   /** Po potwierdzeniu calloutu: tylko koszyk albo koszyk + `/checkout`. */
   const pendingRedirectRef = useRef<string | null>(null);
 

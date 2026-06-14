@@ -57,6 +57,10 @@ import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { trackProductViewed } from "@/lib/analytics/events";
 import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
 import { DeliveryTrustBadges } from "@/components/product/DeliveryTrustBadges";
+import {
+	MIN_ORDER_QUANTITY_META_KEY,
+	serializeMinOrderQuantityForMetadata,
+} from "@/lib/products/min-order-quantity";
 
 interface CheckoutCallout {
   enabled?: boolean;
@@ -89,7 +93,8 @@ interface ProductPageClientProps {
   certificateStandAvailable?: boolean;
   /** Dopłata za podstawkę w groszach (0 = gratis). */
   standSurchargeGrosze?: number;
-  isVoucher?: boolean;
+  /** Minimalna liczba sztuk w zamówieniu */
+  minOrderQuantity?: number;
 }
 
 function extractMetaKey(optionTitle: string): string {
@@ -106,7 +111,7 @@ export function ProductPageClient({
   schemaImageUrl,
   certificateStandAvailable = false,
   standSurchargeGrosze = 0,
-  isVoucher = false,
+  minOrderQuantity = 1,
 }: ProductPageClientProps) {
   const colorOptionTitles = useMemo(
     () => resolveColorSlotTitles(product.options, product.metadata),
@@ -520,6 +525,8 @@ export function ProductPageClient({
       }
     }
 
+    meta[MIN_ORDER_QUANTITY_META_KEY] = serializeMinOrderQuantityForMetadata(minOrderQuantity);
+
     return Object.keys(meta).length > 0 ? meta : undefined;
   }, [
     textFields,
@@ -536,6 +543,7 @@ export function ProductPageClient({
     standColorCustomization,
     standColorConfig.colorMap,
     colorMap,
+    minOrderQuantity,
   ]);
 
   const calloutEnabled =
@@ -596,7 +604,8 @@ export function ProductPageClient({
   const tracksInventory = selectedVariant?.manage_inventory === true;
   const stockQty = selectedVariant?.inventory_quantity ?? 0;
   const availableToOrder =
-    !!selectedVariant && (!tracksInventory || stockQty > 0);
+    !!selectedVariant &&
+    (!tracksInventory || stockQty >= minOrderQuantity);
   const maxOrderQty = !tracksInventory ? 99 : stockQty;
 
   const standSection =
@@ -717,6 +726,11 @@ export function ProductPageClient({
 
         <div ref={ctaRef} className="space-y-4">
           <ExpressToggle />
+          {minOrderQuantity > 1 ? (
+            <p className="text-sm text-brand-600">
+              Minimalne zamówienie: {minOrderQuantity} szt.
+            </p>
+          ) : null}
           <AddToCartButton
             variantId={selectedVariant?.id ?? null}
             productData={{
@@ -728,7 +742,7 @@ export function ProductPageClient({
             }}
             disabled={!selectedVariant || !availableToOrder}
             maxQuantity={maxOrderQty}
-            minQuantity={isVoucher ? 5 : 1}
+            minQuantity={minOrderQuantity}
             onBeforeAdd={handleBeforeAdd}
             metadata={buildMetadata()}
           />

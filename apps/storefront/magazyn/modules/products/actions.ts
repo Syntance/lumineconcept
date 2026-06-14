@@ -108,6 +108,7 @@ const productSchema = z.object({
 	standSurchargeGrosze: z.number().int().min(0).default(0),
 	pdpCalloutEnabled: z.boolean().default(false),
 	pdpCallout: z.string().max(500).default(""),
+	minOrderQuantity: z.number().int().min(1).max(99).default(1),
 	standDisabledConfigIds: z.array(z.string().trim()).default([]),
 	standDisabledColorCategories: z.array(z.string().trim()).default([]),
 	standProductColors: z
@@ -185,6 +186,7 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 		standSurchargeGrosze: data.standSurchargeGrosze ?? 0,
 		pdpCalloutEnabled: data.pdpCalloutEnabled ?? false,
 		pdpCallout: data.pdpCallout ?? "",
+		minOrderQuantity: data.minOrderQuantity ?? 1,
 		standDisabledConfigIds: data.standDisabledConfigIds ?? [],
 		standDisabledColorCategories: data.standDisabledColorCategories ?? [],
 		standProductColors: data.standProductColors ?? {},
