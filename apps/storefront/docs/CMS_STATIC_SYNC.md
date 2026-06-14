@@ -7,9 +7,9 @@
 | Tekst, SEO, linki, FAQ, trust bar, announcement | `revalidateTag('magazyn-content')` + webhook | sekundy |
 | Obrazy (hero, galerie, OG, logotypy, Instagram) | **ręczny Redeploy** w panelu CMS/SEO → deploy hook → prebuild | ~2–3 min |
 
-**Runtime:** storefront zawsze czyta treść **live** z Medusa (`lib/content/admin-read.ts`).
-Obrazy z R2/CDN są opcjonalnie **nadpisywane** mapą z prebuildu (`static-cms-media-map.ts`)
-→ lokalne `/images/cms/…` dla LCP i PageSpeed.
+**Runtime:** storefront czyta treść **live** z Medusa, ale **nowe zdalne URL-e obrazów**
+(poza mapą z ostatniego prebuildu) są **ukrywane** do ręcznego Redeploy — nie widać ich z R2 od razu po zapisie.
+Po redeploy mapa zawiera nowe wpisy → obrazy serwowane lokalnie z `/images/cms/…`.
 
 ## Flow zapisu w panelu
 
