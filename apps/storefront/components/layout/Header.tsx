@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 import { HeaderMobileToggle } from "./HeaderMobileToggle";
 import { HeaderIcons } from "./HeaderIcons";
+import { HeaderLogoLink } from "./HeaderLogoLink";
 import { SHOP_HUB_HREF, SHOP_NAV_DROPDOWN } from "./shop-nav";
 
 const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Tablice z logo" }] as const;
@@ -86,20 +86,7 @@ export function Header() {
           </nav>
         </div>
 
-        <Link
-          href="/"
-          className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
-        >
-          <Image
-            src="/images/logo.png"
-            alt="Lumine Concept"
-            width={204}
-            height={46}
-            className="h-[46.2px] w-auto"
-            loading="eager"
-            fetchPriority="low"
-          />
-        </Link>
+        <HeaderLogoLink />
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:justify-start lg:gap-8 lg:pl-[calc(101.75px+5rem)]">
           <nav className="hidden shrink-0 lg:flex items-center gap-8" aria-label="Nawigacja dodatkowa">
