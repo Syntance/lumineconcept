@@ -35,6 +35,7 @@ import {
   buildMatDisabledSetForSlot,
   flattenProductColorsForSlot,
   parseMatOverridesBySlot,
+  parseMatOverridesBySlotWithStand,
   parseAllowCustomColorBySlot,
   parseDisabledColorCategoriesBySlot,
   parseDisabledConfigIds,
@@ -138,10 +139,29 @@ export function ProductPageClient({
   const customSet = useMemo(() => buildCustomSet(mergedColors), [mergedColors]);
   const matDisabledSet = useMemo(() => buildMatDisabledSet(mergedColors), [mergedColors]);
 
-  const matOverridesBySlot = useMemo(
+  const [includeCertificateStand, setIncludeCertificateStand] = useState(false);
+
+  const matOverridesBySlotBase = useMemo(
     () => parseMatOverridesBySlot(product.metadata, colorOptionTitles),
     [product.metadata, colorOptionTitles],
   );
+
+  const matOverridesBySlot = useMemo(() => {
+    if (!certificateStandAvailable || !includeCertificateStand) {
+      return matOverridesBySlotBase;
+    }
+    return parseMatOverridesBySlotWithStand(
+      product.metadata,
+      colorOptionTitles,
+      matOverridesBySlotBase,
+    );
+  }, [
+    certificateStandAvailable,
+    includeCertificateStand,
+    product.metadata,
+    colorOptionTitles,
+    matOverridesBySlotBase,
+  ]);
 
   const allowCustomColor = useMemo(
     () => parseAllowCustomColor(product.metadata),
@@ -155,8 +175,6 @@ export function ProductPageClient({
     const colorIds = new Set(globalColors.map((c) => c.id));
     return legacyDisabledIds.filter((id) => colorIds.has(id));
   }, [legacyDisabledIds, globalColors]);
-
-  const [includeCertificateStand, setIncludeCertificateStand] = useState(false);
 
   const disabledConfigIdsBySlotBase = useMemo(
     () =>

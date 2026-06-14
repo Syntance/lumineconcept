@@ -5,6 +5,7 @@ import {
 	parseDisabledConfigIdsBySlotWithStand,
 	STAND_COLOR_OPTION_TITLE,
 } from "@/lib/products/stand-config";
+import { parseMatOverridesBySlotWithStand } from "@/lib/products/color-slot-config";
 
 describe("stand-config", () => {
 	it("parseStandAvailable reads metadata flag", () => {
@@ -32,5 +33,19 @@ describe("stand-config", () => {
 		);
 		expect(names).toEqual(["Biały"]);
 		expect(STAND_COLOR_OPTION_TITLE).toBe("Podstawka");
+	});
+
+	it("parseMatOverridesBySlotWithStand keeps separate mat config per mode", () => {
+		const slots = ["Kolor tabliczki"] as const;
+		const noStand = { "Kolor tabliczki": { g1: false } };
+		const withStandMeta = {
+			mat_overrides_by_slot_with_stand: JSON.stringify({
+				"Kolor tabliczki": { g1: true },
+			}),
+		};
+		expect(
+			parseMatOverridesBySlotWithStand(withStandMeta, slots, noStand)["Kolor tabliczki"],
+		).toEqual({ g1: true });
+		expect(noStand["Kolor tabliczki"]).toEqual({ g1: false });
 	});
 });

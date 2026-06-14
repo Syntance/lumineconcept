@@ -33,8 +33,9 @@ export const STAND_ALLOW_CUSTOM_KEY = "stand_allow_custom_color";
 export const STAND_MAT_OVERRIDES_KEY = "stand_mat_overrides";
 export const DISABLED_CONFIG_IDS_BY_SLOT_WITH_STAND_KEY =
 	"disabled_config_ids_by_slot_with_stand";
-export const DISABLED_COLOR_CATEGORIES_BY_SLOT_WITH_STAND_KEY =
+export const 	DISABLED_COLOR_CATEGORIES_BY_SLOT_WITH_STAND_KEY =
 	"disabled_color_categories_by_slot_with_stand";
+export const MAT_OVERRIDES_BY_SLOT_WITH_STAND_KEY = "mat_overrides_by_slot_with_stand";
 
 /** Tytuł pola koloru podstawki na PDP (metadata: color_podstawki). */
 export const STAND_COLOR_OPTION_TITLE = "Podstawka";
