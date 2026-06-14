@@ -79,7 +79,7 @@ export async function createColorOptionAction(input: {
 	const parsed = z
 		.object({
 			name: z.string().trim().min(2, "Nazwa musi mieć min. 2 znaki."),
-			hex_color: z.string().trim().min(1, "Podaj kolor HEX."),
+			hex_color: z.string().trim(),
 			color_category: colorCategorySchema,
 		})
 		.safeParse(input);

@@ -6,7 +6,6 @@ export interface TextFieldDef {
   placeholder?: string;
   required?: boolean;
   maxLength?: number;
-  multiline?: boolean;
 }
 
 export function isValidTextField(f: unknown): f is TextFieldDef {
@@ -43,7 +42,6 @@ export function createDefaultTextField(index: number): TextFieldDef {
     placeholder: "",
     required: false,
     maxLength: 200,
-    multiline: false,
   };
 }
 
@@ -54,10 +52,9 @@ export function serializeTextFieldsForMetadata(fields: TextFieldDef[]): TextFiel
       key: f.key.trim(),
       label: f.label.trim(),
       ...(f.hint?.trim() ? { hint: f.hint.trim() } : {}),
-      ...(f.placeholder?.trim() ? { placeholder: f.placeholder.trim() } : {}),
+      ...(f.placeholder?.trim() ? { placeholder: f.placeholder } : {}),
       ...(f.required ? { required: true } : {}),
       ...(f.maxLength && f.maxLength !== 200 ? { maxLength: f.maxLength } : {}),
-      ...(f.multiline ? { multiline: true } : {}),
     }));
 }
 

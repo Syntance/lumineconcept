@@ -7,7 +7,7 @@ import { Input } from "@magazyn/core/ui/input";
 import {
 	type ColorCategoryDefinition,
 	type ColorCategoryId,
-	normalizeHexInput,
+	resolveHexInputOrTransparent,
 } from "@magazyn/modules/products/color-categories";
 import { ColorSwatch, colorsInCategory, sortConfigOptions } from "@magazyn/modules/products/color-ui";
 import type { ConfigOption } from "@magazyn/modules/products/store";
@@ -56,7 +56,7 @@ function AddColorForm({
 		handleAdd();
 	}
 
-	const previewHex = normalizeHexInput(hex);
+	const previewHex = resolveHexInputOrTransparent(hex);
 
 	return (
 		<div

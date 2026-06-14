@@ -6,7 +6,7 @@ import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import {
 	type ColorCategoryId,
-	normalizeHexInput,
+	resolveHexInputOrTransparent,
 } from "./color-categories";
 
 type Props = {
@@ -24,18 +24,18 @@ export function AddProductColorForm({ category, slotLabel, onAdd }: Props) {
 	function handleAdd() {
 		setError(null);
 		const trimmedName = name.trim();
-		const normalizedHex = normalizeHexInput(hex);
+		const resolvedHex = resolveHexInputOrTransparent(hex);
 		if (trimmedName.length < 2) {
 			setError("Nazwa musi mieć min. 2 znaki.");
 			return;
 		}
-		if (!normalizedHex) {
-			setError("Podaj poprawny kolor HEX (np. #AF7C61).");
+		if (!resolvedHex) {
+			setError("Podaj poprawny kolor HEX (np. #AF7C61) lub zostaw puste dla bezbarwnego.");
 			return;
 		}
 		setPending(true);
 		try {
-			onAdd({ name: trimmedName, hex_color: normalizedHex });
+			onAdd({ name: trimmedName, hex_color: resolvedHex });
 			setName("");
 			setHex("#");
 		} catch (e) {
@@ -51,7 +51,7 @@ export function AddProductColorForm({ category, slotLabel, onAdd }: Props) {
 		handleAdd();
 	}
 
-	const previewHex = normalizeHexInput(hex);
+	const previewHex = resolveHexInputOrTransparent(hex);
 
 	return (
 		<div
@@ -98,7 +98,7 @@ export function AddProductColorForm({ category, slotLabel, onAdd }: Props) {
 							value={hex}
 							onChange={(e) => setHex(e.target.value)}
 							onKeyDown={onFieldKeyDown}
-							placeholder="#AF7C61"
+							placeholder="opcjonalnie"
 							className="h-9 w-28 font-mono text-sm"
 						/>
 					</div>
