@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ProductWatermark } from "@/components/product/ProductWatermark";
 import { cn } from "@/lib/utils";
 import {
   getProductDimensionParts,
@@ -156,22 +157,7 @@ export function ProductCard({
                 aria-hidden
                 className="pointer-events-none absolute top-0 right-0 z-20 pt-4 pr-4"
               >
-                <Image
-                  src="/images/watermark.png"
-                  alt=""
-                  width={421}
-                  height={134}
-                  unoptimized
-                  loading={priority ? "eager" : "lazy"}
-                  sizes="0.875rem"
-                  quality={85}
-                  className="block h-3.5 w-auto max-w-none select-none sm:h-4"
-                  style={{
-                    filter:
-                      "brightness(0) invert(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.55)) drop-shadow(0 0 1px rgb(0 0 0 / 0.75))",
-                  }}
-                  draggable={false}
-                />
+                <ProductWatermark className="h-3.5 aspect-[421/134] select-none sm:h-4" />
               </div>
             ) : null}
           </>

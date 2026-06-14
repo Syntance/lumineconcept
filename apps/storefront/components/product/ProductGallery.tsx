@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 
+import { ProductWatermark } from "@/components/product/ProductWatermark";
 import {
   PRODUCT_GALLERY_MAX_WIDTH_STYLE,
   PRODUCT_IMAGE_ASPECT_CLASS,
@@ -201,22 +202,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 aria-hidden
                 className="pointer-events-none absolute top-0 right-0 z-20 pt-6 pr-6"
               >
-                <Image
-                  src="/images/watermark.png"
-                  alt=""
-                  width={421}
-                  height={134}
-                  unoptimized
-                  loading="eager"
-                  sizes="(max-width: 1024px) 1.75rem, 2.25rem"
-                  quality={85}
-                  className="block h-7 w-auto max-w-none select-none sm:h-8 lg:h-9"
-                  style={{
-                    filter:
-                      "brightness(0) invert(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.55)) drop-shadow(0 0 1px rgb(0 0 0 / 0.75))",
-                  }}
-                  draggable={false}
-                />
+                <ProductWatermark className="h-7 aspect-[421/134] select-none sm:h-8 lg:h-9" />
               </div>
               {images.length > 1 && (
                 <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 lg:hidden">
