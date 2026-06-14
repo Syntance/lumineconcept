@@ -1,0 +1,71 @@
+import { describe, expect, it } from "vitest";
+import { applyMediaUrlOverlay } from "@/lib/content/media-overlay";
+
+const remoteA = "https://cdn.example.com/cms/a.webp";
+const remoteB = "https://cdn.example.com/cms/b.webp";
+const localA = "/images/cms/a.webp";
+
+describe("applyMediaUrlOverlay", () => {
+	it("mapuje znane URL-e na lokalne ścieżki", () => {
+		const out = applyMediaUrlOverlay(
+			{
+				siteSettings: null,
+				pageSeo: null,
+				pageContent: {
+					"logo-3d": {
+						gallery: [{ id: "1", imageUrl: remoteA, order: 0 }],
+					},
+				},
+				globalContent: null,
+			},
+			{ [remoteA]: localA },
+		);
+
+		const gallery = (out.pageContent as Record<string, { gallery?: Array<{ imageUrl: string }> }>)["logo-3d"]
+			?.gallery;
+		expect(gallery?.[0]?.imageUrl).toBe(localA);
+	});
+
+	it("ukrywa nowe zdalne obrazy bez wpisu w mapie (do redeploy)", () => {
+		const out = applyMediaUrlOverlay(
+			{
+				siteSettings: null,
+				pageSeo: null,
+				pageContent: {
+					"logo-3d": {
+						gallery: [
+							{ id: "1", imageUrl: remoteA, order: 0 },
+							{ id: "2", imageUrl: remoteB, order: 1 },
+						],
+					},
+				},
+				globalContent: null,
+			},
+			{ [remoteA]: localA },
+		);
+
+		const gallery = (out.pageContent as Record<string, { gallery?: Array<{ id: string }> }>)["logo-3d"]?.gallery;
+		expect(gallery).toHaveLength(1);
+		expect(gallery?.[0]?.id).toBe("1");
+	});
+
+	it("bez mapy prebuild zostawia zdalne URL-e (dev)", () => {
+		const out = applyMediaUrlOverlay(
+			{
+				siteSettings: null,
+				pageSeo: null,
+				pageContent: {
+					"logo-3d": {
+						gallery: [{ id: "1", imageUrl: remoteB, order: 0 }],
+					},
+				},
+				globalContent: null,
+			},
+			{},
+		);
+
+		const gallery = (out.pageContent as Record<string, { gallery?: Array<{ imageUrl: string }> }>)["logo-3d"]
+			?.gallery;
+		expect(gallery?.[0]?.imageUrl).toBe(remoteB);
+	});
+});

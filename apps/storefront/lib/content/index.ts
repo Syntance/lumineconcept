@@ -36,7 +36,7 @@ function getStaticMediaUrlMap(): Record<string, string> {
 /**
  * Hybryda CMS:
  * - tekst / SEO → live z Medusa (tag `magazyn-content`, revalidate po zapisie),
- * - obrazy → opcjonalny overlay z prebuild (`/images/cms/…`) dla LCP po deployu.
+ * - obrazy → overlay z prebuild; niezmapowane zdalne URL-e ukryte do redeploy.
  */
 async function getContentBlob() {
 	const live = await fetchStoreMetadataBlob();
