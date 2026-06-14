@@ -68,8 +68,6 @@ export default async function HomePage() {
           as="image"
           href={heroData.desktopImageUrl}
           fetchPriority="high"
-          // @ts-expect-error - imageSrcSet nie jest w typach Next.js, ale działa
-          imageSrcSet={heroData.desktopImageUrl}
           media="(min-width: 1024px)"
         />
       )}
@@ -79,8 +77,6 @@ export default async function HomePage() {
           as="image"
           href={heroData.mobileImageUrl}
           fetchPriority="high"
-          // @ts-expect-error - imageSrcSet nie jest w typach Next.js, ale działa
-          imageSrcSet={heroData.mobileImageUrl}
           media="(max-width: 1023px)"
         />
       )}
