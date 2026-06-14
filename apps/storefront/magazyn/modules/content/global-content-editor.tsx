@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
@@ -10,9 +10,8 @@ import {
 	saveGlobalSiteSettingsAction,
 } from "./content-actions";
 import { cmsSaveSuccessMessage } from "./cms-save-feedback";
-import { newCmsId } from "./cms-id";
 import { SalonLogosEditor } from "./salon-logos-editor";
-import { OgImageField } from "./seo/og-image-field";
+import { InstagramTilesEditor } from "./instagram-tiles-editor";
 
 const inputClass =
 	"w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -162,17 +161,10 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 				onChange={(salonLogos) => setGlobal((g) => ({ ...g, salonLogos }))}
 			/>
 
-			<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
-				<legend className="px-1 text-sm font-medium">Instagram (HP, max 6)</legend>
-				{(global.instagramTiles ?? []).map((tile, index) => (
-					<div key={tile.id} className="flex flex-col gap-2 rounded-lg border border-border p-3">
-						<Input value={tile.postUrl} onChange={(e) => setGlobal((g) => ({ ...g, instagramTiles: (g.instagramTiles ?? []).map((t, i) => (i === index ? { ...t, postUrl: e.target.value } : t)) }))} placeholder="URL posta" className="h-9" />
-						<OgImageField label="Miniatura" value={tile.imageUrl} onChange={(url) => setGlobal((g) => ({ ...g, instagramTiles: (g.instagramTiles ?? []).map((t, i) => (i === index ? { ...t, imageUrl: url } : t)) }))} />
-						<Button type="button" variant="ghost" size="sm" onClick={() => setGlobal((g) => ({ ...g, instagramTiles: (g.instagramTiles ?? []).filter((_, i) => i !== index) }))} className="w-fit text-destructive"><Trash2 className="size-4" />Usuń</Button>
-					</div>
-				))}
-				<Button type="button" variant="outline" size="sm" disabled={(global.instagramTiles?.length ?? 0) >= 6} onClick={() => setGlobal((g) => ({ ...g, instagramTiles: [...(g.instagramTiles ?? []), { id: newCmsId("ig"), postUrl: "", imageUrl: "" }] }))} className="w-fit gap-1"><Plus className="size-4" />Dodaj kafelek</Button>
-			</fieldset>
+			<InstagramTilesEditor
+				value={global.instagramTiles ?? []}
+				onChange={(instagramTiles) => setGlobal((g) => ({ ...g, instagramTiles }))}
+			/>
 
 			{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
 			{successMessage ? (
