@@ -13,8 +13,10 @@ const HERO_BG_HEIGHT = 966;
 /**
  * Hero — desktop: ultrawide + overlay; mobile: zdjęcie + CTA w 80svh.
  *
- * Tło wyłącznie z CMS. Po deployu prebuild (`sync-cms-to-static`) kopiuje
- * obraz do `/public/images/cms/…` — serwowany statycznie z edge (unoptimized).
+ * Tło z CMS. Next.js Image Optimization generuje responsive srcset
+ * (downskalowanie dla mobile, AVIF/WebP, cache 1 rok).
+ * Po deployu prebuild (`sync-cms-to-static`) kopiuje obraz źródłowy do
+ * `/public/images/cms/…` — Next.js go optymalizuje w locie.
  * Bez obrazu w CMS: placeholder (brand-800), bez fallbacku z repo.
  */
 export async function HeroSection({
@@ -61,7 +63,8 @@ export async function HeroSection({
 				 * Lighthouse). Świadomie NIE używamy `priority`: dodałby bezwarunkowy
 				 * `<link rel=preload>`, który na mobile (gdzie ten obraz jest `hidden`)
 				 * ściągałby ultraszerokie tło z wysokim priorytetem, konkurując z LCP
-				 * wersji mobilnej.
+				 * wersji mobilnej. Next.js Image Optimization generuje responsive srcset
+				 * — downskalowanie dla różnych viewportów, AVIF/WebP, cache 1 rok.
 				 */}
 				{desktopImageUrl ? (
 					<Image
@@ -72,7 +75,6 @@ export async function HeroSection({
 						loading="eager"
 						fetchPriority="high"
 						sizes="100vw"
-						unoptimized
 						placeholder={desktopBlurDataURL ? "blur" : "empty"}
 						blurDataURL={desktopBlurDataURL}
 						className="absolute inset-0 h-full w-full select-none object-cover object-top"
