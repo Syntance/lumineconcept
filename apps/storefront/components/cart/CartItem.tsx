@@ -6,6 +6,7 @@ import { useCart } from "@/hooks/useCart";
 import { CartConfiguratorDetails } from "@/components/cart/CartConfiguratorDetails";
 import { formatPrice } from "@/lib/utils";
 import { trackRemoveFromCart } from "@/lib/analytics/events";
+import { minOrderQuantityFromLineMetadata } from "@/lib/products/min-order-quantity";
 
 interface CartItemData {
   id: string;
@@ -33,9 +34,10 @@ export function CartItem({ item }: { item: CartItemData }) {
   const { updateItem, removeItem } = useCart();
   const [isUpdating, setIsUpdating] = useState(false);
   const isOptimistic = item.optimistic === true;
+  const minQuantity = minOrderQuantityFromLineMetadata(item.metadata);
 
   const handleQuantityChange = async (newQuantity: number) => {
-    if (newQuantity < 1) return;
+    if (newQuantity < minQuantity) return;
     if (isOptimistic) return;
     setIsUpdating(true);
     try {
@@ -122,7 +124,7 @@ export function CartItem({ item }: { item: CartItemData }) {
               <button
                 type="button"
                 onClick={() => handleQuantityChange(item.quantity - 1)}
-                disabled={busy || item.quantity <= 1}
+                disabled={busy || item.quantity <= minQuantity}
                 className="flex h-7 w-7 items-center justify-center text-brand-500 transition-colors hover:text-brand-800 disabled:opacity-30"
                 aria-label="Zmniejsz ilość"
               >
