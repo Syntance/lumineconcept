@@ -56,7 +56,7 @@ export type ProductFormValues = {
 	title: string;
 	handle: string;
 	status: ProductStatus;
-	categoryId: string | null;
+	categoryIds: string[];
 	description: string;
 	/** Cena w najmniejszej jednostce (grosze) w walucie z magazyn.config.ts. */
 	price: number | null;
@@ -380,7 +380,9 @@ export async function listAdminProducts(): Promise<AdminProductRow[]> {
 			handle: product.handle,
 			status: product.status,
 			thumbnail: thumbnailOf(product),
-			categoryName: product.categories?.[0]?.name ?? null,
+			categoryName: product.categories?.length
+				? product.categories.map((c) => c.name).join(", ")
+				: null,
 			price: priceOf(variant, CURRENCY),
 		};
 	});
@@ -407,7 +409,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		title: product.title,
 		handle: product.handle,
 		status: product.status,
-		categoryId: product.categories?.[0]?.id ?? null,
+		categoryIds: (product.categories ?? []).map((c) => c.id),
 		description: product.description ?? "",
 		price: priceOf(variant, CURRENCY),
 		images: resolveMedusaMediaUrls((product.images ?? []).map((i) => i.url)),
@@ -470,7 +472,9 @@ export async function createAdminProduct(values: ProductFormValues): Promise<str
 		],
 	};
 
-	if (values.categoryId) body.categories = [{ id: values.categoryId }];
+	if (values.categoryIds.length > 0) {
+		body.categories = values.categoryIds.map((id) => ({ id }));
+	}
 	if (shippingProfileId) body.shipping_profile_id = shippingProfileId;
 	if (salesChannelId) body.sales_channels = [{ id: salesChannelId }];
 
@@ -505,10 +509,7 @@ export async function updateAdminProduct(
 		body.handle = values.handle.trim();
 	}
 
-	/** Pusta kategoria = nie wysyłaj `categories` — Medusa wtedy kasuje przypisanie do drzewa sklepu. */
-	if (values.categoryId) {
-		body.categories = [{ id: values.categoryId }];
-	}
+	body.categories = values.categoryIds.map((id) => ({ id }));
 
 	await adminFetch(`/admin/products/${id}`, { method: "POST", body: JSON.stringify(body) });
 
