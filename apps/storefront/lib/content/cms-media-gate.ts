@@ -5,7 +5,7 @@ const IMAGE_EXT = /\.(jpe?g|png|webp|gif|avif|svg)$/i;
 const MEDUSA_MEDIA_PREFIXES = ["/static/", "/uploads/", "/products/"] as const;
 
 /** Zdalny upload CMS (R2/CDN/Medusa) — nie lokalny asset z repo ani `/images/cms/`. */
-export function isCmsMediaAssetUrl(value: unknown): value is string {
+export function isCmsMediaAssetUrl(value: unknown): boolean {
 	if (typeof value !== "string" || !value.trim()) return false;
 	const trimmed = value.trim();
 	if (trimmed.startsWith("/images/cms/")) return false;
