@@ -1,4 +1,23 @@
 import type { RawStoreMetadataBlob } from "./admin-read";
+
+function parseMetadataJsonField(value: unknown): unknown {
+	if (typeof value !== "string") return value;
+	try {
+		return JSON.parse(value) as unknown;
+	} catch {
+		return value;
+	}
+}
+
+/** Store.metadata trzyma CMS jako JSON-stringi — parsuj przed overlay URL-i. */
+export function normalizeMetadataBlobForOverlay(blob: RawStoreMetadataBlob): RawStoreMetadataBlob {
+	return {
+		siteSettings: parseMetadataJsonField(blob.siteSettings),
+		pageSeo: parseMetadataJsonField(blob.pageSeo),
+		pageContent: parseMetadataJsonField(blob.pageContent),
+		globalContent: parseMetadataJsonField(blob.globalContent),
+	};
+}
 import {
 	isCmsMediaAssetUrl,
 	isRuntimeCmsMediaGateEnabled,

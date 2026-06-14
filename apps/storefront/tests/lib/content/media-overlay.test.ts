@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyMediaUrlOverlay } from "@/lib/content/media-overlay";
+import { applyMediaUrlOverlay, normalizeMetadataBlobForOverlay } from "@/lib/content/media-overlay";
+import { parsePageContentMap } from "@/lib/content/parsers";
 
 const remoteA = "https://cdn.example.com/cms/a.webp";
 const remoteB = "https://cdn.example.com/cms/b.webp";
@@ -67,5 +68,24 @@ describe("applyMediaUrlOverlay", () => {
 		const gallery = (out.pageContent as Record<string, { gallery?: Array<{ id: string }> }>)["logo-3d"]
 			?.gallery;
 		expect(gallery).toHaveLength(0);
+	});
+
+	it("mapuje galerię gdy pageContent jest JSON-stringiem z Medusy", () => {
+		const rawBlob = {
+			siteSettings: null,
+			pageSeo: null,
+			pageContent: JSON.stringify({
+				"logo-3d": {
+					gallery: [{ id: "1", imageUrl: remoteA, order: 0 }],
+				},
+			}),
+			globalContent: null,
+		};
+
+		const out = applyMediaUrlOverlay(normalizeMetadataBlobForOverlay(rawBlob), {
+			[remoteA]: localA,
+		});
+		const map = parsePageContentMap(out.pageContent);
+		expect(map["logo-3d"]?.gallery?.[0]?.imageUrl).toBe(localA);
 	});
 });

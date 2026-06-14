@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { fetchStoreMetadataBlob } from "./admin-read";
-import { applyMediaUrlOverlay } from "./media-overlay";
+import { applyMediaUrlOverlay, normalizeMetadataBlobForOverlay } from "./media-overlay";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import {
 	getPageContentWithDefaults,
@@ -42,7 +42,7 @@ async function getContentBlob() {
 	const live = await fetchStoreMetadataBlob();
 	if (!live) return null;
 	const map = getStaticMediaUrlMap();
-	return applyMediaUrlOverlay(live, map);
+	return applyMediaUrlOverlay(normalizeMetadataBlobForOverlay(live), map);
 }
 
 export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
