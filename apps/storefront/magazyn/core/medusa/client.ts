@@ -82,10 +82,13 @@ async function adminFetchWithToken<T>(
 		if (pause > 0) await sleep(pause);
 
 		try {
+			const shouldCache = (!init.method || init.method === "GET") && !init.body;
+
 			const res = await fetch(`${serverEnv.medusaBackendUrl}${path}`, {
 				...init,
 				headers,
-				cache: "no-store",
+				cache: shouldCache ? "force-cache" : "no-store",
+				next: shouldCache ? { revalidate: 60 } : undefined,
 				signal: AbortSignal.timeout(ADMIN_FETCH_TIMEOUT_MS),
 			});
 
