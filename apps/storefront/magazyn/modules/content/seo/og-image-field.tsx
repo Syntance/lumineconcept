@@ -2,11 +2,12 @@
 
 import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { isCmsImageUnoptimized, resolveCmsAssetUrl } from "@/lib/content/asset-url";
 import { uploadImagesAction } from "@magazyn/modules/products/actions";
 import { queueCmsMediaPublishAction } from "@magazyn/modules/content/content-actions";
 import { cn } from "@magazyn/core/lib/cn";
+import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
 
 type Props = {
 	label: string;
@@ -20,34 +21,51 @@ export function OgImageField({ label, value, onChange }: Props) {
 	const [error, setError] = useState<string | null>(null);
 	const previewUrl = value ? resolveCmsAssetUrl(value) ?? value : "";
 
-	async function onUpload(files: FileList | null) {
-		if (!files?.length) return;
-		setUploading(true);
-		setError(null);
-		try {
-			const formData = new FormData();
-			for (const file of Array.from(files)) formData.append("files", file);
-			const result = await uploadImagesAction(formData);
-			if (result.error) {
-				setError(result.error);
-				return;
+	const uploadFiles = useCallback(
+		async (files: File[]) => {
+			if (files.length === 0) return;
+			setUploading(true);
+			setError(null);
+			try {
+				const formData = new FormData();
+				for (const file of files) formData.append("files", file);
+				const result = await uploadImagesAction(formData);
+				if (result.error) {
+					setError(result.error);
+					return;
+				}
+				const url = result.urls[0];
+				if (url) {
+					onChange(url);
+					void queueCmsMediaPublishAction();
+				}
+			} catch {
+				setError("Upload nie powiódł się. Spróbuj ponownie lub mniejszy plik.");
+			} finally {
+				setUploading(false);
 			}
-			const url = result.urls[0];
-			if (url) {
-				onChange(url);
-				void queueCmsMediaPublishAction();
-			}
-		} catch {
-			setError("Upload nie powiódł się. Spróbuj ponownie lub mniejszy plik.");
-		} finally {
-			setUploading(false);
-		}
-	}
+		},
+		[onChange],
+	);
+
+	const { isDragging, dropZoneProps } = useFileDropZone({
+		disabled: uploading,
+		accept: isImageFile,
+		onDropFiles: (files) => {
+			void uploadFiles(files);
+		},
+	});
 
 	return (
 		<div className="flex flex-col gap-2">
 			<span className="text-sm font-medium">{label}</span>
-			<div className="flex flex-wrap items-start gap-3">
+			<div
+				{...dropZoneProps}
+				className={cn(
+					"flex flex-wrap items-start gap-3 rounded-lg p-1 transition-colors",
+					isDragging && "bg-primary/5 ring-2 ring-primary ring-offset-2",
+				)}
+			>
 				{previewUrl ? (
 					<div className="relative h-24 w-40 overflow-hidden rounded-lg border border-border bg-muted">
 						<Image
@@ -72,6 +90,7 @@ export function OgImageField({ label, value, onChange }: Props) {
 					htmlFor={fileId}
 					className={cn(
 						"grid h-24 w-40 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:bg-muted",
+						isDragging && "border-primary bg-primary/5",
 						uploading && "pointer-events-none opacity-60",
 					)}
 				>
@@ -88,15 +107,16 @@ export function OgImageField({ label, value, onChange }: Props) {
 					className="sr-only"
 					disabled={uploading}
 					onChange={(e) => {
-						void onUpload(e.target.files);
+						void uploadFiles(Array.from(e.target.files ?? []));
 						e.target.value = "";
 					}}
 				/>
 			</div>
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}
 			<p className="text-xs text-muted-foreground">
-				Zalecane 1200×630 px (WebP lub JPG). Po zapisie formularza obraz widać od razu (CDN). Pełna
-				optymalizacja LCP po publikacji (~2–3 min).
+				Przeciągnij zdjęcie na pole lub kliknij, aby wybrać plik. Zalecane 1200×630 px (WebP lub
+				JPG). Po zapisie formularza obraz widać od razu (CDN). Pełna optymalizacja LCP po
+				publikacji (~2–3 min).
 			</p>
 		</div>
 	);

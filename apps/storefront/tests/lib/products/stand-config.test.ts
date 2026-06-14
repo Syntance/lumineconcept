@@ -6,6 +6,7 @@ import {
 	STAND_COLOR_OPTION_TITLE,
 } from "@/lib/products/stand-config";
 import { parseMatOverridesBySlotWithStand } from "@/lib/products/color-slot-config";
+import { buildStandColorMaps } from "@/lib/products/stand-config";
 
 describe("stand-config", () => {
 	it("parseStandAvailable reads metadata flag", () => {
@@ -47,5 +48,18 @@ describe("stand-config", () => {
 			parseMatOverridesBySlotWithStand(withStandMeta, slots, noStand)["Kolor tabliczki"],
 		).toEqual({ g1: true });
 		expect(noStand["Kolor tabliczki"]).toEqual({ g1: false });
+	});
+
+	it("buildStandColorMaps assigns categoryByColorName for grouping in dropdown", () => {
+		const maps = buildStandColorMaps(
+			[
+				{ id: "g1", name: "czarny", hex_color: "#000", color_category: "standard" },
+				{ id: "g2", name: "czerwony", hex_color: "#f00", color_category: "color" },
+			],
+			[],
+			{},
+		);
+		expect(maps.categoryByColorName.czarny).toBe("standard");
+		expect(maps.categoryByColorName.czerwony).toBe("color");
 	});
 });

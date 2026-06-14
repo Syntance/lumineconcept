@@ -1,8 +1,9 @@
 "use client";
 
 import { Trash2, Upload } from "lucide-react";
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { cn } from "@magazyn/core/lib/cn";
+import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
 import type {
 	Block,
 	BlockStyle,
@@ -91,34 +92,60 @@ function ImageEditor({
 	const [pending, setPending] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	async function handleFile(file: File | undefined) {
-		if (!file) return;
-		setPending(true);
-		setError(null);
-		const result = await onUpload(file);
-		setPending(false);
-		if (result.error || !result.url) {
-			setError(result.error ?? "Upload nie powiódł się.");
-			return;
-		}
-		onChange({ ...block, src: result.url });
-	}
+	const handleFile = useCallback(
+		async (file: File | undefined) => {
+			if (!file) return;
+			setPending(true);
+			setError(null);
+			const result = await onUpload(file);
+			setPending(false);
+			if (result.error || !result.url) {
+				setError(result.error ?? "Upload nie powiódł się.");
+				return;
+			}
+			onChange({ ...block, src: result.url });
+		},
+		[block, onChange, onUpload],
+	);
+
+	const { isDragging, dropZoneProps } = useFileDropZone({
+		disabled: pending,
+		accept: isImageFile,
+		onDropFiles: (files) => {
+			void handleFile(files[0]);
+		},
+	});
 
 	return (
 		<div className="flex flex-col gap-3">
-			<div className="flex flex-col gap-1.5">
+			<div
+				{...dropZoneProps}
+				className={cn(
+					"flex flex-col gap-1.5 rounded-lg p-1 transition-colors",
+					isDragging && "bg-primary/5 ring-2 ring-primary ring-offset-2",
+				)}
+			>
 				<span className="text-sm font-medium">Obraz</span>
 				{block.src ? (
 					// eslint-disable-next-line @next/next/no-img-element
 					<img src={block.src} alt="" className="max-h-32 w-full rounded-md border border-border object-contain" />
 				) : (
-					<div className="grid h-24 place-items-center rounded-md border border-dashed border-border text-xs text-muted-foreground">
-						Brak obrazu
+					<div
+						className={cn(
+							"grid h-24 place-items-center rounded-md border border-dashed border-border text-xs text-muted-foreground",
+							isDragging && "border-primary bg-primary/5",
+						)}
+					>
+						Przeciągnij zdjęcie lub kliknij poniżej
 					</div>
 				)}
 				<label
 					htmlFor={inputId}
-					className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-input px-3 py-2 text-sm font-medium transition-colors hover:bg-muted focus-within:ring-2 focus-within:ring-ring/50"
+					className={cn(
+						"inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-input px-3 py-2 text-sm font-medium transition-colors hover:bg-muted focus-within:ring-2 focus-within:ring-ring/50",
+						isDragging && "border-primary bg-primary/5",
+						pending && "pointer-events-none opacity-60",
+					)}
 				>
 					<Upload className="size-4" aria-hidden />
 					{pending ? "Wysyłanie…" : "Wgraj obraz"}
@@ -129,7 +156,10 @@ function ImageEditor({
 					accept="image/*"
 					className="sr-only"
 					disabled={pending}
-					onChange={(e) => handleFile(e.target.files?.[0])}
+					onChange={(e) => {
+						void handleFile(e.target.files?.[0]);
+						e.target.value = "";
+					}}
 				/>
 				{error ? (
 					<p role="alert" className="text-xs text-destructive">
