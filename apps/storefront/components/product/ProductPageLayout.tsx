@@ -32,6 +32,7 @@ import {
 import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
 import { variantOptionsRecord } from "@/lib/products/variant-options";
 import { parseStandAvailable, getStandSurchargeGrosze, formatStandSurchargePln } from "@/lib/products/stand-config";
+import { resolvePdpCalloutDisplay } from "@/lib/products/pdp-callout";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
@@ -223,6 +224,7 @@ export async function ProductPageLayout({
   const certificateStandAvailable =
     !isVoucher && (parseStandAvailable(metadata) || productIsCertyfikaty(product));
   const standSurchargeGrosze = getStandSurchargeGrosze(metadata);
+  const pdpCallout = resolvePdpCalloutDisplay(metadata);
   const productFaqs = parseProductFaqFromMetadata(metadata);
   const firstVariant = variants[0];
   const dimensionParts = getProductDimensionParts(
@@ -411,7 +413,7 @@ export async function ProductPageLayout({
             ) : null}
             {certificateStandAvailable && standSurchargeGrosze <= 0 ? (
               <p className="text-sm text-brand-700">
-                Opcjonalna podstawka gratis (zaznacz przy zamówieniu).
+                Opcjonalna podstawka w cenie (zaznacz przy zamówieniu).
               </p>
             ) : null}
 
@@ -422,6 +424,12 @@ export async function ProductPageLayout({
               </span>
               <span className="h-px flex-1 bg-brand-300" />
             </div>
+
+            {pdpCallout ? (
+              <p className="-mt-2 mb-4 rounded-none border border-brand-200 bg-brand-50 px-4 py-3 text-sm leading-relaxed text-brand-700 whitespace-pre-line">
+                {pdpCallout}
+              </p>
+            ) : null}
 
             <ProductPageClient
               product={{

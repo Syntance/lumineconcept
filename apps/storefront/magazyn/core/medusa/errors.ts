@@ -91,6 +91,22 @@ export function translateAdminApiMessage(message: string): string {
 		return "Błąd serwera. Spróbuj ponownie za chwilę.";
 	}
 
+	if (/application failed to respond/i.test(trimmed)) {
+		return "Backend Medusa nie odpowiada (cold start Railway). Odśwież stronę za chwilę.";
+	}
+
+	if (/^bad gateway\.?$/i.test(trimmed)) {
+		return "Backend Medusa chwilowo niedostępny (502). Odśwież stronę za chwilę.";
+	}
+
+	if (/^service unavailable\.?$/i.test(trimmed)) {
+		return "Backend Medusa chwilowo niedostępny (503). Odśwież stronę za chwilę.";
+	}
+
+	if (/^gateway timeout\.?$/i.test(trimmed)) {
+		return "Backend Medusa nie zdążył odpowiedzieć. Odśwież stronę za chwilę.";
+	}
+
 	if (/\balready exists\.?$/i.test(trimmed)) {
 		return trimmed.replace(/\balready exists\.?$/i, "już istnieje.");
 	}

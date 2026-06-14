@@ -612,7 +612,7 @@ export function ProductPageClient({
           <span className="font-semibold">
             {standSurchargeGrosze > 0
               ? `Dodaj podstawkę (+${formatStandSurchargePln(standSurchargeGrosze)} zł)`
-              : "Dodaj podstawkę (gratis)"}
+              : "Dodaj podstawkę (w cenie)"}
           </span>
         </label>
         {includeCertificateStand && standColorConfig.values.length > 0 ? (
