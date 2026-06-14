@@ -5,6 +5,7 @@ export { default as EditProductPage } from "./edit-product-page";
 export { ProductForm } from "./product-form";
 export { ProductsList } from "./products-list";
 export { DeleteProductButton } from "./delete-product-button";
+export { DuplicateProductButton } from "./duplicate-product-button";
 export {
 	listAdminProducts,
 	getAdminProduct,
@@ -12,6 +13,7 @@ export {
 	createAdminProduct,
 	updateAdminProduct,
 	deleteAdminProduct,
+	duplicateAdminProduct,
 	type AdminProductRow,
 	type AdminProductDetail,
 	type ProductFormValues,
@@ -19,4 +21,4 @@ export {
 	type ConfigOption,
 	listGlobalConfigOptions,
 } from "./store";
-export { saveProductAction, deleteProductAction, uploadImagesAction } from "./actions";
+export { saveProductAction, deleteProductAction, duplicateProductAction, uploadImagesAction } from "./actions";

@@ -1,6 +1,8 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { cache } from "react";
 import { adminFetch } from "@magazyn/core/medusa/client";
+import { slugify } from "@magazyn/core/lib/slug";
 import { resolveMedusaMediaUrl, resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import {
@@ -34,7 +36,7 @@ import type { ProductFaqItem, ProductSeoMeta } from "@/lib/content/types";
 import {
 	findCategoryDefinition,
 	type ColorCategoryId,
-	normalizeHexInput,
+	resolveHexInputOrTransparent,
 } from "./color-categories";
 import {
 	parseStandAllowCustom,
@@ -259,12 +261,12 @@ export type CreateColorOptionInput = {
 
 export async function createGlobalColorOption(input: CreateColorOptionInput): Promise<ConfigOption> {
 	const name = input.name.trim();
-	const hex = normalizeHexInput(input.hex_color);
+	const hex = resolveHexInputOrTransparent(input.hex_color);
 	if (!name || name.length < 2) {
 		throw new Error("Nazwa koloru musi mieć min. 2 znaki.");
 	}
 	if (!hex) {
-		throw new Error("Podaj poprawny kolor HEX (np. #AF7C61) lub „transparent”.");
+		throw new Error("Podaj poprawny kolor HEX (np. #AF7C61) lub zostaw puste dla bezbarwnego.");
 	}
 
 	const allColors = (await listGlobalConfigOptions()).filter((o) => o.type === "color");
@@ -663,6 +665,105 @@ export async function updateAdminProduct(
 	if (values.price != null) {
 		await syncProductBasePrice(id, values.price);
 	}
+}
+
+function cloneProductCustomColors(
+	colors: Record<string, ProductCustomColor[]>,
+): Record<string, ProductCustomColor[]> {
+	const next: Record<string, ProductCustomColor[]> = {};
+	for (const [category, items] of Object.entries(colors)) {
+		next[category] = items.map((color) => ({
+			...color,
+			id: `pc_${randomUUID()}`,
+		}));
+	}
+	return next;
+}
+
+function cloneProductColorsBySlot(
+	colorsBySlot: Record<string, Record<string, ProductCustomColor[]>>,
+): Record<string, Record<string, ProductCustomColor[]>> {
+	const next: Record<string, Record<string, ProductCustomColor[]>> = {};
+	for (const [slot, byCategory] of Object.entries(colorsBySlot)) {
+		next[slot] = cloneProductCustomColors(byCategory);
+	}
+	return next;
+}
+
+function buildDuplicateProductTitle(title: string): string {
+	const trimmed = title.trim();
+	const copySuffix = " (kopia)";
+	if (trimmed.toLowerCase().endsWith(copySuffix)) {
+		return `${trimmed} 2`;
+	}
+	return `${trimmed}${copySuffix}`;
+}
+
+function buildDuplicateProductHandle(sourceHandle: string, title: string): string {
+	const fromTitle = slugify(buildDuplicateProductTitle(title));
+	if (fromTitle) return fromTitle;
+	const fromHandle = slugify(`${sourceHandle}-kopia`);
+	if (fromHandle) return fromHandle;
+	return `produkt-kopia-${Date.now().toString(36)}`;
+}
+
+function adminDetailToDuplicateFormValues(product: AdminProductDetail): ProductFormValues {
+	const duplicateTitle = buildDuplicateProductTitle(product.title);
+
+	return {
+		title: duplicateTitle,
+		handle: buildDuplicateProductHandle(product.handle, product.title),
+		status: "draft",
+		categoryIds: [...product.categoryIds],
+		description: product.description,
+		price: product.price,
+		images: [...product.images],
+		disabledConfigIds: [...product.disabledConfigIds],
+		disabledConfigIdsBySlot: structuredClone(product.disabledConfigIdsBySlot),
+		disabledColorCategoriesBySlot: structuredClone(product.disabledColorCategoriesBySlot),
+		allowCustomColorBySlot: { ...product.allowCustomColorBySlot },
+		productColorsBySlot: cloneProductColorsBySlot(product.productColorsBySlot),
+		matOverridesBySlot: structuredClone(product.matOverridesBySlot),
+		matOverridesBySlotWithStand: structuredClone(product.matOverridesBySlotWithStand),
+		colorSlotCount: product.colorSlotCount,
+		colorSlotNames: product.colorSlotNames ? [...product.colorSlotNames] : undefined,
+		allowCustomColor: product.allowCustomColor,
+		textFields: product.textFields.map((field) => ({ ...field })),
+		uploadSettings: { ...product.uploadSettings },
+		seo: { ...product.seo },
+		productFaq: product.productFaq.map((item) => ({
+			...item,
+			id: `faq_${randomUUID()}`,
+		})),
+		standAvailable: product.standAvailable,
+		standPaid: product.standPaid,
+		standSurchargeGrosze: product.standSurchargeGrosze,
+		pdpCalloutEnabled: product.pdpCalloutEnabled,
+		pdpCallout: product.pdpCallout,
+		minOrderQuantity: product.minOrderQuantity,
+		standDisabledConfigIds: [...product.standDisabledConfigIds],
+		standDisabledColorCategories: [...product.standDisabledColorCategories],
+		standProductColors: cloneProductCustomColors(product.standProductColors),
+		standAllowCustomColor: product.standAllowCustomColor,
+		standMatOverrides: { ...product.standMatOverrides },
+		disabledConfigIdsBySlotWithStand: structuredClone(product.disabledConfigIdsBySlotWithStand),
+		disabledColorCategoriesBySlotWithStand: structuredClone(
+			product.disabledColorCategoriesBySlotWithStand,
+		),
+	};
+}
+
+/** Kopiuje produkt (szkic) z pełną konfiguracją — zwraca ID nowego produktu. */
+export async function duplicateAdminProduct(sourceId: string): Promise<string> {
+	const source = await getAdminProduct(sourceId);
+	if (!source) {
+		throw new Error("Nie znaleziono produktu do powielenia.");
+	}
+	if (source.price == null) {
+		throw new Error("Produkt nie ma ceny — uzupełnij ją przed powieleniem.");
+	}
+
+	return createAdminProduct(adminDetailToDuplicateFormValues(source));
 }
 
 export async function deleteAdminProduct(id: string): Promise<void> {

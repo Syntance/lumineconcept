@@ -127,9 +127,6 @@ export function TextFieldsSection({
 							className={inputClass}
 							placeholder={"np. Wpisz nazwę salonu…\nDruga linia pod spodem"}
 						/>
-						<p className="text-xs text-muted-foreground">
-							Enter — nowa linia w placeholderze widoczna klientowi w konfiguratorze.
-						</p>
 					</div>
 
 					<label className="flex items-center gap-2.5 text-sm">
@@ -139,15 +136,6 @@ export function TextFieldsSection({
 							aria-label="Pole wymagane"
 						/>
 						Wymagane
-					</label>
-
-					<label className="flex items-center gap-2.5 text-sm">
-						<CheckboxInput
-							checked={activeField.multiline ?? false}
-							onChange={(multiline) => onUpdateField(activeField.key, { multiline })}
-							aria-label="Pole wieloliniowe"
-						/>
-						Wieloliniowe
 					</label>
 				</div>
 			) : null}

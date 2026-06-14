@@ -9,6 +9,7 @@ import { cn } from "@magazyn/core/lib/cn";
 import { Input } from "@magazyn/core/ui/input";
 import type { AdminProductRow } from "./store";
 import { DeleteProductButton } from "./delete-product-button";
+import { DuplicateProductButton } from "./duplicate-product-button";
 import { ProductThumbnail } from "./product-thumbnail";
 
 type SortColumn = "title" | "category" | "price" | "status";
@@ -294,6 +295,7 @@ export function ProductsList({ products }: { products: AdminProductRow[] }) {
 											>
 												<Pencil className="size-4" aria-hidden />
 											</Link>
+											<DuplicateProductButton id={product.id} title={product.title} />
 											<DeleteProductButton id={product.id} title={product.title} />
 										</div>
 									</td>

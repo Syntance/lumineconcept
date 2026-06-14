@@ -15,6 +15,7 @@ import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-st
 import {
 	createAdminProduct,
 	deleteAdminProduct,
+	duplicateAdminProduct,
 	type ProductFormValues,
 	updateAdminProduct,
 } from "./store";
@@ -70,10 +71,9 @@ const productSchema = z.object({
 				key: z.string().trim().min(1),
 				label: z.string().trim().min(1),
 				hint: z.string().trim().optional(),
-				placeholder: z.string().trim().optional(),
+				placeholder: z.string().optional(),
 				required: z.boolean().optional(),
 				maxLength: z.number().int().min(1).max(1000).optional(),
-				multiline: z.boolean().optional(),
 			}),
 		)
 		.default([]),
@@ -250,6 +250,29 @@ export async function deleteProductAction(id: string): Promise<void> {
 	revalidateTag("medusa-products", "max");
 	revalidateTag("medusa-categories", "max");
 	revalidatePath(PRODUCTS_PATH);
+}
+
+export type DuplicateProductState = { ok: boolean; error: string | null; newId?: string };
+
+export async function duplicateProductAction(id: string): Promise<DuplicateProductState> {
+	let newId: string;
+	try {
+		newId = await duplicateAdminProduct(id);
+		await recordAudit("product.duplicate", { target: id, meta: { newId } });
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminApiError) return { ok: false, error: error.message };
+		if (error instanceof Error) return { ok: false, error: error.message };
+		return { ok: false, error: "Nie udało się powielić produktu." };
+	}
+
+	revalidateTag("medusa-products", "max");
+	revalidateTag("medusa-categories", "max");
+	await revalidateStorefrontMedusaCache();
+	revalidatePath(PRODUCTS_PATH);
+	revalidatePath(`${PRODUCTS_PATH}/${newId}`);
+
+	return { ok: true, error: null, newId };
 }
 
 export type UploadState = { urls: string[]; error: string | null };

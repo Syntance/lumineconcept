@@ -562,43 +562,23 @@ export function MiniConfiguratorModal({
                         <span className="ml-1 font-normal text-brand-400">(opcjonalnie)</span>
                       )}
                     </label>
-                    {field.multiline ? (
-                      <AutoGrowTextarea
-                        value={value}
-                        onChange={(e) =>
-                          setTextFieldValues((prev) => ({
-                            ...prev,
-                            [field.key]: e.target.value,
-                          }))
-                        }
-                        placeholder={field.placeholder ?? ""}
-                        minRows={2}
-                        maxLength={max}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
-                          field.required && !value.trim()
-                            ? "border-red-300 bg-white focus:border-red-400"
-                            : "border-brand-200 focus:border-accent"
-                        } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
-                      />
-                    ) : (
-                      <AutoGrowTextarea
-                        value={value}
-                        onChange={(e) =>
-                          setTextFieldValues((prev) => ({
-                            ...prev,
-                            [field.key]: e.target.value,
-                          }))
-                        }
-                        placeholder={field.placeholder ?? ""}
-                        minRows={1}
-                        maxLength={max}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
-                          field.required && !value.trim()
-                            ? "border-red-300 bg-white focus:border-red-400"
-                            : "border-brand-200 focus:border-accent"
-                        } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
-                      />
-                    )}
+                    <AutoGrowTextarea
+                      value={value}
+                      onChange={(e) =>
+                        setTextFieldValues((prev) => ({
+                          ...prev,
+                          [field.key]: e.target.value,
+                        }))
+                      }
+                      placeholder={field.placeholder ?? ""}
+                      minRows={2}
+                      maxLength={max}
+                      className={`w-full rounded-lg border px-3 py-2 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                        field.required && !value.trim()
+                          ? "border-red-300 bg-white focus:border-red-400"
+                          : "border-brand-200 focus:border-accent"
+                      } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
+                    />
                   </div>
                 );
               })}

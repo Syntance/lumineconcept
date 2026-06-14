@@ -73,3 +73,10 @@ export function normalizeHexInput(raw: string): string | null {
 	if (!/^#[0-9a-fA-F]{6}$/.test(withHash)) return null;
 	return withHash.toLowerCase();
 }
+
+/** Pusty lub sam `#` → bezbarwny (`transparent`); inaczej walidacja HEX. */
+export function resolveHexInputOrTransparent(raw: string): string | null {
+	const trimmed = raw.trim();
+	if (trimmed === "" || trimmed === "#") return "transparent";
+	return normalizeHexInput(raw);
+}

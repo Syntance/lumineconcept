@@ -370,40 +370,23 @@ export function ProductConfigurator({
                     {field.hint}
                   </p>
                 )}
-                {field.multiline ? (
-                  <AutoGrowTextarea
-                    id={inputId}
-                    value={value}
-                    onChange={(e) => onTextFieldChange(field.key, e.target.value)}
-                    placeholder={
-                      field.placeholder ??
-                      "W uwagach prosimy o wpisanie treści, która ma być zawarta na przedmiocie"
-                    }
-                    minRows={2}
-                    maxLength={max}
-                    required={field.required}
-                    className={`w-full border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
-                      field.required && !value.trim()
-                        ? "border-red-300 focus:border-red-400"
-                        : "border-brand-300 focus:border-brand-500"
-                    } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
-                  />
-                ) : (
-                  <AutoGrowTextarea
-                    id={inputId}
-                    value={value}
-                    onChange={(e) => onTextFieldChange(field.key, e.target.value)}
-                    placeholder={field.placeholder ?? ""}
-                    minRows={1}
-                    maxLength={max}
-                    required={field.required}
-                    className={`w-full border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
-                      field.required && !value.trim()
-                        ? "border-red-300 focus:border-red-400"
-                        : "border-brand-300 focus:border-brand-500"
-                    } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
-                  />
-                )}
+                <AutoGrowTextarea
+                  id={inputId}
+                  value={value}
+                  onChange={(e) => onTextFieldChange(field.key, e.target.value)}
+                  placeholder={
+                    field.placeholder ??
+                    "W uwagach prosimy o wpisanie treści, która ma być zawarta na przedmiocie"
+                  }
+                  minRows={2}
+                  maxLength={max}
+                  required={field.required}
+                  className={`w-full border px-3 py-2.5 text-sm text-brand-700 placeholder:text-brand-300 focus:outline-none transition-colors ${
+                    field.required && !value.trim()
+                      ? "border-red-300 focus:border-red-400"
+                      : "border-brand-300 focus:border-brand-500"
+                  } ${value.trim() ? "bg-brand-50" : "bg-white"}`}
+                />
                 {value.length > 0 && (
                   <p className="mt-1 text-right text-xs text-brand-400">
                     {value.length}/{max}
