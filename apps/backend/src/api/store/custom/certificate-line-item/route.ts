@@ -15,6 +15,8 @@ import {
   productTagsMatchCertificate,
 } from "../../../../lib/certificate-product-eligibility";
 
+const STAND_AVAILABLE_META_KEY = "stand_available";
+
 /** Synchronizuj z PDP (`ProductPageClient`) — dopłata za podstawkę w kolorze certyfikatu. */
 const CERTIFICATE_STAND_SURCHARGE_PLN = 10;
 
@@ -94,6 +96,12 @@ function isCertificateProduct(row: VariantGraphRow): boolean {
   return productCategoriesMatchCertificate(
     row.product?.categories as Parameters<typeof productCategoriesMatchCertificate>[0],
   );
+}
+
+function isStandEligible(row: VariantGraphRow): boolean {
+  const standFlag = row.product?.metadata?.[STAND_AVAILABLE_META_KEY];
+  if (standFlag === "true") return true;
+  return isCertificateProduct(row);
 }
 
 function stringifyMetadata(
@@ -187,7 +195,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
    * 2) Osobny graph na produkcie — gdy relacje pod wariantem są obcięte.
    * 3) retrieveProduct + relacje — ostatnia deska (jak w `product-upserted`).
    */
-  let certificateEligible = isCertificateProduct(row);
+  let certificateEligible = isStandEligible(row);
   const productIdFromGraph =
     ((row as { product_id?: string }).product_id?.trim() ||
       row.product?.id?.trim() ||
@@ -197,12 +205,13 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   if (!certificateEligible && productIdFromGraph) {
     const { data: productRows } = await query.graph({
       entity: "product",
-      fields: ["id", "tags.value", ...buildCategoryGraphFieldsWithPrefix("categories", 8)],
+      fields: ["id", "metadata", "tags.value", ...buildCategoryGraphFieldsWithPrefix("categories", 8)],
       filters: { id: productIdFromGraph },
     });
     const p = productRows[0] as VariantGraphRow["product"] | undefined;
     if (p) {
       certificateEligible =
+        p.metadata?.[STAND_AVAILABLE_META_KEY] === "true" ||
         productTagsMatchCertificate(p.tags) ||
         productCategoriesMatchCertificate(
           p.categories as Parameters<typeof productCategoriesMatchCertificate>[0],
@@ -222,6 +231,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
         typeof productCategoriesMatchCertificateByParentIdWalk
       >[1];
       certificateEligible =
+        product.metadata?.[STAND_AVAILABLE_META_KEY] === "true" ||
         productTagsMatchCertificate(
           product.tags as Array<{ value?: string | null } | null> | undefined,
         ) ||
@@ -238,7 +248,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   if (!certificateEligible) {
     return res.status(400).json({
       message:
-        "Podstawka jest dostępna tylko dla certyfikatów — przypisz produkt do kategorii „certyfikaty” lub dodaj ten tag w Medusie.",
+        "Podstawka nie jest dostępna dla tego produktu — włącz opcję w Magazynie (stand_available) lub przypisz produkt do kategorii „certyfikaty”.",
     });
   }
 

@@ -23,9 +23,29 @@ import {
 	type ColorCategoryDefinition,
 	DEFAULT_COLOR_CATEGORIES,
 } from "./color-categories";
+import {
+	parseDisabledConfigIdsBySlotWithStand,
+	parseDisabledColorCategoriesBySlotWithStand,
+	parseStandAllowCustom,
+	parseStandDisabledCategories,
+	parseStandDisabledConfigIds,
+	parseStandMatOverrides,
+	parseStandProductColors,
+} from "@/lib/products/stand-config";
 import type { AdminProductDetail, ConfigOption } from "./store";
 
+export type ProductColorMode = "no_stand" | "with_stand";
+
 export type ColorSlotFormState = {
+	standAvailable: boolean;
+	productColorMode: ProductColorMode;
+	disabledBySlotWithStand: Record<string, Set<string>>;
+	disabledCategoriesBySlotWithStand: Record<string, Set<string>>;
+	standDisabledColorIds: Set<string>;
+	standDisabledCategories: Set<string>;
+	standProductColors: Record<string, ProductCustomColor[]>;
+	standAllowCustomColor: boolean;
+	standMatOverrides: Record<string, boolean>;
 	slotTitles: string[];
 	activeSlot: string;
 	disabledBySlot: Record<string, Set<string>>;
@@ -80,11 +100,48 @@ export function createInitialColorSlotState(
 	const matOverridesRecord =
 		product?.matOverridesBySlot ?? parseMatOverridesBySlot(metadata, slotTitles);
 
+	const noStandDisabled =
+		product?.disabledConfigIdsBySlot ??
+		parseDisabledConfigIdsBySlot(metadata, slotTitles, colors);
+	const noStandCategories =
+		product?.disabledColorCategoriesBySlot ??
+		parseDisabledColorCategoriesBySlot(metadata, slotTitles);
+	const withStandDisabled = parseDisabledConfigIdsBySlotWithStand(
+		metadata,
+		slotTitles,
+		noStandDisabled,
+	);
+	const withStandCategories = parseDisabledColorCategoriesBySlotWithStand(
+		metadata,
+		slotTitles,
+		noStandCategories,
+	);
+
 	return {
+		standAvailable: product?.standAvailable ?? metadata.stand_available === "true",
+		productColorMode: "no_stand",
+		disabledBySlotWithStand: setsFromRecord(withStandDisabled),
+		disabledCategoriesBySlotWithStand: setsFromRecord(withStandCategories),
+		standDisabledColorIds: new Set(
+			product?.standDisabledConfigIds ?? parseStandDisabledConfigIds(metadata),
+		),
+		standDisabledCategories: new Set(
+			product?.standDisabledColorCategories ?? parseStandDisabledCategories(metadata),
+		),
+		standProductColors:
+			product?.standProductColors ??
+			parseStandProductColors(metadata, categoryIdList),
+		standAllowCustomColor:
+			product?.standAllowCustomColor ?? parseStandAllowCustom(metadata),
+		standMatOverrides:
+			product?.standMatOverrides ?? parseStandMatOverrides(metadata),
 		slotTitles,
 		activeSlot: slotTitles[0] ?? DEFAULT_FIRST_COLOR_SLOT,
-		disabledBySlot: setsFromRecord(disabledRecord),
-		disabledCategoriesBySlot: setsFromRecord(disabledCategoriesRecord),
+		disabledBySlot: setsFromRecord(
+			product?.disabledConfigIdsBySlot ??
+				parseDisabledConfigIdsBySlot(metadata, slotTitles, colors),
+		),
+		disabledCategoriesBySlot: setsFromRecord(noStandCategories),
 		allowCustomBySlot: allowRecord,
 		productColorsBySlot: productColors,
 		matOverridesBySlot: matOverridesRecord,
@@ -115,7 +172,12 @@ export function addColorSlot(state: ColorSlotFormState): ColorSlotFormState {
 		slotTitles: newTitles,
 		activeSlot: newTitle,
 		disabledBySlot: { ...state.disabledBySlot, [newTitle]: new Set() },
+		disabledBySlotWithStand: { ...state.disabledBySlotWithStand, [newTitle]: new Set() },
 		disabledCategoriesBySlot: { ...state.disabledCategoriesBySlot, [newTitle]: new Set() },
+		disabledCategoriesBySlotWithStand: {
+			...state.disabledCategoriesBySlotWithStand,
+			[newTitle]: new Set(),
+		},
 		allowCustomBySlot: { ...state.allowCustomBySlot, [newTitle]: true },
 		productColorsBySlot: {
 			...state.productColorsBySlot,
@@ -139,10 +201,16 @@ export function removeColorSlot(state: ColorSlotFormState, titleToRemove?: strin
 	const newMatOverrides: ColorSlotFormState["matOverridesBySlot"] = {};
 
 	const newDisabledCategories: Record<string, Set<string>> = {};
+	const newDisabledWithStand: Record<string, Set<string>> = {};
+	const newDisabledCategoriesWithStand: Record<string, Set<string>> = {};
 
 	for (const title of newTitles) {
 		newDisabled[title] = new Set(state.disabledBySlot[title] ?? []);
+		newDisabledWithStand[title] = new Set(state.disabledBySlotWithStand[title] ?? []);
 		newDisabledCategories[title] = new Set(state.disabledCategoriesBySlot[title] ?? []);
+		newDisabledCategoriesWithStand[title] = new Set(
+			state.disabledCategoriesBySlotWithStand[title] ?? [],
+		);
 		newAllow[title] = state.allowCustomBySlot[title] ?? true;
 		newProductColors[title] = state.productColorsBySlot[title] ?? emptyProductColorsByCategory();
 		newMatOverrides[title] = { ...(state.matOverridesBySlot[title] ?? {}) };
@@ -158,7 +226,9 @@ export function removeColorSlot(state: ColorSlotFormState, titleToRemove?: strin
 		slotTitles: newTitles,
 		activeSlot: nextActive,
 		disabledBySlot: newDisabled,
+		disabledBySlotWithStand: newDisabledWithStand,
 		disabledCategoriesBySlot: newDisabledCategories,
+		disabledCategoriesBySlotWithStand: newDisabledCategoriesWithStand,
 		allowCustomBySlot: newAllow,
 		productColorsBySlot: newProductColors,
 		matOverridesBySlot: newMatOverrides,
@@ -177,11 +247,17 @@ export function renameColorSlot(state: ColorSlotFormState, oldTitle: string, new
 	const newMatOverrides: ColorSlotFormState["matOverridesBySlot"] = {};
 
 	const newDisabledCategories: Record<string, Set<string>> = {};
+	const newDisabledWithStand: Record<string, Set<string>> = {};
+	const newDisabledCategoriesWithStand: Record<string, Set<string>> = {};
 
 	for (const title of newTitles) {
 		const sourceTitle = title === trimmed ? oldTitle : title;
 		newDisabled[title] = new Set(state.disabledBySlot[sourceTitle] ?? []);
+		newDisabledWithStand[title] = new Set(state.disabledBySlotWithStand[sourceTitle] ?? []);
 		newDisabledCategories[title] = new Set(state.disabledCategoriesBySlot[sourceTitle] ?? []);
+		newDisabledCategoriesWithStand[title] = new Set(
+			state.disabledCategoriesBySlotWithStand[sourceTitle] ?? [],
+		);
 		newAllow[title] = state.allowCustomBySlot[sourceTitle] ?? true;
 		newProductColors[title] = state.productColorsBySlot[sourceTitle] ?? emptyProductColorsByCategory();
 		newMatOverrides[title] = { ...(state.matOverridesBySlot[sourceTitle] ?? {}) };
@@ -192,7 +268,9 @@ export function renameColorSlot(state: ColorSlotFormState, oldTitle: string, new
 		slotTitles: newTitles,
 		activeSlot: state.activeSlot === oldTitle ? trimmed : state.activeSlot,
 		disabledBySlot: newDisabled,
+		disabledBySlotWithStand: newDisabledWithStand,
 		disabledCategoriesBySlot: newDisabledCategories,
+		disabledCategoriesBySlotWithStand: newDisabledCategoriesWithStand,
 		allowCustomBySlot: newAllow,
 		productColorsBySlot: newProductColors,
 		matOverridesBySlot: newMatOverrides,
@@ -326,22 +404,52 @@ export function getGlobalColorMatAllowed(
 	return state.matOverridesBySlot[slot]?.[colorId] ?? globalDefault;
 }
 
+export function getActiveDisabledBySlot(state: ColorSlotFormState): Record<string, Set<string>> {
+	return state.productColorMode === "with_stand"
+		? state.disabledBySlotWithStand
+		: state.disabledBySlot;
+}
+
+export function getActiveDisabledCategoriesBySlot(
+	state: ColorSlotFormState,
+): Record<string, Set<string>> {
+	return state.productColorMode === "with_stand"
+		? state.disabledCategoriesBySlotWithStand
+		: state.disabledCategoriesBySlot;
+}
+
 export function serializeColorSlotState(state: ColorSlotFormState): {
 	colorSlotCount: number;
 	colorSlotNames: string[];
 	disabledConfigIds: string[];
 	disabledConfigIdsBySlot: Record<string, string[]>;
 	disabledColorCategoriesBySlot: Record<string, string[]>;
+	disabledConfigIdsBySlotWithStand: Record<string, string[]>;
+	disabledColorCategoriesBySlotWithStand: Record<string, string[]>;
 	allowCustomColorBySlot: Record<string, boolean>;
 	productColorsBySlot: Record<string, Record<string, ProductCustomColor[]>>;
 	matOverridesBySlot: Record<string, Record<string, boolean>>;
 	allowCustomColor: boolean;
+	standAvailable: boolean;
+	standDisabledConfigIds: string[];
+	standDisabledColorCategories: string[];
+	standProductColors: Record<string, ProductCustomColor[]>;
+	standAllowCustomColor: boolean;
+	standMatOverrides: Record<string, boolean>;
 } {
 	const disabledConfigIdsBySlot: Record<string, string[]> = {};
 	const disabledColorCategoriesBySlot: Record<string, string[]> = {};
+	const disabledConfigIdsBySlotWithStand: Record<string, string[]> = {};
+	const disabledColorCategoriesBySlotWithStand: Record<string, string[]> = {};
 	for (const title of state.slotTitles) {
 		disabledConfigIdsBySlot[title] = Array.from(state.disabledBySlot[title] ?? []);
 		disabledColorCategoriesBySlot[title] = Array.from(state.disabledCategoriesBySlot[title] ?? []);
+		disabledConfigIdsBySlotWithStand[title] = Array.from(
+			state.disabledBySlotWithStand[title] ?? [],
+		);
+		disabledColorCategoriesBySlotWithStand[title] = Array.from(
+			state.disabledCategoriesBySlotWithStand[title] ?? [],
+		);
 	}
 
 	return {
@@ -350,10 +458,18 @@ export function serializeColorSlotState(state: ColorSlotFormState): {
 		disabledConfigIds: Array.from(state.nonColorDisabledIds),
 		disabledConfigIdsBySlot,
 		disabledColorCategoriesBySlot,
+		disabledConfigIdsBySlotWithStand,
+		disabledColorCategoriesBySlotWithStand,
 		allowCustomColorBySlot: state.allowCustomBySlot,
 		productColorsBySlot: state.productColorsBySlot,
 		matOverridesBySlot: state.matOverridesBySlot,
 		allowCustomColor: Object.values(state.allowCustomBySlot).some(Boolean),
+		standAvailable: state.standAvailable,
+		standDisabledConfigIds: Array.from(state.standDisabledColorIds),
+		standDisabledColorCategories: Array.from(state.standDisabledCategories),
+		standProductColors: state.standProductColors,
+		standAllowCustomColor: state.standAllowCustomColor,
+		standMatOverrides: state.standMatOverrides,
 	};
 }
 

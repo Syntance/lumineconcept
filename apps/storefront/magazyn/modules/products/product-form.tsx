@@ -3,10 +3,11 @@
 import { ImagePlus, Loader2, Save, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useId, useMemo, useState, useTransition } from "react";
+import { useCallback, useId, useMemo, useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import { cn } from "@magazyn/core/lib/cn";
+import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import type { ColorCategoryDefinition, ColorCategoryId } from "./color-categories";
 import type { AdminProductDetail, CategoryOption, ConfigOption } from "./store";
@@ -16,16 +17,20 @@ import {
 	addColorSlot,
 	addProductColor,
 	createInitialColorSlotState,
+	getActiveDisabledBySlot,
+	getActiveDisabledCategoriesBySlot,
 	removeColorSlot,
 	removeProductColor,
 	renameColorSlot,
 	serializeColorSlotState,
-	toggleColorCategoryForSlot,
 	getGlobalColorMatAllowed,
 	toggleGlobalColorMat,
 	toggleProductColorMat,
 	type ColorSlotFormState,
 } from "./product-color-config-state";
+import { StandConfigSection } from "./stand-config-section";
+import { STAND_SURCHARGE_PLN } from "@/lib/products/stand-config";
+import { emptyProductColorsByCategory } from "@/lib/products/color-slot-config";
 import {
 	addTextField,
 	createInitialTextFieldState,
@@ -81,15 +86,15 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 	const [uploading, setUploading] = useState(false);
 	const [saving, startSave] = useTransition();
 
-	const disabledColorIdsForActiveSlot = useMemo(
-		() => colorSlotState.disabledBySlot[colorSlotState.activeSlot] ?? new Set<string>(),
-		[colorSlotState.activeSlot, colorSlotState.disabledBySlot],
-	);
+	const disabledColorIdsForActiveSlot = useMemo(() => {
+		const active = getActiveDisabledBySlot(colorSlotState);
+		return active[colorSlotState.activeSlot] ?? new Set<string>();
+	}, [colorSlotState]);
 
-	const disabledCategoryIdsForActiveSlot = useMemo(
-		() => colorSlotState.disabledCategoriesBySlot[colorSlotState.activeSlot] ?? new Set<string>(),
-		[colorSlotState.activeSlot, colorSlotState.disabledCategoriesBySlot],
-	);
+	const disabledCategoryIdsForActiveSlot = useMemo(() => {
+		const active = getActiveDisabledCategoriesBySlot(colorSlotState);
+		return active[colorSlotState.activeSlot] ?? new Set<string>();
+	}, [colorSlotState]);
 
 	const allowCustomForActiveSlot =
 		colorSlotState.allowCustomBySlot[colorSlotState.activeSlot] ?? true;
@@ -109,36 +114,55 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 		);
 	}, [colorSlotState]);
 
-	async function onUpload(files: FileList | null) {
-		if (!files || files.length === 0) return;
-		setUploading(true);
-		setError(null);
-		try {
-			const formData = new FormData();
-			for (const file of Array.from(files)) formData.append("files", file);
-			const result = await uploadImagesAction(formData);
-			if (result.error) {
-				setError(result.error);
-				return;
+	const uploadFiles = useCallback(
+		async (files: File[]) => {
+			if (files.length === 0) return;
+			setUploading(true);
+			setError(null);
+			try {
+				const formData = new FormData();
+				for (const file of files) formData.append("files", file);
+				const result = await uploadImagesAction(formData);
+				if (result.error) {
+					setError(result.error);
+					return;
+				}
+				setImages((prev) => [...prev, ...result.urls]);
+			} catch {
+				setError("Upload nie powiódł się. Spróbuj ponownie.");
+			} finally {
+				setUploading(false);
 			}
-			setImages((prev) => [...prev, ...result.urls]);
-		} catch {
-			setError("Upload nie powiódł się. Spróbuj ponownie.");
-		} finally {
-			setUploading(false);
-		}
+		},
+		[],
+	);
+
+	const { isDragging, dropZoneProps } = useFileDropZone({
+		disabled: uploading,
+		accept: isImageFile,
+		onDropFiles: (files) => {
+			void uploadFiles(files);
+		},
+	});
+
+	function updateActiveSlotDisabled(updater: (current: Set<string>) => Set<string>) {
+		setColorSlotState((prev) => {
+			const slot = prev.activeSlot;
+			const isWithStand = prev.productColorMode === "with_stand";
+			const key = isWithStand ? "disabledBySlotWithStand" : "disabledBySlot";
+			const current = new Set(prev[key][slot] ?? []);
+			return {
+				...prev,
+				[key]: { ...prev[key], [slot]: updater(current) },
+			};
+		});
 	}
 
 	function toggleColorForActiveSlot(id: string, enabled: boolean) {
-		setColorSlotState((prev) => {
-			const slot = prev.activeSlot;
-			const current = new Set(prev.disabledBySlot[slot] ?? []);
+		updateActiveSlotDisabled((current) => {
 			if (enabled) current.delete(id);
 			else current.add(id);
-			return {
-				...prev,
-				disabledBySlot: { ...prev.disabledBySlot, [slot]: current },
-			};
+			return current;
 		});
 	}
 
@@ -152,24 +176,12 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 	}
 
 	function enableAllColorsForActiveSlot() {
-		setColorSlotState((prev) => {
-			const slot = prev.activeSlot;
-			return {
-				...prev,
-				disabledBySlot: { ...prev.disabledBySlot, [slot]: new Set<string>() },
-			};
-		});
+		updateActiveSlotDisabled(() => new Set<string>());
 	}
 
 	function disableAllColorsForActiveSlot() {
-		setColorSlotState((prev) => {
-			const slot = prev.activeSlot;
-			const colorIds = configOptions.filter((o) => o.type === "color").map((o) => o.id);
-			return {
-				...prev,
-				disabledBySlot: { ...prev.disabledBySlot, [slot]: new Set(colorIds) },
-			};
-		});
+		const colorIds = configOptions.filter((o) => o.type === "color").map((o) => o.id);
+		updateActiveSlotDisabled(() => new Set(colorIds));
 	}
 
 	function setAllowCustomForActiveSlot(enabled: boolean) {
@@ -189,9 +201,25 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 	}
 
 	function toggleCategoryForActiveSlot(categoryId: ColorCategoryId, enabled: boolean) {
-		setColorSlotState((prev) =>
-			toggleColorCategoryForSlot(prev, prev.activeSlot, categoryId, enabled),
-		);
+		setColorSlotState((prev) => {
+			const isWithStand = prev.productColorMode === "with_stand";
+			const categoriesKey = isWithStand
+				? "disabledCategoriesBySlotWithStand"
+				: "disabledCategoriesBySlot";
+			const slot = prev.activeSlot;
+			const current = new Set(prev[categoriesKey][slot] ?? []);
+			if (enabled) current.delete(categoryId);
+			else current.add(categoryId);
+			const nextAllowCustomBySlot = { ...prev.allowCustomBySlot };
+			if (!enabled && categoryId === "custom") {
+				nextAllowCustomBySlot[slot] = false;
+			}
+			return {
+				...prev,
+				[categoriesKey]: { ...prev[categoriesKey], [slot]: current },
+				allowCustomBySlot: nextAllowCustomBySlot,
+			};
+		});
 	}
 
 	function handleRemoveProductColor(category: ColorCategoryId, colorId: string) {
@@ -218,6 +246,95 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 		setColorSlotState((prev) =>
 			toggleProductColorMat(prev, prev.activeSlot, category, colorId, enabled),
 		);
+	}
+
+	function toggleStandColor(id: string, enabled: boolean) {
+		setColorSlotState((prev) => {
+			const current = new Set(prev.standDisabledColorIds);
+			if (enabled) current.delete(id);
+			else current.add(id);
+			return { ...prev, standDisabledColorIds: current };
+		});
+	}
+
+	function toggleStandCategory(categoryId: ColorCategoryId, enabled: boolean) {
+		setColorSlotState((prev) => {
+			const current = new Set(prev.standDisabledCategories);
+			if (enabled) current.delete(categoryId);
+			else current.add(categoryId);
+			return {
+				...prev,
+				standDisabledCategories: current,
+				standAllowCustomColor: enabled || categoryId !== "custom" ? prev.standAllowCustomColor : false,
+			};
+		});
+	}
+
+	function handleAddStandProductColor(
+		category: ColorCategoryId,
+		input: { name: string; hex_color: string },
+	) {
+		setColorSlotState((prev) => {
+			const section = colorCategories.find((c) => c.id === category);
+			const slotColors = prev.standProductColors;
+			const color = {
+				id: `sc_${crypto.randomUUID()}`,
+				name: input.name.trim(),
+				hex_color: input.hex_color,
+				color_category: category,
+				mat_allowed: section?.matDefault ?? true,
+			};
+			return {
+				...prev,
+				standProductColors: {
+					...slotColors,
+					[category]: [...(slotColors[category] ?? []), color],
+				},
+			};
+		});
+	}
+
+	function handleRemoveStandProductColor(category: ColorCategoryId, colorId: string) {
+		setColorSlotState((prev) => ({
+			...prev,
+			standProductColors: {
+				...prev.standProductColors,
+				[category]: (prev.standProductColors[category] ?? []).filter((c) => c.id !== colorId),
+			},
+		}));
+	}
+
+	function resolveStandGlobalColorMatAllowed(colorId: string, globalDefault: boolean) {
+		return colorSlotState.standMatOverrides[colorId] ?? globalDefault;
+	}
+
+	function handleToggleStandGlobalColorMat(
+		colorId: string,
+		globalDefault: boolean,
+		enabled: boolean,
+	) {
+		setColorSlotState((prev) => {
+			const current = { ...prev.standMatOverrides };
+			if (enabled === globalDefault) delete current[colorId];
+			else current[colorId] = enabled;
+			return { ...prev, standMatOverrides: current };
+		});
+	}
+
+	function handleToggleStandProductColorMat(
+		category: ColorCategoryId,
+		colorId: string,
+		enabled: boolean,
+	) {
+		setColorSlotState((prev) => ({
+			...prev,
+			standProductColors: {
+				...prev.standProductColors,
+				[category]: (prev.standProductColors[category] ?? []).map((color) =>
+					color.id === colorId ? { ...color, mat_allowed: enabled } : color,
+				),
+			},
+		}));
 	}
 
 	function onSubmit(event: React.FormEvent) {
@@ -249,6 +366,14 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				colorSlotCount: colorConfig.colorSlotCount,
 				colorSlotNames: colorConfig.colorSlotNames,
 				allowCustomColor: colorConfig.allowCustomColor,
+				disabledConfigIdsBySlotWithStand: colorConfig.disabledConfigIdsBySlotWithStand,
+				disabledColorCategoriesBySlotWithStand: colorConfig.disabledColorCategoriesBySlotWithStand,
+				standAvailable: colorConfig.standAvailable,
+				standDisabledConfigIds: colorConfig.standDisabledConfigIds,
+				standDisabledColorCategories: colorConfig.standDisabledColorCategories,
+				standProductColors: colorConfig.standProductColors,
+				standAllowCustomColor: colorConfig.standAllowCustomColor,
+				standMatOverrides: colorConfig.standMatOverrides,
 				textFields,
 				uploadsEnabled: uploadSettings.enabled,
 				uploadsRequired: uploadSettings.required,
@@ -283,7 +408,13 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 
 				<div className="flex flex-col gap-2">
 					<span className="text-sm font-medium">Zdjęcia</span>
-					<div className="flex flex-wrap gap-3">
+					<div
+						{...dropZoneProps}
+						className={cn(
+							"flex flex-wrap gap-3 rounded-lg p-2 transition-colors",
+							isDragging && "bg-primary/5 ring-2 ring-primary ring-offset-2",
+						)}
+					>
 						{images.map((url) => (
 							<div key={url} className="relative size-24 overflow-hidden rounded-lg border border-border bg-muted">
 								<Image src={url} alt="" fill sizes="96px" className="object-cover" />
@@ -299,16 +430,33 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 						))}
 						<label
 							htmlFor={fileId}
-							className="grid size-24 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:bg-muted"
+							className={cn(
+								"grid size-24 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:bg-muted",
+								isDragging && "border-primary bg-primary/5",
+								uploading && "pointer-events-none opacity-60",
+							)}
 						>
 							{uploading ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <ImagePlus className="size-5" aria-hidden />}
 						</label>
-						<input id={fileId} type="file" accept="image/*" multiple className="sr-only" disabled={uploading} onChange={(e) => onUpload(e.target.files)} />
+						<input
+							id={fileId}
+							type="file"
+							accept="image/*"
+							multiple
+							className="sr-only"
+							disabled={uploading}
+							onChange={(e) => {
+								void uploadFiles(Array.from(e.target.files ?? []));
+								e.target.value = "";
+							}}
+						/>
 					</div>
+					<p className="text-xs text-muted-foreground">Przeciągnij zdjęcia na pole lub kliknij, aby wybrać pliki.</p>
 				</div>
 
 				<ProductFormTabs
 					fieldsCount={textFieldState.fields.length}
+					showStandTab={colorSlotState.standAvailable}
 					colorsPanel={
 						<ProductConfigSection
 							embedded
@@ -343,6 +491,43 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 							allowCustomColor={allowCustomForActiveSlot}
 							onAllowCustomColorChange={setAllowCustomForActiveSlot}
 							hasAnyDisabled={hasAnyDisabled}
+							standAvailable={colorSlotState.standAvailable}
+							productColorMode={colorSlotState.productColorMode}
+							onProductColorModeChange={(mode) =>
+								setColorSlotState((prev) => ({ ...prev, productColorMode: mode }))
+							}
+						/>
+					}
+					standPanel={
+						<StandConfigSection
+							configOptions={configOptions}
+							colorCategories={colorCategories}
+							disabledColorIds={colorSlotState.standDisabledColorIds}
+							disabledCategoryIds={colorSlotState.standDisabledCategories}
+							productColors={colorSlotState.standProductColors}
+							allowCustomColor={colorSlotState.standAllowCustomColor}
+							onToggleColor={toggleStandColor}
+							onToggleCategory={toggleStandCategory}
+							onAddProductColor={handleAddStandProductColor}
+							onRemoveProductColor={handleRemoveStandProductColor}
+							getGlobalColorMatAllowed={resolveStandGlobalColorMatAllowed}
+							onToggleGlobalColorMat={handleToggleStandGlobalColorMat}
+							onToggleProductColorMat={handleToggleStandProductColorMat}
+							onAllowCustomColorChange={(enabled) =>
+								setColorSlotState((prev) => ({ ...prev, standAllowCustomColor: enabled }))
+							}
+							onEnableAllColors={() => {
+								setColorSlotState((prev) => ({ ...prev, standDisabledColorIds: new Set() }));
+							}}
+							onDisableAllColors={() => {
+								const colorIds = configOptions
+									.filter((o) => o.type === "color")
+									.map((o) => o.id);
+								setColorSlotState((prev) => ({
+									...prev,
+									standDisabledColorIds: new Set(colorIds),
+								}));
+							}}
 						/>
 					}
 					fieldsPanel={
@@ -443,6 +628,32 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 						)}
 					</div>
 				</fieldset>
+
+				<label className="flex cursor-pointer items-start gap-3 rounded-lg border border-input px-3 py-3 text-sm">
+					<input
+						type="checkbox"
+						checked={colorSlotState.standAvailable}
+						onChange={(e) =>
+							setColorSlotState((prev) => ({
+								...prev,
+								standAvailable: e.target.checked,
+								standProductColors:
+									Object.keys(prev.standProductColors).length > 0
+										? prev.standProductColors
+										: emptyProductColorsByCategory(
+												colorCategories.map((c) => c.id),
+											),
+							}))
+						}
+						className="mt-0.5 size-4 rounded border-input accent-primary"
+					/>
+					<span>
+						<span className="font-medium">Opcja podstawki</span>
+						<span className="mt-0.5 block text-xs text-muted-foreground">
+							Klient może dodać podstawkę (+{STAND_SURCHARGE_PLN} zł / szt.) i wybrać jej kolor.
+						</span>
+					</span>
+				</label>
 
 				<div className="flex flex-col gap-1.5">
 					<label htmlFor="product-price" className="text-sm font-medium">Cena ({magazynConfig.currency.toUpperCase()})</label>

@@ -16,7 +16,9 @@ function humanizeSlug(slug: string): string {
 function certificateStandLine(meta: Record<string, string>): string | null {
 	const v = meta.certificate_stand?.trim();
 	if (v !== "true" && v !== "1") return null;
-	return "+ Podstawka w kolorze certyfikatu";
+	const color = meta.color_podstawki?.trim() || meta.color_podstawki_custom?.trim();
+	if (color) return `+ Podstawka: ${color}`;
+	return "+ Podstawka";
 }
 
 function formatColorLine(label: string, value: string, mat?: string): string {

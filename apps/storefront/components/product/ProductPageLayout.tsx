@@ -31,6 +31,7 @@ import {
 } from "@/lib/medusa/shop-breadcrumbs";
 import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
 import { variantOptionsRecord } from "@/lib/products/variant-options";
+import { parseStandAvailable, STAND_SURCHARGE_PLN } from "@/lib/products/stand-config";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
@@ -193,7 +194,6 @@ export async function ProductPageLayout({
     if (!hasTag) notFound();
   }
 
-  const certificateStandAvailable = productIsCertyfikaty(product) && !productIsVoucher(product);
   const isVoucher = productIsVoucher(product);
 
   const { galleryImages: images, schemaImageUrl } = extractSchemaImage({
@@ -218,6 +218,8 @@ export async function ProductPageLayout({
     values: Array<{ value: string }>;
   }>;
   const metadata = (product.metadata ?? {}) as Record<string, unknown>;
+  const certificateStandAvailable =
+    !isVoucher && (parseStandAvailable(metadata) || productIsCertyfikaty(product));
   const productFaqs = parseProductFaqFromMetadata(metadata);
   const firstVariant = variants[0];
   const dimensionParts = getProductDimensionParts(
@@ -400,7 +402,7 @@ export async function ProductPageLayout({
             <PriceDisplay amount={price} variant="badge" />
             {certificateStandAvailable && (
               <p className="text-sm text-brand-700">
-                Opcjonalna podstawka w kolorze certyfikatu: +10 zł / szt. (zaznacz przy zamówieniu).
+                Opcjonalna podstawka: +{STAND_SURCHARGE_PLN} zł / szt. (zaznacz przy zamówieniu).
               </p>
             )}
 

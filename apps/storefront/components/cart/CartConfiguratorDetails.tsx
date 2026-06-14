@@ -22,7 +22,12 @@ export function certificateStandLine(
   meta: Record<string, string> | undefined,
 ): string | null {
   if (!hasCertificateStand(meta)) return null;
-  return "+ Podstawka w kolorze certyfikatu";
+  const color =
+    meta?.color_podstawki?.trim() ||
+    meta?.color_podstawki_custom?.trim() ||
+    null;
+  if (color) return `+ Podstawka: ${color}`;
+  return "+ Podstawka";
 }
 
 function parseHexLike(s: string): string | null {

@@ -100,6 +100,27 @@ const productSchema = z.object({
 			}),
 		)
 		.default([]),
+	standAvailable: z.boolean().default(false),
+	standDisabledConfigIds: z.array(z.string().trim()).default([]),
+	standDisabledColorCategories: z.array(z.string().trim()).default([]),
+	standProductColors: z
+		.record(
+			z.string(),
+			z.array(
+				z.object({
+					id: z.string().trim(),
+					name: z.string().trim().min(2),
+					hex_color: z.string().trim(),
+					color_category: z.string().trim(),
+					mat_allowed: z.boolean(),
+				}),
+			),
+		)
+		.default({}),
+	standAllowCustomColor: z.boolean().default(true),
+	standMatOverrides: z.record(z.string(), z.boolean()).default({}),
+	disabledConfigIdsBySlotWithStand: z.record(z.string(), z.array(z.string().trim())).default({}),
+	disabledColorCategoriesBySlotWithStand: z.record(z.string(), z.array(z.string().trim())).default({}),
 });
 
 export type ProductPayload = z.input<typeof productSchema>;
@@ -136,6 +157,14 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 		},
 		seo: data.seo ?? {},
 		productFaq: data.productFaq ?? [],
+		standAvailable: data.standAvailable ?? false,
+		standDisabledConfigIds: data.standDisabledConfigIds ?? [],
+		standDisabledColorCategories: data.standDisabledColorCategories ?? [],
+		standProductColors: data.standProductColors ?? {},
+		standAllowCustomColor: data.standAllowCustomColor ?? true,
+		standMatOverrides: data.standMatOverrides ?? {},
+		disabledConfigIdsBySlotWithStand: data.disabledConfigIdsBySlotWithStand ?? {},
+		disabledColorCategoriesBySlotWithStand: data.disabledColorCategoriesBySlotWithStand ?? {},
 	};
 }
 

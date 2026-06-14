@@ -35,6 +35,24 @@ import {
 	type ColorCategoryId,
 	normalizeHexInput,
 } from "./color-categories";
+import {
+	parseStandAllowCustom,
+	parseStandDisabledCategories,
+	parseStandDisabledConfigIds,
+	parseStandMatOverrides,
+	parseStandProductColors,
+	parseDisabledConfigIdsBySlotWithStand,
+	parseDisabledColorCategoriesBySlotWithStand,
+	parseStandAvailable,
+	STAND_ALLOW_CUSTOM_KEY,
+	STAND_AVAILABLE_META_KEY,
+	STAND_DISABLED_CATEGORIES_KEY,
+	STAND_DISABLED_CONFIG_IDS_KEY,
+	STAND_MAT_OVERRIDES_KEY,
+	STAND_PRODUCT_COLORS_KEY,
+	DISABLED_CONFIG_IDS_BY_SLOT_WITH_STAND_KEY,
+	DISABLED_COLOR_CATEGORIES_BY_SLOT_WITH_STAND_KEY,
+} from "@/lib/products/stand-config";
 import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
 
 export { buildColorOptionTitles } from "@/lib/products/color-slot-config";
@@ -87,6 +105,17 @@ export type ProductFormValues = {
 	seo: ProductSeoMeta;
 	/** FAQ produktowe (metadata.product_faq). */
 	productFaq: ProductFaqItem[];
+	/** Opcja podstawki (+10 zł) na PDP. */
+	standAvailable: boolean;
+	/** Wyłączone globalne kolory dla pola „Podstawka”. */
+	standDisabledConfigIds: string[];
+	standDisabledColorCategories: string[];
+	standProductColors: Record<string, ProductCustomColor[]>;
+	standAllowCustomColor: boolean;
+	standMatOverrides: Record<string, boolean>;
+	/** Kolory produktu per slot gdy klient wybierze podstawkę. */
+	disabledConfigIdsBySlotWithStand: Record<string, string[]>;
+	disabledColorCategoriesBySlotWithStand: Record<string, string[]>;
 };
 
 export type AdminProductRow = {
@@ -292,6 +321,18 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 				...serializeUploadSettingsForMetadata(values.uploadSettings),
 				...serializeProductSeoForMetadata(values.seo),
 				product_faq: values.productFaq.length > 0 ? serializeProductFaqForMetadata(values.productFaq) : undefined,
+				[STAND_AVAILABLE_META_KEY]: values.standAvailable ? "true" : "false",
+				[STAND_DISABLED_CONFIG_IDS_KEY]: JSON.stringify(values.standDisabledConfigIds),
+				[STAND_DISABLED_CATEGORIES_KEY]: JSON.stringify(values.standDisabledColorCategories),
+				[STAND_PRODUCT_COLORS_KEY]: JSON.stringify(values.standProductColors),
+				[STAND_ALLOW_CUSTOM_KEY]: values.standAllowCustomColor ? "true" : "false",
+				[STAND_MAT_OVERRIDES_KEY]: JSON.stringify(values.standMatOverrides),
+				[DISABLED_CONFIG_IDS_BY_SLOT_WITH_STAND_KEY]: JSON.stringify(
+					values.disabledConfigIdsBySlotWithStand,
+				),
+				[DISABLED_COLOR_CATEGORIES_BY_SLOT_WITH_STAND_KEY]: JSON.stringify(
+					values.disabledColorCategoriesBySlotWithStand,
+				),
 			},
 		}),
 	});
@@ -402,6 +443,9 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 	const legacyDisabled = parseDisabledConfigIds(metadata);
 	const defaultAllowCustom = parseAllowCustomColor(metadata);
 
+	const noStandDisabled = parseDisabledConfigIdsBySlot(metadata, slotTitles, []);
+	const noStandCategories = parseDisabledColorCategoriesBySlot(metadata, slotTitles);
+
 	return {
 		id: product.id,
 		variantId: variant?.id ?? null,
@@ -414,8 +458,18 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		price: priceOf(variant, CURRENCY),
 		images: resolveMedusaMediaUrls((product.images ?? []).map((i) => i.url)),
 		disabledConfigIds: legacyDisabled,
-		disabledConfigIdsBySlot: parseDisabledConfigIdsBySlot(metadata, slotTitles, []),
-		disabledColorCategoriesBySlot: parseDisabledColorCategoriesBySlot(metadata, slotTitles),
+		disabledConfigIdsBySlot: noStandDisabled,
+		disabledColorCategoriesBySlot: noStandCategories,
+		disabledConfigIdsBySlotWithStand: parseDisabledConfigIdsBySlotWithStand(
+			metadata,
+			slotTitles,
+			noStandDisabled,
+		),
+		disabledColorCategoriesBySlotWithStand: parseDisabledColorCategoriesBySlotWithStand(
+			metadata,
+			slotTitles,
+			noStandCategories,
+		),
 		allowCustomColorBySlot: parseAllowCustomColorBySlot(metadata, slotTitles, defaultAllowCustom),
 		productColorsBySlot: parseProductColorsBySlot(metadata, slotTitles),
 		matOverridesBySlot: parseMatOverridesBySlot(metadata, slotTitles),
@@ -426,6 +480,12 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		uploadSettings: parseUploadSettingsFromMetadata(metadata),
 		seo: parseProductSeoFromMetadata(metadata) ?? {},
 		productFaq: parseProductFaqFromMetadata(metadata),
+		standAvailable: parseStandAvailable(metadata),
+		standDisabledConfigIds: parseStandDisabledConfigIds(metadata),
+		standDisabledColorCategories: parseStandDisabledCategories(metadata),
+		standProductColors: parseStandProductColors(metadata),
+		standAllowCustomColor: parseStandAllowCustom(metadata),
+		standMatOverrides: parseStandMatOverrides(metadata),
 		metadata,
 	};
 }
