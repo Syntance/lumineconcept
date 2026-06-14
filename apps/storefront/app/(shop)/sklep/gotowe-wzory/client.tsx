@@ -13,6 +13,7 @@ import {
 } from "@/components/product/filter-types";
 import { trackCategoryViewed, trackProductFiltered, trackSearchQuery } from "@/lib/analytics/events";
 import { MIN_PRODUCT_SEARCH_LENGTH } from "@/lib/products/product-search";
+import { useShopListingCategoryOptional } from "@/components/shop/ShopListingCategoryContext";
 import { medusaCategoryIdsForScope } from "@/lib/medusa/category-tree";
 import { extractFilterConfig, type SimpleProduct } from "@/lib/products/simple-product";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
@@ -97,6 +98,7 @@ export function ShopGridClient({
   const resolvedMedusaScopeMap = medusaCategoryScopeMap ?? EMPTY_MEDUSA_CATEGORY_SCOPE;
   /** Prymityw stabilny przy tym samym zestawie ID (w przeciwieństwie do referencji obiektu z RSC). */
   const medusaScopeKey = JSON.stringify(resolvedMedusaScopeMap);
+  const listingCategory = useShopListingCategoryOptional();
 
   const [products, setProducts] = useState<SimpleProduct[]>(initialProducts);
   const [totalFiltered, setTotalFiltered] = useState(totalCount);
@@ -234,6 +236,9 @@ export function ShopGridClient({
       setSearchInput("");
     }
     setFilters(next);
+    if (next.category !== undefined) {
+      listingCategory?.setActiveCategoryId(next.category);
+    }
     trackProductFiltered({
       category: next.category,
       sizes: next.sizes,
@@ -245,7 +250,7 @@ export function ShopGridClient({
       sort: next.sort,
       search: next.search,
     });
-  }, [searchInput]);
+  }, [searchInput, listingCategory]);
 
   const showLoadMore = !listLoading && products.length > 0 && products.length < totalFiltered;
 

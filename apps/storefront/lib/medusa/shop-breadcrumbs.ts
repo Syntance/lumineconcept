@@ -73,9 +73,7 @@ function buildListingCategoryTrail(
     return [{ label: root.name }];
   }
 
-  const items: ShopBreadcrumbItem[] = [
-    { label: root.name, href: listingBasePath },
-  ];
+  const items: ShopBreadcrumbItem[] = [];
 
   for (let i = 0; i < chain.length; i++) {
     const node = chain[i];
@@ -125,15 +123,18 @@ function resolveProductCategoryId(
   let bestDepth = -1;
 
   for (const category of productCategories) {
-    if (!category.id || !subtreeIds.has(category.id)) continue;
+    const resolvedId =
+      category.id ??
+      (category.handle ? categoryIdByHandle(tree, category.handle) : undefined);
+    if (!resolvedId || !subtreeIds.has(resolvedId)) continue;
     const depth = categoryChainFromListingRoot(
       tree,
       listingRootHandle,
-      category.id,
+      resolvedId,
     ).length;
     if (depth > bestDepth) {
       bestDepth = depth;
-      bestId = category.id;
+      bestId = resolvedId;
     }
   }
 
@@ -172,13 +173,17 @@ export function buildShopProductBreadcrumbs(options: {
         )
       : [];
 
-  const items: ShopBreadcrumbItem[] = [HOME, SHOP, { label: root.name, href: options.listingBasePath }];
+  const items: ShopBreadcrumbItem[] = [HOME, SHOP];
 
-  for (const node of chain) {
-    items.push({
-      label: node.name,
-      href: categoryListingHref(node.handle, options.listingBasePath),
-    });
+  if (chain.length === 0) {
+    items.push({ label: root.name, href: options.listingBasePath });
+  } else {
+    for (const node of chain) {
+      items.push({
+        label: node.name,
+        href: categoryListingHref(node.handle, options.listingBasePath),
+      });
+    }
   }
 
   items.push({ label: options.productTitle });
