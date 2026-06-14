@@ -50,6 +50,8 @@ interface ProductCardProps {
   description?: string | null;
   /** Gdy true — image ładuje się eager (above fold). */
   priority?: boolean;
+  /** Ukryj znak wodny (np. sekcja Bestsellery — PDP bez zmian). */
+  hideWatermark?: boolean;
 }
 
 function htmlPlainText(html: string): string {
@@ -87,6 +89,7 @@ export function ProductCard({
   description,
   hideMaterialRow = false,
   priority = false,
+  hideWatermark = false,
 }: ProductCardProps) {
   const productHref = href ?? `/sklep/gotowe-wzory/${handle}`;
   const dimensionsLabel = getProductDimensionsLabel(productMetadata, variantMetadata);
@@ -148,27 +151,29 @@ export function ProductCard({
               sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
               unoptimized={thumbnail.startsWith("http://localhost")}
             />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute top-0 right-0 z-20 pt-2 pr-2"
-            >
-              <Image
-                src="/images/watermark.png"
-                alt=""
-                width={421}
-                height={134}
-                unoptimized
-                loading={priority ? "eager" : "lazy"}
-                sizes="1.75rem"
-                quality={85}
-                className="block h-7 w-auto max-w-none select-none sm:h-8"
-                style={{
-                  filter:
-                    "brightness(0) invert(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.55)) drop-shadow(0 0 1px rgb(0 0 0 / 0.75))",
-                }}
-                draggable={false}
-              />
-            </div>
+            {!hideWatermark ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute top-0 right-0 z-20 pt-4 pr-4"
+              >
+                <Image
+                  src="/images/watermark.png"
+                  alt=""
+                  width={421}
+                  height={134}
+                  unoptimized
+                  loading={priority ? "eager" : "lazy"}
+                  sizes="0.875rem"
+                  quality={85}
+                  className="block h-3.5 w-auto max-w-none select-none sm:h-4"
+                  style={{
+                    filter:
+                      "brightness(0) invert(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.55)) drop-shadow(0 0 1px rgb(0 0 0 / 0.75))",
+                  }}
+                  draggable={false}
+                />
+              </div>
+            ) : null}
           </>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-brand-400">

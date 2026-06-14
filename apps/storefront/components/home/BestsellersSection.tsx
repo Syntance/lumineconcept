@@ -82,6 +82,7 @@ export async function BestsellersSection() {
                     imageOnly
                     linkless
                     sharpCorners={sharpCorners}
+                    hideWatermark
                     imageAspectClassName={PRODUCT_IMAGE_ASPECT_CLASS}
                     imageAreaClassName="bg-white"
                   />

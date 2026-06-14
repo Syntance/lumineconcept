@@ -199,7 +199,7 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
               </div>
               <div
                 aria-hidden
-                className="pointer-events-none absolute top-0 right-0 z-20 pt-4 pr-4"
+                className="pointer-events-none absolute top-0 right-0 z-20 pt-6 pr-6"
               >
                 <Image
                   src="/images/watermark.png"
@@ -208,9 +208,9 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                   height={134}
                   unoptimized
                   loading="eager"
-                  sizes="(max-width: 1024px) 3.5rem, 4.5rem"
+                  sizes="(max-width: 1024px) 1.75rem, 2.25rem"
                   quality={85}
-                  className="block h-14 w-auto max-w-none select-none sm:h-16 lg:h-[4.5rem]"
+                  className="block h-7 w-auto max-w-none select-none sm:h-8 lg:h-9"
                   style={{
                     filter:
                       "brightness(0) invert(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.55)) drop-shadow(0 0 1px rgb(0 0 0 / 0.75))",
