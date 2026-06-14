@@ -7,6 +7,7 @@ import { magazynConfig } from "@magazyn/magazyn.config";
 import type { ContentPageConfig } from "@magazyn/core/config/types";
 import type { PageSeoMap, SiteSettings } from "@/lib/content/types";
 import { SeoForm } from "./seo-form";
+import { CmsRedeployButton } from "../cms-redeploy-button";
 
 type Props = {
 	siteSettings: SiteSettings;
@@ -34,7 +35,8 @@ export function SeoSettingsClient({ siteSettings, pageSeo, pages, activeTab }: P
 				))}
 			</nav>
 
-			<div className="min-w-0 flex-1">
+			<div className="min-w-0 flex-1 flex flex-col gap-4">
+				<CmsRedeployButton />
 				{activeTab === "global" ? (
 					<SeoForm mode="global" initial={siteSettings} />
 				) : (

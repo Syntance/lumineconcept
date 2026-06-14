@@ -5,7 +5,7 @@
 | Typ zmiany | Publikacja | Czas na prod |
 |------------|------------|--------------|
 | Tekst, SEO, linki, FAQ, trust bar, announcement | `revalidateTag('magazyn-content')` + webhook | sekundy |
-| Obrazy (hero, galerie, OG, logotypy, Instagram) | deploy hook → `prebuild` → `/public/images/cms/` | ~2–3 min |
+| Obrazy (hero, galerie, OG, logotypy, Instagram) | **ręczny Redeploy** w panelu CMS/SEO → deploy hook → prebuild | ~2–3 min |
 
 **Runtime:** storefront zawsze czyta treść **live** z Medusa (`lib/content/admin-read.ts`).
 Obrazy z R2/CDN są opcjonalnie **nadpisywane** mapą z prebuildu (`static-cms-media-map.ts`)
@@ -14,21 +14,21 @@ Obrazy z R2/CDN są opcjonalnie **nadpisywane** mapą z prebuildu (`static-cms-m
 ## Flow zapisu w panelu
 
 ```
-Edycja w Magazyn → Save
+Edycja w Magazyn → Zapisz
         │
-        ├─ tylko tekst/SEO?
-        │     └─ revalidateTag + webhook → live od razu
+        └─ revalidateTag + webhook → tekst live od razu (bez redeploy)
+
+Edycja zdjęć → Zapisz (URL w Medusa) → opcjonalnie wiele zapisów
         │
-        └─ zmieniono URL obrazu?
-              └─ + deploy hook (VERCEL_DEPLOY_HOOK_URL)
+        └─ gdy gotowe: przycisk „Redeploy” w CMS / SEO
+              └─ deploy hook (VERCEL_DEPLOY_HOOK_URL)
                     └─ prebuild: sync-cms-to-static.ts
                           ├─ download obrazów → public/images/cms/
                           └─ generate static-cms-media-map.ts
                                 └─ next build → prod
 ```
 
-Upload obrazu w polu (np. OG) może od razu wywołać `queueCmsMediaPublish()` —
-deploy hook bez czekania na Save całego formularza.
+Upload obrazu **nie** uruchamia deployu — tylko zapis formularza + późniejszy Redeploy.
 
 ## Prebuild (`scripts/sync-cms-to-static.ts`)
 
