@@ -99,7 +99,7 @@ async function _getProductByHandle(handle: string) {
           handle,
           region_id: regionId,
           fields:
-            "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options,+tags,+collection.handle,+collection.title,+categories.handle,+categories.name,+description" +
+            "+variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.metadata,*images,+thumbnail,+metadata,+options,+tags,+collection.handle,+collection.title,+categories.id,+categories.handle,+categories.name,+description" +
             medusaCategoryAncestorFields(8),
         }),
         30_000,
