@@ -189,6 +189,9 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-popover",
       "posthog-js",
       "posthog-js/react",
+      "@dnd-kit/core",
+      "@dnd-kit/sortable",
+      "@dnd-kit/utilities",
     ],
   },
 };
