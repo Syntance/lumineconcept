@@ -59,7 +59,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 
 	const [title, setTitle] = useState(product?.title ?? "");
 	const [status, setStatus] = useState<"draft" | "published">(product?.status ?? "draft");
-	const [categoryId, setCategoryId] = useState<string>(product?.categoryId ?? "");
+	const [categoryIds, setCategoryIds] = useState<string[]>(() => product?.categoryIds ?? []);
 	const [description, setDescription] = useState(product?.description ?? "");
 	const [priceMajor, setPriceMajor] = useState<string>(product?.price != null ? String(product.price / 100) : "");
 	const [images, setImages] = useState<string[]>(product?.images ?? []);
@@ -236,7 +236,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				priceId: product?.priceId ?? null,
 				title: title.trim(),
 				status,
-				categoryId: categoryId || null,
+				categoryIds,
 				description,
 				price: priceNumber,
 				images,
@@ -412,15 +412,37 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 					</select>
 				</div>
 
-				<div className="flex flex-col gap-1.5">
-					<label htmlFor="product-category" className="text-sm font-medium">Kategoria</label>
-					<select id="product-category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
-						<option value="">— brak —</option>
-						{categories.map((c) => (
-							<option key={c.id} value={c.id}>{c.name}</option>
-						))}
-					</select>
-				</div>
+				<fieldset className="flex flex-col gap-2">
+					<legend className="text-sm font-medium">Kategorie</legend>
+					<p className="text-xs text-muted-foreground">Produkt może być widoczny w wielu kategoriach sklepu.</p>
+					<div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-input p-3">
+						{categories.length === 0 ? (
+							<p className="text-sm text-muted-foreground">Brak kategorii w sklepie.</p>
+						) : (
+							categories.map((c) => {
+								const checked = categoryIds.includes(c.id);
+								return (
+									<label
+										key={c.id}
+										className="flex cursor-pointer items-center gap-2 text-sm"
+									>
+										<input
+											type="checkbox"
+											checked={checked}
+											onChange={() => {
+												setCategoryIds((prev) =>
+													checked ? prev.filter((id) => id !== c.id) : [...prev, c.id],
+												);
+											}}
+											className="size-4 rounded border-input accent-primary"
+										/>
+										<span>{c.name}</span>
+									</label>
+								);
+							})
+						)}
+					</div>
+				</fieldset>
 
 				<div className="flex flex-col gap-1.5">
 					<label htmlFor="product-price" className="text-sm font-medium">Cena ({magazynConfig.currency.toUpperCase()})</label>
