@@ -119,13 +119,17 @@ export function TextFieldsSection({
 						<label htmlFor="text-field-placeholder" className="text-sm font-medium">
 							Placeholder
 						</label>
-						<Input
+						<textarea
 							id="text-field-placeholder"
 							value={activeField.placeholder ?? ""}
 							onChange={(e) => onUpdateField(activeField.key, { placeholder: e.target.value })}
-							placeholder="np. Wpisz nazwę salonu…"
-							className="h-10"
+							rows={3}
+							className={inputClass}
+							placeholder={"np. Wpisz nazwę salonu…\nDruga linia pod spodem"}
 						/>
+						<p className="text-xs text-muted-foreground">
+							Enter — nowa linia w placeholderze widoczna klientowi w konfiguratorze.
+						</p>
 					</div>
 
 					<label className="flex items-center gap-2.5 text-sm">

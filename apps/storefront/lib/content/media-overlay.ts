@@ -11,20 +11,12 @@ function parseMetadataJsonField(value: unknown): unknown {
 
 /** Store.metadata trzyma CMS jako JSON-stringi — parsuj przed overlay URL-i. */
 export function normalizeMetadataBlobForOverlay(blob: RawStoreMetadataBlob): RawStoreMetadataBlob {
-	const normalized = {
+	return {
 		siteSettings: parseMetadataJsonField(blob.siteSettings),
 		pageSeo: parseMetadataJsonField(blob.pageSeo),
 		pageContent: parseMetadataJsonField(blob.pageContent),
 		globalContent: parseMetadataJsonField(blob.globalContent),
 	};
-
-	// DEBUG: Sprawdź czy normalizacja zadziałała
-	console.log("[CMS DEBUG] Normalized types:", {
-		pageContent: typeof normalized.pageContent,
-		globalContent: typeof normalized.globalContent,
-	});
-
-	return normalized;
 }
 import {
 	isCmsMediaAssetUrl,
@@ -49,10 +41,6 @@ function applyMediaGate(
 		const published = lookupPublishedMediaUrl(node, urlMap);
 		if (published) return published;
 		if (gateEnabled && shouldStripUnpublishedCmsMedia(node, urlMap)) {
-			// DEBUG: Log stripped URLs
-			if (isCmsMediaAssetUrl(node)) {
-				console.log("[CMS DEBUG] Stripping unmapped URL:", node.substring(0, 100));
-			}
 			return "";
 		}
 		return node;

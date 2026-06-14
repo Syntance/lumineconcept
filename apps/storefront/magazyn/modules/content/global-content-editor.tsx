@@ -2,6 +2,7 @@
 
 import { Loader2, Save } from "lucide-react";
 import { useState, useTransition } from "react";
+import { usePreventWindowFileDrop } from "@magazyn/core/hooks/use-prevent-window-file-drop";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import type { GlobalContent, SiteSettings } from "@/lib/content/types";
@@ -27,6 +28,7 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 	const [error, setError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
+	usePreventWindowFileDrop();
 
 	function onSubmit(e: React.FormEvent) {
 		e.preventDefault();

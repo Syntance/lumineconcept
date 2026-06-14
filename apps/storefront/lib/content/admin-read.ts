@@ -109,32 +109,12 @@ export const fetchStoreMetadataBlob = cache(async (): Promise<RawStoreMetadataBl
 		};
 		const metadata = data.stores[0]?.metadata ?? {};
 
-		const blob = {
+		return {
 			siteSettings: metadata[MAGAZYN_SITE_SETTINGS_KEY],
 			pageSeo: metadata[MAGAZYN_PAGE_SEO_KEY],
 			pageContent: metadata[MAGAZYN_PAGE_CONTENT_KEY],
 			globalContent: metadata[MAGAZYN_GLOBAL_CONTENT_KEY],
 		};
-
-		// DEBUG: Sprawdź typy raw danych z Medusa
-		console.log("[CMS DEBUG] Raw blob types:", {
-			siteSettings: typeof blob.siteSettings,
-			pageSeo: typeof blob.pageSeo,
-			pageContent: typeof blob.pageContent,
-			globalContent: typeof blob.globalContent,
-		});
-
-		// DEBUG: Sprawdź czy pageContent jest stringiem czy obiektem
-		if (blob.pageContent) {
-			console.log(
-				"[CMS DEBUG] pageContent preview:",
-				typeof blob.pageContent === "string"
-					? blob.pageContent.substring(0, 200)
-					: JSON.stringify(blob.pageContent).substring(0, 200),
-			);
-		}
-
-		return blob;
 	} catch (e) {
 		console.error("[CMS] Błąd parsowania Store.metadata:", e);
 		return null;
