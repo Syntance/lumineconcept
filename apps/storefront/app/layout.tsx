@@ -6,20 +6,20 @@ import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
 
 /**
- * Ograniczamy liczbę ładowanych wag — każdy plik to osobne ~200kB.
- * Gilroy (body) zostaje jako `swap` (critical path), bez wagi 300 (nieużywana).
- * Chronicle (display) i Binerka (dekoracja) dostają `optional`: jeśli nie
- * załadują się w ~100ms, przeglądarka zostaje na fallbacku — brak FOIT/CLS.
+ * Optymalizacja fontów dla mobile LCP:
+ * - Gilroy (body): `optional` zamiast `swap` — eliminuje 300ms render block
+ * - Tylko 2 wagi (400, 500) — waga 700 rzadko używana, fallback wystarczy
+ * - Chronicle (display) i Binerka (dekor): `optional` + `preload: false`
  */
 const gilroy = localFont({
   src: [
     { path: "../public/fonts/Gilroy-Regular.woff2", weight: "400", style: "normal" },
     { path: "../public/fonts/Gilroy-Medium.woff2", weight: "500", style: "normal" },
-    { path: "../public/fonts/Gilroy-Bold.woff2", weight: "700", style: "normal" },
   ],
   variable: "--font-gilroy",
-  display: "swap",
+  display: "optional",
   fallback: ['system-ui', '-apple-system', 'sans-serif'],
+  preload: false,
 });
 
 const chronicle = localFont({
@@ -36,6 +36,7 @@ const binerka = localFont({
   weight: "400",
   variable: "--font-binerka",
   display: "optional",
+  preload: false,
 });
 
 const SITE_URL =
