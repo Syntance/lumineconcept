@@ -12,7 +12,7 @@ import type { ColorCategoryDefinition, ColorCategoryId } from "./color-categorie
 import { AddProductColorForm } from "./add-product-color-form";
 import { ColorSwatch, colorsInCategory } from "./color-ui";
 import type { ConfigOption } from "./store";
-import { STAND_SURCHARGE_PLN } from "@/lib/products/stand-config";
+import { formatStandSurchargePln } from "@/lib/products/stand-config";
 
 const GLOBAL_COLORS_PATH = `${magazynConfig.basePath}/panel/ustawienia/kolory`;
 
@@ -33,6 +33,8 @@ type Props = {
 	onAllowCustomColorChange: (enabled: boolean) => void;
 	onEnableAllColors: () => void;
 	onDisableAllColors: () => void;
+	standPaid: boolean;
+	standSurchargeGrosze: number;
 };
 
 export function StandConfigSection({
@@ -52,7 +54,13 @@ export function StandConfigSection({
 	onAllowCustomColorChange,
 	onEnableAllColors,
 	onDisableAllColors,
+	standPaid,
+	standSurchargeGrosze,
 }: Props) {
+	const standPriceHint =
+		standPaid && standSurchargeGrosze > 0
+			? `+${formatStandSurchargePln(standSurchargeGrosze)} zł / szt.`
+			: "gratis";
 	const colorOptions = configOptions.filter((o) => o.type === "color");
 	const allColorsDisabled =
 		colorOptions.length > 0 && colorOptions.every((o) => disabledColorIds.has(o.id));
@@ -62,7 +70,7 @@ export function StandConfigSection({
 			<div>
 				<h2 className="text-sm font-medium text-foreground">Kolory podstawki</h2>
 				<p className="mt-1 text-sm text-muted-foreground">
-					Klient wybierze kolor podstawki po zaznaczeniu opcji (+{STAND_SURCHARGE_PLN} zł / szt.).
+					Klient wybierze kolor podstawki po zaznaczeniu opcji ({standPriceHint}).
 					Paleta globalna:{" "}
 					<Link
 						href={GLOBAL_COLORS_PATH}

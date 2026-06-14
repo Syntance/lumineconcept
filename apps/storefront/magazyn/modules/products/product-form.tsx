@@ -29,7 +29,6 @@ import {
 	type ColorSlotFormState,
 } from "./product-color-config-state";
 import { StandConfigSection } from "./stand-config-section";
-import { STAND_SURCHARGE_PLN } from "@/lib/products/stand-config";
 import { emptyProductColorsByCategory } from "@/lib/products/color-slot-config";
 import {
 	addTextField,
@@ -370,6 +369,8 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				disabledConfigIdsBySlotWithStand: colorConfig.disabledConfigIdsBySlotWithStand,
 				disabledColorCategoriesBySlotWithStand: colorConfig.disabledColorCategoriesBySlotWithStand,
 				standAvailable: colorConfig.standAvailable,
+				standPaid: colorConfig.standPaid,
+				standSurchargeGrosze: colorConfig.standSurchargeGrosze,
 				standDisabledConfigIds: colorConfig.standDisabledConfigIds,
 				standDisabledColorCategories: colorConfig.standDisabledColorCategories,
 				standProductColors: colorConfig.standProductColors,
@@ -529,6 +530,8 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 									standDisabledColorIds: new Set(colorIds),
 								}));
 							}}
+							standPaid={colorSlotState.standPaid}
+							standSurchargeGrosze={colorSlotState.standSurchargeGrosze}
 						/>
 					}
 					fieldsPanel={
@@ -638,6 +641,8 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 							setColorSlotState((prev) => ({
 								...prev,
 								standAvailable: e.target.checked,
+								standPaid: e.target.checked ? prev.standPaid : false,
+								standSurchargeGrosze: e.target.checked ? prev.standSurchargeGrosze : 0,
 								standProductColors:
 									Object.keys(prev.standProductColors).length > 0
 										? prev.standProductColors
@@ -651,10 +656,62 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 					<span>
 						<span className="font-medium">Opcja podstawki</span>
 						<span className="mt-0.5 block text-xs text-muted-foreground">
-							Klient może dodać podstawkę (+{STAND_SURCHARGE_PLN} zł / szt.) i wybrać jej kolor.
+							Klient może dodać podstawkę i wybrać jej kolor. Domyślnie gratis.
 						</span>
 					</span>
 				</label>
+
+				{colorSlotState.standAvailable ? (
+					<div className="flex flex-col gap-3 rounded-lg border border-input px-3 py-3 text-sm">
+						<label className="flex cursor-pointer items-start gap-3">
+							<input
+								type="checkbox"
+								checked={colorSlotState.standPaid}
+								onChange={(e) =>
+									setColorSlotState((prev) => ({
+										...prev,
+										standPaid: e.target.checked,
+										standSurchargeGrosze: e.target.checked ? prev.standSurchargeGrosze : 0,
+									}))
+								}
+								className="mt-0.5 size-4 rounded border-input accent-primary"
+							/>
+							<span>
+								<span className="font-medium">Podstawka płatna</span>
+								<span className="mt-0.5 block text-xs text-muted-foreground">
+									Odznaczone = gratis dla klienta.
+								</span>
+							</span>
+						</label>
+						{colorSlotState.standPaid ? (
+							<div className="flex flex-col gap-1.5 pl-7">
+								<label htmlFor="stand-surcharge-price" className="text-sm font-medium">
+									Dopłata za podstawkę ({magazynConfig.currency.toUpperCase()} / szt.)
+								</label>
+								<Input
+									id="stand-surcharge-price"
+									type="number"
+									min={0.01}
+									step="0.01"
+									value={
+										colorSlotState.standSurchargeGrosze > 0
+											? (colorSlotState.standSurchargeGrosze / 100).toFixed(2)
+											: ""
+									}
+									onChange={(e) => {
+										const raw = e.target.value.trim();
+										const grosze =
+											raw === "" ? 0 : Math.max(0, Math.round(Number(raw) * 100));
+										setColorSlotState((prev) => ({ ...prev, standSurchargeGrosze: grosze }));
+									}}
+									placeholder="np. 10,00"
+									className="h-10"
+									required={colorSlotState.standPaid}
+								/>
+							</div>
+						) : null}
+					</div>
+				) : null}
 
 				<div className="flex flex-col gap-1.5">
 					<label htmlFor="product-price" className="text-sm font-medium">Cena ({magazynConfig.currency.toUpperCase()})</label>

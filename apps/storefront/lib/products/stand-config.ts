@@ -23,10 +23,12 @@ function parseJsonRecord(raw: unknown): Record<string, unknown> | null {
 	return null;
 }
 
-/** Dopłata za podstawkę — synchronizuj z backendem `certificate-line-item`. */
+/** @deprecated Użyj `getStandSurchargeGrosze` — cena jest per produkt w metadata. */
 export const STAND_SURCHARGE_PLN = 10;
 
 export const STAND_AVAILABLE_META_KEY = "stand_available";
+export const STAND_PAID_META_KEY = "stand_paid";
+export const STAND_SURCHARGE_GROSZE_KEY = "stand_surcharge_grosze";
 export const STAND_DISABLED_CONFIG_IDS_KEY = "stand_disabled_config_ids";
 export const STAND_DISABLED_CATEGORIES_KEY = "stand_disabled_color_categories";
 export const STAND_PRODUCT_COLORS_KEY = "stand_product_colors";
@@ -45,6 +47,42 @@ export function parseStandAvailable(
 	meta: Record<string, unknown> | null | undefined,
 ): boolean {
 	return meta?.[STAND_AVAILABLE_META_KEY] === "true";
+}
+
+function parsePositiveInt(raw: unknown): number {
+	if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) {
+		return Math.round(raw);
+	}
+	if (typeof raw === "string" && raw.trim() !== "") {
+		const n = Number(raw.trim());
+		if (Number.isFinite(n) && n > 0) return Math.round(n);
+	}
+	return 0;
+}
+
+/** Czy podstawka jest płatna (domyślnie: nie — gratis). */
+export function parseStandPaid(meta: Record<string, unknown> | null | undefined): boolean {
+	return meta?.[STAND_PAID_META_KEY] === "true";
+}
+
+/** Dopłata za podstawkę w groszach (0 = gratis). */
+export function getStandSurchargeGrosze(
+	meta: Record<string, unknown> | null | undefined,
+): number {
+	if (!parseStandPaid(meta)) return 0;
+	return parsePositiveInt(meta?.[STAND_SURCHARGE_GROSZE_KEY]);
+}
+
+/** Dopłata w PLN (decimal) — do wyświetlania i backendu koszyka. */
+export function getStandSurchargePln(meta: Record<string, unknown> | null | undefined): number {
+	return getStandSurchargeGrosze(meta) / 100;
+}
+
+export function formatStandSurchargePln(grosze: number): string {
+	return new Intl.NumberFormat("pl-PL", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	}).format(grosze / 100);
 }
 
 function parseStringArray(raw: unknown): string[] {

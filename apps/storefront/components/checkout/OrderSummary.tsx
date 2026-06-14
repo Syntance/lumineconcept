@@ -120,7 +120,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
   ]);
 
   return (
-    <div className="rounded-lg border border-brand-200 bg-brand-50/50 p-6">
+    <div className="rounded-none border border-brand-200 bg-brand-50/50 p-6">
       <h3 className="font-display text-lg font-semibold text-brand-800 mb-4">
         Podsumowanie
       </h3>
@@ -128,7 +128,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
       <div className="space-y-3 mb-4">
         {items.map((item) => (
           <div key={item.id} className="flex gap-3">
-            <div className="h-12 w-9 shrink-0 overflow-hidden rounded bg-white">
+            <div className="h-12 w-9 shrink-0 overflow-hidden rounded-none bg-white">
               {item.thumbnail ? (
                 <img
                   src={item.thumbnail}

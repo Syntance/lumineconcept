@@ -250,7 +250,7 @@ export function ProductConfigurator({
                       key={value}
                       type="button"
                       onClick={() => onOptionChange(option.title, value)}
-                      className={`flex flex-col items-center justify-center rounded-lg border px-5 py-2.5 text-sm transition-colors ${
+                      className={`flex flex-col items-center justify-center rounded-none border px-5 py-2.5 text-sm transition-colors ${
                         isSelected
                           ? "border-accent bg-accent/10 text-accent-dark font-medium"
                           : "border-brand-200 text-brand-700 hover:border-brand-400"
@@ -281,7 +281,7 @@ export function ProductConfigurator({
                       key={value}
                       type="button"
                       onClick={() => onOptionChange(option.title, value)}
-                      className={`flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm transition-colors ${
+                      className={`flex items-center gap-2 rounded-none border px-5 py-2.5 text-sm transition-colors ${
                         isSelected
                           ? "border-accent bg-accent/10 text-accent-dark font-medium"
                           : "border-brand-200 text-brand-700 hover:border-brand-400"
@@ -311,7 +311,7 @@ export function ProductConfigurator({
                     key={value}
                     type="button"
                     onClick={() => onOptionChange(option.title, value)}
-                    className={`rounded-md border px-4 py-2 text-sm transition-colors ${
+                    className={`rounded-none border px-4 py-2 text-sm transition-colors ${
                       isSelected
                         ? "border-accent bg-accent/10 text-accent-dark font-medium"
                         : "border-brand-200 text-brand-700 hover:border-brand-400"

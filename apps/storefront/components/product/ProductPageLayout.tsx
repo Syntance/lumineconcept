@@ -31,7 +31,7 @@ import {
 } from "@/lib/medusa/shop-breadcrumbs";
 import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
 import { variantOptionsRecord } from "@/lib/products/variant-options";
-import { parseStandAvailable, STAND_SURCHARGE_PLN } from "@/lib/products/stand-config";
+import { parseStandAvailable, getStandSurchargeGrosze, formatStandSurchargePln } from "@/lib/products/stand-config";
 
 export const getProductData = cache((slug: string) => getProductByHandle(slug));
 
@@ -158,6 +158,8 @@ interface ProductPageLayoutProps {
     schemaImageUrl?: string | null;
     /** PDP certyfikatów — opcja dopłaty za podstawkę w kolorze certyfikatu */
     certificateStandAvailable?: boolean;
+    /** Dopłata za podstawkę w groszach (0 = gratis). */
+    standSurchargeGrosze?: number;
     /** Voucher podarunkowy — min 5 sztuk, brak opcji podstawki */
     isVoucher?: boolean;
   }>;
@@ -220,6 +222,7 @@ export async function ProductPageLayout({
   const metadata = (product.metadata ?? {}) as Record<string, unknown>;
   const certificateStandAvailable =
     !isVoucher && (parseStandAvailable(metadata) || productIsCertyfikaty(product));
+  const standSurchargeGrosze = getStandSurchargeGrosze(metadata);
   const productFaqs = parseProductFaqFromMetadata(metadata);
   const firstVariant = variants[0];
   const dimensionParts = getProductDimensionParts(
@@ -400,11 +403,17 @@ export async function ProductPageLayout({
             ) : null}
 
             <PriceDisplay amount={price} variant="badge" />
-            {certificateStandAvailable && (
+            {certificateStandAvailable && standSurchargeGrosze > 0 ? (
               <p className="text-sm text-brand-700">
-                Opcjonalna podstawka: +{STAND_SURCHARGE_PLN} zł / szt. (zaznacz przy zamówieniu).
+                Opcjonalna podstawka: +{formatStandSurchargePln(standSurchargeGrosze)} zł / szt.
+                (zaznacz przy zamówieniu).
               </p>
-            )}
+            ) : null}
+            {certificateStandAvailable && standSurchargeGrosze <= 0 ? (
+              <p className="text-sm text-brand-700">
+                Opcjonalna podstawka gratis (zaznacz przy zamówieniu).
+              </p>
+            ) : null}
 
             <div className="flex items-center gap-4 pt-2 pb-4">
               <span className="h-px flex-1 bg-brand-300" />
@@ -443,6 +452,7 @@ export async function ProductPageLayout({
               colorCategories={productConfig.colorCategories}
               schemaImageUrl={schemaImageUrl}
               certificateStandAvailable={certificateStandAvailable}
+              standSurchargeGrosze={standSurchargeGrosze}
               isVoucher={isVoucher}
             />
           </div>

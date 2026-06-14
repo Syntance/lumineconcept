@@ -14,7 +14,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
 
   if (compact) {
     return (
-      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-brand-200 bg-brand-50/60 px-3 py-2.5">
+      <label className="flex cursor-pointer items-center gap-2 rounded-none border border-brand-200 bg-brand-50/60 px-3 py-2.5">
         <input
           type="checkbox"
           checked={expressDelivery}
@@ -35,7 +35,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
   }
 
   return (
-    <div className="rounded-lg border border-brand-200 bg-brand-50/60 p-3">
+    <div className="rounded-none border border-brand-200 bg-brand-50/60 p-3">
       <div className="flex items-start gap-2 text-brand-900">
         <Zap
           className="mt-px h-3.5 w-3.5 shrink-0 text-brand-800"
@@ -51,7 +51,7 @@ export function ExpressToggle({ compact = false }: ExpressToggleProps) {
         </p>
       </div>
 
-      <label className="mt-2 flex cursor-pointer items-center gap-2 rounded-md border border-brand-300 bg-brand-800 px-3 py-2 font-gilroy transition-colors hover:bg-brand-900 focus-within:outline-none focus-within:ring-2 focus-within:ring-white/30">
+      <label className="mt-2 flex cursor-pointer items-center gap-2 rounded-none border border-brand-300 bg-brand-800 px-3 py-2 font-gilroy transition-colors hover:bg-brand-900 focus-within:outline-none focus-within:ring-2 focus-within:ring-white/30">
         <input
           type="checkbox"
           checked={expressDelivery}

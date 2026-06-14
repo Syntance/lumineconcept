@@ -64,7 +64,7 @@ export function CartItem({ item }: { item: CartItemData }) {
         className={`relative flex gap-4 bg-white py-4 transition-all ${busy ? "opacity-60" : ""}`}
       >
         {/* Thumbnail */}
-        <div className="h-[72px] w-[54px] shrink-0 overflow-hidden rounded-lg bg-brand-50">
+        <div className="h-[72px] w-[54px] shrink-0 overflow-hidden rounded-none bg-brand-50">
           {item.thumbnail ? (
             <img
               src={item.thumbnail}

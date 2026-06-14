@@ -32,8 +32,8 @@ export function BankTransferInstructions({
 		<div
 			className={
 				isCheckout
-					? "rounded-lg border border-brand-100 bg-brand-50/50 p-4 text-left"
-					: "mx-auto mt-8 max-w-lg rounded-xl border border-brand-200 bg-brand-50/80 p-6 text-left shadow-sm"
+					? "rounded-none border border-brand-100 bg-brand-50/50 p-4 text-left"
+					: "mx-auto mt-8 max-w-lg rounded-none border border-brand-200 bg-brand-50/80 p-6 text-left shadow-sm"
 			}
 		>
 			<h2

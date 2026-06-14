@@ -6,7 +6,7 @@ import { Lock, ShieldCheck } from "lucide-react";
 export function CheckoutTrustBadges() {
   return (
     <div
-      className="grid grid-cols-1 gap-3 rounded-lg border border-brand-100 bg-brand-50/50 p-4 sm:grid-cols-3"
+      className="grid grid-cols-1 gap-3 rounded-none border border-brand-100 bg-brand-50/50 p-4 sm:grid-cols-3"
       role="list"
       aria-label="Bezpieczeństwo płatności"
     >
