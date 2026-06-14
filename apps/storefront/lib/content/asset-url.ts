@@ -17,8 +17,24 @@ export function isStorefrontPublicAssetPath(url: string): boolean {
 }
 
 /**
- * Rozwiązuje URL obrazu z CMS: `/images/…` zostaje lokalnie,
- * `/static/…` i URL-e Medusa/R2 → publiczny CDN lub backend.
+ * Podgląd w panelu Magazyn — pełny URL (R2/CDN), bez media gate storefrontu.
+ * Storefront używa `resolveCmsAssetUrl` / overlay; admin musi widzieć upload od razu.
+ */
+export function resolveCmsAdminPreviewUrl(url: string | null | undefined): string | undefined {
+	if (!url?.trim()) return undefined;
+	const trimmed = url.trim();
+
+	if (isStorefrontPublicAssetPath(trimmed)) {
+		const pathOnly = trimmed.startsWith("/") ? trimmed : new URL(trimmed).pathname;
+		return pathOnly.split("?")[0] || pathOnly;
+	}
+
+	return resolveMedusaMediaUrl(trimmed) ?? trimmed;
+}
+
+/**
+ * Rozwiązuje URL obrazu na storefront: `/images/…` zostaje lokalnie,
+ * nieopublikowane uploady CMS (R2, Medusa) → undefined (media gate).
  */
 export function resolveCmsAssetUrl(url: string | null | undefined): string | undefined {
 	if (!url?.trim()) return undefined;

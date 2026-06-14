@@ -4,11 +4,12 @@ import {
 	MAGAZYN_SITE_SETTINGS_KEY,
 } from "@/lib/content/metadata-keys";
 import {
-	parsePageSeoMap,
-	parseSiteSettings,
+	parsePageSeoMapForAdmin,
+	parseSiteSettingsForAdmin,
 	siteSettingsSchema,
 	pageSeoMapSchema,
 	normalizeSeoMeta,
+	parseJsonValue,
 } from "@/lib/content/parsers";
 import type { PageSeoMap, SeoMeta, SiteSettings } from "@/lib/content/types";
 import { getMedusaStore, mergeStoreMetadata, readMetadataJson } from "../store-metadata";
@@ -21,8 +22,8 @@ export type SeoSettingsBundle = {
 export async function getSeoSettingsBundle(): Promise<SeoSettingsBundle> {
 	const store = await getMedusaStore();
 	return {
-		siteSettings: parseSiteSettings(readMetadataJson(store, MAGAZYN_SITE_SETTINGS_KEY)),
-		pageSeo: parsePageSeoMap(readMetadataJson(store, MAGAZYN_PAGE_SEO_KEY)),
+		siteSettings: parseSiteSettingsForAdmin(readMetadataJson(store, MAGAZYN_SITE_SETTINGS_KEY)),
+		pageSeo: parsePageSeoMapForAdmin(readMetadataJson(store, MAGAZYN_PAGE_SEO_KEY)),
 	};
 }
 
@@ -45,7 +46,7 @@ export async function saveGlobalSeoSettings(settings: SiteSettings): Promise<voi
 	// pola SEO. Bez tego zapis SEO nadpisywał cały `magazyn_site_settings`
 	// wartościami domyślnymi, kasując pasek zapowiedzi, trust bar, social i stopkę.
 	const store = await getMedusaStore();
-	const current = parseSiteSettings(readMetadataJson(store, MAGAZYN_SITE_SETTINGS_KEY));
+	const current = parseSiteSettingsForAdmin(readMetadataJson(store, MAGAZYN_SITE_SETTINGS_KEY));
 
 	const merged: SiteSettings = { ...current };
 	for (const field of GLOBAL_SEO_FIELDS) {
@@ -60,7 +61,8 @@ export async function saveGlobalSeoSettings(settings: SiteSettings): Promise<voi
 
 export async function savePageSeo(pageId: string, seo: SeoMeta): Promise<void> {
 	const store = await getMedusaStore();
-	const current = parsePageSeoMap(readMetadataJson(store, MAGAZYN_PAGE_SEO_KEY));
+	const raw = readMetadataJson(store, MAGAZYN_PAGE_SEO_KEY);
+	const current = parseJsonValue(raw, pageSeoMapSchema) ?? {};
 	const next: PageSeoMap = {
 		...current,
 		[pageId]: normalizeSeoMeta(seo) ?? {},

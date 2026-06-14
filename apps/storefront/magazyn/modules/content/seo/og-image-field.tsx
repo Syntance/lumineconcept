@@ -3,7 +3,7 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useId, useState } from "react";
-import { isCmsImageUnoptimized, resolveCmsAssetUrl } from "@/lib/content/asset-url";
+import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { uploadImagesAction } from "@magazyn/modules/products/actions";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
@@ -27,7 +27,7 @@ export function OgImageField({
 	const fileId = useId();
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const previewUrl = value ? resolveCmsAssetUrl(value) ?? value : "";
+	const previewUrl = value ? resolveCmsAdminPreviewUrl(value) ?? value : "";
 	const batchMode = multiple && !!onMultipleChange;
 
 	const uploadFiles = useCallback(

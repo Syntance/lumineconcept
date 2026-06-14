@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	parseGlobalContent,
 	parsePageContentMap,
+	parsePageContentMapForAdmin,
 	parsePageSeoMap,
 	parseProductFaqFromMetadata,
 	parseProductSeoFromMetadata,
@@ -70,6 +71,18 @@ describe("content parsers", () => {
 			}),
 		);
 		expect(map["logo-3d"]?.gallery).toEqual([]);
+	});
+
+	it("parsePageContentMapForAdmin zachowuje nieopublikowane obrazy galerii (R2)", () => {
+		const remote = "https://pub-abc.r2.dev/cms-uploads/realizacja.webp";
+		const map = parsePageContentMapForAdmin(
+			JSON.stringify({
+				"logo-3d": {
+					gallery: [{ id: "1", imageUrl: remote, order: 0 }],
+				},
+			}),
+		);
+		expect(map["logo-3d"]?.gallery?.[0]?.imageUrl).toBe(remote);
 	});
 
 	it("parsePageContentMap serwuje opublikowane obrazy z /images/cms/", () => {

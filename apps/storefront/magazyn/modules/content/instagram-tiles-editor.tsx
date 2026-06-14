@@ -24,7 +24,7 @@ import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import { cn } from "@magazyn/core/lib/cn";
 import type { InstagramTile } from "@/lib/content/types";
-import { isCmsImageUnoptimized, resolveCmsAssetUrl } from "@/lib/content/asset-url";
+import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { newCmsId } from "./cms-id";
 import { OgImageField } from "./seo/og-image-field";
 
@@ -46,7 +46,7 @@ function SortableTile({
 	selected: boolean;
 	onSelect: () => void;
 }) {
-	const previewUrl = tile.imageUrl ? resolveCmsAssetUrl(tile.imageUrl) ?? tile.imageUrl : "";
+	const previewUrl = tile.imageUrl ? resolveCmsAdminPreviewUrl(tile.imageUrl) ?? tile.imageUrl : "";
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: tile.id,
 	});

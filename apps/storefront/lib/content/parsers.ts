@@ -215,16 +215,6 @@ const instagramTileSchema = z.object({
 function resolvePublishedImageUrl(raw: string | undefined): string | undefined {
 	if (!raw?.trim()) return undefined;
 	const resolved = resolveCmsAssetUrl(raw);
-	
-	// DEBUG: Log resolution
-	if (raw.startsWith("http")) {
-		console.log("[CMS DEBUG] resolvePublishedImageUrl:", {
-			input: raw.substring(0, 80),
-			resolved,
-			isCmsAsset: isCmsMediaAssetUrl(raw),
-		});
-	}
-	
 	if (resolved) return resolved;
 	if (isCmsMediaAssetUrl(raw)) return undefined;
 	return raw;
@@ -342,7 +332,7 @@ export const productFaqSchema = z.array(
 	}),
 );
 
-function parseJsonValue<T>(raw: unknown, schema: z.ZodType<T>): T | null {
+export function parseJsonValue<T>(raw: unknown, schema: z.ZodType<T>): T | null {
 	if (raw == null || raw === "") return null;
 	try {
 		const value = typeof raw === "string" ? JSON.parse(raw) : raw;
@@ -370,6 +360,22 @@ export function parseSiteSettings(raw: unknown): SiteSettings {
 	};
 }
 
+/** Panel Magazyn — surowe URL-e obrazów (R2), bez media gate storefrontu. */
+export function parseSiteSettingsForAdmin(raw: unknown): SiteSettings {
+	const parsed = parseJsonValue(raw, siteSettingsSchema);
+	if (!parsed) return DEFAULT_SITE_SETTINGS;
+	return {
+		...DEFAULT_SITE_SETTINGS,
+		...parsed,
+		trustBar: { ...DEFAULT_SITE_SETTINGS.trustBar, ...parsed.trustBar },
+		checkoutCallout: {
+			...DEFAULT_SITE_SETTINGS.checkoutCallout,
+			...parsed.checkoutCallout,
+		},
+		socialLinks: { ...DEFAULT_SITE_SETTINGS.socialLinks, ...parsed.socialLinks },
+	};
+}
+
 export function parsePageSeoMap(raw: unknown): PageSeoMap {
 	const parsed = parseJsonValue(raw, pageSeoMapSchema) ?? {};
 	const resolved: PageSeoMap = {};
@@ -377,6 +383,11 @@ export function parsePageSeoMap(raw: unknown): PageSeoMap {
 		resolved[key as keyof PageSeoMap] = resolveSeoAssets(seo);
 	}
 	return resolved;
+}
+
+/** Panel Magazyn — surowe URL-e OG bez filtrowania media gate. */
+export function parsePageSeoMapForAdmin(raw: unknown): PageSeoMap {
+	return parseJsonValue(raw, pageSeoMapSchema) ?? {};
 }
 
 export function parsePageContentMap(raw: unknown): PageContentMap {
@@ -394,6 +405,22 @@ export function parsePageContentMap(raw: unknown): PageContentMap {
 	return merged;
 }
 
+/** Panel Magazyn — zachowaj wszystkie URL-e CMS (R2) do edycji i podglądu. */
+export function parsePageContentMapForAdmin(raw: unknown): PageContentMap {
+	const parsed = parseJsonValue(raw, pageContentMapSchema) ?? {};
+	const merged: PageContentMap = { ...DEFAULT_PAGE_CONTENT };
+	for (const [key, value] of Object.entries(parsed)) {
+		const pageKey = key as keyof PageContentMap;
+		const defaults = DEFAULT_PAGE_CONTENT[pageKey];
+		merged[pageKey] = {
+			...defaults,
+			...value,
+			hero: mergeHeroWithDefaultsForAdmin(value.hero, pageKey) ?? defaults?.hero,
+		};
+	}
+	return merged;
+}
+
 export function parseGlobalContent(raw: unknown): GlobalContent {
 	const parsed = parseJsonValue(raw, globalContentSchema);
 	if (!parsed) return DEFAULT_GLOBAL_CONTENT;
@@ -401,6 +428,16 @@ export function parseGlobalContent(raw: unknown): GlobalContent {
 		salonLogos: parsed.salonLogos?.length ? parsed.salonLogos : DEFAULT_GLOBAL_CONTENT.salonLogos,
 		instagramTiles: parsed.instagramTiles ?? [],
 	});
+}
+
+/** Panel Magazyn — surowe URL-e logotypów / Instagram bez media gate. */
+export function parseGlobalContentForAdmin(raw: unknown): GlobalContent {
+	const parsed = parseJsonValue(raw, globalContentSchema);
+	if (!parsed) return DEFAULT_GLOBAL_CONTENT;
+	return {
+		salonLogos: parsed.salonLogos?.length ? parsed.salonLogos : DEFAULT_GLOBAL_CONTENT.salonLogos,
+		instagramTiles: parsed.instagramTiles ?? [],
+	};
 }
 
 export function parseProductSeoFromMetadata(
@@ -483,6 +520,29 @@ export function mergeHeroWithDefaults(
 	const desktopImageUrl = normalizeLocalAssetUrl(hero.desktopImageUrl);
 	const mobileImageUrl =
 		normalizeLocalAssetUrl(hero.mobileImageUrl) || desktopImageUrl;
+
+	return {
+		...defaults,
+		...hero,
+		...(desktopImageUrl ? { desktopImageUrl } : {}),
+		...(mobileImageUrl ? { mobileImageUrl } : {}),
+		...(hero.desktopBlurDataURL ? { desktopBlurDataURL: hero.desktopBlurDataURL } : {}),
+		...(hero.mobileBlurDataURL ? { mobileBlurDataURL: hero.mobileBlurDataURL } : {}),
+	};
+}
+
+/** Panel Magazyn — nie stripuj R2 z hero; tylko merge tekstów z defaultami. */
+export function mergeHeroWithDefaultsForAdmin(
+	hero: HeroContent | undefined,
+	pageId: keyof PageContentMap,
+): HeroContent | undefined {
+	const defaults =
+		pageId === "home" ? HOME_HERO_DEFAULT : pageId === "logo-3d" ? LOGO_HERO_DEFAULT : undefined;
+	if (!defaults) return hero;
+	if (!hero) return defaults;
+
+	const desktopImageUrl = hero.desktopImageUrl?.trim() || undefined;
+	const mobileImageUrl = hero.mobileImageUrl?.trim() || desktopImageUrl;
 
 	return {
 		...defaults,

@@ -14,6 +14,8 @@ import type {
 	PageContent,
 	Testimonial,
 } from "@/lib/content/types";
+import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
+import { usePreventWindowFileDrop } from "@magazyn/core/hooks/use-prevent-window-file-drop";
 import { savePageContentAction } from "./content-actions";
 import { cmsSaveSuccessMessage } from "./cms-save-feedback";
 import { newCmsId } from "./cms-id";
@@ -34,6 +36,7 @@ export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 	const [error, setError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
+	usePreventWindowFileDrop();
 
 	function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -262,14 +265,24 @@ function GalleryEditor({
 		<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
 			<legend className="px-1 text-sm font-medium">Galeria realizacji</legend>
 			<div className="flex flex-wrap gap-2">
-				{value.map((photo, index) => (
+				{value.map((photo, index) => {
+					const previewUrl = resolveCmsAdminPreviewUrl(photo.imageUrl) ?? photo.imageUrl;
+					return (
 					<div key={photo.id} className="relative size-20 overflow-hidden rounded-lg border border-border">
-						<Image src={photo.imageUrl} alt={photo.alt ?? ""} fill sizes="80px" className="object-cover" />
+						<Image
+							src={previewUrl}
+							alt={photo.alt ?? ""}
+							fill
+							sizes="80px"
+							className="object-cover"
+							unoptimized={isCmsImageUnoptimized(previewUrl)}
+						/>
 						<button type="button" onClick={() => remove(index)} className="absolute right-0 top-0 bg-background/80 p-0.5" aria-label="Usuń">
 							<Trash2 className="size-3 text-destructive" />
 						</button>
 					</div>
-				))}
+					);
+				})}
 			</div>
 			<OgImageField
 				label="Dodaj zdjęcia"

@@ -37,7 +37,7 @@ export function AutoGrowTextarea({
 				onChange?.(event);
 				requestAnimationFrame(adjustHeight);
 			}}
-			className={cn("resize-none overflow-hidden", className)}
+			className={cn("resize-none overflow-hidden placeholder:whitespace-pre-line", className)}
 			{...props}
 		/>
 	);

@@ -7,9 +7,11 @@ import {
 import {
 	globalContentSchema,
 	pageContentMapSchema,
-	parseGlobalContent,
-	parsePageContentMap,
-	parseSiteSettings,
+	pageContentSchema,
+	parseGlobalContentForAdmin,
+	parseJsonValue,
+	parsePageContentMapForAdmin,
+	parseSiteSettingsForAdmin,
 	siteSettingsSchema,
 } from "@/lib/content/parsers";
 import type { GlobalContent, PageContent, PageContentMap, SiteSettings } from "@/lib/content/types";
@@ -24,16 +26,18 @@ export type ContentBundle = {
 export async function getContentBundle(): Promise<ContentBundle> {
 	const store = await getMedusaStore();
 	return {
-		siteSettings: parseSiteSettings(readMetadataJson(store, MAGAZYN_SITE_SETTINGS_KEY)),
-		pageContent: parsePageContentMap(readMetadataJson(store, MAGAZYN_PAGE_CONTENT_KEY)),
-		globalContent: parseGlobalContent(readMetadataJson(store, MAGAZYN_GLOBAL_CONTENT_KEY)),
+		siteSettings: parseSiteSettingsForAdmin(readMetadataJson(store, MAGAZYN_SITE_SETTINGS_KEY)),
+		pageContent: parsePageContentMapForAdmin(readMetadataJson(store, MAGAZYN_PAGE_CONTENT_KEY)),
+		globalContent: parseGlobalContentForAdmin(readMetadataJson(store, MAGAZYN_GLOBAL_CONTENT_KEY)),
 	};
 }
 
 export async function savePageContent(pageId: string, content: PageContent): Promise<void> {
 	const store = await getMedusaStore();
-	const current = parsePageContentMap(readMetadataJson(store, MAGAZYN_PAGE_CONTENT_KEY));
-	const next: PageContentMap = { ...current, [pageId]: content };
+	const raw = readMetadataJson(store, MAGAZYN_PAGE_CONTENT_KEY);
+	const current = parseJsonValue(raw, pageContentMapSchema) ?? {};
+	const parsedPage = pageContentSchema.parse(content);
+	const next: PageContentMap = { ...current, [pageId]: parsedPage };
 	const parsed = pageContentMapSchema.parse(next);
 	await mergeStoreMetadata({
 		[MAGAZYN_PAGE_CONTENT_KEY]: JSON.stringify(parsed),
