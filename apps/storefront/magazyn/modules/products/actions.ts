@@ -58,6 +58,9 @@ const productSchema = z.object({
 	matOverridesBySlot: z
 		.record(z.string(), z.record(z.string(), z.boolean()))
 		.default({}),
+	matOverridesBySlotWithStand: z
+		.record(z.string(), z.record(z.string(), z.boolean()))
+		.default({}),
 	colorSlotCount: z.number().int().min(1).max(5).default(1),
 	colorSlotNames: z.array(z.string().trim()).optional(),
 	allowCustomColor: z.boolean().default(true),
@@ -145,6 +148,7 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 		allowCustomColorBySlot: data.allowCustomColorBySlot ?? {},
 		productColorsBySlot: data.productColorsBySlot ?? {},
 		matOverridesBySlot: data.matOverridesBySlot ?? {},
+		matOverridesBySlotWithStand: data.matOverridesBySlotWithStand ?? {},
 		colorSlotCount: data.colorSlotCount ?? 1,
 		colorSlotNames: data.colorSlotNames,
 		allowCustomColor: data.allowCustomColor ?? true,

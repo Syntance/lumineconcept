@@ -330,6 +330,37 @@ export function parseMatOverridesBySlot(
 	return result;
 }
 
+export function parseMatOverridesBySlotWithStand(
+	meta: Record<string, unknown> | null | undefined,
+	slotTitles: readonly string[],
+	fallback: Record<string, Record<string, boolean>> = {},
+): Record<string, Record<string, boolean>> {
+	const result: Record<string, Record<string, boolean>> = {};
+	for (const title of slotTitles) {
+		result[title] = { ...(fallback[title] ?? {}) };
+	}
+
+	const obj = parseJsonRecord(meta?.mat_overrides_by_slot_with_stand);
+	if (!obj) return result;
+
+	for (const title of slotTitles) {
+		const slotObj = obj[title];
+		if (!slotObj || typeof slotObj !== "object" || Array.isArray(slotObj)) continue;
+		const slotRecord = slotObj as Record<string, unknown>;
+		const parsed: Record<string, boolean> = {};
+		for (const [colorId, value] of Object.entries(slotRecord)) {
+			if (typeof value === "boolean") {
+				parsed[colorId] = value;
+				continue;
+			}
+			if (value === "true") parsed[colorId] = true;
+			if (value === "false") parsed[colorId] = false;
+		}
+		result[title] = parsed;
+	}
+	return result;
+}
+
 export function buildMatDisabledSetForSlot(
 	slotTitle: string,
 	globalColors: ReadonlyArray<{

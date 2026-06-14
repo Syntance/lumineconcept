@@ -11,6 +11,7 @@ import {
 	parseDisabledColorCategoriesBySlot,
 	parseDisabledConfigIdsBySlot,
 	parseMatOverridesBySlot,
+	parseMatOverridesBySlotWithStand,
 	parseProductColorsBySlot,
 	type ProductCustomColor,
 } from "@/lib/products/color-slot-config";
@@ -52,6 +53,7 @@ import {
 	STAND_PRODUCT_COLORS_KEY,
 	DISABLED_CONFIG_IDS_BY_SLOT_WITH_STAND_KEY,
 	DISABLED_COLOR_CATEGORIES_BY_SLOT_WITH_STAND_KEY,
+	MAT_OVERRIDES_BY_SLOT_WITH_STAND_KEY,
 } from "@/lib/products/stand-config";
 import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
 
@@ -91,6 +93,7 @@ export type ProductFormValues = {
 	productColorsBySlot: Record<string, Record<string, ProductCustomColor[]>>;
 	/** Nadpisania mat_allowed per pole koloru (metadata.mat_overrides_by_slot). */
 	matOverridesBySlot: Record<string, Record<string, boolean>>;
+	matOverridesBySlotWithStand: Record<string, Record<string, boolean>>;
 	/** Liczba pól „Kolor” w konfiguratorze (1 = samo „Kolor”, 2+ = „Kolor 2”…). */
 	colorSlotCount: number;
 	/** Custom nazwy pól kolorów (metadata.color_slot_names). */
@@ -316,6 +319,9 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 					: "false",
 				product_colors_by_slot: JSON.stringify(values.productColorsBySlot),
 				mat_overrides_by_slot: JSON.stringify(values.matOverridesBySlot),
+				[MAT_OVERRIDES_BY_SLOT_WITH_STAND_KEY]: JSON.stringify(
+					values.matOverridesBySlotWithStand,
+				),
 				color_slot_names: values.colorSlotNames ? JSON.stringify(values.colorSlotNames) : undefined,
 				text_fields: JSON.stringify(serializeTextFieldsForMetadata(values.textFields)),
 				...serializeUploadSettingsForMetadata(values.uploadSettings),
@@ -445,6 +451,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 
 	const noStandDisabled = parseDisabledConfigIdsBySlot(metadata, slotTitles, []);
 	const noStandCategories = parseDisabledColorCategoriesBySlot(metadata, slotTitles);
+	const noStandMat = parseMatOverridesBySlot(metadata, slotTitles);
 
 	return {
 		id: product.id,
@@ -472,7 +479,12 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		),
 		allowCustomColorBySlot: parseAllowCustomColorBySlot(metadata, slotTitles, defaultAllowCustom),
 		productColorsBySlot: parseProductColorsBySlot(metadata, slotTitles),
-		matOverridesBySlot: parseMatOverridesBySlot(metadata, slotTitles),
+		matOverridesBySlot: noStandMat,
+		matOverridesBySlotWithStand: parseMatOverridesBySlotWithStand(
+			metadata,
+			slotTitles,
+			noStandMat,
+		),
 		colorSlotCount,
 		colorSlotNames: customNames ?? slotTitles,
 		allowCustomColor: defaultAllowCustom,

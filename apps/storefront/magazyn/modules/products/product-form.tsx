@@ -363,6 +363,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				allowCustomColorBySlot: colorConfig.allowCustomColorBySlot,
 				productColorsBySlot: colorConfig.productColorsBySlot,
 				matOverridesBySlot: colorConfig.matOverridesBySlot,
+				matOverridesBySlotWithStand: colorConfig.matOverridesBySlotWithStand,
 				colorSlotCount: colorConfig.colorSlotCount,
 				colorSlotNames: colorConfig.colorSlotNames,
 				allowCustomColor: colorConfig.allowCustomColor,
