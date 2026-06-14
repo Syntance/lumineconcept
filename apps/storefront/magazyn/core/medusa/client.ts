@@ -1,9 +1,14 @@
 import "server-only";
+import { sleep } from "@/lib/medusa/transient-error";
 import { serverEnv } from "../env";
 import { AdminApiError, AdminUnauthorizedError, extractMessage } from "./errors";
 import { getSessionToken } from "./session";
 
 type AdminFetchInit = Omit<RequestInit, "body"> & { body?: string };
+
+const ADMIN_FETCH_TIMEOUT_MS = 30_000;
+const ADMIN_FETCH_RETRY_DELAYS_MS = [0, 1200, 2500, 4000] as const;
+const TRANSIENT_ADMIN_STATUSES = new Set([502, 503, 504]);
 
 /**
  * Konto admina w produkcyjnej Medusie zostało utworzone z literówką (lumie).
@@ -70,20 +75,56 @@ async function adminFetchWithToken<T>(
 	headers.set("Authorization", `Bearer ${token}`);
 	if (init.body) headers.set("Content-Type", "application/json");
 
-	const res = await fetch(`${serverEnv.medusaBackendUrl}${path}`, {
-		...init,
-		headers,
-		cache: "no-store",
-		signal: AbortSignal.timeout(15_000),
-	});
+	let lastError: AdminApiError | null = null;
 
-	if (res.status === 401) throw new AdminUnauthorizedError();
-	if (!res.ok) {
-		const text = await res.text();
-		throw new AdminApiError(extractMessage(text, `Błąd ${res.status}.`), res.status);
+	for (let attempt = 0; attempt < ADMIN_FETCH_RETRY_DELAYS_MS.length; attempt++) {
+		const pause = ADMIN_FETCH_RETRY_DELAYS_MS[attempt] ?? 0;
+		if (pause > 0) await sleep(pause);
+
+		try {
+			const res = await fetch(`${serverEnv.medusaBackendUrl}${path}`, {
+				...init,
+				headers,
+				cache: "no-store",
+				signal: AbortSignal.timeout(ADMIN_FETCH_TIMEOUT_MS),
+			});
+
+			if (res.status === 401) throw new AdminUnauthorizedError();
+			if (!res.ok) {
+				const text = await res.text();
+				const error = new AdminApiError(extractMessage(text, `Błąd ${res.status}.`), res.status);
+				if (TRANSIENT_ADMIN_STATUSES.has(res.status) && attempt < ADMIN_FETCH_RETRY_DELAYS_MS.length - 1) {
+					lastError = error;
+					continue;
+				}
+				throw error;
+			}
+
+			if (res.status === 204) return undefined as T;
+			return (await res.json()) as T;
+		} catch (error) {
+			if (error instanceof AdminUnauthorizedError || error instanceof AdminApiError) {
+				if (
+					error instanceof AdminApiError &&
+					TRANSIENT_ADMIN_STATUSES.has(error.status) &&
+					attempt < ADMIN_FETCH_RETRY_DELAYS_MS.length - 1
+				) {
+					lastError = error;
+					continue;
+				}
+				throw error;
+			}
+
+			if (attempt < ADMIN_FETCH_RETRY_DELAYS_MS.length - 1) {
+				lastError = new AdminApiError("Backend Medusa nie odpowiada. Spróbuj ponownie za chwilę.", 502);
+				continue;
+			}
+
+			throw lastError ?? new AdminApiError("Backend Medusa nie odpowiada. Spróbuj ponownie za chwilę.", 502);
+		}
 	}
-	if (res.status === 204) return undefined as T;
-	return (await res.json()) as T;
+
+	throw lastError ?? new AdminApiError("Backend Medusa nie odpowiada. Spróbuj ponownie za chwilę.", 502);
 }
 
 /** Wywołanie Admin API z tokenem z sesji panelu. Rzuca AdminUnauthorizedError przy 401. */

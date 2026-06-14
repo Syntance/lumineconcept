@@ -125,6 +125,12 @@
     font-synthesis: none;
   }
 
+  /* Chronicle: tylko Roman w bundle — synteza wagi dla font-bold / font-semibold (np. tytuł PDP). */
+  .font-display.font-bold,
+  .font-display.font-semibold {
+    font-synthesis: weight;
+  }
+
   /* Chronicle bez pliku italic — bez syntezy kursywa się nie renderuje */
   .font-display.italic {
     font-synthesis: style;

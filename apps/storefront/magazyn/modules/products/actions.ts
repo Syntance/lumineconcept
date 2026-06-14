@@ -106,6 +106,8 @@ const productSchema = z.object({
 	standAvailable: z.boolean().default(false),
 	standPaid: z.boolean().default(false),
 	standSurchargeGrosze: z.number().int().min(0).default(0),
+	pdpCalloutEnabled: z.boolean().default(false),
+	pdpCallout: z.string().max(500).default(""),
 	standDisabledConfigIds: z.array(z.string().trim()).default([]),
 	standDisabledColorCategories: z.array(z.string().trim()).default([]),
 	standProductColors: z
@@ -132,6 +134,13 @@ const productSchema = z.object({
 			code: z.ZodIssueCode.custom,
 			message: "Podaj cenę podstawki większą niż 0 zł.",
 			path: ["standSurchargeGrosze"],
+		});
+	}
+	if (data.pdpCalloutEnabled && !(data.pdpCallout ?? "").trim()) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: "Podaj treść calloutu lub odznacz opcję.",
+			path: ["pdpCallout"],
 		});
 	}
 });
@@ -174,6 +183,8 @@ function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
 		standAvailable: data.standAvailable ?? false,
 		standPaid: data.standPaid ?? false,
 		standSurchargeGrosze: data.standSurchargeGrosze ?? 0,
+		pdpCalloutEnabled: data.pdpCalloutEnabled ?? false,
+		pdpCallout: data.pdpCallout ?? "",
 		standDisabledConfigIds: data.standDisabledConfigIds ?? [],
 		standDisabledColorCategories: data.standDisabledColorCategories ?? [],
 		standProductColors: data.standProductColors ?? {},

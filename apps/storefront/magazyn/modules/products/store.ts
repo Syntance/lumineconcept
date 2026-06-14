@@ -59,6 +59,11 @@ import {
 	DISABLED_COLOR_CATEGORIES_BY_SLOT_WITH_STAND_KEY,
 	MAT_OVERRIDES_BY_SLOT_WITH_STAND_KEY,
 } from "@/lib/products/stand-config";
+import {
+	serializePdpCalloutForMetadata,
+	parsePdpCallout,
+	parsePdpCalloutEnabled,
+} from "@/lib/products/pdp-callout";
 import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
 
 export { buildColorOptionTitles } from "@/lib/products/color-slot-config";
@@ -118,6 +123,9 @@ export type ProductFormValues = {
 	standPaid: boolean;
 	/** Dopłata za podstawkę w groszach (gdy standPaid). */
 	standSurchargeGrosze: number;
+	/** Opcjonalny callout pod „Skonfiguruj swój produkt” na PDP. */
+	pdpCalloutEnabled: boolean;
+	pdpCallout: string;
 	/** Wyłączone globalne kolory dla pola „Podstawka”. */
 	standDisabledConfigIds: string[];
 	standDisabledColorCategories: string[];
@@ -292,13 +300,13 @@ export async function updateGlobalColorOption(
 	return data.config_option;
 }
 
-export async function listGlobalConfigOptions(): Promise<ConfigOption[]> {
+export const listGlobalConfigOptions = cache(async (): Promise<ConfigOption[]> => {
 	const data = await adminFetch<{ config_options: ConfigOption[] }>("/admin/product-config");
 	return (data.config_options ?? []).sort((a, b) => {
 		if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
 		return a.name.localeCompare(b.name, "pl");
 	});
-}
+});
 
 async function syncProductConfiguratorSettings(productId: string, values: ProductFormValues): Promise<void> {
 	const current = await adminFetch<{ product: MedusaProduct }>(
@@ -342,6 +350,7 @@ async function syncProductConfiguratorSettings(productId: string, values: Produc
 					values.standAvailable && values.standPaid && values.standSurchargeGrosze > 0
 						? String(values.standSurchargeGrosze)
 						: "0",
+				...serializePdpCalloutForMetadata(values.pdpCalloutEnabled, values.pdpCallout),
 				[STAND_DISABLED_CONFIG_IDS_KEY]: JSON.stringify(values.standDisabledConfigIds),
 				[STAND_DISABLED_CATEGORIES_KEY]: JSON.stringify(values.standDisabledColorCategories),
 				[STAND_PRODUCT_COLORS_KEY]: JSON.stringify(values.standProductColors),
@@ -405,7 +414,7 @@ export const getStoreConfig = cache(async (): Promise<{ salesChannelId: string |
 	};
 });
 
-export async function listCategoryOptions(): Promise<CategoryOption[]> {
+export const listCategoryOptions = cache(async (): Promise<CategoryOption[]> => {
 	const data = await adminFetch<{
 		product_categories: Array<{
 			id: string;
@@ -428,7 +437,7 @@ export async function listCategoryOptions(): Promise<CategoryOption[]> {
 			id: c.id,
 			name: c.name,
 		}));
-}
+});
 
 export async function listAdminProducts(): Promise<AdminProductRow[]> {
 	const data = await adminFetch<{ products: MedusaProduct[] }>(`/admin/products?limit=200&fields=${LIST_FIELDS}`);
@@ -509,6 +518,8 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 		standAvailable: parseStandAvailable(metadata),
 		standPaid: parseStandPaid(metadata),
 		standSurchargeGrosze: getStandSurchargeGrosze(metadata),
+		pdpCalloutEnabled: parsePdpCalloutEnabled(metadata),
+		pdpCallout: parsePdpCallout(metadata),
 		standDisabledConfigIds: parseStandDisabledConfigIds(metadata),
 		standDisabledColorCategories: parseStandDisabledCategories(metadata),
 		standProductColors: parseStandProductColors(metadata),

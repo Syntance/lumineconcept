@@ -79,6 +79,10 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 	);
 	const [seo, setSeo] = useState<ProductSeoMeta>(() => product?.seo ?? {});
 	const [productFaq, setProductFaq] = useState<ProductFaqItem[]>(() => product?.productFaq ?? []);
+	const [pdpCalloutEnabled, setPdpCalloutEnabled] = useState(
+		() => product?.pdpCalloutEnabled ?? false,
+	);
+	const [pdpCallout, setPdpCallout] = useState(() => product?.pdpCallout ?? "");
 
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
@@ -371,6 +375,8 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				standAvailable: colorConfig.standAvailable,
 				standPaid: colorConfig.standPaid,
 				standSurchargeGrosze: colorConfig.standSurchargeGrosze,
+				pdpCalloutEnabled,
+				pdpCallout,
 				standDisabledConfigIds: colorConfig.standDisabledConfigIds,
 				standDisabledColorCategories: colorConfig.standDisabledColorCategories,
 				standProductColors: colorConfig.standProductColors,
@@ -632,6 +638,40 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 						)}
 					</div>
 				</fieldset>
+
+				<div className="flex flex-col gap-3 rounded-lg border border-input px-3 py-3 text-sm">
+					<label className="flex cursor-pointer items-start gap-3">
+						<input
+							type="checkbox"
+							checked={pdpCalloutEnabled}
+							onChange={(e) => setPdpCalloutEnabled(e.target.checked)}
+							className="mt-0.5 size-4 rounded border-input accent-primary"
+						/>
+						<span>
+							<span className="font-medium">Callout na PDP</span>
+							<span className="mt-0.5 block text-xs text-muted-foreground">
+								Informacja pod nagłówkiem „Skonfiguruj swój produkt”.
+							</span>
+						</span>
+					</label>
+					{pdpCalloutEnabled ? (
+						<div className="flex flex-col gap-1.5 pl-7">
+							<label htmlFor="pdp-callout" className="text-sm font-medium">
+								Treść calloutu
+							</label>
+							<textarea
+								id="pdp-callout"
+								value={pdpCallout}
+								onChange={(e) => setPdpCallout(e.target.value)}
+								rows={3}
+								maxLength={500}
+								className={inputClass}
+								placeholder="Np. Realizacja certyfikatu trwa ok. 10 dni roboczych."
+								required
+							/>
+						</div>
+					) : null}
+				</div>
 
 				<label className="flex cursor-pointer items-start gap-3 rounded-lg border border-input px-3 py-3 text-sm">
 					<input
