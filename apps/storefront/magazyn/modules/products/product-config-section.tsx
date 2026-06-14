@@ -51,6 +51,9 @@ type Props = {
 	onAllowCustomColorChange: (enabled: boolean) => void;
 	hasAnyDisabled: boolean;
 	embedded?: boolean;
+	standAvailable?: boolean;
+	productColorMode?: "no_stand" | "with_stand";
+	onProductColorModeChange?: (mode: "no_stand" | "with_stand") => void;
 };
 
 export function ProductConfigSection({
@@ -79,6 +82,9 @@ export function ProductConfigSection({
 	allowCustomColor,
 	onAllowCustomColorChange,
 	embedded = false,
+	standAvailable = false,
+	productColorMode = "no_stand",
+	onProductColorModeChange,
 }: Props) {
 	const colorOptions = configOptions.filter((o) => o.type === "color");
 	const allColorsDisabledForSlot =
@@ -111,6 +117,39 @@ export function ProductConfigSection({
 					.
 				</p>
 			</div>
+
+			{standAvailable && onProductColorModeChange ? (
+				<div
+					role="group"
+					aria-label="Tryb konfiguracji kolorów produktu"
+					className="flex rounded-lg border border-border p-1"
+				>
+					<button
+						type="button"
+						onClick={() => onProductColorModeChange("no_stand")}
+						className={cn(
+							"flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
+							productColorMode === "no_stand"
+								? "bg-primary text-primary-foreground"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+					>
+						Bez podstawki
+					</button>
+					<button
+						type="button"
+						onClick={() => onProductColorModeChange("with_stand")}
+						className={cn(
+							"flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
+							productColorMode === "with_stand"
+								? "bg-primary text-primary-foreground"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+					>
+						Z podstawką
+					</button>
+				</div>
+			) : null}
 
 			<ColorSlotPicker
 				slotTitles={slotTitles}

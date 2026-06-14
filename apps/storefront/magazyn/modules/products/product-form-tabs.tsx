@@ -3,24 +3,50 @@
 import { useId, useState, type ReactNode } from "react";
 import { cn } from "@magazyn/core/lib/cn";
 
-type TabId = "colors" | "fields" | "seo";
+type TabId = "colors" | "stand" | "fields" | "seo";
 
-const TABS: ReadonlyArray<{ id: TabId; label: string }> = [
-	{ id: "colors", label: "Edycja kolorów" },
-	{ id: "fields", label: "Pola" },
-	{ id: "seo", label: "SEO i treści" },
-];
+type TabDef = { id: TabId; label: string };
+
+const COLORS_TAB: TabDef = { id: "colors", label: "Edycja kolorów" };
+const STAND_TAB: TabDef = { id: "stand", label: "Podstawka" };
+const FIELDS_TAB: TabDef = { id: "fields", label: "Pola" };
+const SEO_TAB: TabDef = { id: "seo", label: "SEO i treści" };
 
 type Props = {
 	colorsPanel: ReactNode;
+	standPanel?: ReactNode;
 	fieldsPanel: ReactNode;
 	seoPanel: ReactNode;
 	fieldsCount?: number;
+	showStandTab?: boolean;
 };
 
-export function ProductFormTabs({ colorsPanel, fieldsPanel, seoPanel, fieldsCount = 0 }: Props) {
+export function ProductFormTabs({
+	colorsPanel,
+	standPanel,
+	fieldsPanel,
+	seoPanel,
+	fieldsCount = 0,
+	showStandTab = false,
+}: Props) {
 	const baseId = useId();
+	const tabs: TabDef[] = showStandTab
+		? [COLORS_TAB, STAND_TAB, FIELDS_TAB, SEO_TAB]
+		: [COLORS_TAB, FIELDS_TAB, SEO_TAB];
 	const [activeTab, setActiveTab] = useState<TabId>("colors");
+
+	function panelForTab(id: TabId): ReactNode {
+		switch (id) {
+			case "colors":
+				return colorsPanel;
+			case "stand":
+				return standPanel;
+			case "fields":
+				return fieldsPanel;
+			case "seo":
+				return seoPanel;
+		}
+	}
 
 	return (
 		<div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -29,7 +55,7 @@ export function ProductFormTabs({ colorsPanel, fieldsPanel, seoPanel, fieldsCoun
 				aria-label="Konfiguracja produktu"
 				className="flex border-b border-border bg-muted/20"
 			>
-				{TABS.map((tab) => {
+				{tabs.map((tab) => {
 					const selected = activeTab === tab.id;
 					const tabId = `${baseId}-${tab.id}`;
 					const panelId = `${baseId}-${tab.id}-panel`;
@@ -68,7 +94,7 @@ export function ProductFormTabs({ colorsPanel, fieldsPanel, seoPanel, fieldsCoun
 				})}
 			</div>
 
-			{TABS.map((tab) => {
+			{tabs.map((tab) => {
 				const selected = activeTab === tab.id;
 				const tabId = `${baseId}-${tab.id}`;
 				const panelId = `${baseId}-${tab.id}-panel`;
@@ -82,7 +108,7 @@ export function ProductFormTabs({ colorsPanel, fieldsPanel, seoPanel, fieldsCoun
 						hidden={!selected}
 						className="p-5"
 					>
-						{tab.id === "colors" ? colorsPanel : tab.id === "fields" ? fieldsPanel : seoPanel}
+						{panelForTab(tab.id)}
 					</div>
 				);
 			})}

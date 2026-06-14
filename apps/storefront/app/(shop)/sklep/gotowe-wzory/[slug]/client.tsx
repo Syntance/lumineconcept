@@ -42,14 +42,23 @@ import {
   parseProductColorsBySlot,
   resolveColorSlotTitles,
 } from "@/lib/products/color-slot-config";
+import {
+  buildStandColorMaps,
+  parseDisabledColorCategoriesBySlotWithStand,
+  parseDisabledConfigIdsBySlotWithStand,
+  parseStandProductColors,
+  STAND_COLOR_OPTION_TITLE,
+  STAND_SURCHARGE_PLN,
+} from "@/lib/products/stand-config";
+import { ColorStepPanel } from "@/components/product/ColorStepPanel";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { trackProductViewed } from "@/lib/analytics/events";
 import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
 import { DeliveryTrustBadges } from "@/components/product/DeliveryTrustBadges";
 
-/** Synchronizuj z backendem `certificate-line-item` (CERTIFICATE_STAND_SURCHARGE_PLN). */
-const CERTIFICATE_STAND_PRICE_PLN = 10;
+/** @deprecated — użyj STAND_SURCHARGE_PLN */
+const CERTIFICATE_STAND_PRICE_PLN = STAND_SURCHARGE_PLN;
 
 interface CheckoutCallout {
   enabled?: boolean;
@@ -146,7 +155,10 @@ export function ProductPageClient({
     const colorIds = new Set(globalColors.map((c) => c.id));
     return legacyDisabledIds.filter((id) => colorIds.has(id));
   }, [legacyDisabledIds, globalColors]);
-  const disabledConfigIdsBySlot = useMemo(
+
+  const [includeCertificateStand, setIncludeCertificateStand] = useState(false);
+
+  const disabledConfigIdsBySlotBase = useMemo(
     () =>
       parseDisabledConfigIdsBySlot(
         product.metadata,
@@ -155,10 +167,45 @@ export function ProductPageClient({
       ),
     [product.metadata, colorOptionTitles, legacyColorDisabledIds],
   );
-  const disabledColorCategoriesBySlot = useMemo(
+
+  const disabledColorCategoriesBySlotBase = useMemo(
     () => parseDisabledColorCategoriesBySlot(product.metadata, colorOptionTitles),
     [product.metadata, colorOptionTitles],
   );
+
+  const disabledConfigIdsBySlot = useMemo(() => {
+    if (!certificateStandAvailable || !includeCertificateStand) {
+      return disabledConfigIdsBySlotBase;
+    }
+    return parseDisabledConfigIdsBySlotWithStand(
+      product.metadata,
+      colorOptionTitles,
+      disabledConfigIdsBySlotBase,
+    );
+  }, [
+    certificateStandAvailable,
+    includeCertificateStand,
+    product.metadata,
+    colorOptionTitles,
+    disabledConfigIdsBySlotBase,
+  ]);
+
+  const disabledColorCategoriesBySlot = useMemo(() => {
+    if (!certificateStandAvailable || !includeCertificateStand) {
+      return disabledColorCategoriesBySlotBase;
+    }
+    return parseDisabledColorCategoriesBySlotWithStand(
+      product.metadata,
+      colorOptionTitles,
+      disabledColorCategoriesBySlotBase,
+    );
+  }, [
+    certificateStandAvailable,
+    includeCertificateStand,
+    product.metadata,
+    colorOptionTitles,
+    disabledColorCategoriesBySlotBase,
+  ]);
   const allowCustomColorBySlot = useMemo(
     () =>
       parseAllowCustomColorBySlot(
@@ -227,7 +274,24 @@ export function ProductPageClient({
 
   const [textFieldValues, setTextFieldValues] = useState<Record<string, string>>({});
 
-  const [includeCertificateStand, setIncludeCertificateStand] = useState(false);
+  const standProductColorsFlat = useMemo(
+    () => flattenProductColorsForSlot(parseStandProductColors(product.metadata)),
+    [product.metadata],
+  );
+
+  const standColorConfig = useMemo(
+    () =>
+      buildStandColorMaps(
+        globalColors,
+        standProductColorsFlat,
+        product.metadata ?? {},
+      ),
+    [globalColors, standProductColorsFlat, product.metadata],
+  );
+
+  const [standSelectedColor, setStandSelectedColor] = useState("");
+  const [standColorCustomization, setStandColorCustomization] =
+    useState<ColorCustomization>({ customColor: null, matFinish: false });
 
   useEffect(() => {
     setTextFieldValues((prev) => {
@@ -258,6 +322,20 @@ export function ProductPageClient({
       ),
     [colorOptionTitles, selectedOptions, colorCustomizations],
   );
+
+  const standColorComplete = useMemo(() => {
+    if (!certificateStandAvailable || !includeCertificateStand) return true;
+    return isEveryColorOptionChosen(
+      [STAND_COLOR_OPTION_TITLE],
+      { [STAND_COLOR_OPTION_TITLE]: standSelectedColor },
+      { [STAND_COLOR_OPTION_TITLE]: standColorCustomization },
+    );
+  }, [
+    certificateStandAvailable,
+    includeCertificateStand,
+    standSelectedColor,
+    standColorCustomization,
+  ]);
 
   const linksCount = useMemo(() => {
     const raw = product.metadata?.links_count;
@@ -318,7 +396,7 @@ export function ProductPageClient({
   const variantHasPrice = selectedVariant?.price != null && selectedVariant.price > 0;
   const baseDisplayPrice = variantHasPrice ? selectedVariant.price : (basePrice ?? 0);
   const standAddon =
-    certificateStandAvailable && includeCertificateStand ? CERTIFICATE_STAND_PRICE_PLN : 0;
+    certificateStandAvailable && includeCertificateStand ? STAND_SURCHARGE_PLN : 0;
   const displayPrice = Math.round((baseDisplayPrice + standAddon) * 100) / 100;
 
   useEffect(() => {
@@ -409,6 +487,19 @@ export function ProductPageClient({
 
     if (certificateStandAvailable && includeCertificateStand) {
       meta.certificate_stand = "true";
+      const standKey = extractMetaKey(STAND_COLOR_OPTION_TITLE);
+      const standSel = standSelectedColor;
+      if (standSel && standSel !== CUSTOM_COLOR_VALUE) {
+        meta[`color_${standKey}`] = standSel;
+        const hex = standColorConfig.colorMap[standSel.toLowerCase()];
+        if (hex) meta[`color_${standKey}_hex`] = hex;
+      }
+      if (standColorCustomization.customColor) {
+        meta[`color_${standKey}_custom`] = standColorCustomization.customColor;
+      }
+      if (standColorCustomization.matFinish) {
+        meta[`color_${standKey}_mat`] = "true";
+      }
     }
 
     return Object.keys(meta).length > 0 ? meta : undefined;
@@ -423,6 +514,9 @@ export function ProductPageClient({
     uploadedFiles,
     certificateStandAvailable,
     includeCertificateStand,
+    standSelectedColor,
+    standColorCustomization,
+    standColorConfig.colorMap,
     colorMap,
   ]);
 
@@ -438,7 +532,15 @@ export function ProductPageClient({
     uploadBlocksAddToCart ||
     !allLinksProvided ||
     !allTextFieldsValid ||
-    (!allColorChoicesComplete && colorOptionTitles.length > 0);
+    (!allColorChoicesComplete && colorOptionTitles.length > 0) ||
+    !standColorComplete;
+
+  useEffect(() => {
+    if (!includeCertificateStand) {
+      setStandSelectedColor("");
+      setStandColorCustomization({ customColor: null, matFinish: false });
+    }
+  }, [includeCertificateStand]);
 
   useEffect(() => {
     if (!configIncomplete) {
@@ -543,17 +645,52 @@ export function ProductPageClient({
 
         <div ref={ctaRef} className="space-y-4">
           {certificateStandAvailable && (
-            <label className="flex cursor-pointer items-start gap-3 rounded-none border border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 shadow-sm transition-colors hover:border-brand-300">
-              <input
-                type="checkbox"
-                checked={includeCertificateStand}
-                onChange={(e) => setIncludeCertificateStand(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-brand-300 accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
-              />
-              <span className="font-semibold">
-                Podstawka w kolorze certyfikatu (+{CERTIFICATE_STAND_PRICE_PLN.toFixed(2).replace(".", ",")} zł)
-              </span>
-            </label>
+            <div className="space-y-3">
+              <label className="flex cursor-pointer items-start gap-3 rounded-none border border-brand-200 bg-white px-4 py-3 text-sm text-brand-800 shadow-sm transition-colors hover:border-brand-300">
+                <input
+                  type="checkbox"
+                  checked={includeCertificateStand}
+                  onChange={(e) => setIncludeCertificateStand(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-brand-300 accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
+                />
+                <span className="font-semibold">
+                  Dodaj podstawkę (+{STAND_SURCHARGE_PLN.toFixed(2).replace(".", ",")} zł)
+                </span>
+              </label>
+              {includeCertificateStand && standColorConfig.values.length > 0 ? (
+                <ColorStepPanel
+                  option={{
+                    id: "stand-color",
+                    title: STAND_COLOR_OPTION_TITLE,
+                    values: standColorConfig.values,
+                  }}
+                  selectedColor={standSelectedColor}
+                  onColorChange={setStandSelectedColor}
+                  customColor={standColorCustomization.customColor}
+                  onCustomColorChange={(hex) =>
+                    setStandColorCustomization((prev) => ({
+                      ...prev,
+                      customColor: hex,
+                    }))
+                  }
+                  matFinish={standColorCustomization.matFinish}
+                  onMatFinishChange={(enabled) =>
+                    setStandColorCustomization((prev) => ({
+                      ...prev,
+                      matFinish: enabled,
+                    }))
+                  }
+                  colorMap={standColorConfig.colorMap}
+                  coloredSet={new Set(standColorConfig.values)}
+                  mirrorSet={new Set()}
+                  customSet={new Set()}
+                  matDisabledSet={standColorConfig.matDisabledSet}
+                  allowCustomColor={standColorConfig.allowCustom}
+                  customCategoryEnabled={standColorConfig.allowCustom}
+                  colorCategories={colorCategories}
+                />
+              ) : null}
+            </div>
           )}
           <ExpressToggle />
           <AddToCartButton
