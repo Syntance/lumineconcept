@@ -2,6 +2,7 @@
 
 import { ChevronDown, ChevronUp, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
@@ -17,7 +18,7 @@ import type {
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { usePreventWindowFileDrop } from "@magazyn/core/hooks/use-prevent-window-file-drop";
 import { savePageContentAction } from "./content-actions";
-import { cmsSaveSuccessMessage } from "./cms-save-feedback";
+import { cmsGallerySaveSuccessMessage, cmsSaveSuccessMessage } from "./cms-save-feedback";
 import { newCmsId } from "./cms-id";
 import { OgImageField } from "./seo/og-image-field";
 
@@ -32,23 +33,46 @@ type Props = {
 };
 
 export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
+	const router = useRouter();
 	const [content, setContent] = useState<PageContent>(initial);
 	const [error, setError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [pending, startTransition] = useTransition();
+	const [gallerySaving, startGallerySave] = useTransition();
 	usePreventWindowFileDrop();
 
-	function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
+	function saveContent(
+		next: PageContent,
+		options: { message?: string; transition?: typeof startTransition } = {},
+	) {
+		const runSave = options.transition ?? startTransition;
 		setError(null);
-		setSuccessMessage(null);
-		startTransition(async () => {
-			const result = await savePageContentAction(pageId, path, content);
+		runSave(async () => {
+			const result = await savePageContentAction(pageId, path, next);
 			if (!result.ok) {
 				setError(result.error);
 				return;
 			}
-			setSuccessMessage(cmsSaveSuccessMessage());
+			setSuccessMessage(options.message ?? cmsSaveSuccessMessage());
+			router.refresh();
+		});
+	}
+
+	function onSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setSuccessMessage(null);
+		saveContent(content);
+	}
+
+	function onGalleryChange(gallery: GalleryPhoto[]) {
+		let next: PageContent = content;
+		setContent((current) => {
+			next = { ...current, gallery };
+			return next;
+		});
+		saveContent(next, {
+			message: cmsGallerySaveSuccessMessage(),
+			transition: startGallerySave,
 		});
 	}
 
@@ -78,7 +102,8 @@ export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 			{blocks.includes("gallery") ? (
 				<GalleryEditor
 					value={content.gallery ?? []}
-					onChange={(gallery) => setContent((c) => ({ ...c, gallery }))}
+					onChange={onGalleryChange}
+					saving={gallerySaving}
 				/>
 			) : null}
 			{blocks.includes("categoryTiles") ? (
@@ -93,7 +118,7 @@ export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 					{successMessage}
 				</p>
 			) : null}
-			<Button type="submit" disabled={pending} className="h-10 w-fit gap-1.5">
+			<Button type="submit" disabled={pending || gallerySaving} className="h-10 w-fit gap-1.5">
 				{pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
 				Zapisz treści
 			</Button>
@@ -240,9 +265,11 @@ function FaqEditor({ value, onChange }: { value: FaqItem[]; onChange: (v: FaqIte
 function GalleryEditor({
 	value,
 	onChange,
+	saving = false,
 }: {
 	value: GalleryPhoto[];
 	onChange: (v: GalleryPhoto[]) => void;
+	saving?: boolean;
 }) {
 	function addMany(urls: string[]) {
 		if (urls.length === 0) return;
@@ -264,6 +291,12 @@ function GalleryEditor({
 	return (
 		<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
 			<legend className="px-1 text-sm font-medium">Galeria realizacji</legend>
+			{saving ? (
+				<p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
+					<Loader2 className="size-3.5 animate-spin" aria-hidden />
+					Zapisywanie galerii…
+				</p>
+			) : null}
 			<div className="flex flex-wrap gap-2">
 				{value.map((photo, index) => {
 					const previewUrl = resolveCmsAdminPreviewUrl(photo.imageUrl) ?? photo.imageUrl;

@@ -44,7 +44,7 @@ export async function savePageContentAction(
 		return { ok: false, error: "Nie udało się zapisać treści podstrony." };
 	}
 
-	await revalidateContentCache([path]);
+	await revalidateContentCache([path, `${magazynConfig.basePath}/panel/cms/${pageId}`]);
 	return { ok: true, error: null };
 }
 

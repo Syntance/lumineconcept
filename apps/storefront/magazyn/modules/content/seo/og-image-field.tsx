@@ -143,7 +143,7 @@ export function OgImageField({
 			<p className="text-xs text-muted-foreground">
 				{description ??
 					(batchMode
-						? "Możesz dodać wiele zdjęć naraz — przeciągnij na pole lub wybierz z dysku (WebP, JPG, PNG)."
+						? "Zdjęcia zapisują się automatycznie w CMS. Na stronie sklepu pojawią się po Redeploy (~2–3 min)."
 						: "Przeciągnij zdjęcie na pole lub wybierz plik. Zapisz formularz, potem Redeploy u góry panelu (~2–3 min na prod).")}
 			</p>
 		</div>

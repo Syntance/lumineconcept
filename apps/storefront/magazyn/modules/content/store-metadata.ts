@@ -6,6 +6,7 @@ type MedusaStore = { id: string; metadata?: Record<string, unknown> | null };
 export async function getMedusaStore(): Promise<MedusaStore> {
 	const data = await adminFetch<{ stores: MedusaStore[] }>(
 		"/admin/stores?limit=1&fields=id,metadata",
+		{ fresh: true },
 	);
 	const store = data.stores[0];
 	if (!store) throw new Error("Nie znaleziono sklepu w Medusa.");

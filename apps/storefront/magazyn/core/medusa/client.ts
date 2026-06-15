@@ -4,7 +4,11 @@ import { serverEnv } from "../env";
 import { AdminApiError, AdminUnauthorizedError, extractMessage } from "./errors";
 import { getSessionToken } from "./session";
 
-type AdminFetchInit = Omit<RequestInit, "body"> & { body?: string };
+type AdminFetchInit = Omit<RequestInit, "body"> & {
+	body?: string;
+	/** Odczyt panelu CMS — bez Next data cache (zawsze świeże Store.metadata). */
+	fresh?: boolean;
+};
 
 const ADMIN_FETCH_TIMEOUT_MS = 30_000;
 const ADMIN_FETCH_RETRY_DELAYS_MS = [0, 1200, 2500, 4000] as const;
@@ -82,7 +86,8 @@ async function adminFetchWithToken<T>(
 		if (pause > 0) await sleep(pause);
 
 		try {
-			const shouldCache = (!init.method || init.method === "GET") && !init.body;
+			const shouldCache =
+				(!init.method || init.method === "GET") && !init.body && !init.fresh;
 
 			const res = await fetch(`${serverEnv.medusaBackendUrl}${path}`, {
 				...init,
