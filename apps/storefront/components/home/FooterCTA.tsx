@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { Instagram } from "lucide-react";
-import { getGlobalContent, getPageContent, getSiteSettings } from "@/lib/content";
-import { resolveBrandingCta } from "@/lib/content/branding";
+import { getGlobalContent, getSiteSettings } from "@/lib/content";
 import {
 	resolveInstagramProfileUrl,
 	resolveInstagramTiles,
@@ -9,28 +8,31 @@ import {
 } from "@/lib/content/cms-wiring";
 import type { SocialLinks } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
-import { BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
 import { SITE_CONTACT } from "@/lib/site-contact";
 import { formatInstagramDisplayLabel } from "@/lib/social-links";
-import { cn } from "@/lib/utils";
-
-const BRANDING_BG_WIDTH = 2560;
-const BRANDING_BG_HEIGHT = 922;
 
 const SHOP_CTA_CLASS =
   "inline-flex items-center justify-center rounded-none border font-gilroy font-medium uppercase tracking-[0.2em] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
 const IG_GRID_SLOTS = 6;
 
-function BrandingHeading({ className = "" }: { className?: string }) {
+function BrandingHeading({
+  className = "",
+  align = "center",
+}: {
+  className?: string;
+  align?: "center" | "left";
+}) {
+  const alignClassName = align === "left" ? "items-start text-left" : "items-center text-center";
+
   return (
-    <div className="flex flex-col items-center gap-2 text-center">
+    <div className={`flex flex-col gap-2 ${alignClassName}`}>
       <h2
-        className={`m-0 w-fit font-binerka text-3xl font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800 lg:text-4xl ${className}`}
+        className={`m-0 w-fit font-binerka text-3xl font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800 lg:text-4xl lg:whitespace-nowrap ${className}`}
       >
         Gotowa na branding,
       </h2>
-      <p className="m-0 font-gilroy text-[2rem] font-light leading-snug text-brand-800 lg:text-[2.5rem]">
+      <p className="m-0 font-gilroy text-[2rem] font-light leading-snug text-brand-800 lg:text-[2.5rem] lg:whitespace-nowrap">
         który wyróżni Twój salon?
       </p>
     </div>
@@ -153,15 +155,13 @@ function InstagramGrid({
 }
 
 export async function FooterCTA() {
-  const [global, settings, pageContent] = await Promise.all([
+  const [global, settings] = await Promise.all([
     getGlobalContent(),
     getSiteSettings(),
-    getPageContent("home"),
   ]);
   const social = resolveSocialLinks(settings);
   const igPosts = resolveInstagramTiles(global);
   const igProfile = resolveInstagramProfileUrl(social);
-  const { desktopBackgroundUrl, desktopBlurDataURL } = resolveBrandingCta(pageContent.brandingCta);
 
   return (
     <>
@@ -173,28 +173,26 @@ export async function FooterCTA() {
             <BrandingContact layout="stack" social={social} />
           </div>
         </div>
-        <div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/645] lg:max-h-[645px]">
-          {desktopBackgroundUrl ? (
-            <Image
-              src={desktopBackgroundUrl}
-              alt=""
-              width={BRANDING_BG_WIDTH}
-              height={BRANDING_BG_HEIGHT}
-              sizes="100vw"
-              priority={false}
-              unoptimized={isCmsImageUnoptimized(desktopBackgroundUrl)}
-              placeholder={desktopBlurDataURL ? "blur" : undefined}
-              blurDataURL={desktopBlurDataURL}
-              className="absolute inset-0 h-full w-full origin-[30%_80%] scale-[1.2] select-none object-cover object-[30%_80%]"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-brand-50" aria-hidden />
-          )}
-          <div className={cn("absolute inset-0 z-10 flex items-center", BREADCRUMBS_ALIGN_CLASS)}>
-            <div className="flex w-fit max-w-full flex-col items-center text-center lg:ml-[16%]">
-              <BrandingHeading />
-              <BrandingShopLink className="mt-10 whitespace-nowrap px-7 py-3" />
-              <BrandingContact layout="inline" className="mt-8 text-sm" social={social} />
+        <div className="hidden h-[540px] w-full overflow-hidden bg-brand-50 lg:block">
+          <div className="mx-auto grid h-full w-full max-w-[1360px] grid-cols-[minmax(520px,1.1fr)_minmax(360px,1fr)] items-center gap-12 px-8 xl:px-14">
+            <div className="flex w-full justify-start">
+              <div className="inline-flex flex-col items-center">
+                <BrandingHeading align="center" />
+                <BrandingShopLink className="mt-10 whitespace-nowrap px-7 py-3" />
+                <BrandingContact layout="inline" className="mt-8 text-sm" social={social} />
+              </div>
+            </div>
+            <div className="relative flex h-full items-end justify-center overflow-hidden">
+              <Image
+                src="/images/branding-cta-model.png"
+                alt=""
+                aria-hidden
+                width={760}
+                height={997}
+                sizes="(max-width: 1280px) 420px, 520px"
+                unoptimized
+                className="pointer-events-none absolute -bottom-[50px] z-10 h-[129.8%] w-auto select-none object-contain object-bottom"
+              />
             </div>
           </div>
         </div>

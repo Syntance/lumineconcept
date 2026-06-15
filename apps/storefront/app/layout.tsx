@@ -6,14 +6,14 @@ import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
 
 /**
- * Optymalizacja fontów:
- * - Gilroy (body): `optional` + `preload: false` — eliminuje render block dla tekstu body
- *   (różnica Gilroy vs system-ui jest subtelna, więc brak swapu jest akceptowalny).
- * - Chronicle (display) i Binerka (dekor, np. hero „CONCEPT"): `swap` — fonty marki
- *   wyraźnie różnią się od serif fallbacku, więc MUSZĄ się ostatecznie pojawić zawsze.
- *   `optional` powodował, że przy zimnym cache czcionka nie podmieniała się wcale
- *   („raz dobra, raz zła" — zależnie od stanu cache).
- * - Binerka dodatkowo `preload: true` — to font nagłówka hero (nad linią zgięcia).
+ * Fonty brandowe — `display: "swap"` gwarantuje SPÓJNE renderowanie marki
+ * niezależnie od stanu cache. `optional` powodował, że przy zimnym cache font
+ * nie zdążał w okno ~100ms i wcale się nie podmieniał (hero „CONCEPT" spadał na
+ * serif fallback) — stąd „raz dobra, raz zła czcionka".
+ * - Gilroy (body + podtytuł hero): `swap`, preload na krytycznej ścieżce.
+ * - Chronicle (display, nagłówki h1-h3): `swap` bez preload (FOUT < niespójność).
+ * - Binerka (nagłówek hero „CONCEPT"): `swap` + `preload: true` — nad linią zgięcia.
+ * - 2 wagi Gilroy (400, 500) — waga 700 syntezowana z fallbacku.
  */
 const gilroy = localFont({
   src: [
@@ -21,9 +21,8 @@ const gilroy = localFont({
     { path: "../public/fonts/Gilroy-Medium.woff2", weight: "500", style: "normal" },
   ],
   variable: "--font-gilroy",
-  display: "optional",
+  display: "swap",
   fallback: ['system-ui', '-apple-system', 'sans-serif'],
-  preload: false,
 });
 
 const chronicle = localFont({
