@@ -84,7 +84,12 @@ function GlobalSeoForm({ initial }: { initial: SiteSettings }) {
 				<label className="text-sm font-medium">Google Site Verification</label>
 				<Input value={googleVerification} onChange={(e) => setGoogleVerification(e.target.value)} className="h-10" />
 			</div>
-			<OgImageField label="Domyślne zdjęcie OG" value={defaultOg} onChange={setDefaultOg} />
+			<OgImageField
+				label="Domyślne zdjęcie OG"
+				value={defaultOg}
+				onChange={setDefaultOg}
+				description="Bez własnego pliku witryna korzysta z domyślnego obrazu OG generowanego automatycznie przez Vercel (Next.js OG Image). To rekomendowane — bez uploadu i redeployu, spójny branding na podstronach bez dedykowanego zdjęcia."
+			/>
 			<SeoFields seo={seo} onChange={updateSeo} />
 			<FormFooter error={error} successMessage={successMessage} pending={pending} />
 		</form>
@@ -160,7 +165,12 @@ function SeoFields({
 				<label className="text-sm font-medium">OG Description</label>
 				<textarea value={seo.ogDescription ?? ""} onChange={(e) => onChange({ ogDescription: e.target.value })} rows={2} className={inputClass} />
 			</div>
-			<OgImageField label="OG Image" value={seo.ogImageUrl ?? ""} onChange={(url) => onChange({ ogImageUrl: url })} />
+			<OgImageField
+				label="OG Image"
+				value={seo.ogImageUrl ?? ""}
+				onChange={(url) => onChange({ ogImageUrl: url })}
+				description="Puste pole korzysta z domyślnego obrazu witryny lub — gdy też puste — z obrazu OG generowanego przez Vercel. Zostawienie pustego pola jest rekomendowane, o ile nie potrzebujesz dedykowanego podglądu dla tej podstrony."
+			/>
 			<div className="flex flex-col gap-1.5">
 				<label className="text-sm font-medium">Canonical URL</label>
 				<Input value={seo.canonicalUrl ?? ""} onChange={(e) => onChange({ canonicalUrl: e.target.value })} className="h-10" />

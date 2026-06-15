@@ -15,6 +15,8 @@ type Props = {
 	/** Wiele plików naraz (galeria CMS) — wywołuje onMultipleChange z listą URL. */
 	multiple?: boolean;
 	onMultipleChange?: (urls: string[]) => void;
+	/** Nadpisuje domyślną podpowiedź pod polem (np. panel SEO). */
+	description?: string;
 };
 
 export function OgImageField({
@@ -23,6 +25,7 @@ export function OgImageField({
 	onChange,
 	multiple = false,
 	onMultipleChange,
+	description,
 }: Props) {
 	const fileId = useId();
 	const [uploading, setUploading] = useState(false);
@@ -138,9 +141,10 @@ export function OgImageField({
 			</div>
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}
 			<p className="text-xs text-muted-foreground">
-				{batchMode
-					? "Możesz dodać wiele zdjęć naraz — przeciągnij na pole lub wybierz z dysku (WebP, JPG, PNG)."
-					: "Przeciągnij zdjęcie na pole lub wybierz plik. Zapisz formularz, potem Redeploy u góry panelu (~2–3 min na prod)."}
+				{description ??
+					(batchMode
+						? "Możesz dodać wiele zdjęć naraz — przeciągnij na pole lub wybierz z dysku (WebP, JPG, PNG)."
+						: "Przeciągnij zdjęcie na pole lub wybierz plik. Zapisz formularz, potem Redeploy u góry panelu (~2–3 min na prod).")}
 			</p>
 		</div>
 	);
