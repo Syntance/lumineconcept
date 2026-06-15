@@ -3,7 +3,13 @@ import { Suspense } from "react";
 import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
 import { resolveSocialLinks } from "@/lib/content/cms-wiring";
 import { buildMetadata } from "@/lib/content/metadata";
+import {
+  ORGANIZATION_ID,
+  ORGANIZATION_KNOWS_ABOUT,
+  ORGANIZATION_POSTAL_ADDRESS,
+} from "@/lib/geo/organization";
 import { resolveSocialSameAs } from "@/lib/social-links";
+import { SITE_CONTACT } from "@/lib/site-contact";
 import { SITE_URL } from "@/lib/utils";
 import { HeroSection } from "@/components/home/HeroSection";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
@@ -40,10 +46,21 @@ export default async function HomePage() {
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": ORGANIZATION_ID,
     name: "Lumine Concept",
+    legalName: "Lumine Concept",
     url: SITE_URL,
-    logo: `${SITE_URL}/images/logo.png`,
-    description: "Produkty z plexi: tablice z logo Twojej marki, cenniki i oznaczenia w technice 3D. Matowe UV, LED z pilotem, 15+ kolor\u00f3w.",
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE_URL}/images/logo.png`,
+    },
+    image: `${SITE_URL}/images/logo.png`,
+    description:
+      "Produkty z plexi: tablice z logo Twojej marki, cenniki i oznaczenia w technice 3D. Matowe UV, LED z pilotem, 15+ kolor\u00f3w.",
+    email: SITE_CONTACT.email,
+    address: ORGANIZATION_POSTAL_ADDRESS,
+    areaServed: "PL",
+    knowsAbout: [...ORGANIZATION_KNOWS_ABOUT],
     ...(socialSameAs.length > 0 ? { sameAs: socialSameAs } : {}),
   };
 
@@ -52,6 +69,7 @@ export default async function HomePage() {
     "@type": "WebSite",
     name: "Lumine Concept",
     url: SITE_URL,
+    publisher: { "@id": ORGANIZATION_ID },
     potentialAction: {
       "@type": "SearchAction",
       target: `${SITE_URL}/sklep?q={search_term_string}`,

@@ -7,6 +7,11 @@ import { ContactForm } from "@/components/contact/ContactForm";
 import { getSiteSettings } from "@/lib/content";
 import { resolveSocialLinks } from "@/lib/content/cms-wiring";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/content/defaults";
+import {
+  ORGANIZATION_ID,
+  ORGANIZATION_POSTAL_ADDRESS,
+  STORE_ID,
+} from "@/lib/geo/organization";
 import { SITE_CONTACT } from "@/lib/site-contact";
 import { formatFacebookDisplayLabel, formatInstagramDisplayLabel } from "@/lib/social-links";
 import { SITE_URL } from "@/lib/utils";
@@ -57,17 +62,13 @@ export default async function KontaktPage() {
   const localBusinessJsonLd = {
     "@context": "https://schema.org",
     "@type": "Store",
+    "@id": STORE_ID,
     name: "Lumine Concept",
     image: `${SITE_URL}/images/logo.png`,
     url: `${SITE_URL}/kontakt`,
     email: SITE_CONTACT.email,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "Jana Pawła II 93",
-      addressLocality: "Ryczów",
-      postalCode: "34-115",
-      addressCountry: "PL",
-    },
+    address: ORGANIZATION_POSTAL_ADDRESS,
+    parentOrganization: { "@id": ORGANIZATION_ID },
     openingHoursSpecification: [
       {
         "@type": "OpeningHoursSpecification",
