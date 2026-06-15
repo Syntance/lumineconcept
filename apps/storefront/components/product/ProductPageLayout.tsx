@@ -2,8 +2,8 @@ import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getProductByHandle, getProducts, getProductCategories } from "@/lib/medusa/products";
 import { getSiteSettings } from "@/lib/content";
-import { parseProductFaqFromMetadata } from "@/lib/content/parsers";
-import type { CheckoutCallout, ProductFaqItem } from "@/lib/content/types";
+import { parseProductFaqFromMetadata } from "@moduly/cms/parsers";
+import type { CheckoutCallout, ProductFaqItem } from "@moduly/types";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
@@ -20,6 +20,7 @@ import {
   stripHtmlForDimensions,
 } from "@/lib/products/dimensions";
 import { PDP_MATERIAL_ACRYLIC } from "@/lib/product-pdp-copy";
+import { ORGANIZATION_ID } from "@/lib/geo/organization";
 import {
   getGlobalProductConfigForProduct,
   EMPTY_GLOBAL_CONFIG,
@@ -29,7 +30,7 @@ import {
   buildShopProductBreadcrumbs,
   productBreadcrumbContextFromBasePath,
 } from "@/lib/medusa/shop-breadcrumbs";
-import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
+import type { CategoryTreeNode } from "@moduly/magazyn-core";
 import { variantOptionsRecord } from "@/lib/products/variant-options";
 import { parseStandAvailable, getStandSurchargeGrosze, formatStandSurchargePln } from "@/lib/products/stand-config";
 import { resolvePdpCalloutDisplay } from "@/lib/products/pdp-callout";
@@ -300,7 +301,7 @@ export async function ProductPageLayout({
     .toISOString()
     .slice(0, 10);
 
-  const sellerOrg = { "@type": "Organization", name: BRAND_NAME };
+  const sellerOrg = { "@type": "Organization", "@id": ORGANIZATION_ID, name: BRAND_NAME };
   const offers =
     lowPrice === highPrice
       ? {
@@ -326,6 +327,37 @@ export async function ProductPageLayout({
           seller: sellerOrg,
         };
 
+  const additionalProperty = [
+    dimensionParts.width && {
+      "@type": "PropertyValue" as const,
+      name: "Szerokość",
+      value: dimensionParts.width,
+    },
+    dimensionParts.height && {
+      "@type": "PropertyValue" as const,
+      name: "Wysokość",
+      value: dimensionParts.height,
+    },
+    dimensionParts.thickness && {
+      "@type": "PropertyValue" as const,
+      name: "Grubość",
+      value: dimensionParts.thickness,
+    },
+    dimensionParts.dimensionsFallback &&
+      !dimensionParts.width &&
+      !dimensionParts.height && {
+        "@type": "PropertyValue" as const,
+        name: "Wymiary",
+        value: dimensionParts.dimensionsFallback,
+      },
+  ].filter(
+    (entry): entry is { "@type": "PropertyValue"; name: string; value: string } =>
+      Boolean(entry),
+  );
+
+  const productCategoryLabel = breadcrumbItems.at(-2)?.label;
+  const productUpdatedAt = (product as { updated_at?: string | null }).updated_at;
+
   const productJsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -335,6 +367,10 @@ export async function ProductPageLayout({
     url: productUrl,
     sku,
     brand: { "@type": "Brand", name: BRAND_NAME },
+    material: PDP_MATERIAL_ACRYLIC,
+    ...(additionalProperty.length > 0 ? { additionalProperty } : {}),
+    ...(productCategoryLabel ? { category: productCategoryLabel } : {}),
+    ...(productUpdatedAt ? { dateModified: productUpdatedAt } : {}),
     offers,
     // Uwaga: świadomie NIE dodajemy aggregateRating/review — brak realnych
     // danych ocen; fabrykowanie łamałoby wytyczne Google i grozi karą.
