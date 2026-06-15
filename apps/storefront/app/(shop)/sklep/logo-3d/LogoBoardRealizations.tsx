@@ -21,7 +21,7 @@ function RealizationTile({ item }: { item: GalleryPhoto }) {
         alt={alt}
         width={1920}
         height={1280}
-        sizes="(max-width: 1024px) 100vw, min(102rem, calc(100vw - 2rem))"
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         className="h-auto w-full"
         unoptimized={isCmsImageUnoptimized(item.imageUrl)}
       />
@@ -46,7 +46,7 @@ export function LogoBoardRealizations({ items }: Props) {
           Realizacje
         </h2>
         <div className="mt-3 mx-auto h-px w-12 bg-accent" />
-        <div className="mt-10 flex flex-col gap-8 lg:gap-12">
+        <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-12">
           {shown.map((item) => (
             <RealizationTile key={item.id} item={item} />
           ))}
