@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { ExternalLink, LogOut } from "lucide-react";
 import Link from "next/link";
 import { logoutAction } from "../auth/actions";
 import { Button } from "../ui/button";
@@ -8,9 +8,10 @@ export function SidebarFooter({ storefrontUrl }: { storefrontUrl: string }) {
 		<div className="mt-2 flex flex-col gap-2 border-t border-border pt-4">
 			<Link
 				href={storefrontUrl}
-				className="px-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
+				className="inline-flex h-8 w-full items-center justify-start gap-2 rounded-lg px-3 text-sm font-medium transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
 			>
-				↗ Otwórz sklep
+				<ExternalLink className="size-4" aria-hidden />
+				Otwórz sklep
 			</Link>
 			<form action={logoutAction}>
 				<Button type="submit" variant="ghost" size="sm" className="w-full justify-start gap-2">
