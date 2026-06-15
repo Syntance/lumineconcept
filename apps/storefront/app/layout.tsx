@@ -6,10 +6,14 @@ import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
 
 /**
- * Optymalizacja fontów dla mobile LCP:
- * - Gilroy (body): `optional` zamiast `swap` — eliminuje 300ms render block
- * - Tylko 2 wagi (400, 500) — waga 700 rzadko używana, fallback wystarczy
- * - Chronicle (display) i Binerka (dekor): `optional` + `preload: false`
+ * Optymalizacja fontów:
+ * - Gilroy (body): `optional` + `preload: false` — eliminuje render block dla tekstu body
+ *   (różnica Gilroy vs system-ui jest subtelna, więc brak swapu jest akceptowalny).
+ * - Chronicle (display) i Binerka (dekor, np. hero „CONCEPT"): `swap` — fonty marki
+ *   wyraźnie różnią się od serif fallbacku, więc MUSZĄ się ostatecznie pojawić zawsze.
+ *   `optional` powodował, że przy zimnym cache czcionka nie podmieniała się wcale
+ *   („raz dobra, raz zła" — zależnie od stanu cache).
+ * - Binerka dodatkowo `preload: true` — to font nagłówka hero (nad linią zgięcia).
  */
 const gilroy = localFont({
   src: [
@@ -27,7 +31,8 @@ const chronicle = localFont({
     { path: "../public/fonts/ChronicleDisp-Roman.woff2", weight: "400", style: "normal" },
   ],
   variable: "--font-chronicle",
-  display: "optional",
+  display: "swap",
+  fallback: ['Georgia', 'serif'],
   preload: false,
 });
 
@@ -35,8 +40,9 @@ const binerka = localFont({
   src: "../public/fonts/Binerka.woff2",
   weight: "400",
   variable: "--font-binerka",
-  display: "optional",
-  preload: false,
+  display: "swap",
+  fallback: ['Georgia', 'serif'],
+  preload: true,
 });
 
 const SITE_URL =
