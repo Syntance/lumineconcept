@@ -73,7 +73,7 @@ export async function Footer() {
 
           {Object.entries(FOOTER_LINKS).map(([title, links]) => (
             <div key={title}>
-              <h3 className="text-base font-semibold uppercase tracking-wider text-white">
+              <h3 className="text-base font-normal uppercase tracking-wider text-white">
                 {title}
               </h3>
               <ul className="mt-4 space-y-2">
@@ -92,7 +92,7 @@ export async function Footer() {
           ))}
 
           <div>
-            <h3 className="text-base font-semibold uppercase tracking-wider text-white">
+            <h3 className="text-base font-normal uppercase tracking-wider text-white">
               Kontakt
             </h3>
             <ul className="mt-4 space-y-4">
