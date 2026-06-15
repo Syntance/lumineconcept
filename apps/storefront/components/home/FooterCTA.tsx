@@ -28,11 +28,11 @@ function BrandingHeading({
   return (
     <div className={`flex flex-col gap-2 ${alignClassName}`}>
       <h2
-        className={`m-0 w-fit font-binerka text-3xl font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800 lg:text-4xl lg:whitespace-nowrap ${className}`}
+        className={`m-0 w-fit font-binerka text-3xl font-bold uppercase leading-[1.1] tracking-[0.06em] text-brand-800 xl:text-4xl xl:whitespace-nowrap ${className}`}
       >
         Gotowa na branding,
       </h2>
-      <p className="m-0 font-gilroy text-[2rem] font-light leading-snug text-brand-800 lg:text-[2.5rem] lg:whitespace-nowrap">
+      <p className="m-0 font-gilroy text-[2rem] font-light leading-snug text-brand-800 xl:text-[2.5rem] xl:whitespace-nowrap">
         który wyróżni Twój salon?
       </p>
     </div>
@@ -166,33 +166,33 @@ export async function FooterCTA() {
   return (
     <>
       <section id="footer-cta" className="relative isolate overflow-x-hidden">
-        <div className="bg-brand-50 px-4 py-12 lg:hidden">
+        <div className="bg-brand-50 px-4 py-12 xl:hidden">
           <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 text-center">
             <BrandingHeading />
             <BrandingShopLink className="mt-10 w-full max-w-[17.5rem] whitespace-nowrap px-6 py-3.5" />
             <BrandingContact layout="stack" social={social} />
           </div>
         </div>
-        <div className="hidden h-[540px] w-full overflow-hidden bg-brand-50 lg:block">
-          <div className="mx-auto grid h-full w-full max-w-[1360px] grid-cols-[minmax(520px,1.1fr)_minmax(360px,1fr)] items-center gap-12 px-8 xl:px-14">
-            <div className="flex w-full justify-start">
-              <div className="inline-flex flex-col items-center">
+        <div className="hidden h-[540px] w-full overflow-hidden bg-brand-50 xl:block">
+          <div className="mx-auto flex h-full max-w-[1360px] items-center justify-center px-8 xl:px-14">
+            <div className="flex shrink-0 items-center gap-6">
+              <div className="inline-flex shrink-0 flex-col items-center">
                 <BrandingHeading align="center" />
                 <BrandingShopLink className="mt-10 whitespace-nowrap px-7 py-3" />
                 <BrandingContact layout="inline" className="mt-8 text-sm" social={social} />
               </div>
-            </div>
-            <div className="relative flex h-full items-end justify-center overflow-hidden">
-              <Image
-                src="/images/branding-cta-model.png"
-                alt=""
-                aria-hidden
-                width={760}
-                height={997}
-                sizes="(max-width: 1280px) 420px, 520px"
-                unoptimized
-                className="pointer-events-none absolute -bottom-[50px] z-10 h-[129.8%] w-auto select-none object-contain object-bottom"
-              />
+              <div className="relative h-[540px] w-[28rem] shrink-0 overflow-hidden">
+                <Image
+                  src="/images/branding-cta-model.png"
+                  alt=""
+                  aria-hidden
+                  width={760}
+                  height={997}
+                  sizes="(max-width: 1280px) 420px, 520px"
+                  unoptimized
+                  className="pointer-events-none absolute -bottom-[50px] z-10 h-[129.8%] w-auto select-none object-contain object-bottom"
+                />
+              </div>
             </div>
           </div>
         </div>
