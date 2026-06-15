@@ -6,7 +6,7 @@ import {
 	resolveInstagramTiles,
 	resolveSocialLinks,
 } from "@/lib/content/cms-wiring";
-import type { SocialLinks } from "@/lib/content/types";
+import type { SocialLinks } from "@moduly/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { SITE_CONTACT } from "@/lib/site-contact";
 import { formatInstagramDisplayLabel } from "@/lib/social-links";

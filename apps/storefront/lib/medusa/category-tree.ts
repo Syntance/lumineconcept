@@ -1,4 +1,4 @@
-import { compareCategoriesBySortOrder } from "@/lib/medusa/category-sort";
+import { compareCategoriesBySortOrder } from "@moduly/magazyn-core";
 
 /**
  * Taksonomia zsynchronizowana z Medusą (`sync-storefront-categories` w backendzie).

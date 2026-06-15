@@ -1,5 +1,6 @@
+import { getModulyConfig } from "@moduly/magazyn-core/config";
 import { Palette, Paintbrush, Search, type LucideIcon } from "lucide-react";
-import { magazynConfig } from "../../magazyn.config";
+import { getModulyConfig() } from "../../magazyn.config";
 
 export type SettingsNavItem = {
 	href: string;
@@ -9,7 +10,7 @@ export type SettingsNavItem = {
 
 /** Pozycje menu w sekcji Ustawienia sklepu (sidebar). */
 export function buildSettingsNavItems(): SettingsNavItem[] {
-	const base = `${magazynConfig.basePath}/panel/ustawienia`;
+	const base = `${getModulyConfig().basePath}/panel/ustawienia`;
 
 	return [
 		{ href: `${base}/kolory`, label: "Kolory", icon: Palette },
@@ -19,5 +20,5 @@ export function buildSettingsNavItems(): SettingsNavItem[] {
 }
 
 export function isSettingsPath(pathname: string): boolean {
-	return pathname.startsWith(`${magazynConfig.basePath}/panel/ustawienia`);
+	return pathname.startsWith(`${getModulyConfig().basePath}/panel/ustawienia`);
 }

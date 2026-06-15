@@ -1,4 +1,4 @@
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 
 /** Dane do przelewu tradycyjnego — publiczne, edytowalne w magazyn.config.ts lub ENV. */
 export type BankTransferDetails = {
@@ -13,7 +13,7 @@ export type BankTransferDetails = {
 const ENV_IBAN = process.env.NEXT_PUBLIC_BANK_TRANSFER_IBAN?.replace(/\s+/g, "") ?? "";
 
 export function getBankTransferDetails(): BankTransferDetails {
-	const cfg = magazynConfig.bankTransfer;
+	const cfg = getModulyConfig().bankTransfer;
 	return {
 		recipientName: cfg.recipientName,
 		iban: ENV_IBAN || cfg.iban.replace(/\s+/g, ""),
@@ -33,7 +33,7 @@ export function formatIbanDisplay(iban: string): string {
 
 /** Tytuł przelewu widoczny dla klienta. */
 export function buildTransferTitle(displayId: number | string): string {
-	return `${magazynConfig.bankTransfer.transferTitlePrefix} #${displayId}`;
+	return `${getModulyConfig().bankTransfer.transferTitlePrefix} #${displayId}`;
 }
 
 /** Zmienne merge dla maila / podglądu z numerem zamówienia. */

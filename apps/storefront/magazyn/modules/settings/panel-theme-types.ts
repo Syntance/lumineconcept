@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 
 const cssColor = z.string().trim().min(1, "Podaj kolor.");
 
@@ -50,9 +50,9 @@ export type PanelThemePreset = {
 };
 
 const DEFAULT_BRANDING: PanelBranding = {
-	name: magazynConfig.branding.name,
-	panelTitle: magazynConfig.branding.panelTitle,
-	storefrontUrl: magazynConfig.branding.storefrontUrl,
+	name: getModulyConfig().branding.name,
+	panelTitle: getModulyConfig().branding.panelTitle,
+	storefrontUrl: getModulyConfig().branding.storefrontUrl,
 };
 
 export const DEFAULT_PANEL_THEME_PRESET_ID: PanelThemePresetId = "lumine";

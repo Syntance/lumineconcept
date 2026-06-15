@@ -4,7 +4,7 @@ import {
   buildShopProductBreadcrumbs,
   categoryListingHref,
 } from "@/lib/medusa/shop-breadcrumbs";
-import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
+import type { CategoryTreeNode } from "@moduly/magazyn-core";
 
 const tree: CategoryTreeNode[] = [
   {

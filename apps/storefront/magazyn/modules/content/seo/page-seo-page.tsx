@@ -1,5 +1,5 @@
-import { loadAdmin } from "@magazyn/core/auth/load";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { loadAdmin } from "@moduly/magazyn-core";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import { notFound } from "next/navigation";
 import { getSeoSettingsBundle } from "@magazyn/modules/content/seo/seo-store";
 import { SeoSettingsClient } from "@magazyn/modules/content/seo/seo-settings-client";
@@ -10,7 +10,7 @@ type Props = { params: Promise<{ pageId: string }> };
 
 export default async function SeoPageSettingsPage({ params }: Props) {
 	const { pageId } = await params;
-	const page = magazynConfig.content.pages.find((p) => p.id === pageId);
+	const page = getModulyConfig().content.pages.find((p) => p.id === pageId);
 	if (!page) notFound();
 
 	const bundle = await loadAdmin(getSeoSettingsBundle);
@@ -25,7 +25,7 @@ export default async function SeoPageSettingsPage({ params }: Props) {
 			<SeoSettingsClient
 				siteSettings={bundle.siteSettings}
 				pageSeo={bundle.pageSeo}
-				pages={magazynConfig.content.pages}
+				pages={getModulyConfig().content.pages}
 				activeTab={pageId}
 			/>
 		</div>

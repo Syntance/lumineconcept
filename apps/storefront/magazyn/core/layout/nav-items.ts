@@ -1,5 +1,6 @@
+import { getModulyConfig } from "@moduly/magazyn-core/config";
 import { LayoutGrid, Mail, Package, FileText, Settings, ShoppingBag, Tags, type LucideIcon } from "lucide-react";
-import { magazynConfig } from "../../magazyn.config";
+import { getModulyConfig() } from "../../magazyn.config";
 import type { ModulesToggle } from "../config/types";
 
 export type NavItem = {
@@ -22,13 +23,13 @@ const ORDER: Array<keyof ModulesToggle> = ["orders", "products", "categories", "
 
 /** Buduje listę linków nawigacji z włączonych modułów (magazyn.config.ts). */
 export function buildNavItems(): NavItem[] {
-	const base = magazynConfig.basePath;
+	const base = getModulyConfig().basePath;
 	const items: NavItem[] = [
 		{ href: `${base}/panel`, label: "Przegląd", icon: LayoutGrid, exact: true },
 	];
 
 	for (const key of ORDER) {
-		if (!magazynConfig.modules[key]) continue;
+		if (!getModulyConfig().modules[key]) continue;
 		const def = MODULE_NAV[key];
 		items.push({ href: `${base}/panel/${def.segment}`, label: def.label, icon: def.icon, exact: false });
 	}

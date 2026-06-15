@@ -2,7 +2,7 @@
 
 import { Loader2, Rocket } from "lucide-react";
 import { useState, useTransition } from "react";
-import { Button } from "@magazyn/core/ui/button";
+import { Button } from "@moduly/ui";
 import { triggerCmsRedeployAction } from "./content-actions";
 
 export function CmsRedeployButton() {

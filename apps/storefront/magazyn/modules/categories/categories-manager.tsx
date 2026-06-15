@@ -20,11 +20,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { Check, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { Button } from "@magazyn/core/ui/button";
-import { Input } from "@magazyn/core/ui/input";
-import { CheckboxInput } from "@magazyn/core/ui/checkbox";
-import { cn } from "@magazyn/core/lib/cn";
-import { slugify } from "@magazyn/core/lib/slug";
+import { Button } from "@moduly/ui";
+import { Input } from "@moduly/ui";
+import { CheckboxInput } from "@moduly/ui";
+import { cn } from "@moduly/ui";
+import { slugify } from "@moduly/magazyn-core";
 import type { AdminCategory } from "./store";
 import { deleteCategoryAction, reorderCategoriesAction, saveCategoryAction } from "./actions";
 

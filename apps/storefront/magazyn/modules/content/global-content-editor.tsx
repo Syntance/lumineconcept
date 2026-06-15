@@ -3,9 +3,9 @@
 import { Loader2, Save } from "lucide-react";
 import { useState, useTransition } from "react";
 import { usePreventWindowFileDrop } from "@magazyn/core/hooks/use-prevent-window-file-drop";
-import { Button } from "@magazyn/core/ui/button";
-import { Input } from "@magazyn/core/ui/input";
-import type { GlobalContent, SiteSettings } from "@/lib/content/types";
+import { Button } from "@moduly/ui";
+import { Input } from "@moduly/ui";
+import type { GlobalContent, SiteSettings } from "@moduly/types";
 import {
 	saveGlobalContentAction,
 	saveGlobalSiteSettingsAction,

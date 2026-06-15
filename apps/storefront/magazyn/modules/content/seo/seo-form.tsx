@@ -2,9 +2,9 @@
 
 import { Loader2, Save } from "lucide-react";
 import { useState, useTransition } from "react";
-import { Button } from "@magazyn/core/ui/button";
-import { Input } from "@magazyn/core/ui/input";
-import type { SeoMeta, SiteSettings } from "@/lib/content/types";
+import { Button } from "@moduly/ui";
+import { Input } from "@moduly/ui";
+import type { SeoMeta, SiteSettings } from "@moduly/types";
 import { saveGlobalSeoAction, savePageSeoAction } from "./seo-actions";
 import { cmsSaveSuccessMessage } from "../cms-save-feedback";
 import { OgImageField } from "./og-image-field";

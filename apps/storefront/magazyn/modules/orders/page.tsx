@@ -1,4 +1,4 @@
-import { loadAdmin } from "@magazyn/core/auth/load";
+import { loadAdmin } from "@moduly/magazyn-core";
 import { listAdminOrders } from "./store";
 import { OrdersList } from "./orders-list";
 

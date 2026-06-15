@@ -2,7 +2,7 @@
 
 import { type ReactNode } from "react";
 import { useGlobalColorMap } from "@/hooks/useGlobalColorMap";
-import { parseLineItemExtraRows } from "@/lib/cart/line-item-extras";
+import { parseLineItemExtraRows } from "./lib/line-item-extras";
 
 const COLOR_ELEMENT_LABELS: Record<string, string> = {
   kolor: "Kolor",

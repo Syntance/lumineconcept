@@ -1,7 +1,7 @@
 import "server-only";
 
-import { formatPrice } from "@magazyn/core/lib/format";
-import { serviceAdminFetch } from "@magazyn/core/medusa/client";
+import { formatPrice } from "@moduly/magazyn-core";
+import { serviceAdminFetch } from "@moduly/magazyn-core";
 import {
 	getAdminOrderForEmail,
 	orderToEmailSource,

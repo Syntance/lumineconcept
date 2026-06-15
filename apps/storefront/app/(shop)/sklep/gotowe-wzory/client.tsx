@@ -14,7 +14,7 @@ import {
 import { trackCategoryViewed, trackProductFiltered, trackSearchQuery } from "@/lib/analytics/events";
 import { MIN_PRODUCT_SEARCH_LENGTH } from "@/lib/products/product-search";
 import { useShopListingCategoryOptional } from "@/components/shop/ShopListingCategoryContext";
-import { medusaCategoryIdsForScope } from "@/lib/medusa/category-tree";
+import { medusaCategoryIdsForScope } from "@moduly/magazyn-core";
 import { extractFilterConfig, type SimpleProduct } from "@/lib/products/simple-product";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
 

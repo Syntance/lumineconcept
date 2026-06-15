@@ -16,7 +16,7 @@ import {
 	type LucideProps,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type FileType, resolveFileType } from "@/lib/files/file-type";
+import { type FileType, resolveFileType } from "./lib/file-type";
 
 const ICON_STROKE = 1.75;
 

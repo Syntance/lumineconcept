@@ -1,6 +1,6 @@
 import "server-only";
 
-import { formatPrice } from "@magazyn/core/lib/format";
+import { formatPrice } from "@moduly/magazyn-core";
 import {
 	buildOrderRenderContext,
 	mergeSubject,

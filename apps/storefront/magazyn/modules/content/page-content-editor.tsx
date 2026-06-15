@@ -3,8 +3,8 @@
 import { ChevronDown, ChevronUp, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useState, useTransition } from "react";
-import { Button } from "@magazyn/core/ui/button";
-import { Input } from "@magazyn/core/ui/input";
+import { Button } from "@moduly/ui";
+import { Input } from "@moduly/ui";
 import type { ContentBlockKey } from "@magazyn/core/config/types";
 import type {
 	FaqItem,
@@ -13,7 +13,7 @@ import type {
 	BrandingCtaContent,
 	PageContent,
 	Testimonial,
-} from "@/lib/content/types";
+} from "@moduly/types";
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { usePreventWindowFileDrop } from "@magazyn/core/hooks/use-prevent-window-file-drop";
 import { savePageContentAction } from "./content-actions";

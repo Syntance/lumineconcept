@@ -1,10 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
-import { requireAdminSession } from "@magazyn/core/auth/require-session";
-import type { GlobalContent, PageContent, SiteSettings } from "@/lib/content/types";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { AdminApiError, AdminUnauthorizedError } from "@moduly/magazyn-core";
+import { requireAdminSession } from "@moduly/magazyn-core";
+import type { GlobalContent, PageContent, SiteSettings } from "@moduly/types";
 import { revalidateContentCache, triggerCmsRedeploy } from "./revalidate-content";
 import {
 	getPageContentForAdmin,
@@ -18,7 +18,7 @@ import {
 	prepareGlobalContentForSave,
 	preparePageContentForSave,
 	siteSettingsSchema,
-} from "@/lib/content/parsers";
+} from "@moduly/cms/parsers";
 
 export type SaveContentState = {
 	ok: boolean;
@@ -39,7 +39,7 @@ export async function savePageContentAction(
 	try {
 		await savePageContent(pageId, parsed.data);
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać treści podstrony." };
 	}
@@ -64,7 +64,7 @@ export async function saveGlobalContentAction(
 	try {
 		await saveGlobalContent(parsed.data);
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać treści globalnych." };
 	}
@@ -84,7 +84,7 @@ export async function saveGlobalSiteSettingsAction(
 	try {
 		await saveSiteSettingsPartial(parsed.data);
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać ustawień." };
 	}
@@ -105,7 +105,7 @@ export async function triggerCmsRedeployAction(): Promise<RedeployContentState> 
 	try {
 		await requireAdminSession();
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		return { ok: false, error: "Brak sesji administratora.", queued: false };
 	}
 

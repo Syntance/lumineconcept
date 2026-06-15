@@ -4,11 +4,11 @@ import { ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "@magazyn/core/ui/button";
-import { Input } from "@magazyn/core/ui/input";
-import { ConfirmDialog } from "@magazyn/core/ui/confirm-dialog";
-import { cn } from "@magazyn/core/lib/cn";
-import type { SalonLogo } from "@/lib/content/types";
+import { Button } from "@moduly/ui";
+import { Input } from "@moduly/ui";
+import { ConfirmDialog } from "@moduly/ui";
+import { cn } from "@moduly/ui";
+import type { SalonLogo } from "@moduly/types";
 import { newCmsId } from "./cms-id";
 import { OgImageField } from "./seo/og-image-field";
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { Input } from "@magazyn/core/ui/input";
-import { CheckboxInput } from "@magazyn/core/ui/checkbox";
-import { cn } from "@magazyn/core/lib/cn";
+import { Input } from "@moduly/ui";
+import { CheckboxInput } from "@moduly/ui";
+import { cn } from "@moduly/ui";
 import type { TextFieldDef } from "@/lib/products/text-fields";
 import { TextFieldPicker } from "./text-field-picker";
 

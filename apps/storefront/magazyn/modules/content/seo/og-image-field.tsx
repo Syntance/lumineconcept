@@ -5,8 +5,8 @@ import Image from "next/image";
 import { useCallback, useId, useState } from "react";
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { uploadImagesAction } from "@magazyn/modules/products/actions";
-import { cn } from "@magazyn/core/lib/cn";
-import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
+import { cn } from "@moduly/ui";
+import { isImageFile, useFileDropZone } from "@moduly/magazyn-core/hooks/use-file-drop-zone";
 
 type Props = {
 	label: string;

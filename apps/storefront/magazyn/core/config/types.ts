@@ -1,3 +1,4 @@
+import { getModulyConfig } from "@moduly/magazyn-core/config";
 /**
  * Typy konfiguracji modułów. Jeden plik `magazyn.config.ts` w korzeniu steruje
  * całym panelem: brandingiem, włączonymi modułami, motywem maili i tekstami.
@@ -117,7 +118,7 @@ export type BankTransferConfig = {
 	transferTitlePrefix: string;
 };
 
-export type MagazynConfig = {
+export type getModulyConfig() = {
 	/** Bazowa ścieżka panelu, np. „/magazyn", „/panel", „/admin". */
 	basePath: string;
 	branding: BrandingConfig;

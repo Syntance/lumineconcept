@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@magazyn/core/lib/cn";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { cn } from "@moduly/ui";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import type { ContentPageConfig } from "@magazyn/core/config/types";
-import type { PageSeoMap, SiteSettings } from "@/lib/content/types";
+import type { PageSeoMap, SiteSettings } from "@moduly/types";
 import { SeoForm } from "./seo-form";
 import { CmsRedeployButton } from "../cms-redeploy-button";
 
@@ -16,7 +16,7 @@ type Props = {
 	activeTab: "global" | string;
 };
 
-const BASE = `${magazynConfig.basePath}/panel/ustawienia/seo`;
+const BASE = `${getModulyConfig().basePath}/panel/ustawienia/seo`;
 
 export function SeoSettingsClient({ siteSettings, pageSeo, pages, activeTab }: Props) {
 	const pathname = usePathname();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
-import { cn } from "@magazyn/core/lib/cn";
+import { cn } from "@moduly/ui";
 
 type Props = {
 	label: string;

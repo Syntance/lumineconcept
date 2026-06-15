@@ -3,8 +3,8 @@
 import { Ban, Check, CreditCard, Package, PackageCheck, type LucideIcon, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { cn } from "@magazyn/core/lib/cn";
-import { ConfirmDialog } from "@magazyn/core/ui/confirm-dialog";
+import { cn } from "@moduly/ui";
+import { ConfirmDialog } from "@moduly/ui";
 import { type OrderActionType, runOrderAction } from "./actions";
 
 type ActionDef = {

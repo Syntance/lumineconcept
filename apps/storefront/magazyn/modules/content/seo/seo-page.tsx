@@ -1,5 +1,5 @@
-import { loadAdmin } from "@magazyn/core/auth/load";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { loadAdmin } from "@moduly/magazyn-core";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import { getSeoSettingsBundle } from "./seo-store";
 import { SeoSettingsClient } from "./seo-settings-client";
 
@@ -20,7 +20,7 @@ export default async function SeoSettingsPage() {
 			<SeoSettingsClient
 				siteSettings={bundle.siteSettings}
 				pageSeo={bundle.pageSeo}
-				pages={magazynConfig.content.pages}
+				pages={getModulyConfig().content.pages}
 				activeTab="global"
 			/>
 		</div>

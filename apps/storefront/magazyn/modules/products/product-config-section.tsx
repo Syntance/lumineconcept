@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
-import { cn } from "@magazyn/core/lib/cn";
-import { CheckboxInput } from "@magazyn/core/ui/checkbox";
-import { Button } from "@magazyn/core/ui/button";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { cn } from "@moduly/ui";
+import { CheckboxInput } from "@moduly/ui";
+import { Button } from "@moduly/ui";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import type { ProductCustomColor } from "@/lib/products/color-slot-config";
-import { Switch } from "@magazyn/core/ui/switch";
+import { Switch } from "@moduly/ui";
 import type { ColorCategoryDefinition, ColorCategoryId } from "./color-categories";
 import { AddProductColorForm } from "./add-product-color-form";
 import { ColorSlotPicker } from "./color-slot-picker";
@@ -22,7 +22,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const NON_COLOR_TYPES = ["size", "material", "led", "finish"] as const;
-const GLOBAL_COLORS_PATH = `${magazynConfig.basePath}/panel/ustawienia/kolory`;
+const GLOBAL_COLORS_PATH = `${getModulyConfig().basePath}/panel/ustawienia/kolory`;
 
 type Props = {
 	configOptions: ConfigOption[];

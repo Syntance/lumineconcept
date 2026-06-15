@@ -8,7 +8,7 @@ import {
   LISTING_CATEGORY_HANDLE,
   medusaCategoryIdsForScope,
   type CategoryTreeNode,
-} from "@/lib/medusa/category-tree";
+} from "@moduly/magazyn-core";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
 import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
 import { buildMetadata } from "@/lib/content/metadata";

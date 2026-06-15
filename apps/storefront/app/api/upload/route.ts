@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { uploadProductFile } from "@/lib/product-upload/product-file";
+import { uploadProductFile } from "@moduly/magazyn-core";
 
 export const maxDuration = 120;
 

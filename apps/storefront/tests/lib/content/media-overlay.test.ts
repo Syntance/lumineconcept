@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyMediaUrlOverlay, normalizeMetadataBlobForOverlay } from "@/lib/content/media-overlay";
-import { parsePageContentMap } from "@/lib/content/parsers";
+import { parsePageContentMap } from "@moduly/cms/parsers";
 
 const remoteA = "https://cdn.example.com/cms/a.webp";
 const remoteB = "https://cdn.example.com/cms/b.webp";

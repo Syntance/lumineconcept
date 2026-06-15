@@ -5,7 +5,7 @@ import {
 	mapProductFaqsByHandle,
 	mapSiteSettingsToMetadata,
 } from "@/scripts/migrate-sanity-mapper";
-import { parseGlobalContent, parsePageContentMap, parseSiteSettings } from "@/lib/content/parsers";
+import { parseGlobalContent, parsePageContentMap, parseSiteSettings } from "@moduly/cms/parsers";
 import { heroToPortalConfig, resolveHomeHero } from "@/lib/content/hero";
 
 describe("migrate-sanity-mapper", () => {

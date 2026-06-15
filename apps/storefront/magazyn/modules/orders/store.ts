@@ -1,11 +1,11 @@
 import "server-only";
-import { adminFetch, serviceAdminFetch } from "@magazyn/core/medusa/client";
-import { getSessionToken } from "@magazyn/core/medusa/session";
-import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
-import { thumbnailFromMedusaProduct, resolveLineItemThumbnail } from "@/lib/medusa/product-thumbnail";
-import { formatPrice, toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { formatLineItemDetailsLines } from "@/lib/cart/format-line-item-for-email";
+import { adminFetch, serviceAdminFetch } from "@moduly/magazyn-core";
+import { getSessionToken } from "@moduly/magazyn-core";
+import { resolveMedusaMediaUrl } from "@moduly/magazyn-core";
+import { thumbnailFromMedusaProduct, resolveLineItemThumbnail } from "./lib/product-thumbnail";
+import { formatPrice, toMinorUnitsFromDecimal } from "@moduly/magazyn-core";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { formatLineItemDetailsLines } from "./lib/format-line-item-for-email";
 import { expressFeeMinor, isExpressDelivery } from "./order-express";
 import type {
 	AdminOrderDetail,
@@ -277,7 +277,7 @@ export async function getAdminOrdersOverviewSummary(): Promise<AdminOrdersOvervi
 		unpaidCount: 0,
 		unpaidTotalMinor: 0,
 		canceledCount: 0,
-		currencyCode: magazynConfig.currency.toUpperCase(),
+		currencyCode: getModulyConfig().currency.toUpperCase(),
 	};
 
 	let offset = 0;

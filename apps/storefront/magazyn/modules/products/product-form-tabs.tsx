@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
-import { cn } from "@magazyn/core/lib/cn";
+import { cn } from "@moduly/ui";
 
 type TabId = "colors" | "stand" | "fields" | "seo";
 

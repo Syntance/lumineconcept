@@ -1,10 +1,10 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { cache } from "react";
-import { adminFetch } from "@magazyn/core/medusa/client";
-import { slugify } from "@magazyn/core/lib/slug";
-import { resolveMedusaMediaUrl, resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { adminFetch } from "@moduly/magazyn-core";
+import { slugify } from "@moduly/magazyn-core";
+import { resolveMedusaMediaUrl, resolveMedusaMediaUrls } from "@moduly/magazyn-core";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import {
 	buildColorOptionTitles,
 	isColorSlotTitle,
@@ -17,8 +17,8 @@ import {
 	parseProductColorsBySlot,
 	type ProductCustomColor,
 } from "@/lib/products/color-slot-config";
-import { LISTING_CATEGORY_HANDLE, isShopSectionRoot } from "@/lib/medusa/category-tree";
-import { compareCategoriesBySortOrder } from "@/lib/medusa/category-sort";
+import { LISTING_CATEGORY_HANDLE, isShopSectionRoot } from "@moduly/magazyn-core";
+import { compareCategoriesBySortOrder } from "@moduly/magazyn-core";
 import type { TextFieldDef } from "@/lib/products/text-fields";
 import { parseTextFieldsFromMetadata, serializeTextFieldsForMetadata } from "@/lib/products/text-fields";
 import {
@@ -31,8 +31,8 @@ import {
 	parseProductSeoFromMetadata,
 	serializeProductFaqForMetadata,
 	serializeProductSeoForMetadata,
-} from "@/lib/content/parsers";
-import type { ProductFaqItem, ProductSeoMeta } from "@/lib/content/types";
+} from "@moduly/cms/parsers";
+import type { ProductFaqItem, ProductSeoMeta } from "@moduly/types";
 import {
 	findCategoryDefinition,
 	type ColorCategoryId,
@@ -71,7 +71,7 @@ import {
 	serializeMinOrderQuantityForMetadata,
 	MIN_ORDER_QUANTITY_META_KEY,
 } from "@/lib/products/min-order-quantity";
-import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
+import { getColorCategories } from "@moduly/magazyn-core";
 
 export { buildColorOptionTitles } from "@/lib/products/color-slot-config";
 
@@ -166,7 +166,7 @@ export type AdminProductDetail = ProductFormValues & {
 
 export type CategoryOption = { id: string; name: string };
 
-const CURRENCY = magazynConfig.currency;
+const CURRENCY = getModulyConfig().currency;
 
 type MedusaPrice = { id?: string; currency_code: string; amount: number };
 type MedusaVariant = {

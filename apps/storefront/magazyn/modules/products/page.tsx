@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { loadAdmin } from "@magazyn/core/auth/load";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { loadAdmin } from "@moduly/magazyn-core";
 import { listAdminProducts } from "./store";
 import { ProductsList } from "./products-list";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ProductsPage() {
 	const products = await loadAdmin(listAdminProducts);
-	const base = `${magazynConfig.basePath}/panel/produkty`;
+	const base = `${getModulyConfig().basePath}/panel/produkty`;
 
 	return (
 		<div className="flex flex-col gap-6">

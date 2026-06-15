@@ -1,8 +1,8 @@
 "use client";
 
-import { Input } from "@magazyn/core/ui/input";
-import { Switch } from "@magazyn/core/ui/switch";
-import { cn } from "@magazyn/core/lib/cn";
+import { Input } from "@moduly/ui";
+import { Switch } from "@moduly/ui";
+import { cn } from "@moduly/ui";
 import { MAX_PRODUCT_UPLOADS, MIN_PRODUCT_UPLOADS } from "@/lib/products/upload-settings";
 
 type Props = {

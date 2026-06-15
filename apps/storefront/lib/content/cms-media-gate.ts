@@ -1,4 +1,4 @@
-import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
+import { resolveMedusaMediaUrl } from "@moduly/magazyn-core";
 
 const IMAGE_EXT = /\.(jpe?g|png|webp|gif|avif|svg)$/i;
 

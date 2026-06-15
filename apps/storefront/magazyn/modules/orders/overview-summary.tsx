@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Banknote, CircleDollarSign, ShoppingBag, Wallet } from "lucide-react";
-import { formatPrice } from "@magazyn/core/lib/format";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { formatPrice } from "@moduly/magazyn-core";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import type { AdminOrdersOverviewSummary } from "./order-types";
 
 function orderCountLabel(count: number): string {
@@ -38,7 +38,7 @@ function SummaryCard({
 }
 
 export function OverviewOrdersSummary({ summary }: { summary: AdminOrdersOverviewSummary }) {
-	const ordersHref = `${magazynConfig.basePath}/panel/zamowienia`;
+	const ordersHref = `${getModulyConfig().basePath}/panel/zamowienia`;
 	const currency = summary.currencyCode;
 
 	return (

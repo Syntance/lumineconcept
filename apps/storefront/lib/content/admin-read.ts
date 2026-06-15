@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { serverEnv } from "@magazyn/core/env";
-import { loginWithEmailPassword } from "@magazyn/core/medusa/client";
+import { loginWithEmailPassword } from "@moduly/magazyn-core";
 import {
 	MAGAZYN_GLOBAL_CONTENT_KEY,
 	MAGAZYN_PAGE_CONTENT_KEY,

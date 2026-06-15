@@ -5,7 +5,7 @@ import { HeroPortalDesktop } from "@/components/home/HeroPortalDesktop";
 import { HeroPortalMobile } from "@/components/home/HeroPortalMobile";
 import { MobileHeroImageBand } from "@/components/home/MobileHeroImageBand";
 import { MobileHeroViewport } from "@/components/home/MobileHeroViewport";
-import type { HeroContent } from "@/lib/content/types";
+import type { HeroContent } from "@moduly/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { resolveLogoHeroWithFallback } from "@/lib/content/hero";
 import { cn } from "@/lib/utils";

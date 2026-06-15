@@ -1,4 +1,4 @@
-import type { GlobalContent } from "@/lib/content/types";
+import type { GlobalContent } from "@moduly/types";
 
 /** Kafelek siatki IG na HP — źródło: Magazyn CMS (`instagramTiles`). */
 export type HomepageInstagramTile = {

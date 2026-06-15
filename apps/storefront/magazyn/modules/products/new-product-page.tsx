@@ -1,5 +1,5 @@
-import { loadAdmin } from "@magazyn/core/auth/load";
-import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
+import { loadAdmin } from "@moduly/magazyn-core";
+import { getColorCategories } from "@moduly/magazyn-core";
 import { listCategoryOptions, listGlobalConfigOptions } from "./store";
 import { ProductForm } from "./product-form";
 

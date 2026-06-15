@@ -2,9 +2,9 @@
 
 import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
 import { useId } from "react";
-import { CheckboxInput } from "@magazyn/core/ui/checkbox";
-import { Input } from "@magazyn/core/ui/input";
-import { cn } from "@magazyn/core/lib/cn";
+import { CheckboxInput } from "@moduly/ui";
+import { Input } from "@moduly/ui";
+import { cn } from "@moduly/ui";
 import type { TextAlign } from "./template-types";
 import { colorSwatchInput, segmentItem, segmentItemActive, segmentItemIdle, segmentTrack } from "./editor-chrome";
 import "./email-editor.css";

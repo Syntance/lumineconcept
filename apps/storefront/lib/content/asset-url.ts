@@ -1,4 +1,4 @@
-import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
+import { resolveMedusaMediaUrl } from "@moduly/magazyn-core";
 import { isCmsMediaAssetUrl } from "./cms-media-gate";
 
 /** Assety statyczne storefrontu w `public/` — nie prefiksuj backendem Medusa. */

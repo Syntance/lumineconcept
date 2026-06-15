@@ -5,7 +5,7 @@ import {
 } from "@/components/product/ProductPageLayout";
 import { getProducts } from "@/lib/medusa/products";
 import { buildMetadata } from "@/lib/content/metadata";
-import { parseProductSeoFromMetadata } from "@/lib/content/parsers";
+import { parseProductSeoFromMetadata } from "@moduly/cms/parsers";
 import { getSiteSettings } from "@/lib/content";
 import { SITE_URL } from "@/lib/utils";
 import { canonicalProductPath, productTagValues } from "@/lib/products/product-canonical";

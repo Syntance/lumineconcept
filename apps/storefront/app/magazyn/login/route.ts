@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 
 /**
  * Alias logowania pod `${basePath}/login`.
@@ -15,8 +15,8 @@ import { magazynConfig } from "@magazyn/magazyn.config";
  */
 export function GET(request: Request): NextResponse {
 	const response = NextResponse.redirect(
-		new URL(magazynConfig.basePath, request.url),
+		new URL(getModulyConfig().basePath, request.url),
 	);
-	response.cookies.delete(magazynConfig.auth.cookieName);
+	response.cookies.delete(getModulyConfig().auth.cookieName);
 	return response;
 }

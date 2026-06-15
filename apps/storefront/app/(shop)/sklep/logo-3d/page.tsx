@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LogoCategoryHeroSection } from "@/components/category/LogoCategoryHeroSection";
 import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
 import { buildMetadata } from "@/lib/content/metadata";
-import type { GalleryPhoto } from "@/lib/content/types";
+import type { GalleryPhoto } from "@moduly/types";
 import { TablicaZLogoFormClient } from "./client";
 import { QuoteTitleBandMeasure } from "./QuoteTitleBandMeasure";
 import { QuoteImageCtaAlign } from "./QuoteImageCtaAlign";

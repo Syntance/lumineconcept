@@ -1,4 +1,4 @@
-import { loadAdmin } from "@magazyn/core/auth/load";
+import { loadAdmin } from "@moduly/magazyn-core";
 import { getActivePanelThemePresetId } from "./panel-theme-store";
 import { PanelThemePicker } from "./panel-theme-picker";
 

@@ -1,6 +1,7 @@
+import { getModulyConfig } from "@moduly/magazyn-core/config";
 import Link from "next/link";
-import { loadAdmin } from "@magazyn/core/auth/load";
-import { magazynConfig } from "../../magazyn.config";
+import { loadAdmin } from "@moduly/magazyn-core";
+import { getModulyConfig() } from "../../magazyn.config";
 import { getAdminOrdersOverviewSummary } from "@magazyn/modules/orders/store";
 import { OverviewOrdersSummary } from "@magazyn/modules/orders/overview-summary";
 import { buildNavItems } from "./nav-items";
@@ -13,9 +14,9 @@ export const dynamic = "force-dynamic";
  *   export { default } from "@magazyn/core/layout/overview-page";
  */
 export default async function OverviewPage() {
-	const tiles = buildNavItems().filter((item) => item.href !== magazynConfig.basePath);
+	const tiles = buildNavItems().filter((item) => item.href !== getModulyConfig().basePath);
 	const ordersSummary =
-		magazynConfig.modules.orders === true
+		getModulyConfig().modules.orders === true
 			? await loadAdmin(getAdminOrdersOverviewSummary)
 			: null;
 

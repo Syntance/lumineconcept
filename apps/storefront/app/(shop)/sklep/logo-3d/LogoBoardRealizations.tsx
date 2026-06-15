@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { GalleryPhoto } from "@/lib/content/types";
+import type { GalleryPhoto } from "@moduly/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 
 const PAGE_SIZE = 6;

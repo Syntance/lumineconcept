@@ -2,8 +2,8 @@
 
 import { Loader2, Plus } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@magazyn/core/ui/button";
-import { Input } from "@magazyn/core/ui/input";
+import { Button } from "@moduly/ui";
+import { Input } from "@moduly/ui";
 import {
 	type ColorCategoryId,
 	resolveHexInputOrTransparent,

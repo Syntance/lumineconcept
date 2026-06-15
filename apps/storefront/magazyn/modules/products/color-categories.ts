@@ -1,4 +1,4 @@
-import { slugify } from "@magazyn/core/lib/slug";
+import { slugify } from "@moduly/magazyn-core";
 
 /** Id kategorii kolorów (slug, np. standard, mirror, moje-kolory). */
 export type ColorCategoryId = string;

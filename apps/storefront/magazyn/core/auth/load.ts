@@ -1,6 +1,7 @@
+import { getModulyConfig } from "@moduly/magazyn-core/config";
 import "server-only";
 import { redirect } from "next/navigation";
-import { magazynConfig } from "../../magazyn.config";
+import { getModulyConfig() } from "../../magazyn.config";
 import { AdminUnauthorizedError } from "../medusa/errors";
 
 /**
@@ -12,7 +13,7 @@ export async function loadAdmin<T>(fn: () => Promise<T>): Promise<T> {
 		return await fn();
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) {
-			redirect(`${magazynConfig.basePath}/login`);
+			redirect(`${getModulyConfig().basePath}/login`);
 		}
 		throw error;
 	}

@@ -1,4 +1,4 @@
-import type { SocialLinks } from "@/lib/content/types";
+import type { SocialLinks } from "@moduly/types";
 
 const FACEBOOK_PAGE_LABEL = "Lumine Concept";
 

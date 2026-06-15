@@ -1,10 +1,10 @@
 import { ArrowLeft, Mail, MapPin, Phone, Receipt } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { loadAdmin } from "@magazyn/core/auth/load";
-import { formatPrice } from "@magazyn/core/lib/format";
-import { cn } from "@magazyn/core/lib/cn";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { loadAdmin } from "@moduly/magazyn-core";
+import { formatPrice } from "@moduly/magazyn-core";
+import { cn } from "@moduly/ui";
 import { OrderLineItemRow } from "./order-line-item-row";
 import { type AdminOrderDetail, getAdminOrder, type OrderAddress } from "./store";
 import { BADGE_TONE_CLASS, fulfillmentStatusBadge, orderStatusBadge, paymentStatusBadge } from "./order-status";
@@ -15,7 +15,7 @@ import { EXPRESS_DELIVERY_LABEL, expressFeeMinor, isExpressDelivery } from "./or
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const DATE_TIME = new Intl.DateTimeFormat(magazynConfig.locale, {
+const DATE_TIME = new Intl.DateTimeFormat(getModulyConfig().locale, {
 	day: "2-digit",
 	month: "long",
 	year: "numeric",
@@ -93,7 +93,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 	);
 	const express = isExpressDelivery(order.metadata);
 	const expressFee = expressFeeMinor(order.metadata, order.itemTotal);
-	const ordersHref = `${magazynConfig.basePath}/panel/zamowienia`;
+	const ordersHref = `${getModulyConfig().basePath}/panel/zamowienia`;
 
 	return (
 		<div className="flex flex-col gap-6">

@@ -3,9 +3,9 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
-import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { AdminApiError, AdminUnauthorizedError } from "@moduly/magazyn-core";
+import { revalidateStorefrontMedusaCache } from "@moduly/magazyn-core";
 import type { ColorCategoryDefinition, ColorCategoryId } from "@magazyn/modules/products/color-categories";
 import {
 	createGlobalColorOption,
@@ -31,8 +31,8 @@ import {
 	type PanelThemePresetId,
 } from "./panel-theme-types";
 
-const SETTINGS_COLORS_PATH = `${magazynConfig.basePath}/panel/ustawienia/kolory`;
-const SETTINGS_THEME_PATH = `${magazynConfig.basePath}/panel/ustawienia/motywy`;
+const SETTINGS_COLORS_PATH = `${getModulyConfig().basePath}/panel/ustawienia/kolory`;
+const SETTINGS_THEME_PATH = `${getModulyConfig().basePath}/panel/ustawienia/motywy`;
 const colorCategorySchema = z.string().trim().min(1);
 
 export type CreateColorState = {
@@ -93,7 +93,7 @@ export async function createColorOptionAction(input: {
 		await revalidateGlobalColors();
 		return { ok: true, error: null, option };
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message, option: null };
 		if (error instanceof Error) return { ok: false, error: error.message, option: null };
 		return { ok: false, error: "Nie udało się dodać koloru.", option: null };
@@ -111,10 +111,10 @@ export async function selectPanelThemePresetAction(
 	try {
 		const theme = await savePanelThemePreset(parsed.data);
 		revalidatePath(SETTINGS_THEME_PATH);
-		revalidatePath(`${magazynConfig.basePath}/panel`);
+		revalidatePath(`${getModulyConfig().basePath}/panel`);
 		return { ok: true, error: null, theme };
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		if (error instanceof Error) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać motywu." };
@@ -125,10 +125,10 @@ export async function resetPanelThemeAction(): Promise<PanelThemeActionState> {
 	try {
 		const theme = await resetPanelTheme();
 		revalidatePath(SETTINGS_THEME_PATH);
-		revalidatePath(`${magazynConfig.basePath}/panel`);
+		revalidatePath(`${getModulyConfig().basePath}/panel`);
 		return { ok: true, error: null, theme };
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		if (error instanceof Error) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się przywrócić motywu." };
@@ -158,7 +158,7 @@ export async function createColorCategoryAction(label: string): Promise<ColorCat
 		await revalidateGlobalColors();
 		return { ok: true, error: null, category };
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		if (error instanceof Error) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się dodać kategorii." };
@@ -189,7 +189,7 @@ export async function deleteColorCategoryAction(categoryId: string): Promise<Col
 		const categories = await getColorCategories();
 		return { ok: true, error: null, categories };
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		if (error instanceof Error) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się usunąć kategorii." };
@@ -207,7 +207,7 @@ export async function deleteColorOptionAction(id: string): Promise<DeleteColorSt
 		await revalidateGlobalColors();
 		return { ok: true, error: null };
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		if (error instanceof Error) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się usunąć koloru." };
@@ -236,7 +236,7 @@ export async function updateColorOptionMatAction(
 		await revalidateGlobalColors();
 		return { ok: true, error: null, option };
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message, option: null };
 		if (error instanceof Error) return { ok: false, error: error.message, option: null };
 		return { ok: false, error: "Nie udało się zaktualizować koloru.", option: null };

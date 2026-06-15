@@ -1,8 +1,8 @@
 import "server-only";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
+import { revalidateStorefrontMedusaCache } from "@moduly/magazyn-core";
 import { triggerVercelDeploy } from "@magazyn/core/lib/trigger-vercel-deploy";
-import { MAGAZYN_CONTENT_CACHE_TAG } from "@/lib/content/metadata-keys";
+import { MAGAZYN_CONTENT_CACHE_TAG } from "@moduly/cms/metadata-keys";
 
 export type RevalidateContentResult = {
 	/** Tekst/SEO odświeżone tagiem (live na prod w sekundach). */

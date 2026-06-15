@@ -3,7 +3,7 @@
 import { Copy, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import { duplicateProductAction } from "./actions";
 
 export function DuplicateProductButton({ id, title }: { id: string; title: string }) {
@@ -19,7 +19,7 @@ export function DuplicateProductButton({ id, title }: { id: string; title: strin
 				setError(result.error ?? "Nie udało się powielić produktu.");
 				return;
 			}
-			router.push(`${magazynConfig.basePath}/panel/produkty/${result.newId}`);
+			router.push(`${getModulyConfig().basePath}/panel/produkty/${result.newId}`);
 			router.refresh();
 		});
 	}

@@ -2,7 +2,7 @@
 
 import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { cn } from "@magazyn/core/lib/cn";
+import { cn } from "@moduly/ui";
 import { MAX_TEXT_FIELDS } from "@/lib/products/text-fields";
 import type { TextFieldDef } from "@/lib/products/text-fields";
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { formatPrice, toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
+import { formatPrice, toMinorUnitsFromDecimal } from "@moduly/magazyn-core";
 import type { OrderRenderSource } from "@magazyn/modules/emails/render-template";
 import { sendPaymentFailedEmail } from "@magazyn/modules/emails/send-payment-failed-email";
 import { getCart, updateCartMetadata } from "@/lib/medusa/cart";

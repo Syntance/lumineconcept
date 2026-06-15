@@ -2,9 +2,9 @@
 
 import { Loader2, Monitor, Plus, Redo2, RotateCcw, Save, Send, Smartphone, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Button } from "@magazyn/core/ui/button";
-import { Input } from "@magazyn/core/ui/input";
-import { cn } from "@magazyn/core/lib/cn";
+import { Button } from "@moduly/ui";
+import { Input } from "@moduly/ui";
+import { cn } from "@moduly/ui";
 import { renderTemplate, sampleRenderContextForTemplate } from "./render-template";
 import {
 	type Block,

@@ -20,8 +20,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useId } from "react";
-import { cn } from "@magazyn/core/lib/cn";
-import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
+import { cn } from "@moduly/ui";
+import { isImageFile, useFileDropZone } from "@moduly/magazyn-core/hooks/use-file-drop-zone";
 
 type ProductImagesEditorProps = {
 	images: string[];

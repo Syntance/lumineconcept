@@ -1,4 +1,4 @@
-import { loadAdmin } from "@magazyn/core/auth/load";
+import { loadAdmin } from "@moduly/magazyn-core";
 import { listGlobalConfigOptions } from "@magazyn/modules/products/store";
 import { getColorCategories } from "./color-category-store";
 import { GlobalColorsManager } from "./global-colors-manager";

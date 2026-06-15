@@ -2,7 +2,7 @@
 
 import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { cn } from "@magazyn/core/lib/cn";
+import { cn } from "@moduly/ui";
 import { formatColorSlotLabel, MAX_COLOR_SLOTS, MIN_COLOR_SLOTS } from "@/lib/products/color-slot-config";
 
 type Props = {

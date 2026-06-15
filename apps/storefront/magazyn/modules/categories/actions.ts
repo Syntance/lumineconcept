@@ -3,16 +3,16 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
-import { recordAudit } from "@magazyn/core/audit/audit-log";
-import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
-import { slugify } from "@magazyn/core/lib/slug";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { AdminApiError, AdminUnauthorizedError } from "@moduly/magazyn-core";
+import { recordAudit } from "@moduly/magazyn-core";
+import { revalidateStorefrontMedusaCache } from "@moduly/magazyn-core";
+import { slugify } from "@moduly/magazyn-core";
 import { type CategoryInput, createCategory, deleteCategory, reorderCategories, updateCategory } from "./store";
 
 export type CategoryActionState = { error: string | null; ok: boolean };
 
-const PATH = `${magazynConfig.basePath}/panel/kategorie`;
+const PATH = `${getModulyConfig().basePath}/panel/kategorie`;
 
 const SHOP_PATHS = [
 	"/sklep",
@@ -57,7 +57,7 @@ export async function saveCategoryAction(payload: CategoryPayload): Promise<Cate
 		if (data.id) await updateCategory(data.id, input);
 		else await createCategory(input);
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać kategorii." };
 	}
@@ -72,7 +72,7 @@ export async function deleteCategoryAction(id: string): Promise<CategoryActionSt
 		await deleteCategory(id);
 		await recordAudit("category.delete", { target: id });
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się usunąć kategorii." };
 	}
@@ -95,7 +95,7 @@ export async function reorderCategoriesAction(orderedIds: string[]): Promise<Cat
 	try {
 		await reorderCategories(parsed.data.orderedIds);
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać kolejności." };
 	}

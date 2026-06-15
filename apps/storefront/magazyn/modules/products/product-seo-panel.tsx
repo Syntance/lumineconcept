@@ -1,10 +1,10 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { Input } from "@magazyn/core/ui/input";
-import type { ProductFaqItem, ProductSeoMeta } from "@/lib/content/types";
-import { newCmsId } from "@magazyn/modules/content/cms-id";
-import { OgImageField } from "@magazyn/modules/content/seo/og-image-field";
+import { Input } from "@moduly/ui";
+import type { ProductFaqItem, ProductSeoMeta } from "@moduly/types";
+import { newCmsId } from "@moduly/magazyn-content/cms-id";
+import { OgImageField } from "@moduly/magazyn-content/seo/og-image-field";
 
 const inputClass =
 	"w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";

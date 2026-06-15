@@ -10,7 +10,7 @@ import {
 	ShoppingBag,
 	Type,
 } from "lucide-react";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import type { Block, BlockType, LeafBlock } from "./template-types";
 
 export const BLOCK_META: Record<BlockType, { label: string; icon: LucideIcon }> = {
@@ -68,7 +68,7 @@ export function createBlock(type: BlockType): Block {
 					fontSize: 14,
 					align: "left",
 					paddingY: 6,
-					color: magazynConfig.emailTheme.text,
+					color: getModulyConfig().emailTheme.text,
 					fontKey: "gilroy",
 				},
 			};
@@ -79,7 +79,7 @@ export function createBlock(type: BlockType): Block {
 				id,
 				type,
 				label: "Zobacz",
-				href: magazynConfig.email.siteUrl,
+				href: getModulyConfig().email.siteUrl,
 				align: "left",
 				radius: 8,
 				paddingY: 10,
@@ -91,7 +91,7 @@ export function createBlock(type: BlockType): Block {
 		case "orderItems":
 			return { id, type, showThumbnails: false, showTotal: true, style: { fontSize: 14, paddingY: 12 } };
 		case "footer":
-			return { id, type, text: magazynConfig.email.footerText, style: { fontSize: 11, align: "left", paddingY: 4 } };
+			return { id, type, text: getModulyConfig().email.footerText, style: { fontSize: 11, align: "left", paddingY: 4 } };
 		case "columns":
 			return { id, type, left: [], right: [], gap: 16, paddingY: 8 };
 	}

@@ -1,5 +1,5 @@
 import "server-only";
-import { adminFetch } from "@magazyn/core/medusa/client";
+import { adminFetch } from "@moduly/magazyn-core";
 import {
 	DEFAULT_PANEL_THEME_PRESET_ID,
 	panelThemePresetIdSchema,

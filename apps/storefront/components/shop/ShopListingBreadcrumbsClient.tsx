@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { buildShopListingBreadcrumbs } from "@/lib/medusa/shop-breadcrumbs";
-import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
+import type { CategoryTreeNode } from "@moduly/magazyn-core";
 import { useShopListingCategory } from "@/components/shop/ShopListingCategoryContext";
 
 export function ShopListingBreadcrumbsClient({

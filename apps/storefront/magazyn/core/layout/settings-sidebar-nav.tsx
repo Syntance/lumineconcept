@@ -1,14 +1,15 @@
+import { getModulyConfig } from "@moduly/magazyn-core/config";
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { cn } from "../lib/cn";
-import { magazynConfig } from "../../magazyn.config";
+import { getModulyConfig() } from "../../magazyn.config";
 import { buildSettingsNavItems } from "./settings-nav-items";
 
 const ITEMS = buildSettingsNavItems();
-const PANEL_HOME = `${magazynConfig.basePath}/panel`;
+const PANEL_HOME = `${getModulyConfig().basePath}/panel`;
 
 export function SettingsSidebarNav() {
 	const pathname = usePathname();

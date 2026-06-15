@@ -3,7 +3,7 @@
 import { Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { ConfirmDialog } from "@magazyn/core/ui/confirm-dialog";
+import { ConfirmDialog } from "@moduly/ui";
 import { deleteProductAction } from "./actions";
 
 export function DeleteProductButton({ id, title }: { id: string; title: string }) {

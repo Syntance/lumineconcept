@@ -1,5 +1,5 @@
-import { formatPrice } from "@magazyn/core/lib/format";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { formatPrice } from "@moduly/magazyn-core";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import { mergeRichHtml, mergeRichPlain } from "./email-inline-format";
 import { emailFontFaceCss } from "./email-fonts";
 import {
@@ -236,7 +236,7 @@ function emailAssetsBaseUrl(): string {
 	if (typeof window !== "undefined" && window.location?.origin) {
 		return window.location.origin;
 	}
-	return magazynConfig.email.siteUrl ?? magazynConfig.branding.storefrontUrl;
+	return getModulyConfig().email.siteUrl ?? getModulyConfig().branding.storefrontUrl;
 }
 
 function collectFontKeys(template: EmailTemplate): FontKey[] {
@@ -379,7 +379,7 @@ function metaOrDash(meta: Record<string, string> | undefined, key: string): stri
 	return value || "—";
 }
 
-const ORDER_DATE_FORMAT = new Intl.DateTimeFormat(magazynConfig.locale, {
+const ORDER_DATE_FORMAT = new Intl.DateTimeFormat(getModulyConfig().locale, {
 	day: "2-digit",
 	month: "long",
 	year: "numeric",

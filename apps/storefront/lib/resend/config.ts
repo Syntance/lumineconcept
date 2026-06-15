@@ -1,4 +1,4 @@
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 
 export const RESEND_DEFAULT_FROM = "Lumine Concept <kontakt@lumineconcept.pl>";
 export const RESEND_DEFAULT_REPLY_TO = "kontakt@lumineconcept.pl";
@@ -18,7 +18,7 @@ export type ResendRuntimeConfig = {
 export function resolveResendFromAddress(
 	fromRaw?: string,
 	emailRaw?: string,
-	fromName = magazynConfig.email.fromName,
+	fromName = getModulyConfig().email.fromName,
 ): string {
 	const from = trimEnv(fromRaw);
 	if (from) {
@@ -27,7 +27,7 @@ export function resolveResendFromAddress(
 	}
 	const email =
 		trimEnv(emailRaw) ??
-		trimEnv(magazynConfig.email.contactEmail) ??
+		trimEnv(getModulyConfig().email.contactEmail) ??
 		"kontakt@lumineconcept.pl";
 	return `${fromName} <${email}>`;
 }
@@ -41,7 +41,7 @@ export function getResendConfig(): ResendRuntimeConfig {
 	const replyTo =
 		trimEnv(process.env.RESEND_REPLY_TO) ??
 		trimEnv(process.env.CONTACT_INBOX_EMAIL) ??
-		magazynConfig.email.contactEmail;
+		getModulyConfig().email.contactEmail;
 
 	return {
 		apiKey,

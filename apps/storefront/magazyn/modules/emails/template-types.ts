@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import type { EmailFontKey, EmailThemeConfig } from "@magazyn/core/config/types";
 import { FONT_KEYS, type FontKey } from "./email-fonts";
 
@@ -406,12 +406,12 @@ export const MERGE_TOKENS = MERGE_VARIABLES.map((v) => v.token);
 /* Domyślny motyw + szablony (z magazyn.config.ts)    */
 /* ────────────────────────────────────────────── */
 
-export const DEFAULT_THEME: EmailTheme = { ...magazynConfig.emailTheme };
+export const DEFAULT_THEME: EmailTheme = { ...getModulyConfig().emailTheme };
 
-const BRAND = magazynConfig.branding.name;
+const BRAND = getModulyConfig().branding.name;
 const SUBJECT_PREFIX = `[${BRAND}]`;
-const FOOTER_TEXT = magazynConfig.email.footerText;
-const CONTACT = magazynConfig.email.contactEmail;
+const FOOTER_TEXT = getModulyConfig().email.footerText;
+const CONTACT = getModulyConfig().email.contactEmail;
 
 type StageContent = {
 	subject: string;

@@ -1,5 +1,5 @@
 import "server-only";
-import { adminFetch } from "@magazyn/core/medusa/client";
+import { adminFetch } from "@moduly/magazyn-core";
 
 type MedusaStore = { id: string; metadata?: Record<string, unknown> | null };
 

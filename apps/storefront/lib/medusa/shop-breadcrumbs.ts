@@ -4,7 +4,7 @@ import {
   findCategoryNodeByHandle,
   LISTING_CATEGORY_HANDLE,
   type CategoryTreeNode,
-} from "@/lib/medusa/category-tree";
+} from "@moduly/magazyn-core";
 
 export type ShopBreadcrumbItem = {
   label: string;

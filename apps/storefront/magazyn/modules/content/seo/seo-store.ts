@@ -2,7 +2,7 @@ import "server-only";
 import {
 	MAGAZYN_PAGE_SEO_KEY,
 	MAGAZYN_SITE_SETTINGS_KEY,
-} from "@/lib/content/metadata-keys";
+} from "@moduly/cms/metadata-keys";
 import {
 	parsePageSeoMapForAdmin,
 	parseSiteSettingsForAdmin,
@@ -10,8 +10,8 @@ import {
 	pageSeoMapSchema,
 	normalizeSeoMeta,
 	parseJsonValue,
-} from "@/lib/content/parsers";
-import type { PageSeoMap, SeoMeta, SiteSettings } from "@/lib/content/types";
+} from "@moduly/cms/parsers";
+import type { PageSeoMap, SeoMeta, SiteSettings } from "@moduly/types";
 import { getMedusaStore, mergeStoreMetadata, readMetadataJson } from "../store-metadata";
 
 export type SeoSettingsBundle = {

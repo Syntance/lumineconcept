@@ -1,5 +1,6 @@
+import { getModulyConfig } from "@moduly/magazyn-core/config";
 import { type NextRequest, NextResponse } from "next/server";
-import { magazynConfig } from "../../magazyn.config";
+import { getModulyConfig() } from "../../magazyn.config";
 import { serverEnv } from "../env";
 import { setSessionToken } from "../medusa/session";
 
@@ -12,8 +13,8 @@ import { setSessionToken } from "../medusa/session";
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
 	const { searchParams, origin } = request.nextUrl;
-	const loginUrl = new URL(magazynConfig.basePath, origin);
-	const dashboardUrl = new URL(`${magazynConfig.basePath}/panel`, origin);
+	const loginUrl = new URL(getModulyConfig().basePath, origin);
+	const dashboardUrl = new URL(`${getModulyConfig().basePath}/panel`, origin);
 
 	// SECURITY: NIE akceptujemy tokenu z query (`?token=`). Wcześniej callback
 	// zapisywał dowolny token z URL jako sesję bez weryfikacji — to umożliwiało

@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent, ReactNode } from "react";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 
 type Props = { orderId: string; label: string; children: ReactNode };
 
 export function OrderTableRow({ orderId, label, children }: Props) {
 	const router = useRouter();
-	const href = `${magazynConfig.basePath}/panel/zamowienia/${orderId}`;
+	const href = `${getModulyConfig().basePath}/panel/zamowienia/${orderId}`;
 
 	function navigate() {
 		router.push(href);

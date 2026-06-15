@@ -10,9 +10,9 @@ import {
 	parseLineItemLinks,
 	parseLineItemTextFields,
 	type LineItemFile,
-} from "@/lib/cart/line-item-extras";
-import { formatPrice } from "@magazyn/core/lib/format";
-import { cn } from "@magazyn/core/lib/cn";
+} from "./lib/line-item-extras";
+import { formatPrice } from "@moduly/magazyn-core";
+import { cn } from "@moduly/ui";
 import type { OrderLineItem } from "./order-types";
 import { OrderTextFieldTile } from "./order-text-field-tile";
 

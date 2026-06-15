@@ -1,7 +1,8 @@
+import { getModulyConfig } from "@moduly/magazyn-core/config";
 "use server";
 
 import { redirect } from "next/navigation";
-import { magazynConfig } from "../../magazyn.config";
+import { getModulyConfig() } from "../../magazyn.config";
 import { serverEnv } from "../env";
 import { AdminApiError, AdminUnauthorizedError } from "../medusa/errors";
 import { loginWithEmailPassword } from "../medusa/client";
@@ -41,12 +42,12 @@ export async function loginEmailAction(
 		return { error: "Nie udało się połączyć z serwerem. Spróbuj ponownie." };
 	}
 
-	redirect(`${magazynConfig.basePath}/panel`);
+	redirect(`${getModulyConfig().basePath}/panel`);
 }
 
 export async function logoutAction(): Promise<void> {
 	await clearSessionToken();
-	redirect(magazynConfig.basePath);
+	redirect(getModulyConfig().basePath);
 }
 
 /**
@@ -54,7 +55,7 @@ export async function logoutAction(): Promise<void> {
  * Wymaga skonfigurowanego providera google w backendzie. Zwraca błąd gdy niedostępny.
  */
 export async function googleStartAction(): Promise<LoginState> {
-	const callbackUrl = `${serverEnv.siteUrl}${magazynConfig.basePath}/auth/google/callback`;
+	const callbackUrl = `${serverEnv.siteUrl}${getModulyConfig().basePath}/auth/google/callback`;
 
 	let location: string | null = null;
 	try {

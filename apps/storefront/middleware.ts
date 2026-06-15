@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 
 /**
  * Ochrona panelu „magazyn".
@@ -10,10 +10,10 @@ import { magazynConfig } from "@magazyn/magazyn.config";
  * Tu chodzi o to, by niezalogowany użytkownik nie dostał nawet shellu panelu.
  *
  * Matcher musi być literałem statycznym (wymóg Next.js) — trzymamy go zsynchronizowany
- * z `magazynConfig.basePath` (`/magazyn`).
+ * z `getModulyConfig().basePath` (`/magazyn`).
  */
-const SESSION_COOKIE = magazynConfig.auth.cookieName;
-const PANEL_PREFIX = `${magazynConfig.basePath}/panel`;
+const SESSION_COOKIE = getModulyConfig().auth.cookieName;
+const PANEL_PREFIX = `${getModulyConfig().basePath}/panel`;
 
 export function middleware(request: NextRequest): NextResponse {
 	const { pathname } = request.nextUrl;
@@ -24,7 +24,7 @@ export function middleware(request: NextRequest): NextResponse {
 	const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
 	if (hasSession) return NextResponse.next();
 
-	const loginUrl = new URL(magazynConfig.basePath, request.url);
+	const loginUrl = new URL(getModulyConfig().basePath, request.url);
 	loginUrl.searchParams.set("redirect", pathname);
 	return NextResponse.redirect(loginUrl);
 }

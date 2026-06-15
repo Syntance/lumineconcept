@@ -1,6 +1,6 @@
 import "server-only";
 
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import {
 	buildContactEmailRenderVars,
 	type ContactEmailPayload,
@@ -22,7 +22,7 @@ function shopInbox(): string {
 	return (
 		process.env.SHOP_ORDER_NOTIFY_EMAIL?.replace(/\r\n/g, "").trim() ??
 		process.env.CONTACT_INBOX_EMAIL?.replace(/\r\n/g, "").trim() ??
-		magazynConfig.email.contactEmail
+		getModulyConfig().email.contactEmail
 	);
 }
 

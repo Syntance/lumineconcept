@@ -1,5 +1,5 @@
-import { loadAdmin } from "@magazyn/core/auth/load";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { loadAdmin } from "@moduly/magazyn-core";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import { getContentBundle } from "./content-store";
 import { CmsSettingsClient } from "./cms-settings-client";
 
@@ -20,7 +20,7 @@ export default async function CmsPage() {
 				siteSettings={bundle.siteSettings}
 				pageContent={bundle.pageContent}
 				globalContent={bundle.globalContent}
-				pages={magazynConfig.content.pages}
+				pages={getModulyConfig().content.pages}
 				activeTab="global"
 			/>
 		</div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import {
 	CMS_STOREFRONT_WIRING,
 	mapSalonLogosForMarquee,
@@ -14,7 +14,7 @@ import {
 	resolveTrustBarDisplay,
 } from "@/lib/content/cms-wiring";
 import { DEFAULT_PAGE_CONTENT, DEFAULT_SITE_SETTINGS } from "@/lib/content/defaults";
-import { mergeHeroWithDefaults } from "@/lib/content/parsers";
+import { mergeHeroWithDefaults } from "@moduly/cms/parsers";
 import { resolveHomeHero, resolveLogoHero } from "@/lib/content/hero";
 
 describe("cms-wiring", () => {
@@ -163,13 +163,13 @@ describe("cms-wiring", () => {
 
 describe("CMS config ↔ storefront wiring contract", () => {
 	it("every configured global block has a documented consumer", () => {
-		for (const block of magazynConfig.content.globalBlocks) {
+		for (const block of getModulyConfig().content.globalBlocks) {
 			expect(CMS_STOREFRONT_WIRING.global[block as keyof typeof CMS_STOREFRONT_WIRING.global]).toBeTruthy();
 		}
 	});
 
 	it("every configured page block has a documented consumer", () => {
-		for (const page of magazynConfig.content.pages) {
+		for (const page of getModulyConfig().content.pages) {
 			const wiring = CMS_STOREFRONT_WIRING.pages[page.id as keyof typeof CMS_STOREFRONT_WIRING.pages];
 			expect(wiring).toBeTruthy();
 			for (const block of page.blocks) {

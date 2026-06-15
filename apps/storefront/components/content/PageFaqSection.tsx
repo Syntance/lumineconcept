@@ -1,4 +1,4 @@
-import type { FaqItem } from "@/lib/content/types";
+import type { FaqItem } from "@moduly/types";
 import { pickPageFaq } from "@/lib/content/cms-wiring";
 
 type Props = {

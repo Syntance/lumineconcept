@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@magazyn/core/lib/cn";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { cn } from "@moduly/ui";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import type { ContentPageConfig } from "@magazyn/core/config/types";
-import type { GlobalContent, PageContentMap, SiteSettings } from "@/lib/content/types";
+import type { GlobalContent, PageContentMap, SiteSettings } from "@moduly/types";
 import { GlobalContentEditor } from "./global-content-editor";
 import { PageContentEditor } from "./page-content-editor";
 import { CmsRedeployButton } from "./cms-redeploy-button";
@@ -18,7 +18,7 @@ type Props = {
 	activeTab: "global" | string;
 };
 
-const BASE = `${magazynConfig.basePath}/panel/cms`;
+const BASE = `${getModulyConfig().basePath}/panel/cms`;
 
 export function CmsSettingsClient({
 	siteSettings,

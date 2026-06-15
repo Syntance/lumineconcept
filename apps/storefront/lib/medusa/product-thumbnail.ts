@@ -1,4 +1,4 @@
-import { resolveMedusaMediaUrl, resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
+import { resolveMedusaMediaUrl, resolveMedusaMediaUrls } from "@moduly/magazyn-core";
 
 type MedusaProductMedia = {
 	thumbnail?: string | null;

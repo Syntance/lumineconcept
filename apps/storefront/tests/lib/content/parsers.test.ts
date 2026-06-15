@@ -9,7 +9,7 @@ import {
 	parseSiteSettings,
 	prepareGlobalContentForSave,
 	globalContentSchema,
-} from "@/lib/content/parsers";
+} from "@moduly/cms/parsers";
 import { buildMetadata } from "@/lib/content/metadata";
 
 describe("content parsers", () => {

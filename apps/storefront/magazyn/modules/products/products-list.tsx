@@ -3,10 +3,10 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, Inbox, Pencil, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { formatPrice } from "@magazyn/core/lib/format";
-import { cn } from "@magazyn/core/lib/cn";
-import { Input } from "@magazyn/core/ui/input";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { formatPrice } from "@moduly/magazyn-core";
+import { cn } from "@moduly/ui";
+import { Input } from "@moduly/ui";
 import type { AdminProductRow } from "./store";
 import { DeleteProductButton } from "./delete-product-button";
 import { DuplicateProductButton } from "./duplicate-product-button";
@@ -100,7 +100,7 @@ function CategoryCell({ categoryName }: { categoryName: string | null }) {
 }
 
 export function ProductsList({ products }: { products: AdminProductRow[] }) {
-	const base = `${magazynConfig.basePath}/panel/produkty`;
+	const base = `${getModulyConfig().basePath}/panel/produkty`;
 
 	const [query, setQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");

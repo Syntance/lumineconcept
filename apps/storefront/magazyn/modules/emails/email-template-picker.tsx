@@ -2,8 +2,8 @@
 
 import { Loader2 } from "lucide-react";
 import { useId } from "react";
-import { Switch } from "@magazyn/core/ui/switch";
-import { cn } from "@magazyn/core/lib/cn";
+import { Switch } from "@moduly/ui";
+import { cn } from "@moduly/ui";
 import {
 	EMAIL_TEMPLATE_CATEGORIES,
 	type EmailTemplate,

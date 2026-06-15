@@ -3,10 +3,10 @@
 import { Loader2, Save, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useId, useMemo, useState, useTransition } from "react";
-import { Button } from "@magazyn/core/ui/button";
-import { Input } from "@magazyn/core/ui/input";
-import { cn } from "@magazyn/core/lib/cn";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { Button } from "@moduly/ui";
+import { Input } from "@moduly/ui";
+import { cn } from "@moduly/ui";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import type { ColorCategoryDefinition, ColorCategoryId } from "./color-categories";
 import type { AdminProductDetail, CategoryOption, ConfigOption } from "./store";
 import { saveProductAction, uploadImagesAction } from "./actions";
@@ -43,7 +43,7 @@ import { ProductUploadSettingsSection } from "./product-upload-settings-section"
 import { ProductFormTabs } from "./product-form-tabs";
 import { ProductSeoPanel } from "./product-seo-panel";
 import type { ProductUploadSettings } from "@/lib/products/upload-settings";
-import type { ProductFaqItem, ProductSeoMeta } from "@/lib/content/types";
+import type { ProductFaqItem, ProductSeoMeta } from "@moduly/types";
 
 type Props = {
 	product?: AdminProductDetail;
@@ -684,7 +684,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 						{colorSlotState.standPaid ? (
 							<div className="flex flex-col gap-1.5 pl-7">
 								<label htmlFor="stand-surcharge-price" className="text-sm font-medium">
-									Dopłata za podstawkę ({magazynConfig.currency.toUpperCase()} / szt.)
+									Dopłata za podstawkę ({getModulyConfig().currency.toUpperCase()} / szt.)
 								</label>
 								<Input
 									id="stand-surcharge-price"
@@ -712,7 +712,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 				) : null}
 
 				<div className="flex flex-col gap-1.5">
-					<label htmlFor="product-price" className="text-sm font-medium">Cena ({magazynConfig.currency.toUpperCase()})</label>
+					<label htmlFor="product-price" className="text-sm font-medium">Cena ({getModulyConfig().currency.toUpperCase()})</label>
 					<Input id="product-price" type="number" min={0} step="0.01" value={priceMajor} onChange={(e) => setPriceMajor(e.target.value)} placeholder="0.00" className="h-10" required />
 				</div>
 
@@ -750,7 +750,7 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 						{saving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
 						{saving ? "Zapisywanie…" : "Zapisz produkt"}
 					</Button>
-					<Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => router.push(`${magazynConfig.basePath}/panel/produkty`)} className={cn("gap-1.5")}>
+					<Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => router.push(`${getModulyConfig().basePath}/panel/produkty`)} className={cn("gap-1.5")}>
 						Anuluj
 					</Button>
 				</div>

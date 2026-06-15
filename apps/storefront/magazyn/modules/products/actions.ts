@@ -3,15 +3,15 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
-import { adminUpload } from "@magazyn/core/medusa/client";
-import { requireAdminSession } from "@magazyn/core/auth/require-session";
-import { recordAudit } from "@magazyn/core/audit/audit-log";
-import { resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
-import { uploadCmsAssetFile } from "@/lib/product-upload/product-file";
-import { slugify } from "@magazyn/core/lib/slug";
-import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { AdminApiError, AdminUnauthorizedError } from "@moduly/magazyn-core";
+import { adminUpload } from "@moduly/magazyn-core";
+import { requireAdminSession } from "@moduly/magazyn-core";
+import { recordAudit } from "@moduly/magazyn-core";
+import { resolveMedusaMediaUrls } from "@moduly/magazyn-core";
+import { uploadCmsAssetFile } from "@moduly/magazyn-core";
+import { slugify } from "@moduly/magazyn-core";
+import { revalidateStorefrontMedusaCache } from "@moduly/magazyn-core";
 import {
 	createAdminProduct,
 	deleteAdminProduct,
@@ -22,7 +22,7 @@ import {
 
 export type SaveProductState = { error: string | null; ok: boolean };
 
-const PRODUCTS_PATH = `${magazynConfig.basePath}/panel/produkty`;
+const PRODUCTS_PATH = `${getModulyConfig().basePath}/panel/produkty`;
 
 const productSchema = z.object({
 	id: z.string().trim().optional(),
@@ -216,7 +216,7 @@ export async function saveProductAction(payload: ProductPayload): Promise<SavePr
 			await createAdminProduct(values);
 		}
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać produktu. Spróbuj ponownie." };
 	}
@@ -232,7 +232,7 @@ export async function saveProductAction(payload: ProductPayload): Promise<SavePr
 	revalidatePath(PRODUCTS_PATH);
 
 	if (data.id) {
-		revalidatePath(`${magazynConfig.basePath}/panel/produkty/${data.id}`);
+		revalidatePath(`${getModulyConfig().basePath}/panel/produkty/${data.id}`);
 		return { ok: true, error: null };
 	}
 
@@ -244,7 +244,7 @@ export async function deleteProductAction(id: string): Promise<void> {
 		await deleteAdminProduct(id);
 		await recordAudit("product.delete", { target: id });
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		throw error;
 	}
 	revalidateTag("medusa-products", "max");
@@ -260,7 +260,7 @@ export async function duplicateProductAction(id: string): Promise<DuplicateProdu
 		newId = await duplicateAdminProduct(id);
 		await recordAudit("product.duplicate", { target: id, meta: { newId } });
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		if (error instanceof Error) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się powielić produktu." };
@@ -302,7 +302,7 @@ export async function uploadImagesAction(formData: FormData): Promise<UploadStat
 		}
 		return { urls, error: null };
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { urls: [], error: error.message };
 		return { urls: [], error: "Upload nie powiódł się." };
 	}

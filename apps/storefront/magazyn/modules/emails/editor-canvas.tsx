@@ -18,7 +18,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Copy, GripVertical, Trash2 } from "lucide-react";
-import { cn } from "@magazyn/core/lib/cn";
+import { cn } from "@moduly/ui";
 import type { Block } from "./template-types";
 import { editorBtnRounded } from "./editor-chrome";
 import { BLOCK_META } from "./block-meta";

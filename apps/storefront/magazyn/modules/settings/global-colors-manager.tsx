@@ -2,8 +2,8 @@
 
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
-import { Button } from "@magazyn/core/ui/button";
-import { Input } from "@magazyn/core/ui/input";
+import { Button } from "@moduly/ui";
+import { Input } from "@moduly/ui";
 import {
 	type ColorCategoryDefinition,
 	type ColorCategoryId,
@@ -18,7 +18,7 @@ import {
 	deleteColorOptionAction,
 	updateColorOptionMatAction,
 } from "./actions";
-import { Switch } from "@magazyn/core/ui/switch";
+import { Switch } from "@moduly/ui";
 
 function AddColorForm({
 	category,

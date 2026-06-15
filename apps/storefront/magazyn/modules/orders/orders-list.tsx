@@ -2,15 +2,15 @@
 
 import { ArrowDown, ArrowUp, ArrowUpDown, Inbox, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Input } from "@magazyn/core/ui/input";
-import { cn } from "@magazyn/core/lib/cn";
-import { formatPrice } from "@magazyn/core/lib/format";
-import { magazynConfig } from "@magazyn/magazyn.config";
+import { Input } from "@moduly/ui";
+import { cn } from "@moduly/ui";
+import { formatPrice } from "@moduly/magazyn-core";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
 import type { AdminOrderRow } from "./order-types";
 import { BADGE_TONE_CLASS, fulfillmentStatusBadge, orderStatusBadge, paymentStatusBadge } from "./order-status";
 import { OrderTableRow } from "./order-table-row";
 
-const DATE_TIME = new Intl.DateTimeFormat(magazynConfig.locale, {
+const DATE_TIME = new Intl.DateTimeFormat(getModulyConfig().locale, {
 	day: "2-digit",
 	month: "2-digit",
 	year: "numeric",

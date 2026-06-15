@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
-import { requireAdminSession } from "@magazyn/core/auth/require-session";
-import { uploadCmsAssetFile } from "@/lib/product-upload/product-file";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { AdminApiError, AdminUnauthorizedError } from "@moduly/magazyn-core";
+import { requireAdminSession } from "@moduly/magazyn-core";
+import { uploadCmsAssetFile } from "@moduly/magazyn-core";
 import { resetEmailTemplate, saveEmailTemplate, setEmailTemplateEnabled } from "./store";
 import { mergeSubject, renderTemplate, sampleRenderContextForTemplate } from "./render-template";
 import { sendTransactionalEmail } from "./send-transactional";
@@ -23,10 +23,10 @@ export type UploadActionState = EmailActionState & { url?: string };
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
-const MAILE_PATH = `${magazynConfig.basePath}/panel/maile`;
+const MAILE_PATH = `${getModulyConfig().basePath}/panel/maile`;
 
 function handleError(error: unknown, fallback: string): EmailActionState {
-	if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+	if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 	if (error instanceof AdminApiError) return { ok: false, error: error.message };
 	if (error instanceof Error) return { ok: false, error: error.message };
 	return { ok: false, error: fallback };

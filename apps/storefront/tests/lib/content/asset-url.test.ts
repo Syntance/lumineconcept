@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
+import { resolveMedusaMediaUrl } from "@moduly/magazyn-core";
 import {
 	isCmsImageUnoptimized,
 	isStorefrontPublicAssetPath,

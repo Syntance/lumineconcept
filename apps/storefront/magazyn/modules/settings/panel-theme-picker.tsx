@@ -3,7 +3,7 @@
 import { Check, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { cn } from "@magazyn/core/lib/cn";
+import { cn } from "@moduly/ui";
 import { selectPanelThemePresetAction } from "./actions";
 import { panelThemeToStyle } from "./panel-theme-vars";
 import {

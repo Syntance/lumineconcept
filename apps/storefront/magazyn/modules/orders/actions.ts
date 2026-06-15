@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { AdminApiError, AdminUnauthorizedError } from "@moduly/magazyn-core";
 import {
 	cancelOrder,
 	completeOrder,
@@ -36,11 +36,11 @@ const ACTION_EMAIL: Partial<
 	cancel: "cancelled",
 };
 
-const ORDERS_PATH = `${magazynConfig.basePath}/panel/zamowienia`;
+const ORDERS_PATH = `${getModulyConfig().basePath}/panel/zamowienia`;
 
 /** Wysyła mail etapu — best-effort, tylko gdy moduł emails jest włączony. */
 async function notifyStage(orderId: string, action: OrderActionType): Promise<void> {
-	if (!magazynConfig.modules.emails) return;
+	if (!getModulyConfig().modules.emails) return;
 	const stage = ACTION_EMAIL[action];
 	if (!stage) return; // akcja bez powiadomienia mailowego (np. „dostarczone")
 	try {
@@ -60,7 +60,7 @@ export async function runOrderAction(orderId: string, action: OrderActionType): 
 	try {
 		await handler(orderId);
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		if (error instanceof Error) return { ok: false, error: error.message };
 		return { ok: false, error: "Operacja nie powiodła się." };
@@ -68,7 +68,7 @@ export async function runOrderAction(orderId: string, action: OrderActionType): 
 
 	revalidatePath(ORDERS_PATH);
 	revalidatePath(`${ORDERS_PATH}/${orderId}`);
-	revalidatePath(magazynConfig.basePath);
+	revalidatePath(getModulyConfig().basePath);
 
 	await notifyStage(orderId, action);
 

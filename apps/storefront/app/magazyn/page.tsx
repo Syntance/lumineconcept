@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { getSessionToken } from "@magazyn/core/medusa/session";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { getSessionToken } from "@moduly/magazyn-core";
 import { LoginForm } from "@magazyn/core/auth/login-form";
 
 /**
@@ -9,10 +9,10 @@ import { LoginForm } from "@magazyn/core/auth/login-form";
  */
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
 	const token = await getSessionToken();
-	if (token) redirect(`${magazynConfig.basePath}/panel`);
+	if (token) redirect(`${getModulyConfig().basePath}/panel`);
 
 	const { error } = await searchParams;
-	const { branding } = magazynConfig;
+	const { branding } = getModulyConfig();
 
 	return (
 		<main className="flex min-h-screen items-center justify-center px-4 py-12">
@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 				</div>
 
 				<div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-					<LoginForm googleEnabled={magazynConfig.auth.google} googleError={error === "google"} />
+					<LoginForm googleEnabled={getModulyConfig().auth.google} googleError={error === "google"} />
 				</div>
 			</div>
 		</main>

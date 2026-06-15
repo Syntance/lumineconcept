@@ -1,4 +1,4 @@
-import { loadAdmin } from "@magazyn/core/auth/load";
+import { loadAdmin } from "@moduly/magazyn-core";
 import { listCategories } from "./store";
 import { CategoriesManager } from "./categories-manager";
 

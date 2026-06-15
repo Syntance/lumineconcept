@@ -1,6 +1,6 @@
 import type { Address } from "@lumine/types";
 import type { HttpTypes } from "@medusajs/types";
-import { toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
+import { toMinorUnitsFromDecimal } from "@moduly/magazyn-core";
 import { getCart } from "./cart";
 import { medusa } from "./client";
 import { resolveMedusaFetchBase } from "./resolve-fetch-base";

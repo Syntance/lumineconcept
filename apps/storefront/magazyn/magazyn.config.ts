@@ -1,4 +1,5 @@
-import type { MagazynConfig } from "./core/config/types";
+import { getModulyConfig } from "@moduly/magazyn-core/config";
+import type { getModulyConfig() } from "./core/config/types";
 
 /**
  * ╔══════════════════════════════════════════════════════════════╗
@@ -8,7 +9,7 @@ import type { MagazynConfig } from "./core/config/types";
  * Sekrety (klucze API, hasła) trzymaj w `.env.local` — patrz `.env.example`.
  * Tu ustawiasz branding, ścieżkę panelu, włączone moduły, motyw maili i teksty.
  */
-export const magazynConfig: MagazynConfig = {
+export const getModulyConfig(): getModulyConfig() = {
 	basePath: "/magazyn",
 
 	branding: {

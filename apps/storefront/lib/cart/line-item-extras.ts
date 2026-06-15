@@ -1,8 +1,8 @@
-import type { FileType } from "@/lib/files/file-type";
-import { extensionFromFilename, resolveFileType } from "@/lib/files/file-type";
+import type { FileType } from "./lib/file-type";
+import { extensionFromFilename, resolveFileType } from "./lib/file-type";
 
-export type { FileType } from "@/lib/files/file-type";
-export { extensionFromFilename, resolveFileType } from "@/lib/files/file-type";
+export type { FileType } from "./lib/file-type";
+export { extensionFromFilename, resolveFileType } from "./lib/file-type";
 
 export type LineItemTextField = { label: string; value: string };
 

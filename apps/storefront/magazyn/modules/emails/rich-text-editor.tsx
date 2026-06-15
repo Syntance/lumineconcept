@@ -2,7 +2,7 @@
 
 import { Bold, ChevronDown, Italic } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { cn } from "@magazyn/core/lib/cn";
+import { cn } from "@moduly/ui";
 import { segmentItem, segmentItemIdle, segmentTrack } from "./editor-chrome";
 import { sanitizeEmailInlineHtml, toEditorDisplayHtml } from "./sanitize-email-inline-html";
 

@@ -2,10 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
-import { siteSettingsSchema } from "@/lib/content/parsers";
-import type { SeoMeta } from "@/lib/content/types";
+import { getModulyConfig() } from "@moduly/magazyn-core/config";
+import { AdminApiError, AdminUnauthorizedError } from "@moduly/magazyn-core";
+import { siteSettingsSchema } from "@moduly/cms/parsers";
+import type { SeoMeta } from "@moduly/types";
 import { revalidateContentCache } from "../revalidate-content";
 import { getSeoSettingsBundle, saveGlobalSeoSettings, savePageSeo } from "./seo-store";
 import type { SaveContentState } from "../content-actions";
@@ -47,7 +47,7 @@ export async function saveGlobalSeoAction(
 		});
 		await saveGlobalSeoSettings(settings);
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać SEO. Spróbuj ponownie." };
 	}
@@ -69,7 +69,7 @@ export async function savePageSeoAction(
 	try {
 		await savePageSeo(pageId, parsed.data);
 	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminUnauthorizedError) redirect(`${getModulyConfig().basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać SEO podstrony." };
 	}

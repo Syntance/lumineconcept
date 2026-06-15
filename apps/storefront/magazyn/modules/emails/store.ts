@@ -1,5 +1,5 @@
 import "server-only";
-import { adminFetch, serviceAdminFetch } from "@magazyn/core/medusa/client";
+import { adminFetch, serviceAdminFetch } from "@moduly/magazyn-core";
 import {
 	buildDefaultTemplate,
 	EMAIL_TEMPLATE_TYPES,

@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import type { HeroContent } from "@/lib/content/types";
+import type { HeroContent } from "@moduly/types";
 import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";

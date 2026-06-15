@@ -3,7 +3,7 @@ import {
 	MAGAZYN_GLOBAL_CONTENT_KEY,
 	MAGAZYN_PAGE_CONTENT_KEY,
 	MAGAZYN_SITE_SETTINGS_KEY,
-} from "@/lib/content/metadata-keys";
+} from "@moduly/cms/metadata-keys";
 import {
 	globalContentSchema,
 	pageContentMapSchema,
@@ -13,8 +13,8 @@ import {
 	parsePageContentMapForAdmin,
 	parseSiteSettingsForAdmin,
 	siteSettingsSchema,
-} from "@/lib/content/parsers";
-import type { GlobalContent, PageContent, PageContentMap, SiteSettings } from "@/lib/content/types";
+} from "@moduly/cms/parsers";
+import type { GlobalContent, PageContent, PageContentMap, SiteSettings } from "@moduly/types";
 import { getMedusaStore, mergeStoreMetadata, readMetadataJson } from "./store-metadata";
 
 export type ContentBundle = {

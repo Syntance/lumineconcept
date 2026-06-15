@@ -1,12 +1,12 @@
 import "server-only";
-import { adminFetch } from "@magazyn/core/medusa/client";
-import { LISTING_CATEGORY_HANDLE, isShopSectionRoot } from "@/lib/medusa/category-tree";
+import { adminFetch } from "@moduly/magazyn-core";
+import { LISTING_CATEGORY_HANDLE, isShopSectionRoot } from "@moduly/magazyn-core";
 import {
 	CATEGORY_SORT_METADATA_KEY,
 	categorySortOrderMetadata,
 	compareCategoriesBySortOrder,
 	parseCategorySortOrder,
-} from "@/lib/medusa/category-sort";
+} from "@moduly/magazyn-core";
 
 /** Rooty sekcji sklepu — nie tworzymy ich w magazynie, nie przenosimy pod „gotowe-wzory”. */
 function isReservedShopRoot(handle: string): boolean {

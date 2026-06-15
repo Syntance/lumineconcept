@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type RefObject } from "react";
-import { cn } from "@magazyn/core/lib/cn";
+import { cn } from "@moduly/ui";
 import { BLOCK_META, PALETTE_BLOCKS } from "./block-meta";
 import type { BlockType } from "./template-types";
 import { editorBtnRounded } from "./editor-chrome";

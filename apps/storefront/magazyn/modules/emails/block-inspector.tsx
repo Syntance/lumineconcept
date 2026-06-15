@@ -2,8 +2,8 @@
 
 import { Trash2, Upload } from "lucide-react";
 import { useCallback, useId, useState } from "react";
-import { cn } from "@magazyn/core/lib/cn";
-import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
+import { cn } from "@moduly/ui";
+import { isImageFile, useFileDropZone } from "@moduly/magazyn-core/hooks/use-file-drop-zone";
 import type {
 	Block,
 	BlockStyle,

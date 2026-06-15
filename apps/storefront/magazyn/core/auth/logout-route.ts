@@ -1,5 +1,6 @@
+import { getModulyConfig } from "@moduly/magazyn-core/config";
 import { type NextRequest, NextResponse } from "next/server";
-import { magazynConfig } from "../../magazyn.config";
+import { getModulyConfig() } from "../../magazyn.config";
 import { clearSessionToken } from "../medusa/session";
 
 /**
@@ -8,5 +9,5 @@ import { clearSessionToken } from "../medusa/session";
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
 	await clearSessionToken();
-	return NextResponse.redirect(new URL(`${magazynConfig.basePath}/login`, request.nextUrl.origin));
+	return NextResponse.redirect(new URL(`${getModulyConfig().basePath}/login`, request.nextUrl.origin));
 }

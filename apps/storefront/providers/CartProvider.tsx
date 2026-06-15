@@ -21,7 +21,7 @@ import {
   pickLowestPaidShippingOptionPrice,
   prefetchShippingOptions,
 } from "@/lib/medusa/checkout";
-import { resolveCartLineItemThumbnail } from "@/lib/medusa/product-thumbnail";
+import { resolveCartLineItemThumbnail } from "./lib/product-thumbnail";
 
 interface CartItem {
   id: string;
