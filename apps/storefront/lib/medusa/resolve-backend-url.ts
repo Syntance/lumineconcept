@@ -84,6 +84,9 @@ export async function resolveMedusaBackendUrl(): Promise<string> {
   }
 
   if (isLocalhostUrl(configured)) {
+    if (await isLocalBackendHealthy()) {
+      return LOCAL_BACKEND;
+    }
     return configured;
   }
 

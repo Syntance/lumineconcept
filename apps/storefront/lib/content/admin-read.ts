@@ -91,9 +91,22 @@ async function fetchStoreMetadataWithRetry(token: string): Promise<Response | nu
  * Przy niepowodzeniu (np. build gdy backend niedostępny) zwraca null — defaults mają lokalne hero.
  */
 export const fetchStoreMetadataBlob = cache(async (): Promise<RawStoreMetadataBlob | null> => {
+	const email = serverEnv.adminEmail;
+	const password = serverEnv.adminPassword?.trim();
+	if (!email || !password) {
+		if (process.env.NODE_ENV === "development") {
+			console.warn(
+				"[CMS] Brak MEDUSA_ADMIN_EMAIL / MEDUSA_ADMIN_PASSWORD — używam domyślnych treści (patrz apps/storefront/.env.local.example).",
+			);
+		}
+		return null;
+	}
+
 	const token = await getServiceTokenForRead();
 	if (!token) {
-		console.error("[CMS] Brak tokenu admin — nie można odczytać Store.metadata");
+		console.warn(
+			"[CMS] Logowanie do Medusa Admin nie powiodło się — sprawdź konto serwisowe i czy backend działa (localhost:9000 lub MEDUSA_BACKEND_URL).",
+		);
 		return null;
 	}
 
