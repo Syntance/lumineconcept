@@ -2,8 +2,8 @@ import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getProductByHandle, getProducts, getProductCategories } from "@/lib/medusa/products";
 import { getSiteSettings } from "@/lib/content";
-import { parseProductFaqFromMetadata } from "@moduly/cms/parsers";
-import type { CheckoutCallout, ProductFaqItem } from "@moduly/types";
+import { parseProductFaqFromMetadata } from "@/lib/content/parsers";
+import type { CheckoutCallout, ProductFaqItem } from "@/lib/content/types";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
@@ -30,7 +30,7 @@ import {
   buildShopProductBreadcrumbs,
   productBreadcrumbContextFromBasePath,
 } from "@/lib/medusa/shop-breadcrumbs";
-import type { CategoryTreeNode } from "@moduly/magazyn-core";
+import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
 import { variantOptionsRecord } from "@/lib/products/variant-options";
 import { parseStandAvailable, getStandSurchargeGrosze, formatStandSurchargePln } from "@/lib/products/stand-config";
 import { resolvePdpCalloutDisplay } from "@/lib/products/pdp-callout";
