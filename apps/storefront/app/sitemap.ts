@@ -17,8 +17,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/sklep/gotowe-wzory`, changeFrequency: "daily", priority: 0.85, lastModified: now },
     { url: `${SITE_URL}/sklep/logo-3d`, changeFrequency: "daily", priority: 0.85, lastModified: now },
     { url: `${SITE_URL}/sklep/certyfikaty`, changeFrequency: "daily", priority: 0.85, lastModified: now },
-    // Strony informacyjne / prawne (indeksowalne). `o-nas` i `salony-beauty`
-    // są `noindex` (w budowie) — celowo ich tu NIE ma.
+    // Strony informacyjne / prawne (indeksowalne). `salony-beauty` jest `noindex` (w budowie).
+    { url: `${SITE_URL}/o-nas`, changeFrequency: "monthly", priority: 0.65, lastModified: now },
     { url: `${SITE_URL}/kontakt`, changeFrequency: "monthly", priority: 0.6, lastModified: now },
     { url: `${SITE_URL}/dostawa-i-platnosci`, changeFrequency: "monthly", priority: 0.6, lastModified: now },
     { url: `${SITE_URL}/zwroty`, changeFrequency: "yearly", priority: 0.4, lastModified: now },

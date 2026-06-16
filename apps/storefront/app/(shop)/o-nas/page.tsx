@@ -1,44 +1,63 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+
+import { AboutClosingSection } from "@/components/about/AboutClosingSection";
+import { AboutHeroSection } from "@/components/about/AboutHeroSection";
+import { AboutIntroSection } from "@/components/about/AboutIntroSection";
+import { AboutMissionSection } from "@/components/about/AboutMissionSection";
+import { resolveAboutPage } from "@/lib/content/about";
+import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { buildMetadata } from "@/lib/content/metadata";
+import { ORGANIZATION_ID } from "@/lib/geo/organization";
 import { SITE_URL } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "O nas — W budowie",
-  description: "Ta strona jest tymczasowo niedostępna. Trwają prace nad sekcją O nas.",
-  robots: {
-    index: false,
-    follow: false,
-  },
-  alternates: {
-    canonical: `${SITE_URL}/o-nas`,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [seo, settings, pageContent] = await Promise.all([
+    getPageSeo("o-nas"),
+    getSiteSettings(),
+    getPageContent("o-nas"),
+  ]);
+  const about = resolveAboutPage(pageContent);
 
-export default function ONasPage() {
+  return buildMetadata({
+    seo,
+    fallbackTitle: "O nas — Lumine Concept",
+    fallbackDescription:
+      "Lumine Concept — marka tworzona przez dwie siostry. Projektujemy spójne rozwiązania dla salonów beauty: tablice z logo, certyfikaty i detale, które budują wizerunek premium.",
+    siteSettings: settings,
+    path: "/o-nas",
+    fallbackImage: about.sections.introImageUrl.startsWith("http")
+      ? about.sections.introImageUrl
+      : `${SITE_URL}${about.sections.introImageUrl}`,
+  });
+}
+
+export const revalidate = 60;
+
+export default async function ONasPage() {
+  const pageContent = await getPageContent("o-nas");
+  const about = resolveAboutPage(pageContent);
+
+  const aboutPageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: "O nas — Lumine Concept",
+    url: `${SITE_URL}/o-nas`,
+    description: about.sections.introParagraphs[0] ?? "Lumine Concept — O nas",
+    mainEntity: { "@id": ORGANIZATION_ID },
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Breadcrumbs
-        items={[
-          { label: "Strona główna", href: "/" },
-          { label: "O nas" },
-        ]}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
       />
-      <div className="mx-auto max-w-4xl">
-        <h1 className="mb-4 text-center font-display text-3xl font-bold text-brand-800">
-          O nas
-        </h1>
-        <div className="rounded-lg border border-brand-200 p-8 text-center text-brand-500">
-          <p className="text-lg">Strona w budowie</p>
-          <p className="mt-2 text-sm">Wróć wkrótce — kończymy prace nad tą podstroną.</p>
-          <Link
-            href="/kontakt"
-            className="mt-6 inline-flex rounded-md border border-brand-300 px-5 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-50"
-          >
-            Napisz do nas
-          </Link>
-        </div>
+      <div className="font-gilroy [&_h1]:font-binerka [&_h2]:font-binerka">
+        <AboutHeroSection hero={about.hero} />
+        <AboutIntroSection sections={about.sections} />
+        <AboutMissionSection sections={about.sections} />
+        <AboutClosingSection sections={about.sections} />
       </div>
-    </div>
+    </>
   );
 }

@@ -63,6 +63,12 @@ export const magazynConfig: MagazynConfig = {
 				path: "/sklep/certyfikaty",
 				blocks: ["testimonials", "faq"],
 			},
+			{
+				id: "o-nas",
+				label: "O nas",
+				path: "/o-nas",
+				blocks: ["hero", "about"],
+			},
 		],
 		globalBlocks: [
 			"announcementBar",

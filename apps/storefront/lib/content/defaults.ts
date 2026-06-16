@@ -1,4 +1,5 @@
 import type {
+	AboutPageContent,
 	GlobalContent,
 	BrandingCtaContent,
 	HeroContent,
@@ -55,10 +56,39 @@ export const LOGO_HERO_DEFAULT: HeroContent = {
 	ctaShowDownArrow: true,
 };
 
+export const ABOUT_HERO_DEFAULT: HeroContent = {
+	headline: "O NAS",
+	subtitle: "Kim jesteśmy?",
+	description: " ",
+	ctaLabel: "Sklep",
+	ctaHref: "/sklep",
+};
+
+export const ABOUT_PAGE_DEFAULT: AboutPageContent = {
+	sideCaption: "Zapoznaj się z nami",
+	introHeading: "O NAS",
+	introParagraphs: [
+		"Lumine to marka tworzona przez dwie siostry, która powstała z potrzeby podnoszenia standardów estetyki w branży beauty.",
+		"Projektujemy z wyczuciem i konsekwencją, dbając o spójność, detal i profesjonalny odbiór.",
+		"Pomagamy salonom budować wizerunek premium w praktyce: porządkować przestrzeń, czytelnie prowadzić klienta i wzmacniać pierwsze wrażenie.",
+	],
+	introImageAlt: "Założycielki Lumine Concept przy wspólnej pracy nad projektem",
+	introLabel: "my",
+	missionParagraphs: [
+		"Naszą misją jest podnosić doświadczenie klientów w salonach beauty poprzez dopracowane detale i spójną komunikację w przestrzeni.",
+		"Tworzymy rozwiązania, które pomagają budować zaufanie, porządek i profesjonalny odbiór marki — od wejścia, przez recepcję, aż po strefy zabiegowe.",
+		"Stawiamy na jakość, czytelność i estetykę, które realnie pracują na wizerunek salonu każdego dnia.",
+	],
+	missionImageAlt: "Praca nad tablicą z logo w pracowni Lumine Concept",
+	missionLabel: "nasza misja",
+	closingImageAlt: "Gotowa tablica z logo salonu beauty — realizacja Lumine Concept",
+};
+
 export const DEFAULT_PAGE_CONTENT: PageContentMap = {
 	home: { hero: HOME_HERO_DEFAULT, brandingCta: BRANDING_CTA_DEFAULT },
 	"logo-3d": { hero: LOGO_HERO_DEFAULT },
 	shop: {},
+	"o-nas": { hero: ABOUT_HERO_DEFAULT, about: ABOUT_PAGE_DEFAULT },
 };
 
 export const DEFAULT_GLOBAL_CONTENT: GlobalContent = {

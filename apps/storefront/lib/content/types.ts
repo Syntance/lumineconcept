@@ -4,10 +4,12 @@ export type ContentPageId =
 	| "shop"
 	| "logo-3d"
 	| "gotowe-wzory"
-	| "certyfikaty";
+	| "certyfikaty"
+	| "o-nas";
 
 export type ContentBlockKey =
 	| "hero"
+	| "about"
 	| "brandingCta"
 	| "testimonials"
 	| "faq"
@@ -145,8 +147,24 @@ export type InstagramTile = {
 	alt?: string;
 };
 
+export type AboutPageContent = {
+	sideCaption?: string;
+	introHeading?: string;
+	introParagraphs?: string[];
+	introImageUrl?: string;
+	introImageAlt?: string;
+	introLabel?: string;
+	missionParagraphs?: string[];
+	missionImageUrl?: string;
+	missionImageAlt?: string;
+	missionLabel?: string;
+	closingImageUrl?: string;
+	closingImageAlt?: string;
+};
+
 export type PageContent = {
 	hero?: HeroContent;
+	about?: AboutPageContent;
 	brandingCta?: BrandingCtaContent;
 	testimonials?: Testimonial[];
 	faq?: FaqItem[];

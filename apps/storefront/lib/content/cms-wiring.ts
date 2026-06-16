@@ -142,5 +142,9 @@ export const CMS_STOREFRONT_WIRING = {
 		"logo-3d": { hero: "LogoCategoryHeroSection", gallery: "LogoBoardRealizations" },
 		"gotowe-wzory": { testimonials: "gotowe-wzory/page.tsx", faq: "PageFaqSection" },
 		certyfikaty: { testimonials: "certyfikaty/page.tsx", faq: "PageFaqSection" },
+		"o-nas": {
+			hero: "AboutHeroSection",
+			about: "AboutIntroSection + AboutMissionSection + AboutClosingSection",
+		},
 	},
 } as const;
