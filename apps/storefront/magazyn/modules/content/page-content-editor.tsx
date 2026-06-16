@@ -8,6 +8,7 @@ import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import type { ContentBlockKey } from "@magazyn/core/config/types";
 import type {
+	AboutPageContent,
 	FaqItem,
 	GalleryPhoto,
 	HeroContent,
@@ -15,6 +16,7 @@ import type {
 	PageContent,
 	Testimonial,
 } from "@/lib/content/types";
+import { ABOUT_HERO_DEFAULT } from "@/lib/content/defaults";
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { usePreventWindowFileDrop } from "@magazyn/core/hooks/use-prevent-window-file-drop";
 import { savePageContentAction } from "./content-actions";
@@ -79,9 +81,22 @@ export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 	return (
 		<form onSubmit={onSubmit} className="flex max-w-3xl flex-col gap-6">
 			{blocks.includes("hero") ? (
-				<HeroEditor
-					value={content.hero}
-					onChange={(hero) => setContent((c) => ({ ...c, hero }))}
+				pageId === "o-nas" ? (
+					<AboutHeroEditor
+						value={content.hero}
+						onChange={(hero) => setContent((c) => ({ ...c, hero }))}
+					/>
+				) : (
+					<HeroEditor
+						value={content.hero}
+						onChange={(hero) => setContent((c) => ({ ...c, hero }))}
+					/>
+				)
+			) : null}
+			{blocks.includes("about") ? (
+				<AboutSectionsEditor
+					value={content.about}
+					onChange={(about) => setContent((c) => ({ ...c, about }))}
 				/>
 			) : null}
 			{blocks.includes("brandingCta") ? (
@@ -123,6 +138,146 @@ export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 				Zapisz treści
 			</Button>
 		</form>
+	);
+}
+
+function AboutHeroEditor({
+	value,
+	onChange,
+}: {
+	value?: HeroContent;
+	onChange: (v: HeroContent) => void;
+}) {
+	const hero = { ...ABOUT_HERO_DEFAULT, ...value };
+
+	return (
+		<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
+			<legend className="px-1 text-sm font-medium">Hero — O nas</legend>
+			<Input
+				value={hero.headline}
+				onChange={(e) => onChange({ ...hero, headline: e.target.value })}
+				placeholder="Nagłówek"
+				className="h-10"
+			/>
+			<Input
+				value={hero.subtitle ?? ""}
+				onChange={(e) => onChange({ ...hero, subtitle: e.target.value })}
+				placeholder="Podtytuł"
+				className="h-10"
+			/>
+			<OgImageField
+				label="Tło hero"
+				value={hero.desktopImageUrl ?? ""}
+				onChange={(url) => onChange({ ...hero, desktopImageUrl: url })}
+			/>
+		</fieldset>
+	);
+}
+
+function AboutSectionsEditor({
+	value,
+	onChange,
+}: {
+	value?: AboutPageContent;
+	onChange: (v: AboutPageContent) => void;
+}) {
+	const about = value ?? {};
+
+	function paragraphsToText(paragraphs: string[] | undefined): string {
+		return (paragraphs ?? []).join("\n\n");
+	}
+
+	function textToParagraphs(text: string): string[] {
+		return text
+			.split(/\n\s*\n/)
+			.map((p) => p.trim())
+			.filter((p) => p.length > 0);
+	}
+
+	return (
+		<fieldset className="flex flex-col gap-4 rounded-xl border border-border p-4">
+			<legend className="px-1 text-sm font-medium">Sekcje — O nas</legend>
+			<Input
+				value={about.sideCaption ?? ""}
+				onChange={(e) => onChange({ ...about, sideCaption: e.target.value })}
+				placeholder="Tekst boczny (pionowy)"
+				className="h-10"
+			/>
+			<div className="flex flex-col gap-3 rounded-lg border border-border p-3">
+				<p className="text-sm font-medium">Sekcja „my”</p>
+				<Input
+					value={about.introHeading ?? ""}
+					onChange={(e) => onChange({ ...about, introHeading: e.target.value })}
+					placeholder="Nagłówek sekcji"
+					className="h-10"
+				/>
+				<textarea
+					value={paragraphsToText(about.introParagraphs)}
+					onChange={(e) => onChange({ ...about, introParagraphs: textToParagraphs(e.target.value) })}
+					rows={6}
+					className={inputClass}
+					placeholder="Akapitów — oddziel pustą linią"
+				/>
+				<Input
+					value={about.introLabel ?? ""}
+					onChange={(e) => onChange({ ...about, introLabel: e.target.value })}
+					placeholder="Etykieta pod zdjęciem"
+					className="h-10"
+				/>
+				<Input
+					value={about.introImageAlt ?? ""}
+					onChange={(e) => onChange({ ...about, introImageAlt: e.target.value })}
+					placeholder="Alt zdjęcia intro"
+					className="h-10"
+				/>
+				<OgImageField
+					label="Zdjęcie intro"
+					value={about.introImageUrl ?? ""}
+					onChange={(url) => onChange({ ...about, introImageUrl: url })}
+				/>
+			</div>
+			<div className="flex flex-col gap-3 rounded-lg border border-border p-3">
+				<p className="text-sm font-medium">Sekcja „nasza misja”</p>
+				<textarea
+					value={paragraphsToText(about.missionParagraphs)}
+					onChange={(e) => onChange({ ...about, missionParagraphs: textToParagraphs(e.target.value) })}
+					rows={6}
+					className={inputClass}
+					placeholder="Akapitów — oddziel pustą linią"
+				/>
+				<Input
+					value={about.missionLabel ?? ""}
+					onChange={(e) => onChange({ ...about, missionLabel: e.target.value })}
+					placeholder="Etykieta nad zdjęciem"
+					className="h-10"
+				/>
+				<Input
+					value={about.missionImageAlt ?? ""}
+					onChange={(e) => onChange({ ...about, missionImageAlt: e.target.value })}
+					placeholder="Alt zdjęcia misji"
+					className="h-10"
+				/>
+				<OgImageField
+					label="Zdjęcie misji"
+					value={about.missionImageUrl ?? ""}
+					onChange={(url) => onChange({ ...about, missionImageUrl: url })}
+				/>
+			</div>
+			<div className="flex flex-col gap-3 rounded-lg border border-border p-3">
+				<p className="text-sm font-medium">Domknięcie strony</p>
+				<Input
+					value={about.closingImageAlt ?? ""}
+					onChange={(e) => onChange({ ...about, closingImageAlt: e.target.value })}
+					placeholder="Alt zdjęcia domknięcia"
+					className="h-10"
+				/>
+				<OgImageField
+					label="Zdjęcie domknięcia"
+					value={about.closingImageUrl ?? ""}
+					onChange={(url) => onChange({ ...about, closingImageUrl: url })}
+				/>
+			</div>
+		</fieldset>
 	);
 }
 

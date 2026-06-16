@@ -3,6 +3,8 @@ import { resolveCmsAssetUrl } from "./asset-url";
 import { isCmsMediaAssetUrl } from "./cms-media-gate";
 import { normalizeHeroCtaHref } from "./cta-href";
 import {
+	ABOUT_HERO_DEFAULT,
+	ABOUT_PAGE_DEFAULT,
 	DEFAULT_GLOBAL_CONTENT,
 	DEFAULT_PAGE_CONTENT,
 	DEFAULT_SITE_SETTINGS,
@@ -10,6 +12,7 @@ import {
 	LOGO_HERO_DEFAULT,
 } from "./defaults";
 import type {
+	AboutPageContent,
 	GlobalContent,
 	HeroContent,
 	PageContent,
@@ -185,8 +188,24 @@ const brandingCtaSchema = z.object({
 	desktopBackgroundUrl: cmsOptionalAssetUrlSchema.optional(),
 });
 
+const aboutPageContentSchema = z.object({
+	sideCaption: z.string().optional(),
+	introHeading: z.string().optional(),
+	introParagraphs: z.array(z.string().min(1)).optional(),
+	introImageUrl: cmsOptionalAssetUrlSchema.optional(),
+	introImageAlt: z.string().optional(),
+	introLabel: z.string().optional(),
+	missionParagraphs: z.array(z.string().min(1)).optional(),
+	missionImageUrl: cmsOptionalAssetUrlSchema.optional(),
+	missionImageAlt: z.string().optional(),
+	missionLabel: z.string().optional(),
+	closingImageUrl: cmsOptionalAssetUrlSchema.optional(),
+	closingImageAlt: z.string().optional(),
+});
+
 export const pageContentSchema = z.object({
 	hero: heroSchema.optional(),
+	about: aboutPageContentSchema.optional(),
 	brandingCta: brandingCtaSchema.optional(),
 	testimonials: z.array(testimonialSchema).optional(),
 	faq: z.array(faqSchema).optional(),
@@ -237,10 +256,24 @@ function resolveHeroAssets(hero: HeroContent | undefined): HeroContent | undefin
 	};
 }
 
+function resolveAboutAssets(about: AboutPageContent | undefined): AboutPageContent | undefined {
+	if (!about) return about;
+	const introImageUrl = resolvePublishedImageUrl(about.introImageUrl);
+	const missionImageUrl = resolvePublishedImageUrl(about.missionImageUrl);
+	const closingImageUrl = resolvePublishedImageUrl(about.closingImageUrl);
+	return {
+		...about,
+		...(introImageUrl ? { introImageUrl } : {}),
+		...(missionImageUrl ? { missionImageUrl } : {}),
+		...(closingImageUrl ? { closingImageUrl } : {}),
+	};
+}
+
 function resolvePageContentAssets(content: PageContent): PageContent {
 	return {
 		...content,
 		hero: resolveHeroAssets(content.hero),
+		about: resolveAboutAssets(content.about),
 		brandingCta: content.brandingCta
 			? (() => {
 					const desktopBackgroundUrl = resolvePublishedImageUrl(
@@ -400,6 +433,7 @@ export function parsePageContentMap(raw: unknown): PageContentMap {
 			...defaults,
 			...value,
 			hero: mergeHeroWithDefaults(value.hero, pageKey) ?? defaults?.hero,
+			about: mergeAboutWithDefaults(value.about) ?? defaults?.about,
 		});
 	}
 	return merged;
@@ -416,6 +450,7 @@ export function parsePageContentMapForAdmin(raw: unknown): PageContentMap {
 			...defaults,
 			...value,
 			hero: mergeHeroWithDefaultsForAdmin(value.hero, pageKey) ?? defaults?.hero,
+			about: mergeAboutWithDefaultsForAdmin(value.about) ?? defaults?.about,
 		};
 	}
 	return merged;
@@ -513,7 +548,13 @@ export function mergeHeroWithDefaults(
 	pageId: keyof PageContentMap,
 ): HeroContent | undefined {
 	const defaults =
-		pageId === "home" ? HOME_HERO_DEFAULT : pageId === "logo-3d" ? LOGO_HERO_DEFAULT : undefined;
+		pageId === "home"
+			? HOME_HERO_DEFAULT
+			: pageId === "logo-3d"
+				? LOGO_HERO_DEFAULT
+				: pageId === "o-nas"
+					? ABOUT_HERO_DEFAULT
+					: undefined;
 	if (!defaults) return hero;
 	if (!hero) return defaults;
 
@@ -537,7 +578,13 @@ export function mergeHeroWithDefaultsForAdmin(
 	pageId: keyof PageContentMap,
 ): HeroContent | undefined {
 	const defaults =
-		pageId === "home" ? HOME_HERO_DEFAULT : pageId === "logo-3d" ? LOGO_HERO_DEFAULT : undefined;
+		pageId === "home"
+			? HOME_HERO_DEFAULT
+			: pageId === "logo-3d"
+				? LOGO_HERO_DEFAULT
+				: pageId === "o-nas"
+					? ABOUT_HERO_DEFAULT
+					: undefined;
 	if (!defaults) return hero;
 	if (!hero) return defaults;
 
@@ -551,6 +598,45 @@ export function mergeHeroWithDefaultsForAdmin(
 		...(mobileImageUrl ? { mobileImageUrl } : {}),
 		...(hero.desktopBlurDataURL ? { desktopBlurDataURL: hero.desktopBlurDataURL } : {}),
 		...(hero.mobileBlurDataURL ? { mobileBlurDataURL: hero.mobileBlurDataURL } : {}),
+	};
+}
+
+export function mergeAboutWithDefaults(
+	about: AboutPageContent | undefined,
+): AboutPageContent | undefined {
+	if (!about) return ABOUT_PAGE_DEFAULT;
+	const introImageUrl = normalizeLocalAssetUrl(about.introImageUrl);
+	const missionImageUrl = normalizeLocalAssetUrl(about.missionImageUrl);
+	const closingImageUrl = normalizeLocalAssetUrl(about.closingImageUrl);
+	return {
+		...ABOUT_PAGE_DEFAULT,
+		...about,
+		introParagraphs:
+			about.introParagraphs?.filter((p) => p.trim().length > 0) ??
+			ABOUT_PAGE_DEFAULT.introParagraphs,
+		missionParagraphs:
+			about.missionParagraphs?.filter((p) => p.trim().length > 0) ??
+			ABOUT_PAGE_DEFAULT.missionParagraphs,
+		...(introImageUrl ? { introImageUrl } : {}),
+		...(missionImageUrl ? { missionImageUrl } : {}),
+		...(closingImageUrl ? { closingImageUrl } : {}),
+	};
+}
+
+/** Panel Magazyn — zachowaj surowe URL-e R2 w sekcjach O nas. */
+export function mergeAboutWithDefaultsForAdmin(
+	about: AboutPageContent | undefined,
+): AboutPageContent | undefined {
+	if (!about) return ABOUT_PAGE_DEFAULT;
+	return {
+		...ABOUT_PAGE_DEFAULT,
+		...about,
+		introParagraphs:
+			about.introParagraphs?.filter((p) => p.trim().length > 0) ??
+			ABOUT_PAGE_DEFAULT.introParagraphs,
+		missionParagraphs:
+			about.missionParagraphs?.filter((p) => p.trim().length > 0) ??
+			ABOUT_PAGE_DEFAULT.missionParagraphs,
 	};
 }
 
@@ -578,6 +664,22 @@ export function preparePageContentForSave(_pageId: string, content: PageContent)
 		next.gallery = next.gallery
 			.map((item) => ({ ...item, imageUrl: item.imageUrl.trim(), alt: item.alt?.trim() }))
 			.filter((item) => item.imageUrl.length > 0);
+	}
+	if (next.about) {
+		const about = { ...next.about };
+		if (!about.introImageUrl?.trim()) delete about.introImageUrl;
+		else about.introImageUrl = about.introImageUrl.trim();
+		if (!about.missionImageUrl?.trim()) delete about.missionImageUrl;
+		else about.missionImageUrl = about.missionImageUrl.trim();
+		if (!about.closingImageUrl?.trim()) delete about.closingImageUrl;
+		else about.closingImageUrl = about.closingImageUrl.trim();
+		about.introParagraphs = about.introParagraphs
+			?.map((p) => p.trim())
+			.filter((p) => p.length > 0);
+		about.missionParagraphs = about.missionParagraphs
+			?.map((p) => p.trim())
+			.filter((p) => p.length > 0);
+		next.about = Object.keys(about).length ? about : undefined;
 	}
 	return next;
 }
