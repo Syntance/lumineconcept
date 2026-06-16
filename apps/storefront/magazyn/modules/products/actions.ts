@@ -9,7 +9,7 @@ import { adminUpload } from "@magazyn/core/medusa/client";
 import { requireAdminSession } from "@magazyn/core/auth/require-session";
 import { recordAudit } from "@magazyn/core/audit/audit-log";
 import { resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
-import { uploadCmsAssetFile } from "@/lib/product-upload/product-file";
+import { uploadCmsAssetFile, formatCmsUploadError } from "@/lib/product-upload/product-file";
 import { slugify } from "@magazyn/core/lib/slug";
 import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
 import {
@@ -294,16 +294,13 @@ export async function uploadImagesAction(formData: FormData): Promise<UploadStat
 					if (fallback[0]) urls.push(fallback[0]);
 					continue;
 				}
-				if (inner instanceof Error && !inner.message.startsWith("MEDUSA_")) {
-					return { urls: [], error: inner.message };
-				}
-				throw inner;
+				return { urls: [], error: formatCmsUploadError(inner) };
 			}
 		}
 		return { urls, error: null };
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
 		if (error instanceof AdminApiError) return { urls: [], error: error.message };
-		return { urls: [], error: "Upload nie powiódł się." };
+		return { urls: [], error: formatCmsUploadError(error) };
 	}
 }

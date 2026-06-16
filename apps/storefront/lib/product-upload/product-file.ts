@@ -182,15 +182,21 @@ async function uploadViaR2(
   const prefix = keyPrefix.endsWith("/") ? keyPrefix : `${keyPrefix}/`;
   const key = `${prefix}${timestamp}-${random}-${safeName}`;
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
+  const contentType =
+    inferCmsMimeType(file) ?? inferMimeType(file) ?? (file.type || "application/octet-stream");
+  const body =
+    typeof file.stream === "function"
+      ? file.stream()
+      : new Uint8Array(await file.arrayBuffer());
 
   await withUploadTimeout(
     cachedR2.send(
       new PutObjectCommand({
         Bucket: config.bucket,
         Key: key,
-        Body: bytes,
-        ContentType: file.type || "application/octet-stream",
+        Body: body,
+        ContentLength: file.size,
+        ContentType: contentType,
       }),
     ),
     "R2_UPLOAD",
@@ -211,17 +217,66 @@ export function validateProductUploadFile(file: File): string | null {
   return null;
 }
 
+/** Zgodne z Medusa `admin.maxUploadFileSize` (10 MB). */
+export const MAX_CMS_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 const CMS_IMAGE_TYPES = new Set([
   "image/png",
   "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
   "image/webp",
   "image/gif",
   "image/avif",
 ]);
 
+const CMS_EXT_TO_MIME: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  gif: "image/gif",
+  avif: "image/avif",
+};
+
+function inferCmsMimeType(file: File): string | null {
+  const type = file.type.toLowerCase();
+  if (CMS_IMAGE_TYPES.has(type)) return type;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const fromExt = CMS_EXT_TO_MIME[ext];
+  return fromExt && CMS_IMAGE_TYPES.has(fromExt) ? fromExt : null;
+}
+
+export function formatCmsUploadError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return "Upload nie powiódł się. Spróbuj ponownie.";
+  }
+
+  const msg = error.message;
+  if (msg.includes("Plik jest za duży") || msg.includes("Dozwolone formaty")) return msg;
+  if (msg === "R2_UPLOAD_TIMEOUT") {
+    return "Upload trwa zbyt długo. Spróbuj ponownie lub mniejszy plik (JPG/WebP).";
+  }
+  if (msg.startsWith("MEDUSA_UPLOAD_FAILED_413")) {
+    return "Plik jest za duży dla serwera (maks. 10 MB). Zapisz jako JPG/WebP.";
+  }
+  if (msg.startsWith("MEDUSA_UPLOAD_FAILED_")) {
+    return "Serwer odrzucił plik. Spróbuj JPG/WebP do 10 MB.";
+  }
+  if (msg === "R2_UPLOAD_FAILED" || msg.endsWith("_TIMEOUT")) {
+    return "Upload do magazynu plików nie powiódł się. Spróbuj ponownie.";
+  }
+  if (msg.startsWith("MEDUSA_")) {
+    return "Upload nie powiódł się. Spróbuj JPG/WebP do 10 MB.";
+  }
+  return msg;
+}
+
 export function validateCmsUploadFile(file: File): string | null {
-  const mime = inferMimeType(file) ?? (CMS_IMAGE_TYPES.has(file.type) ? file.type : null);
-  if (!mime || !CMS_IMAGE_TYPES.has(mime)) {
+  if (file.size > MAX_CMS_UPLOAD_BYTES) {
+    return `Plik jest za duży (maks. ${Math.floor(MAX_CMS_UPLOAD_BYTES / (1024 * 1024))} MB). Zapisz jako JPG/WebP lub zmniejsz rozdzielczość.`;
+  }
+  if (!inferCmsMimeType(file)) {
     return "Dozwolone formaty: JPG, PNG, WEBP, GIF, AVIF.";
   }
   return null;

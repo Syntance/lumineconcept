@@ -4,7 +4,7 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useId, useState } from "react";
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
-import { uploadImagesAction } from "@magazyn/modules/products/actions";
+import { MAX_CMS_UPLOAD_BYTES } from "@/lib/product-upload/product-file";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
 
@@ -39,26 +39,51 @@ export function OgImageField({
 			if (images.length === 0) return;
 
 			const toUpload = batchMode ? images : images.slice(0, 1);
+			for (const file of toUpload) {
+				if (file.size > MAX_CMS_UPLOAD_BYTES) {
+					setError(
+						`Plik „${file.name}” jest za duży (maks. ${Math.floor(MAX_CMS_UPLOAD_BYTES / (1024 * 1024))} MB). Zapisz jako JPG/WebP.`,
+					);
+					return;
+				}
+			}
+
 			setUploading(true);
 			setError(null);
 			try {
 				const formData = new FormData();
 				for (const file of toUpload) formData.append("files", file);
-				const result = await uploadImagesAction(formData);
-				if (result.error) {
-					setError(result.error);
+
+				const res = await fetch("/api/magazyn/cms-upload", {
+					method: "POST",
+					body: formData,
+					credentials: "same-origin",
+				});
+
+				let payload: { urls?: string[]; error?: string | null };
+				try {
+					payload = (await res.json()) as { urls?: string[]; error?: string | null };
+				} catch {
+					setError("Upload nie powiódł się — nieprawidłowa odpowiedź serwera.");
 					return;
 				}
-				if (result.urls.length === 0) return;
+
+				if (!res.ok || payload.error) {
+					setError(payload.error ?? "Upload nie powiódł się. Spróbuj ponownie.");
+					return;
+				}
+
+				const urls = payload.urls ?? [];
+				if (urls.length === 0) return;
 
 				if (batchMode) {
-					onMultipleChange(result.urls);
+					onMultipleChange(urls);
 				} else {
-					const url = result.urls[0];
+					const url = urls[0];
 					if (url) onChange(url);
 				}
 			} catch {
-				setError("Upload nie powiódł się. Spróbuj ponownie lub mniejsze pliki.");
+				setError("Upload nie powiódł się. Sprawdź połączenie i spróbuj ponownie.");
 			} finally {
 				setUploading(false);
 			}
