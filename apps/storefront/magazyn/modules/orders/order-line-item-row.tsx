@@ -48,6 +48,7 @@ export function OrderLineItemRow({ item, currencyCode }: Props) {
 	const links = parseLineItemLinks(metadata);
 	const showColors = hasOrderLineItemColors(metadata);
 	const showDetails = hasOrderLineItemPersonalizationDetails(metadata);
+	const lineNote = metadata?.line_note?.trim();
 
 	return (
 		<li className="py-4">
@@ -60,6 +61,9 @@ export function OrderLineItemRow({ item, currencyCode }: Props) {
 				</span>
 				<div className="min-w-0 flex-1">
 					<p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+					{lineNote ? (
+						<p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">Uwagi: {lineNote}</p>
+					) : null}
 					{showColors ? (
 						<div className="mt-1 [&_.text-brand-500]:text-muted-foreground [&_.text-brand-600]:text-muted-foreground [&_.text-brand-700]:text-foreground">
 							<CartConfiguratorDetails metadata={metadata} density="compact" showExtras={false} />
