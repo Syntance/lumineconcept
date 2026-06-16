@@ -30,7 +30,7 @@ export function OrderTextFieldTile({ label, value }: Props) {
 			onClick={toggle}
 			onKeyDown={onKeyDown}
 			className={cn(
-				"overflow-hidden rounded-lg border border-border/80 bg-card text-left shadow-sm outline-none",
+				"w-full overflow-hidden rounded-lg border border-border/80 bg-card text-left shadow-sm outline-none",
 				"cursor-pointer transition-colors hover:bg-muted/20",
 				"focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
 			)}

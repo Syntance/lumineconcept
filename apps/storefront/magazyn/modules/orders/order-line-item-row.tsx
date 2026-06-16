@@ -79,13 +79,13 @@ export function OrderLineItemRow({ item, currencyCode }: Props) {
 								/>
 								Szczegóły
 							</summary>
-							<div className="mt-2 space-y-3 border-l border-border pl-3">
+							<div className="mt-2 w-full space-y-3 border-l border-border pl-3">
 								{textFields.length > 0 ? (
 									<div>
 										<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
 											Pola tekstowe
 										</p>
-										<div className="grid gap-2 sm:grid-cols-2">
+										<div className="flex w-full flex-col gap-2">
 											{textFields.map((field) => (
 												<OrderTextFieldTile
 													key={`${field.label}-${field.value}`}
