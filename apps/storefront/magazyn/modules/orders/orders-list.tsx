@@ -43,6 +43,7 @@ const STATUS_OPTIONS = [
 	{ value: "pending", label: "W toku" },
 	{ value: "completed", label: "Zrealizowane" },
 	{ value: "requires_action", label: "Wymaga działania" },
+	{ value: "canceled", label: "Anulowane" },
 ] as const;
 
 const PAYMENT_OPTIONS = [
@@ -110,13 +111,19 @@ export function OrdersList({ orders }: { orders: AdminOrderRow[] }) {
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [paymentFilter, setPaymentFilter] = useState<string>("all");
 	const [fulfillmentFilter, setFulfillmentFilter] = useState<string>("all");
+	const [hideCanceled, setHideCanceled] = useState(false);
 	const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
 
 	const hasFilters =
-		query.trim().length > 0 || statusFilter !== "all" || paymentFilter !== "all" || fulfillmentFilter !== "all";
+		query.trim().length > 0 ||
+		statusFilter !== "all" ||
+		paymentFilter !== "all" ||
+		fulfillmentFilter !== "all" ||
+		hideCanceled;
 
 	const filtered = useMemo(() => {
 		const result = orders.filter((order) => {
+			if (hideCanceled && order.status === "canceled") return false;
 			if (!matchesSearch(order, query)) return false;
 			if (statusFilter !== "all" && order.status !== statusFilter) return false;
 			if (paymentFilter !== "all" && order.paymentStatus !== paymentFilter) return false;
@@ -124,7 +131,7 @@ export function OrdersList({ orders }: { orders: AdminOrderRow[] }) {
 			return true;
 		});
 		return [...result].sort((a, b) => compareOrders(a, b, sort));
-	}, [orders, query, statusFilter, paymentFilter, fulfillmentFilter, sort]);
+	}, [orders, query, statusFilter, paymentFilter, fulfillmentFilter, hideCanceled, sort]);
 
 	function toggleSort(column: SortColumn) {
 		setSort((current) =>
@@ -139,6 +146,7 @@ export function OrdersList({ orders }: { orders: AdminOrderRow[] }) {
 		setStatusFilter("all");
 		setPaymentFilter("all");
 		setFulfillmentFilter("all");
+		setHideCanceled(false);
 		setSort(DEFAULT_SORT);
 	}
 
@@ -188,6 +196,15 @@ export function OrdersList({ orders }: { orders: AdminOrderRow[] }) {
 							<option key={opt.value} value={opt.value}>{opt.label}</option>
 						))}
 					</select>
+					<label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm text-foreground">
+						<input
+							type="checkbox"
+							checked={hideCanceled}
+							onChange={(e) => setHideCanceled(e.target.checked)}
+							className="size-4 rounded border-border accent-primary"
+						/>
+						Ukryj anulowane
+					</label>
 					{hasFilters ? (
 						<button
 							type="button"

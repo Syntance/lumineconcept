@@ -248,15 +248,25 @@ const SUMMARY_LIST_FIELDS = ["id", "status", "payment_status", "total", "currenc
 
 const SUMMARY_PAGE_SIZE = 100;
 
-/** Zamówienia widoczne w Magazynie — bez archiwizowanych, anulowanych i szkiców. */
-const MAGAZYN_VISIBLE_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set([
+/** Aktywne zamówienia — bez archiwizowanych, anulowanych i szkiców (np. podsumowanie pulpitu). */
+const MAGAZYN_ACTIVE_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set([
 	"pending",
 	"completed",
 	"requires_action",
 ]);
 
-function isMagazynVisibleOrder(status: OrderStatus | string): boolean {
-	return MAGAZYN_VISIBLE_ORDER_STATUSES.has(status as OrderStatus);
+/** Zamówienia na liście Magazynu — aktywne + anulowane (bez archiwizowanych i szkiców). */
+const MAGAZYN_LIST_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set([
+	...MAGAZYN_ACTIVE_ORDER_STATUSES,
+	"canceled",
+]);
+
+function isMagazynActiveOrder(status: OrderStatus | string): boolean {
+	return MAGAZYN_ACTIVE_ORDER_STATUSES.has(status as OrderStatus);
+}
+
+function isMagazynListOrder(status: OrderStatus | string): boolean {
+	return MAGAZYN_LIST_ORDER_STATUSES.has(status as OrderStatus);
 }
 
 function isPaidPaymentStatus(status: OrderPaymentStatus): boolean {
@@ -292,7 +302,7 @@ export async function getAdminOrdersOverviewSummary(): Promise<AdminOrdersOvervi
 
 		for (const order of data.orders ?? []) {
 			const status = order.status ?? "pending";
-			if (!isMagazynVisibleOrder(status)) continue;
+			if (!isMagazynActiveOrder(status)) continue;
 
 			const paymentStatus = order.payment_status ?? "not_paid";
 			const totalMinor = toMinorUnits(order.total);
@@ -322,7 +332,7 @@ export async function listAdminOrders(): Promise<AdminOrderRow[]> {
 	);
 
 	return data.orders
-		.filter((order) => isMagazynVisibleOrder(order.status ?? "pending"))
+		.filter((order) => isMagazynListOrder(order.status ?? "pending"))
 		.map((order) => {
 			const metadata = normalizeMetadata(order.metadata);
 			return {
