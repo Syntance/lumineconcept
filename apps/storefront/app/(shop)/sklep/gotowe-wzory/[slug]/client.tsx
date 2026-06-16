@@ -54,7 +54,8 @@ import {
 import { ColorStepPanel } from "@/components/product/ColorStepPanel";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
-import { trackProductViewed } from "@/lib/analytics/events";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
+import { productToItem } from "@/lib/analytics/medusa-items";
 import { DeliveryInfoBlock } from "@/components/product/DeliveryInfoBlock";
 import { DeliveryTrustBadges } from "@/components/product/DeliveryTrustBadges";
 import {
@@ -113,6 +114,7 @@ export function ProductPageClient({
   standSurchargeGrosze = 0,
   minOrderQuantity = 1,
 }: ProductPageClientProps) {
+  const { track } = useAnalytics();
   const colorOptionTitles = useMemo(
     () => resolveColorSlotTitles(product.options, product.metadata),
     [product.options, product.metadata],
@@ -423,13 +425,20 @@ export function ProductPageClient({
   const displayPrice = Math.round((baseDisplayPrice + standAddonPln) * 100) / 100;
 
   useEffect(() => {
-    trackProductViewed({
-      id: product.id,
-      title: product.title,
-      price: displayPrice,
+    track("product_view", {
+      item_id: product.id,
+      item_name: product.title,
+      value: displayPrice,
       currency: "PLN",
+      items: [
+        productToItem({
+          id: product.id,
+          title: product.title,
+          price: displayPrice,
+        }),
+      ],
     });
-  }, [product.id, product.title, displayPrice]);
+  }, [product.id, product.title, displayPrice, track]);
 
   useEffect(() => {
     if (!calloutAction) return;

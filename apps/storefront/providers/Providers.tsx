@@ -2,14 +2,14 @@
 
 import { Suspense, type ReactNode } from "react";
 import { CartProvider } from "./CartProvider";
-import { PostHogProvider } from "./PostHogProvider";
+import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={null}>
-      <PostHogProvider>
+      <AnalyticsProvider>
         <CartProvider>{children}</CartProvider>
-      </PostHogProvider>
+      </AnalyticsProvider>
     </Suspense>
   );
 }

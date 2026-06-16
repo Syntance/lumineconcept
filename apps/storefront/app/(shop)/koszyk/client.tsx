@@ -1,16 +1,37 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { cartToEcommercePayload } from "@/lib/analytics/medusa-items";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
 import { CartItem } from "@/components/cart/CartItem";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { PayPoPromo } from "@/components/marketing/PayPoPromo";
+import { ShoppingBag } from "lucide-react";
 
 export function KoszykClient() {
-  const { items, itemCount, grandTotal } = useCart();
+  const { items, itemCount, grandTotal, total } = useCart();
+  const { track } = useAnalytics();
+  const viewedRef = useRef(false);
+
+  useEffect(() => {
+    if (viewedRef.current || items.length === 0) return;
+    viewedRef.current = true;
+    track("view_cart", cartToEcommercePayload({
+      items: items.map((i) => ({
+        id: i.id,
+        variant_id: i.variant_id,
+        title: i.title,
+        quantity: i.quantity,
+        unit_price: i.unit_price,
+      })),
+      total: total ?? grandTotal,
+      currency: "PLN",
+    }));
+  }, [items, total, grandTotal, track]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -54,6 +75,13 @@ export function KoszykClient() {
               </div>
               <Link
                 href="/checkout"
+                onClick={() =>
+                  track("cta_click", {
+                    cta_label: "Przejdź do płatności",
+                    position: "cart_page",
+                    target_url: "/checkout",
+                  })
+                }
                 className="mt-6 block w-full rounded-none bg-brand-900 py-3 text-center text-sm font-semibold text-white hover:bg-brand-800 transition-colors"
               >
                 Przejdź do płatności

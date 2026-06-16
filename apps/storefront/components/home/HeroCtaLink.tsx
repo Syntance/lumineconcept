@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { normalizeHeroCtaHref } from "@/lib/content/cta-href";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
 
 const MOBILE_MAX_QUERY = "(max-width: 1023px)";
 
@@ -70,6 +71,7 @@ type HeroCtaLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & 
  */
 export const HeroCtaLink = forwardRef<HTMLAnchorElement, HeroCtaLinkProps>(
 	function HeroCtaLink({ href, onClick, children, ...rest }, ref) {
+		const { track } = useAnalytics();
 		const normalized = normalizeHeroCtaHref(href);
 		const pathname = usePathname();
 		const searchParams = useSearchParams();
@@ -80,6 +82,14 @@ export const HeroCtaLink = forwardRef<HTMLAnchorElement, HeroCtaLinkProps>(
 		const displayHref = isHashScroll ? currentPath : hrefWithoutFragment(normalized);
 
 		const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
+			track("cta_click", {
+				cta_label:
+					typeof children === "string"
+						? children
+						: "hero_cta",
+				position: "hero",
+				target_url: normalized,
+			});
 			if (isHashScroll) {
 				e.preventDefault();
 				const fragment = hashFragment(normalized);

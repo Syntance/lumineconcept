@@ -19,7 +19,7 @@ interface ShippingOptionView {
 
 interface ShippingSelectorProps {
   selectedOptionId: string;
-  onSelect: (optionId: string) => void;
+  onSelect: (optionId: string, optionName?: string) => void;
 }
 
 function mapOptions(
@@ -84,7 +84,7 @@ export function ShippingSelector({
   useEffect(() => {
     const only = options.length === 1 ? options[0] : null;
     if (only && !selectedOptionId) {
-      onSelect(only.id);
+      onSelect(only.id, only.name);
     }
   }, [options, selectedOptionId, onSelect]);
 
@@ -114,7 +114,7 @@ export function ShippingSelector({
           <button
             key={option.id}
             type="button"
-            onClick={() => onSelect(option.id)}
+            onClick={() => onSelect(option.id, option.name)}
             className={`w-full flex items-start gap-4 rounded-lg border-2 p-4 text-left transition-colors ${
               isSelected
                 ? "border-brand-800 bg-accent/15 shadow-sm"

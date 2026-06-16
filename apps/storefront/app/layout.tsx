@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Providers } from "@/providers/Providers";
 import { CookieConsent } from "@/components/common/CookieConsent";
+import { ConsentModeScript } from "@/components/analytics/ConsentModeScript";
 import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
+
+const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID ?? "";
 
 /**
  * Fonty brandowe — `display: "swap"` gwarantuje SPÓJNE renderowanie marki
@@ -119,6 +123,8 @@ export default function RootLayout({
       <head>
         {/* Hero preload generowany przez next/image priority w HeroSection (URL z CMS). */}
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <ConsentModeScript />
+        {GA4_ID ? <GoogleAnalytics gaId={GA4_ID} /> : null}
       </head>
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">
         <CookieConsent />

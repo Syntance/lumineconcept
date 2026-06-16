@@ -5,7 +5,8 @@ import { useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { CartConfiguratorDetails } from "@/components/cart/CartConfiguratorDetails";
 import { formatPrice } from "@/lib/utils";
-import { trackRemoveFromCart } from "@/lib/analytics/events";
+import { cartLineToItem } from "@/lib/analytics/medusa-items";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
 import { minOrderQuantityFromLineMetadata } from "@/lib/products/min-order-quantity";
 
 interface CartItemData {
@@ -32,6 +33,7 @@ function hasPerElementColors(meta: Record<string, string>): boolean {
 
 export function CartItem({ item }: { item: CartItemData }) {
   const { updateItem, removeItem } = useCart();
+  const { track } = useAnalytics();
   const [isUpdating, setIsUpdating] = useState(false);
   const isOptimistic = item.optimistic === true;
   const minQuantity = minOrderQuantityFromLineMetadata(item.metadata);
@@ -50,7 +52,21 @@ export function CartItem({ item }: { item: CartItemData }) {
   const handleRemove = async () => {
     if (isOptimistic) return;
     setIsUpdating(true);
-    trackRemoveFromCart({ id: item.id, price: item.total });
+    const lineItem = cartLineToItem({
+      id: item.id,
+      title: item.title,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+    });
+    const lineValue =
+      item.unit_price * item.quantity ||
+      (typeof item.total === "number" ? item.total : 0);
+    track("remove_from_cart", {
+      currency: "PLN",
+      value: lineValue,
+      items: [lineItem],
+      items_count: item.quantity,
+    });
     try {
       await removeItem(item.id);
     } finally {

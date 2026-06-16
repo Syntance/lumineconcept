@@ -11,7 +11,7 @@ import type { ActiveFilters, FilterConfig } from "@/components/product/filter-ty
 import {
   clearNonCategoryFilters,
 } from "@/components/product/filter-types";
-import { trackCategoryViewed, trackProductFiltered, trackSearchQuery } from "@/lib/analytics/events";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
 import { MIN_PRODUCT_SEARCH_LENGTH } from "@/lib/products/product-search";
 import { useShopListingCategoryOptional } from "@/components/shop/ShopListingCategoryContext";
 import { medusaCategoryIdsForScope } from "@/lib/medusa/category-tree";
@@ -99,6 +99,7 @@ export function ShopGridClient({
   /** Prymityw stabilny przy tym samym zestawie ID (w przeciwieństwie do referencji obiektu z RSC). */
   const medusaScopeKey = JSON.stringify(resolvedMedusaScopeMap);
   const listingCategory = useShopListingCategoryOptional();
+  const { track } = useAnalytics();
 
   const [products, setProducts] = useState<SimpleProduct[]>(initialProducts);
   const [totalFiltered, setTotalFiltered] = useState(totalCount);
@@ -165,7 +166,19 @@ export function ShopGridClient({
   }, [searchInput]);
 
   useEffect(() => {
-    trackCategoryViewed(productBasePath.split("/").pop() ?? "all", productBasePath);
+    if (products.length === 0) return;
+    track("view_item_list", {
+      item_list_name: productBasePath.split("/").pop() ?? "all",
+      currency: "PLN",
+      items: products.slice(0, 20).map((p) => ({
+        item_id: p.id,
+        item_name: p.title,
+        price: p.price,
+        quantity: 1,
+        item_category: productBasePath.split("/").pop() ?? undefined,
+      })),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productBasePath]);
 
   useEffect(() => {
@@ -202,7 +215,10 @@ export function ShopGridClient({
           setProducts(data.products);
           setTotalFiltered(data.count);
           if (f.search && f.search.trim().length >= MIN_PRODUCT_SEARCH_LENGTH) {
-            trackSearchQuery(f.search.trim(), data.count);
+            track("search", {
+              search_term: f.search.trim(),
+              results_count: data.count,
+            });
           }
         }
       })
@@ -239,18 +255,18 @@ export function ShopGridClient({
     if (next.category !== undefined) {
       listingCategory?.setActiveCategoryId(next.category);
     }
-    trackProductFiltered({
+    track("product_filtered", {
       category: next.category,
       sizes: next.sizes,
       materials: next.materials,
       finishes: next.finishes,
-      led: next.led,
-      priceMin: next.priceMin,
-      priceMax: next.priceMax,
+      led: next.led === undefined ? undefined : String(next.led),
+      price_min: next.priceMin,
+      price_max: next.priceMax,
       sort: next.sort,
       search: next.search,
     });
-  }, [searchInput, listingCategory]);
+  }, [searchInput, listingCategory, track]);
 
   const showLoadMore = !listLoading && products.length > 0 && products.length < totalFiltered;
 

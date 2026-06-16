@@ -1,8 +1,10 @@
+import { ABOUT_MEDIA_GUTTER_LEFT, ABOUT_TEXT_GUTTER_RIGHT } from "@/components/about/about-media";
+import { AboutBodyText } from "@/components/about/AboutBodyText";
 import { AboutArchImage } from "@/components/about/AboutArchImage";
 import { AboutMediaBlock } from "@/components/about/AboutMediaBlock";
 import { AboutSectionColumns } from "@/components/about/AboutSectionColumns";
 import { AboutSectionLabel } from "@/components/about/AboutSectionLabel";
-import { ABOUT_BODY_TEXT_CLASS } from "@/components/about/about-typography";
+import { ABOUT_SECTION_HEADING_CLASS } from "@/components/about/about-typography";
 import type { ResolvedAboutSections } from "@/lib/content/about";
 
 type AboutIntroSectionProps = {
@@ -13,7 +15,7 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
   return (
     <section
       aria-labelledby="about-intro-heading"
-      className="relative z-10 -mt-20 bg-brand-50 sm:-mt-24 lg:-mt-28"
+      className="relative bg-brand-50 -mt-20 sm:-mt-24 lg:-mt-28"
     >
       {sections.sideCaption ? (
         <div className="pointer-events-none absolute inset-y-16 right-3 hidden xl:block" aria-hidden>
@@ -25,23 +27,17 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 
       <AboutSectionColumns
         className="pb-16 pt-0 sm:pb-20 lg:pb-24"
-        textClassName="md:pr-4 lg:pt-14 xl:pt-16"
-        mediaClassName="relative z-20 flex w-full justify-center sm:-mt-4 md:justify-end lg:-mt-48 xl:-mt-56"
+        textClassName={`${ABOUT_TEXT_GUTTER_RIGHT} lg:pt-14 xl:pt-16`}
+        mediaClassName={`relative z-20 flex w-full justify-center sm:-mt-4 md:justify-start ${ABOUT_MEDIA_GUTTER_LEFT} lg:-mt-48 xl:-mt-56`}
         text={
           <>
             <h2
               id="about-intro-heading"
-              className="mb-8 text-right font-binerka text-3xl tracking-[0.14em] text-brand-800 sm:text-4xl"
+              className={`mb-8 text-right ${ABOUT_SECTION_HEADING_CLASS}`}
             >
               {sections.introHeading}
             </h2>
-            <div className={`space-y-5 text-right text-brand-700 ${ABOUT_BODY_TEXT_CLASS}`}>
-              {sections.introParagraphs.map((paragraph) => (
-                <p key={paragraph} className="text-pretty">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
+            <AboutBodyText paragraphs={sections.introParagraphs} className="text-right" />
           </>
         }
         media={

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { trackCrossSellClick } from "@/lib/analytics/events";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
+import { markUpsellReferral } from "@/lib/analytics/upsell-attribution";
 
 interface UpsellProduct {
   id: string;
@@ -18,6 +19,7 @@ interface CartUpsellProps {
 }
 
 export function CartUpsell({ currentItemIds }: CartUpsellProps) {
+  const { track } = useAnalytics();
   const [suggestions, setSuggestions] = useState<UpsellProduct[]>([]);
 
   useEffect(() => {
@@ -44,12 +46,13 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
           <Link
             key={p.id}
             href={`/sklep/gotowe-wzory/${p.handle}`}
-            onClick={() =>
-              trackCrossSellClick({
-                fromProduct: currentItemIds[0],
-                toProduct: p.id,
-              })
-            }
+            onClick={() => {
+              track("cross_sell_click", {
+                from_product: currentItemIds[0],
+                to_product: p.id,
+              });
+              markUpsellReferral(p.id, currentItemIds[0]);
+            }}
             className="flex items-center gap-3 rounded-md p-1.5 transition-colors hover:bg-brand-50"
           >
             {p.thumbnail ? (

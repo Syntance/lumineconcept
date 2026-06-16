@@ -49,12 +49,12 @@ export function AboutHeroSection({ hero }: AboutHeroSectionProps) {
         <div className="max-w-xl">
           <h1
             id="about-hero-heading"
-            className="font-binerka text-5xl tracking-[0.12em] text-white sm:text-6xl lg:text-7xl"
+            className="font-binerka text-5xl leading-none tracking-[0.12em] text-white sm:text-6xl lg:text-7xl"
           >
             {hero.headline}
           </h1>
           {hero.subtitle ? (
-            <p className="mt-3 font-gilroy text-xl italic tracking-[0.06em] text-brand-100 sm:text-2xl">
+            <p className="-mt-0.5 font-gilroy text-2xl font-normal leading-tight tracking-[0.06em] text-brand-100 sm:text-3xl lg:text-4xl">
               {hero.subtitle}
             </p>
           ) : null}

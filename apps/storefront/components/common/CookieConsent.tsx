@@ -82,7 +82,7 @@ export function CookieConsent() {
               </h2>
               <p className="mt-1 text-sm leading-snug text-brand-600">
                 Używamy plików cookie, żeby strona działała (koszyk, sesja), a za Twoją zgodą —
-                także do analizy ruchu (PostHog) i reklam (Meta Pixel). Możesz zaakceptować
+                także do analizy ruchu (Google Analytics, PostHog) i reklam (Meta Pixel). Możesz zaakceptować
                 wszystkie albo wybrać tylko te, których potrzebujesz.{" "}
                 <Link
                   href="/polityka-prywatnosci"
@@ -143,7 +143,7 @@ export function CookieConsent() {
                 <div>
                   <p className="text-sm font-semibold text-brand-800">Analityka</p>
                   <p className="mt-0.5 text-xs text-brand-500">
-                    PostHog — anonimowe statystyki użycia, nagrania sesji, heatmapy.
+                    Google Analytics i PostHog — anonimowe statystyki użycia, nagrania sesji (PostHog).
                   </p>
                 </div>
                 <ToggleSwitch

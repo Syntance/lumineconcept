@@ -4,6 +4,7 @@ import { getSiteSettings } from "@/lib/content";
 import { resolveFooterText, resolveSocialLinks } from "@/lib/content/cms-wiring";
 import { SITE_CONTACT } from "@/lib/site-contact";
 import { FooterCookieSettings } from "@/components/layout/FooterCookieSettings";
+import { FooterCreditLink, FooterSocialLinks } from "@/components/layout/FooterSocialLinks";
 
 const FOOTER_LINKS = {
   Sklep: [
@@ -45,29 +46,7 @@ export async function Footer() {
               Produkty plexi i branding dla salonów beauty. Tworzymy z pasją, dostarczamy z precyzją.
             </p>
             {(social.instagram || social.facebook || social.tiktok) && (
-              <ul className="mt-4 flex flex-wrap gap-3 text-sm">
-                {social.instagram ? (
-                  <li>
-                    <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-brand-300 hover:text-white">
-                      Instagram
-                    </a>
-                  </li>
-                ) : null}
-                {social.facebook ? (
-                  <li>
-                    <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-brand-300 hover:text-white">
-                      Facebook
-                    </a>
-                  </li>
-                ) : null}
-                {social.tiktok ? (
-                  <li>
-                    <a href={social.tiktok} target="_blank" rel="noopener noreferrer" className="text-brand-300 hover:text-white">
-                      TikTok
-                    </a>
-                  </li>
-                ) : null}
-              </ul>
+              <FooterSocialLinks social={social} />
             )}
           </div>
 
@@ -131,15 +110,7 @@ export async function Footer() {
           <div className="flex flex-col items-center gap-2 text-sm text-brand-400 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
             <p className="text-center lg:text-left">{copyright}</p>
             <p className="text-center lg:text-right">
-              Wdrożenie strony:{" "}
-              <a
-                href="https://syntance.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-brand-300 underline-offset-2 hover:text-white hover:underline"
-              >
-                Syntance
-              </a>
+              Wdrożenie strony: <FooterCreditLink />
             </p>
           </div>
         </div>

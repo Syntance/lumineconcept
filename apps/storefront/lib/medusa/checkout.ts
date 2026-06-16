@@ -1,5 +1,6 @@
 import type { Address } from "@lumine/types";
 import type { HttpTypes } from "@medusajs/types";
+import { clearCheckoutAnalyticsContext } from "@/lib/analytics/checkout-analytics-context";
 import { toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
 import { getCart } from "./cart";
 import { medusa } from "./client";
@@ -78,6 +79,7 @@ export function clearCheckoutCompleted(): void {
   } catch {
     /* prywatny tryb */
   }
+  clearCheckoutAnalyticsContext();
 }
 
 export function readCheckoutCompleted(): CheckoutCompletedPayload | null {
@@ -764,6 +766,12 @@ export async function prepareCheckout(
   optionId: string,
   providerId: string,
   orderNotes?: string,
+  analytics?: {
+    consentAnalytics?: boolean;
+    consentMarketing?: boolean;
+    phDistinctId?: string;
+    phSessionId?: string;
+  },
 ): Promise<{ paymentCollectionId?: string }> {
   const base = resolveMedusaFetchBase();
   const headers: Record<string, string> = {
@@ -782,6 +790,18 @@ export async function prepareCheckout(
       option_id: optionId,
       provider_id: providerId,
       ...(orderNotes ? { order_notes: orderNotes } : {}),
+      ...(analytics?.consentAnalytics != null
+        ? { consent_analytics: analytics.consentAnalytics }
+        : {}),
+      ...(analytics?.consentMarketing != null
+        ? { consent_marketing: analytics.consentMarketing }
+        : {}),
+      ...(analytics?.phDistinctId
+        ? { ph_distinct_id: analytics.phDistinctId }
+        : {}),
+      ...(analytics?.phSessionId
+        ? { ph_session_id: analytics.phSessionId }
+        : {}),
     }),
   });
   if (!res.ok) {

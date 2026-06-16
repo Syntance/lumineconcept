@@ -75,9 +75,7 @@ export const ABOUT_PAGE_DEFAULT: AboutPageContent = {
 	introImageAlt: "Założycielki Lumine Concept przy wspólnej pracy nad projektem",
 	introLabel: "my",
 	missionParagraphs: [
-		"Naszą misją jest podnosić doświadczenie klientów w salonach beauty poprzez dopracowane detale i spójną komunikację w przestrzeni.",
-		"Tworzymy rozwiązania, które pomagają budować zaufanie, porządek i profesjonalny odbiór marki — od wejścia, przez recepcję, aż po strefy zabiegowe.",
-		"Stawiamy na jakość, czytelność i estetykę, które realnie pracują na wizerunek salonu każdego dnia.",
+		"Naszą misją jest podnosić doświadczenie klientów\nw salonach beauty poprzez dopracowane detale\ni spójną komunikację w przestrzeni.\nTworzymy rozwiązania, które pomagają budować zaufanie,\nporządek i profesjonalny odbiór marki —\nod wejścia, przez recepcję, aż po strefy zabiegowe.\nStawiamy na jakość, czytelność i estetykę,\nktóre realnie pracują na wizerunek salonu każdego dnia.",
 	],
 	missionImageAlt: "Praca nad tablicą z logo w pracowni Lumine Concept",
 	missionLabel: "nasza misja",

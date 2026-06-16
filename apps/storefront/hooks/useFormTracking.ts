@@ -1,39 +1,19 @@
 "use client";
 
-/**
- * Notion "Analityka i konwersje → eventy formularza".
- *
- * Hook obsługuje:
- *  - `form_start` raz per sesja (po pierwszym focusie pola formularza),
- *  - `form_abandon` przy `beforeunload` (jeśli `start` był, a `submit` nie),
- *  - timeout inaktywności 60 s na formularzu = `form_abandon` (bez czekania na unload),
- *  - lekkie API do raportowania `form_error` (`reportError`).
- *
- * Konsumpcja w komponencie formularza (przykład dla `logo3d_wycena`):
- *
- *   const tracker = useFormTracking("logo3d_wycena");
- *   <input onFocus={tracker.handleFocus} onBlur={tracker.recordField("email")} />
- *   <button onClick={tracker.handleSubmitSuccess}>Wyślij</button>
- */
 import { useCallback, useEffect, useRef } from "react";
-import {
-  trackFormAbandon,
-  trackFormError,
-  trackFormStart,
-  type FormName,
-} from "@/lib/analytics/events";
+import { track } from "@/lib/analytics/track";
+import type { FormName } from "@/lib/analytics/events/registry";
 
 const INACTIVITY_TIMEOUT_MS = 60_000;
 
 export interface FormTracker {
-  /** Podpiąć pod `onFocus` formularza (każde pole). Idempotentne. */
   handleFocus: () => void;
-  /** Wywołać po SUKCESIE submita — wyłącza monitoring porzucenia. */
   handleSubmitSuccess: () => void;
-  /** Zaznacza pole które user właśnie tknął (do `lastField` w `form_abandon`). */
   recordField: (fieldName: string) => () => void;
-  /** Zgłoszenie błędu walidacji / serwera. */
-  reportError: (fieldName: string, errorType: "required" | "format" | "size" | "server") => void;
+  reportError: (
+    fieldName: string,
+    errorType: "required" | "format" | "size" | "server",
+  ) => void;
 }
 
 export function useFormTracking(formName: FormName): FormTracker {
@@ -45,10 +25,10 @@ export function useFormTracking(formName: FormName): FormTracker {
   const flushAbandon = useCallback(
     (lastField?: string) => {
       if (!startedRef.current || submittedRef.current) return;
-      submittedRef.current = true; // raz per sesja
-      trackFormAbandon({
-        formName,
-        lastField: lastField ?? lastFieldRef.current,
+      submittedRef.current = true;
+      track("form_abandon", {
+        form_name: formName,
+        last_field: lastField ?? lastFieldRef.current,
       });
     },
     [formName],
@@ -64,7 +44,7 @@ export function useFormTracking(formName: FormName): FormTracker {
   const handleFocus = useCallback(() => {
     if (!startedRef.current) {
       startedRef.current = true;
-      trackFormStart(formName);
+      track("form_start", { form_name: formName });
     }
     armInactivity();
   }, [formName, armInactivity]);
@@ -86,8 +66,15 @@ export function useFormTracking(formName: FormName): FormTracker {
   }, []);
 
   const reportError = useCallback(
-    (fieldName: string, errorType: "required" | "format" | "size" | "server") => {
-      trackFormError({ formName, fieldName, errorType });
+    (
+      fieldName: string,
+      errorType: "required" | "format" | "size" | "server",
+    ) => {
+      track("form_error", {
+        form_name: formName,
+        field_name: fieldName,
+        error_type: errorType,
+      });
     },
     [formName],
   );
