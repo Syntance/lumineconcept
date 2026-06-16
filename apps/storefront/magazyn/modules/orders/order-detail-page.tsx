@@ -31,6 +31,7 @@ const META_LABELS: Record<string, string> = {
 	companyName: "Nazwa firmy",
 	invoice: "Faktura VAT",
 	order_notes: "Uwagi do zamówienia",
+	manual_order_source: "Źródło (poza sklepem)",
 };
 
 function Badge({ label, tone }: { label: string; tone: keyof typeof BADGE_TONE_CLASS }) {
