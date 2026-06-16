@@ -110,7 +110,7 @@ function InstagramGrid({
 	profileUrl: string;
 }) {
   return (
-    <div className="mt-10 grid grid-cols-2 gap-4 max-w-2xl mx-auto sm:grid-cols-3">
+    <div className="mt-10 mx-auto flex w-full max-w-6xl gap-2 sm:gap-3 md:gap-4">
       {Array.from({ length: IG_GRID_SLOTS }, (_, i) => {
         const post = posts[i];
         if (post) {
@@ -121,14 +121,14 @@ function InstagramGrid({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Otwórz post na Instagramie"
-              className="group relative aspect-square block overflow-hidden bg-white outline-none ring-brand-800 transition-[transform,box-shadow] hover:z-1 hover:shadow-md focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="group relative aspect-[4/5] min-w-0 flex-1 overflow-hidden bg-white outline-none ring-brand-800 transition-[transform,box-shadow] hover:z-1 hover:shadow-md focus-visible:ring-2 focus-visible:ring-offset-2"
             >
               <div className="absolute inset-0 overflow-hidden">
                 <Image
                   src={post.imageUrl}
                   alt={post.alt}
                   fill
-                  sizes="(max-width: 640px) 50vw, 240px"
+                  sizes="(max-width: 640px) 16vw, (max-width: 1024px) 14vw, 160px"
                   className="object-cover object-center scale-[1.03] transition-transform duration-300 group-hover:scale-105"
                   loading={i < 3 ? "eager" : "lazy"}
                   unoptimized={isCmsImageUnoptimized(post.imageUrl)}
@@ -144,7 +144,7 @@ function InstagramGrid({
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Lumine Concept na Instagramie"
-            className="aspect-square bg-brand-100 hover:bg-brand-200 transition-colors flex items-center justify-center"
+            className="flex aspect-[4/5] min-w-0 flex-1 items-center justify-center bg-brand-100 transition-colors hover:bg-brand-200"
           >
             <Instagram className="h-5 w-5 text-brand-400" />
           </a>
