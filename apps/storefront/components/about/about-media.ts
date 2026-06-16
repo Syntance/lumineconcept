@@ -13,6 +13,6 @@ export const ABOUT_TEXT_GUTTER_LEFT = "md:pl-10 lg:pl-14 xl:pl-16" as const;
 /** Odstęp od środka — lewa kolumna ze zdjęciem (lustrzane odbicie tekstu misji). */
 export const ABOUT_MEDIA_GUTTER_RIGHT = "md:pr-10 lg:pr-14 xl:pr-16" as const;
 
-/** Tekst misji — wyrównanie do widocznej góry wyciętego webp (nie bbox img). */
+/** Tekst misji — wyrównanie do widocznej góry webp (etykieta nad zdjęciem + overlap alfa). */
 export const ABOUT_MISSION_TEXT_TOP_OFFSET =
-  "md:pt-[calc(19.44rem*960/720*0.064)] lg:pt-[calc(22.68rem*960/720*0.064)]" as const;
+  "md:pt-[calc(6.83mm+1rem+2px+19.44rem*960/720*0.064-19.44rem*0.067)] lg:pt-[calc(6.83mm+1rem+2px+22.68rem*960/720*0.064-22.68rem*0.067)]" as const;
