@@ -1,4 +1,5 @@
 import { ABOUT_PAGE_DEFAULT, ABOUT_HERO_DEFAULT } from "./defaults";
+import { normalizeAboutParagraphsForSave } from "./about-text";
 import { resolveCmsAssetUrl } from "./asset-url";
 import type { AboutPageContent, HeroContent, PageContent } from "./types";
 
@@ -56,16 +57,16 @@ export function resolveAboutSections(about?: AboutPageContent): ResolvedAboutSec
 		sideCaption: merged.sideCaption?.trim() || ABOUT_PAGE_DEFAULT.sideCaption || "",
 		introHeading: merged.introHeading?.trim() || ABOUT_PAGE_DEFAULT.introHeading || "O NAS",
 		introParagraphs:
-			merged.introParagraphs?.filter((p) => p.trim().length > 0) ??
-			ABOUT_PAGE_DEFAULT.introParagraphs ??
-			[],
+			normalizeAboutParagraphsForSave(
+				merged.introParagraphs?.filter((p) => p.trim().length > 0),
+			) ?? ABOUT_PAGE_DEFAULT.introParagraphs ?? [],
 		introImageUrl: resolveImageUrl(merged.introImageUrl, ABOUT_STATIC_IMAGES.intro),
 		introImageAlt: merged.introImageAlt?.trim() || ABOUT_PAGE_DEFAULT.introImageAlt || "",
 		introLabel: merged.introLabel?.trim() || ABOUT_PAGE_DEFAULT.introLabel || "",
 		missionParagraphs:
-			merged.missionParagraphs?.filter((p) => p.trim().length > 0) ??
-			ABOUT_PAGE_DEFAULT.missionParagraphs ??
-			[],
+			normalizeAboutParagraphsForSave(
+				merged.missionParagraphs?.filter((p) => p.trim().length > 0),
+			) ?? ABOUT_PAGE_DEFAULT.missionParagraphs ?? [],
 		missionImageUrl: resolveImageUrl(merged.missionImageUrl, ABOUT_STATIC_IMAGES.mission),
 		missionImageAlt: merged.missionImageAlt?.trim() || ABOUT_PAGE_DEFAULT.missionImageAlt || "",
 		missionLabel: merged.missionLabel?.trim() || ABOUT_PAGE_DEFAULT.missionLabel || "",

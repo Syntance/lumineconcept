@@ -2,12 +2,8 @@
 
 import { useState } from "react";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
-import {
-  trackEmailSignup,
-  trackFormSubmit,
-} from "@/lib/analytics/events";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
 import { useFormTracking } from "@/hooks/useFormTracking";
-import { identifyLead } from "@/lib/analytics/identify";
 
 interface NewsletterFormProps {
   variant?: "default" | "footer";
@@ -18,14 +14,13 @@ export function NewsletterForm({ variant = "default" }: NewsletterFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const tracker = useFormTracking("newsletter");
+  const { track, identifyLead } = useAnalytics();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setStatus("loading");
-    trackFormSubmit("newsletter");
-
     try {
       const response = await fetch("/api/newsletter", {
         method: "POST",
@@ -39,9 +34,9 @@ export function NewsletterForm({ variant = "default" }: NewsletterFormProps) {
         setStatus("success");
         setMessage(data.message);
         identifyLead({ email, source: "newsletter" });
-        trackEmailSignup({
+        track("email_signup", {
           source: variant === "footer" ? "footer" : "newsletter",
-          emailDomain: email.split("@")[1],
+          email_domain: email.split("@")[1],
         });
         tracker.handleSubmitSuccess();
         setEmail("");

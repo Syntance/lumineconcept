@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { track } from "@/lib/analytics/track";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
 import { MiniConfiguratorModal } from "./MiniConfiguratorModal";
 
@@ -42,6 +43,11 @@ export function AddToCartButton({
     },
     [],
   );
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    track("configurator_start", { product_id: productId });
+  }, [modalOpen, productId]);
 
   return (
     <>

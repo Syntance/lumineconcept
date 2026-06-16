@@ -2,7 +2,9 @@
 
 import { useCallback } from "react";
 import { useCartContext } from "@/providers/CartProvider";
-import { trackAddToCart } from "@/lib/analytics/events";
+import { productToItem, round2 } from "@/lib/analytics/medusa-items";
+import { track } from "@/lib/analytics/track";
+import { consumeUpsellReferral } from "@/lib/analytics/upsell-attribution";
 
 export function useCart() {
   const cart = useCartContext();
@@ -23,25 +25,34 @@ export function useCart() {
         openDrawer?: boolean;
       },
     ) => {
-      /**
-       * Optymistyczny preview — dzięki temu drawer koszyka pokazuje nową
-       * pozycję natychmiast po kliknięciu, a backend Medusy (nawet po
-       * zmianach infry dalej 400-600 ms na add-line-item) ściga się z UI
-       * w tle. Trackowanie analytics strzelamy też natychmiast — to OK,
-       * bo jeśli backend odrzuci, my i tak rollbackujemy koszyk.
-       */
       await cart.addItem(variantId, quantity, metadata, options?.openDrawer ?? true, {
         title: productData.title,
         thumbnail: productData.thumbnail,
         unit_price: productData.price,
       });
-      trackAddToCart({
+      const item = productToItem({
         id: productData.id,
         title: productData.title,
         price: productData.price,
-        currency: productData.currency,
         quantity,
       });
+      track("add_to_cart", {
+        currency: productData.currency,
+        value: round2(productData.price * quantity),
+        items: [item],
+        items_count: quantity,
+      });
+
+      // Jeśli produkt trafił do koszyka z sugestii upsell — domknij atrybucję.
+      const upsell = consumeUpsellReferral(productData.id);
+      if (upsell) {
+        track("upsell_accepted", {
+          product_id: productData.id,
+          ...(upsell.fromProductId
+            ? { upsell_product_id: upsell.fromProductId }
+            : {}),
+        });
+      }
     },
     [cart.addItem],
   );

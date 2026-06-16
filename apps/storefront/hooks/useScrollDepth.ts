@@ -12,7 +12,7 @@
  * (passive observer + brak debouncingu) i nie konfliktuje ze smooth scroll.
  */
 import { useEffect } from "react";
-import { trackScrollDepth } from "@/lib/analytics/events";
+import { track } from "@/lib/analytics/track";
 
 const THRESHOLDS: Array<25 | 50 | 75 | 100> = [25, 50, 75, 100];
 
@@ -46,7 +46,7 @@ export function useScrollDepth(pagePath: string): void {
             if (!entry.isIntersecting) return;
             if (fired.has(depth)) return;
             fired.add(depth);
-            trackScrollDepth(depth);
+            track("scroll_depth", { depth_percent: depth });
           });
         },
         { threshold: 0 },

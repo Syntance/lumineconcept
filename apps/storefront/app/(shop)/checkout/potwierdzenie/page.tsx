@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
+import { PurchaseTracking, type PurchaseTrackingOrder } from "@/components/analytics/PurchaseTracking";
 import { CheckoutConfirmationGuard } from "@/components/checkout/CheckoutConfirmationGuard";
 import { BankTransferInstructions } from "@/components/checkout/BankTransferInstructions";
 import { getOrder } from "@/lib/medusa/order";
@@ -23,10 +24,10 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps)
     await searchParams;
   const isBankTransfer = payment === "bank_transfer";
 
-  // Pobieramy order z API żeby mieć pewność co do kwoty (nie ufamy URL).
-  // Dla przelewu tradycyjnego kwota musi być z serwera, nie z przeglądarki.
   let orderAmount: number | undefined;
   let displayId = displayIdQuery;
+  let purchaseTrackingOrder: PurchaseTrackingOrder | null = null;
+
   if (orderId) {
     const order = await getOrder(orderId);
     if (order) {
@@ -34,12 +35,27 @@ export default async function OrderConfirmationPage({ searchParams }: PageProps)
       if (!displayId && order.display_id) {
         displayId = String(order.display_id);
       }
+
+      if (order.total != null && order.items.length > 0) {
+        purchaseTrackingOrder = {
+          orderId: order.id,
+          displayId: order.display_id,
+          total: order.total,
+          currency: (order.currency_code ?? "PLN").toUpperCase(),
+          email: order.email,
+          paymentMethod: isBankTransfer ? "bank_transfer" : payment,
+          items: order.items,
+        };
+      }
     }
   }
 
   return (
     <div className="container mx-auto px-4 py-16 text-center">
       <CheckoutConfirmationGuard orderId={orderId} displayId={displayId} />
+      {purchaseTrackingOrder ? (
+        <PurchaseTracking order={purchaseTrackingOrder} />
+      ) : null}
       <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
       <h1 className="mt-6 font-display text-3xl font-bold text-brand-800">
         {isBankTransfer ? "Zamówienie przyjęte — opłać przelewem" : "Dziękujemy za zamówienie!"}

@@ -4,7 +4,7 @@
  * Notion "PostHog i eventy → scroll_to_section".
  *
  * Lista anchorów wzięta wprost z dokumentu — patrz `SECTION_IDS`. Hook
- * wywołujemy globalnie (PostHogProvider), bo te same identyfikatory pojawiają
+ * wywołujemy globalnie (AnalyticsProvider), bo te same identyfikatory pojawiają
  * się na wielu podstronach i pojedyncze komponenty same nie wiedzą, czy
  * sekcja istnieje.
  *
@@ -12,7 +12,7 @@
  * który tylko mignął przez sekcję podczas szybkiego scrolla, jej "nie zliczył".
  */
 import { useEffect } from "react";
-import { trackScrollToSection } from "@/lib/analytics/events";
+import { track } from "@/lib/analytics/track";
 
 const SECTION_IDS = [
   "formularz",
@@ -48,7 +48,7 @@ export function useScrollToSection(pagePath: string): void {
               if (!entry.isIntersecting) return;
               if (fired.has(id)) return;
               fired.add(id);
-              trackScrollToSection(id);
+              track("section_view", { section: id });
             });
           },
           { threshold: 0.3 },

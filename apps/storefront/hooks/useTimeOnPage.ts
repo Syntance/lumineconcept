@@ -11,7 +11,7 @@
  * Bez logowania krótkich sesji (<2s) — to z reguły bot lub przypadkowy klik.
  */
 import { useEffect, useRef } from "react";
-import { trackTimeOnPage } from "@/lib/analytics/events";
+import { track } from "@/lib/analytics/track";
 
 const MIN_SECONDS = 2;
 
@@ -38,7 +38,7 @@ export function useTimeOnPage(pagePath: string): void {
         segmentStartRef.current = null;
       }
       if (total >= MIN_SECONDS) {
-        trackTimeOnPage(total);
+        track("time_on_page", { seconds: Math.round(total) });
       }
       flushedRef.current = true;
     };
@@ -53,7 +53,9 @@ export function useTimeOnPage(pagePath: string): void {
         // Hidden ≠ unmount — wysyłamy snapshot, ale nie blokujemy ponownego
         // pomiaru gdy użytkownik wróci na kartę.
         if (accumulatedRef.current >= MIN_SECONDS && !flushedRef.current) {
-          trackTimeOnPage(accumulatedRef.current);
+          track("time_on_page", {
+            seconds: Math.round(accumulatedRef.current),
+          });
           flushedRef.current = true;
         }
       } else if (document.visibilityState === "visible") {

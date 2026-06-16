@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { searchProducts } from "@/lib/meilisearch/client";
-import { trackSearchQuery } from "@/lib/analytics/events";
+import { track } from "@/lib/analytics/track";
 import type { ProductSearchResult } from "@lumine/types";
 
 const DEBOUNCE_MS = 250;
@@ -39,7 +39,10 @@ export function useSearch() {
           const hits = response.hits as unknown as ProductSearchResult[];
           setResults(hits);
           setTotalHits(response.estimatedTotalHits ?? 0);
-          trackSearchQuery(q, response.estimatedTotalHits ?? 0);
+          track("search", {
+            search_term: q,
+            results_count: response.estimatedTotalHits ?? 0,
+          });
         })
         .catch((err) => {
           if (id !== requestIdRef.current) return;

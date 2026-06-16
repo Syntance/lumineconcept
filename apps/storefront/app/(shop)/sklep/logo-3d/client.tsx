@@ -2,9 +2,8 @@
 
 import { useState, useRef } from "react";
 import { Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
-import { trackFormSubmit } from "@/lib/analytics/events";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
 import { useFormTracking } from "@/hooks/useFormTracking";
-import { identifyLead } from "@/lib/analytics/identify";
 
 const NOTES_LIMIT = 180;
 
@@ -58,6 +57,7 @@ export function TablicaZLogoFormClient() {
   const [status, setStatus] = useState<Status>("idle");
   const [feedback, setFeedback] = useState("");
   const tracker = useFormTracking("logo3d_wycena");
+  const { track, identifyLead } = useAnalytics();
 
   const resetFile = () => {
     setLogoFile(null);
@@ -102,10 +102,10 @@ export function TablicaZLogoFormClient() {
     if (email.trim()) {
       identifyLead({ email, source: "form_logo3d" });
     }
-    trackFormSubmit({
-      formName: "logo3d_wycena",
-      hasLogo: !!logoFile,
-      hasPhoto: false,
+    track("lead_submit", {
+      form_name: "logo3d_wycena",
+      has_logo: !!logoFile,
+      has_photo: false,
       led: led ? "bialy" : "bez",
       size: size?.trim() ? "custom" : "nie_wiem",
       express: /(eks|express)/i.test(notes),
@@ -288,11 +288,8 @@ export function TablicaZLogoFormClient() {
           value={email}
           onFocus={tracker.handleFocus}
           onChange={(e) => setEmail(e.target.value)}
-          onBlur={(e) => {
+          onBlur={() => {
             tracker.recordField("email")();
-            if (e.target.value.includes("@")) {
-              identifyLead({ email: e.target.value, source: "form_logo3d" });
-            }
           }}
           maxLength={200}
           className={INPUT_CLASS}

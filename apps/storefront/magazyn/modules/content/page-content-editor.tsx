@@ -17,6 +17,7 @@ import type {
 	Testimonial,
 } from "@/lib/content/types";
 import { ABOUT_HERO_DEFAULT } from "@/lib/content/defaults";
+import { flattenAboutBodyParagraphs } from "@/lib/content/about-text";
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { usePreventWindowFileDrop } from "@magazyn/core/hooks/use-prevent-window-file-drop";
 import { savePageContentAction } from "./content-actions";
@@ -184,14 +185,12 @@ function AboutSectionsEditor({
 	const about = value ?? {};
 
 	function paragraphsToText(paragraphs: string[] | undefined): string {
-		return (paragraphs ?? []).join("\n\n");
+		return flattenAboutBodyParagraphs(paragraphs);
 	}
 
 	function textToParagraphs(text: string): string[] {
-		return text
-			.split(/\n\s*\n/)
-			.map((p) => p.trim())
-			.filter((p) => p.length > 0);
+		if (text.length === 0) return [];
+		return [text.replace(/\r\n/g, "\n")];
 	}
 
 	return (
@@ -216,7 +215,7 @@ function AboutSectionsEditor({
 					onChange={(e) => onChange({ ...about, introParagraphs: textToParagraphs(e.target.value) })}
 					rows={6}
 					className={inputClass}
-					placeholder="Akapitów — oddziel pustą linią"
+					placeholder="Tekst sekcji — Enter = nowa linia"
 				/>
 				<Input
 					value={about.introLabel ?? ""}
@@ -243,7 +242,7 @@ function AboutSectionsEditor({
 					onChange={(e) => onChange({ ...about, missionParagraphs: textToParagraphs(e.target.value) })}
 					rows={6}
 					className={inputClass}
-					placeholder="Akapitów — oddziel pustą linią"
+					placeholder="Tekst sekcji — Enter = nowa linia"
 				/>
 				<Input
 					value={about.missionLabel ?? ""}

@@ -8,16 +8,17 @@ import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges";
 import { isP24CircuitOpen, recordP24Failure } from "@/lib/checkout/p24-circuit-breaker";
+import { cartToEcommercePayload } from "@/lib/analytics/medusa-items";
 import {
-  trackCheckoutAbandon,
-  trackCheckoutStart,
-  trackCheckoutStep,
-  trackFormStart,
-  trackFormSubmit,
-  trackPurchase,
-  trackFormFieldError,
-} from "@/lib/analytics/events";
-import { identifyLead, markPurchaseCustomer } from "@/lib/analytics/identify";
+  paymentMethodAnalyticsLabel,
+  writeCheckoutAnalyticsContext,
+} from "@/lib/analytics/checkout-analytics-context";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
+import { getConsent } from "@/lib/consent/consent";
+import {
+  getDistinctId as getPostHogDistinctId,
+  getSessionId as getPostHogSessionId,
+} from "@/lib/analytics/destinations/posthog";
 import { useCart } from "@/hooks/useCart";
 import {
   completeCart,
@@ -27,7 +28,6 @@ import {
   markCheckoutCompleted,
   markP24PaymentStarted,
   notifyBankTransferPending,
-  notifyOrderPlaced,
   notifyOrderPlacedAwait,
   attachOrderNotes,
   prefetchPaymentReadiness,
@@ -138,6 +138,7 @@ type CheckoutFormData = {
   city: string;
   postalCode: string;
   shippingOptionId: string;
+  shippingOptionName: string;
   paymentProviderId: string;
   newsletter: boolean;
   wantInvoice: boolean;
@@ -165,6 +166,7 @@ function getDefaultCheckoutFormData(): CheckoutFormData {
     city: "",
     postalCode: "",
     shippingOptionId: "",
+    shippingOptionName: "",
     paymentProviderId: "",
     newsletter: false,
     wantInvoice: false,
@@ -214,6 +216,7 @@ function resetStaleCartAndReload() {
 
 export function CheckoutForm() {
   const { id: cartId, items, total, refreshCart, isInitialized } = useCart();
+  const { track, identifyLead } = useAnalytics();
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formStarted, setFormStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -301,21 +304,22 @@ export function CheckoutForm() {
     if (!cartId || items.length === 0) return;
     beginCheckoutFiredRef.current = true;
     checkoutStartTimeRef.current = Date.now();
-    trackCheckoutStart({
+    writeCheckoutAnalyticsContext({ startedAt: checkoutStartTimeRef.current });
+    track("begin_checkout", cartToEcommercePayload({
+      items: items.map((i) => ({
+        id: i.id,
+        variant_id: i.variant_id,
+        title: i.title,
+        quantity: i.quantity,
+        unit_price: i.unit_price,
+      })),
       total,
       currency: "PLN",
-      items: items.map((i) => ({
-        id: i.variant_id,
-        title: i.title,
-        price: i.unit_price,
-        quantity: i.quantity,
-      })),
-    });
+    }));
   }, [cartId, items, total]);
 
   // Notion: `checkout_abandon` — refy zadeklarujemy tu (potrzebne wyżej w kodzie),
   // a właściwy nasłuch beforeunload montujemy poniżej, gdy `formData` już istnieje.
-  const purchaseSentRef = useRef(false);
   const lastStepRef = useRef<CheckoutStep>(1);
   const abandonSnapshotRef = useRef<{ cartValue: number; hasEmail: boolean }>({
     cartValue: 0,
@@ -362,12 +366,13 @@ export function CheckoutForm() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onUnload = () => {
-      if (purchaseSentRef.current) return;
+      if (readCheckoutCompleted()) return;
       if (!cartId || items.length === 0) return;
-      trackCheckoutAbandon({
-        lastStep: lastStepRef.current,
-        cartValue: abandonSnapshotRef.current.cartValue,
-        hasEmail: abandonSnapshotRef.current.hasEmail,
+      track("checkout_abandon", {
+        last_step: lastStepRef.current,
+        value: abandonSnapshotRef.current.cartValue,
+        currency: "PLN",
+        has_email: abandonSnapshotRef.current.hasEmail,
       });
     };
     window.addEventListener("beforeunload", onUnload);
@@ -482,10 +487,10 @@ export function CheckoutForm() {
         return next;
       });
       if (error) {
-        trackFormFieldError({
-          formName: "checkout_contact",
-          field,
-          error,
+        track("form_error", {
+          form_name: "checkout_contact",
+          field_name: field,
+          error_type: error,
           step: 1,
         });
       }
@@ -502,7 +507,7 @@ export function CheckoutForm() {
   const handleFocus = useCallback(() => {
     if (!formStarted) {
       setFormStarted(true);
-      trackFormStart("checkout_contact");
+      track("form_start", { form_name: "checkout_contact" });
     }
   }, [formStarted]);
 
@@ -549,12 +554,23 @@ export function CheckoutForm() {
     setSubmitting(true);
     setSubmitSlow(false);
     submitSlowTimerRef.current = setTimeout(() => setSubmitSlow(true), 3000);
-    trackFormSubmit({ formName: "checkout_payment" });
+      track("form_step", { form_name: "checkout_payment", step_number: 3 });
 
     const payment = formDataRef.current;
 
     try {
       await assertCartReadyForCheckout(cartId);
+
+      // Snapshot zgód + PostHog ids → cart.metadata (prepare-checkout).
+      // completeCart przeniesie je do order.metadata; subscriber bramkuje
+      // server-side CAPI (marketing) i PostHog (analytics) + odtwarza distinct_id.
+      const consentSnapshot = getConsent();
+      const analyticsSnapshot = {
+        consentAnalytics: consentSnapshot?.analytics ?? false,
+        consentMarketing: consentSnapshot?.marketing ?? false,
+        phDistinctId: getPostHogDistinctId(),
+        phSessionId: getPostHogSessionId(),
+      };
 
       // Sanityzuj orderNotes przed wysłaniem (XSS protection)
       const sanitizedNotes = payment.orderNotes
@@ -573,8 +589,25 @@ export function CheckoutForm() {
           payment.shippingOptionId,
           payment.paymentProviderId,
           sanitizedNotes,
+          analyticsSnapshot,
         );
-        trackCheckoutStep({ stepNumber: 3, cartValue: total });
+        track("add_payment_info", {
+          ...cartToEcommercePayload({
+            items: items.map((i) => ({
+              id: i.id,
+              variant_id: i.variant_id,
+              title: i.title,
+              quantity: i.quantity,
+              unit_price: i.unit_price,
+            })),
+            total,
+            currency: "PLN",
+          }),
+          payment_method: paymentMethodAnalyticsLabel(payment.paymentProviderId),
+        });
+        writeCheckoutAnalyticsContext({
+          paymentMethod: paymentMethodAnalyticsLabel(payment.paymentProviderId),
+        });
         if (typeof window !== "undefined") {
           markP24PaymentStarted(cartId);
           window.location.assign(
@@ -591,8 +624,26 @@ export function CheckoutForm() {
         payment.shippingOptionId,
         payment.paymentProviderId,
         sanitizedNotes,
+        analyticsSnapshot,
       );
       await initPaymentSession(cartId, payment.paymentProviderId);
+
+      const paymentLabel = paymentMethodAnalyticsLabel(payment.paymentProviderId);
+      writeCheckoutAnalyticsContext({ paymentMethod: paymentLabel });
+      track("add_payment_info", {
+        ...cartToEcommercePayload({
+          items: items.map((i) => ({
+            id: i.id,
+            variant_id: i.variant_id,
+            title: i.title,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+          })),
+          total,
+          currency: "PLN",
+        }),
+        payment_method: paymentLabel,
+      });
 
       const result = await completeCart(cartId);
 
@@ -607,33 +658,12 @@ export function CheckoutForm() {
         throw new Error(msg);
       }
 
-      trackCheckoutStep({ stepNumber: 3, cartValue: total });
-      
-      const checkoutDurationSeconds = checkoutStartTimeRef.current
-        ? Math.round((Date.now() - checkoutStartTimeRef.current) / 1000)
-        : undefined;
-      
-      trackPurchase({
-        id: result.order.id,
-        total,
-        currency: "PLN",
-        items: items.map((i) => ({
-          id: i.variant_id,
-          title: i.title,
-          price: i.unit_price,
-          quantity: i.quantity,
-        })),
-        paymentMethod: payment.paymentProviderId,
-        shippingMethod: payment.shippingOptionId,
-        checkout_duration_seconds: checkoutDurationSeconds,
-      });
-      // Notion: po `purchase` aktualizujemy profil PostHog (`firstOrderId`, `totalSpent`).
-      markPurchaseCustomer({
-        email: payment.email,
-        orderId: result.order.id,
-        value: total,
-      });
-      purchaseSentRef.current = true;
+      if (payment.newsletter && payment.email.includes("@")) {
+        track("email_signup", {
+          source: "checkout",
+          email_domain: payment.email.split("@")[1],
+        });
+      }
 
       const isBankTransfer = payment.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID;
 
@@ -1039,8 +1069,7 @@ export function CheckoutForm() {
                       ? { company: formData.companyName }
                       : {}),
                   };
-                  trackFormSubmit({ formName: "checkout_contact" });
-                  trackCheckoutStep({ stepNumber: 1, cartValue: total });
+                  track("form_step", { form_name: "checkout_contact", step_number: 1 });
                   if (formData.email.includes("@")) {
                     identifyLead({
                       email: formData.email,
@@ -1084,7 +1113,10 @@ export function CheckoutForm() {
             </h2>
             <ShippingSelector
               selectedOptionId={formData.shippingOptionId}
-              onSelect={(id: string) => updateField("shippingOptionId", id)}
+              onSelect={(id: string, name?: string) => {
+                updateField("shippingOptionId", id);
+                if (name) updateField("shippingOptionName", name);
+              }}
             />
             {shippingSaveError && (
               <p className="text-sm text-red-600" role="alert">
@@ -1106,8 +1138,24 @@ export function CheckoutForm() {
                   setShippingSaveError(null);
                   setPreparingPayment(true);
                   try {
-                    trackFormSubmit({ formName: "checkout_shipping" });
-                    trackCheckoutStep({ stepNumber: 2, cartValue: total });
+                    track("form_step", { form_name: "checkout_shipping", step_number: 2 });
+                    const shippingMethod =
+                      formData.shippingOptionName || formData.shippingOptionId;
+                    writeCheckoutAnalyticsContext({ shippingMethod });
+                    track("add_shipping_info", {
+                      ...cartToEcommercePayload({
+                        items: items.map((i) => ({
+                          id: i.id,
+                          variant_id: i.variant_id,
+                          title: i.title,
+                          quantity: i.quantity,
+                          unit_price: i.unit_price,
+                        })),
+                        total,
+                        currency: "PLN",
+                      }),
+                      shipping_method: shippingMethod,
+                    });
                     // Najpierw czekamy na providerId (prefetched, zwykle < 50 ms),
                     // żeby w 1 request dolecieć shipping + payment-session.
                     // Wcześniej były to 2 sekwencyjne round-tripy (600 + 200 ms)

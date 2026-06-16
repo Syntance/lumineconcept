@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeAboutParagraphsForSave } from "./about-text";
 import { resolveCmsAssetUrl } from "./asset-url";
 import { isCmsMediaAssetUrl } from "./cms-media-gate";
 import { normalizeHeroCtaHref } from "./cta-href";
@@ -612,11 +613,13 @@ export function mergeAboutWithDefaults(
 		...ABOUT_PAGE_DEFAULT,
 		...about,
 		introParagraphs:
-			about.introParagraphs?.filter((p) => p.trim().length > 0) ??
-			ABOUT_PAGE_DEFAULT.introParagraphs,
+			normalizeAboutParagraphsForSave(
+				about.introParagraphs?.filter((p) => p.trim().length > 0),
+			) ?? ABOUT_PAGE_DEFAULT.introParagraphs,
 		missionParagraphs:
-			about.missionParagraphs?.filter((p) => p.trim().length > 0) ??
-			ABOUT_PAGE_DEFAULT.missionParagraphs,
+			normalizeAboutParagraphsForSave(
+				about.missionParagraphs?.filter((p) => p.trim().length > 0),
+			) ?? ABOUT_PAGE_DEFAULT.missionParagraphs,
 		...(introImageUrl ? { introImageUrl } : {}),
 		...(missionImageUrl ? { missionImageUrl } : {}),
 		...(closingImageUrl ? { closingImageUrl } : {}),
@@ -632,11 +635,13 @@ export function mergeAboutWithDefaultsForAdmin(
 		...ABOUT_PAGE_DEFAULT,
 		...about,
 		introParagraphs:
-			about.introParagraphs?.filter((p) => p.trim().length > 0) ??
-			ABOUT_PAGE_DEFAULT.introParagraphs,
+			normalizeAboutParagraphsForSave(
+				about.introParagraphs?.filter((p) => p.trim().length > 0),
+			) ?? ABOUT_PAGE_DEFAULT.introParagraphs,
 		missionParagraphs:
-			about.missionParagraphs?.filter((p) => p.trim().length > 0) ??
-			ABOUT_PAGE_DEFAULT.missionParagraphs,
+			normalizeAboutParagraphsForSave(
+				about.missionParagraphs?.filter((p) => p.trim().length > 0),
+			) ?? ABOUT_PAGE_DEFAULT.missionParagraphs,
 	};
 }
 
@@ -673,12 +678,8 @@ export function preparePageContentForSave(_pageId: string, content: PageContent)
 		else about.missionImageUrl = about.missionImageUrl.trim();
 		if (!about.closingImageUrl?.trim()) delete about.closingImageUrl;
 		else about.closingImageUrl = about.closingImageUrl.trim();
-		about.introParagraphs = about.introParagraphs
-			?.map((p) => p.trim())
-			.filter((p) => p.length > 0);
-		about.missionParagraphs = about.missionParagraphs
-			?.map((p) => p.trim())
-			.filter((p) => p.length > 0);
+		about.introParagraphs = normalizeAboutParagraphsForSave(about.introParagraphs);
+		about.missionParagraphs = normalizeAboutParagraphsForSave(about.missionParagraphs);
 		next.about = Object.keys(about).length ? about : undefined;
 	}
 	return next;

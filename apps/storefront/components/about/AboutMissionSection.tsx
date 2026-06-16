@@ -1,78 +1,68 @@
+import {
+  ABOUT_MEDIA_GUTTER_RIGHT,
+  ABOUT_MEDIA_WIDTH_CLASS,
+  ABOUT_MISSION_TEXT_TOP_OFFSET,
+  ABOUT_TEXT_GUTTER_LEFT,
+} from "@/components/about/about-media";
+import { AboutBodyText } from "@/components/about/AboutBodyText";
 import { AboutArchImage } from "@/components/about/AboutArchImage";
-import { AboutMediaBlock } from "@/components/about/AboutMediaBlock";
 import { AboutSectionColumns } from "@/components/about/AboutSectionColumns";
 import { AboutSectionLabel } from "@/components/about/AboutSectionLabel";
-import { ABOUT_BODY_TEXT_CLASS } from "@/components/about/about-typography";
 import type { ResolvedAboutSections } from "@/lib/content/about";
+import { cn } from "@/lib/utils";
+
+/** Wcięcie etykiety do widocznej szerokości wyciętego webp. */
+const LABEL_INSET_X = "px-[2.9%]" as const;
 
 type AboutMissionSectionProps = {
   sections: ResolvedAboutSections;
 };
 
-function DoubleArchDivider() {
-  return (
-    <svg
-      viewBox="0 0 48 32"
-      className="mx-auto h-8 w-12 text-brand-300"
-      aria-hidden
-    >
-      <path
-        d="M4 28 Q24 4 44 28"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-      />
-      <path
-        d="M8 30 Q24 10 40 30"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-      />
-    </svg>
-  );
-}
-
 export function AboutMissionSection({ sections }: AboutMissionSectionProps) {
   return (
-    <section aria-labelledby="about-mission-heading" className="bg-white">
-      <div className="mx-auto max-w-7xl px-4 pt-6 pb-16 sm:pb-20 lg:pb-24">
-        <DoubleArchDivider />
+    <section aria-labelledby="about-mission-heading" className="relative bg-brand-50">
+      {/* Dolna połowa — biała; górna zostaje kremowa (jak mockup). */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-[15%] bottom-0 bg-white" />
 
+      {/* Pionowy separator — dokładnie środek szerokości strony (nie krawędź kolumny z gap). */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-1/2 z-[1] hidden w-px -translate-x-1/2 bg-brand-200 md:block"
+      />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 pb-16 sm:pb-20 lg:pb-24">
         <AboutSectionColumns
-          className="mt-12 px-0"
+          className="px-0 pt-4 sm:pt-6 lg:pt-8"
           mediaOnEnd={false}
           mobileMediaFirst
-          mediaClassName="flex w-full justify-center md:justify-start"
-          textClassName="md:border-l md:border-brand-200 md:pl-10 lg:pl-14 xl:pl-16"
+          mediaClassName={`flex w-full justify-center md:justify-end ${ABOUT_MEDIA_GUTTER_RIGHT}`}
+          textClassName={cn(ABOUT_TEXT_GUTTER_LEFT, ABOUT_MISSION_TEXT_TOP_OFFSET)}
           media={
-            <AboutMediaBlock
-              labelPosition="above"
-              label={
-                sections.missionLabel ? (
+            <div className={cn("relative w-full", ABOUT_MEDIA_WIDTH_CLASS)}>
+              {sections.missionLabel ? (
+                <div
+                  className={cn(
+                    "mb-1 w-full shrink-0",
+                    LABEL_INSET_X,
+                    "md:absolute md:inset-x-0 md:bottom-full md:mb-1",
+                  )}
+                >
                   <AboutSectionLabel>{sections.missionLabel}</AboutSectionLabel>
-                ) : undefined
-              }
-              image={
-                <AboutArchImage
-                  src={sections.missionImageUrl}
-                  alt={sections.missionImageAlt}
-                  className="w-full max-w-none"
-                />
-              }
-            />
+                </div>
+              ) : null}
+              <AboutArchImage
+                src={sections.missionImageUrl}
+                alt={sections.missionImageAlt}
+                className="w-full max-w-none"
+              />
+            </div>
           }
           text={
             <>
               <h2 id="about-mission-heading" className="sr-only">
                 Nasza misja
               </h2>
-              <div className={`space-y-5 text-brand-700 ${ABOUT_BODY_TEXT_CLASS}`}>
-                {sections.missionParagraphs.map((paragraph) => (
-                  <p key={paragraph} className="text-pretty">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
+              <AboutBodyText paragraphs={sections.missionParagraphs} />
             </>
           }
         />

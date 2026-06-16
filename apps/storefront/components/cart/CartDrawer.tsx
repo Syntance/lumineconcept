@@ -9,13 +9,15 @@ import { CartItem } from "./CartItem";
 import { CartSummary } from "./CartSummary";
 import { CartUpsell } from "./CartUpsell";
 import { ExpressToggle } from "./ExpressToggle";
-import { trackReferralApplied, trackCartViewed } from "@/lib/analytics/events";
+import { cartToEcommercePayload } from "@/lib/analytics/medusa-items";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
 
 const CART_PANEL_MS = 300;
 const CART_OVERLAY_MS = 200;
 
 export function CartDrawer() {
-  const { isOpen, closeCart, items, itemCount, applyDiscount } = useCart();
+  const { isOpen, closeCart, items, itemCount, applyDiscount, total } = useCart();
+  const { track } = useAnalytics();
 
   const [referralCode, setReferralCode] = useState("");
   const [referralStatus, setReferralStatus] = useState<
@@ -54,12 +56,22 @@ export function CartDrawer() {
     if (!isOpen) return;
 
     if (!prevOpenRef.current) {
-      trackCartViewed(items.map((i) => i.id));
+      track("view_cart", cartToEcommercePayload({
+        items: items.map((i) => ({
+          id: i.id,
+          variant_id: i.variant_id,
+          title: i.title,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+        })),
+        total,
+        currency: "PLN",
+      }));
       const savedCode = localStorage.getItem("lumine_referral");
       if (savedCode && referralStatus === "idle") setReferralCode(savedCode);
       prevOpenRef.current = true;
     }
-  }, [isOpen, referralStatus, items]);
+  }, [isOpen, referralStatus, items, total, track]);
 
   useEffect(() => {
     if (!render) return;
@@ -82,14 +94,14 @@ export function CartDrawer() {
     try {
       if (applyDiscount) await applyDiscount(referralCode.trim());
       localStorage.setItem("lumine_referral", referralCode.trim());
-      trackReferralApplied(referralCode.trim());
+      track("referral_code_used", { referral_code: referralCode.trim() });
       setReferralStatus("success");
       setReferralMessage("Kod zastosowany!");
     } catch {
       setReferralStatus("error");
       setReferralMessage("Nieprawidłowy kod");
     }
-  }, [referralCode, applyDiscount]);
+  }, [referralCode, applyDiscount, track]);
 
   if (!render || !mounted) return null;
 
@@ -237,7 +249,14 @@ export function CartDrawer() {
               <div className="space-y-2.5 px-6 pb-6">
                 <Link
                   href="/checkout"
-                  onClick={closeCart}
+                  onClick={() => {
+                    track("cta_click", {
+                      cta_label: "Zamów teraz",
+                      position: "drawer",
+                      target_url: "/checkout",
+                    });
+                    closeCart();
+                  }}
                   className="flex w-full items-center justify-center gap-2 rounded-none bg-brand-900 py-3.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-brand-800"
                 >
                   Zamów teraz

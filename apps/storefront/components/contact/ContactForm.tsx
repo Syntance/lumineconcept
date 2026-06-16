@@ -3,9 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
-import { trackFormSubmit } from "@/lib/analytics/events";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
 import { useFormTracking } from "@/hooks/useFormTracking";
-import { identifyLead } from "@/lib/analytics/identify";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -26,6 +25,7 @@ export function ContactForm({ className = "", onSuccess }: ContactFormProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [feedback, setFeedback] = useState("");
   const tracker = useFormTracking("kontakt");
+  const { track, identifyLead } = useAnalytics();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +35,7 @@ export function ContactForm({ className = "", onSuccess }: ContactFormProps) {
     if (email.trim()) {
       identifyLead({ email, name, source: "form_kontakt" });
     }
-    trackFormSubmit({ formName: "kontakt" });
+    track("lead_submit", { form_name: "kontakt" });
 
     try {
       const response = await fetch("/api/contact", {
@@ -112,11 +112,8 @@ export function ContactForm({ className = "", onSuccess }: ContactFormProps) {
             autoComplete="email"
             value={email}
             onFocus={tracker.handleFocus}
-            onBlur={(e) => {
+            onBlur={() => {
               tracker.recordField("email")();
-              if (e.target.value.includes("@")) {
-                identifyLead({ email: e.target.value, name, source: "form_kontakt" });
-              }
             }}
             onChange={(e) => setEmail(e.target.value)}
             maxLength={200}

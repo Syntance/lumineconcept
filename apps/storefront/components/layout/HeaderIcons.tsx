@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Search, ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { useAnalytics } from "@/lib/analytics/useAnalytics";
 
 const SearchModal = dynamic(
   () => import("../search/SearchModal").then((m) => m.SearchModal),
@@ -22,6 +23,7 @@ const CartDrawer = dynamic(
  */
 export function HeaderIcons() {
   const { itemCount, openCart } = useCart();
+  const { track } = useAnalytics();
   const [isSearchOpen, setSearchOpen] = useState(false);
 
   return (
@@ -29,7 +31,13 @@ export function HeaderIcons() {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => setSearchOpen(true)}
+          onClick={() => {
+            track("cta_click", {
+              cta_label: "Szukaj",
+              position: "header",
+            });
+            setSearchOpen(true);
+          }}
           className="p-2 text-brand-600 hover:text-brand-900 transition-colors"
           aria-label="Szukaj"
         >
@@ -37,7 +45,13 @@ export function HeaderIcons() {
         </button>
         <button
           type="button"
-          onClick={openCart}
+          onClick={() => {
+            track("cta_click", {
+              cta_label: "Koszyk",
+              position: "header",
+            });
+            openCart();
+          }}
           className="relative p-2 text-brand-600 hover:text-brand-900 transition-colors"
           aria-label={`Koszyk (${itemCount} produktów)`}
         >
