@@ -1,10 +1,10 @@
 import "server-only";
 import { put } from "@vercel/blob";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { resolveMedusaAdminEmail } from "@/magazyn/core/medusa/client";
+import { resolveMedusaAdminEmail } from "@/magazyn/core/medusa/admin-email";
+import { MAX_CMS_UPLOAD_BYTES, MAX_UPLOAD_BYTES } from "./constants";
 
-/** Zgodne z `serverActions.bodySizeLimit` w next.config (praktyczny limit platformy). */
-export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+export { MAX_CMS_UPLOAD_BYTES, MAX_UPLOAD_BYTES } from "./constants";
 
 const ALLOWED_TYPES = new Set([
   "image/png",
@@ -216,9 +216,6 @@ export function validateProductUploadFile(file: File): string | null {
   }
   return null;
 }
-
-/** Zgodne z Medusa `admin.maxUploadFileSize` (10 MB). */
-export const MAX_CMS_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 const CMS_IMAGE_TYPES = new Set([
   "image/png",
