@@ -2,7 +2,10 @@ import "server-only";
 import { sleep } from "@/lib/medusa/transient-error";
 import { serverEnv } from "../env";
 import { AdminApiError, AdminUnauthorizedError, extractMessage } from "./errors";
+import { resolveMedusaAdminEmail } from "./admin-email";
 import { getSessionToken } from "./session";
+
+export { resolveMedusaAdminEmail } from "./admin-email";
 
 type AdminFetchInit = Omit<RequestInit, "body"> & {
 	body?: string;
@@ -13,18 +16,6 @@ type AdminFetchInit = Omit<RequestInit, "body"> & {
 const ADMIN_FETCH_TIMEOUT_MS = 30_000;
 const ADMIN_FETCH_RETRY_DELAYS_MS = [0, 1200, 2500, 4000] as const;
 const TRANSIENT_ADMIN_STATUSES = new Set([502, 503, 504]);
-
-/**
- * Konto admina w produkcyjnej Medusie zostało utworzone z literówką (lumie).
- * Do czasu migracji w bazie akceptujemy poprawny adres i logujemy na istniejące konto.
- */
-export function resolveMedusaAdminEmail(email: string): string {
-	const normalized = email.trim().toLowerCase();
-	if (normalized === "lumine.strona@gmail.com") {
-		return "lumie.strona@gmail.com";
-	}
-	return email.trim();
-}
 
 /** Logowanie email/hasło → token JWT admina Medusa. */
 export async function loginWithEmailPassword(email: string, password: string): Promise<string> {

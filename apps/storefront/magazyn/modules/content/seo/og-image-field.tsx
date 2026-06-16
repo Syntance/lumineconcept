@@ -4,7 +4,7 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useId, useState } from "react";
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
-import { MAX_CMS_UPLOAD_BYTES } from "@/lib/product-upload/product-file";
+import { MAX_CMS_UPLOAD_BYTES } from "@/lib/product-upload/constants";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
 
