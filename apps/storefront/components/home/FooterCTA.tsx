@@ -121,15 +121,15 @@ function InstagramGrid({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Otwórz post na Instagramie"
-              className="group relative aspect-[4/5] min-w-0 flex-1 overflow-hidden bg-white outline-none ring-brand-800 transition-[transform,box-shadow] hover:z-1 hover:shadow-md focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="group relative aspect-[4/5] min-w-0 flex-1 overflow-hidden bg-white outline-none ring-brand-800 transition-shadow hover:z-1 hover:shadow-md focus-visible:ring-2 focus-visible:ring-offset-2"
             >
-              <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute inset-0">
                 <Image
                   src={post.imageUrl}
                   alt={post.alt}
                   fill
                   sizes="(max-width: 640px) 16vw, (max-width: 1024px) 14vw, 160px"
-                  className="object-cover object-center scale-[1.03] transition-transform duration-300 group-hover:scale-105"
+                  className="object-contain object-center"
                   loading={i < 3 ? "eager" : "lazy"}
                   unoptimized={isCmsImageUnoptimized(post.imageUrl)}
                 />
