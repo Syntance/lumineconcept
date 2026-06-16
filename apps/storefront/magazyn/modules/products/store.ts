@@ -434,15 +434,34 @@ function productImagesPayload(urls: string[]): {
 	};
 }
 
-/** Domyślny sales channel + shipping profile — wymagane przy tworzeniu produktu. */
+/**
+ * Domyślny sales channel + shipping profile — wymagane przy tworzeniu produktu.
+ *
+ * KRYTYCZNE: produkt MUSI dostać profil, który ma przypisane metody dostawy
+ * (shipping options). Medusa przy `completeCart` waliduje, że profil produktu
+ * jest pokryty metodą dostawy w koszyku — produkt na profilu BEZ metod (albo
+ * bez profilu) blokuje finalizację już PO opłaceniu (klient płaci, zamówienie
+ * nie powstaje). Dlatego wybieramy profil realnie używany przez metody dostawy,
+ * a NIE „pierwszy z brzegu" (`?limit=1` potrafił trafić w pusty „Default
+ * Shipping Profile”, gdy w sklepie istnieje więcej niż jeden profil).
+ */
 export const getStoreConfig = cache(async (): Promise<{ salesChannelId: string | null; shippingProfileId: string | null }> => {
-	const [channels, profiles] = await Promise.all([
+	const [channels, options, profiles] = await Promise.all([
 		adminFetch<{ sales_channels: Array<{ id: string }> }>("/admin/sales-channels?limit=1"),
+		adminFetch<{ shipping_options: Array<{ shipping_profile_id?: string | null }> }>(
+			"/admin/shipping-options?limit=100&fields=id,shipping_profile_id",
+		).catch(() => ({ shipping_options: [] as Array<{ shipping_profile_id?: string | null }> })),
 		adminFetch<{ shipping_profiles: Array<{ id: string }> }>("/admin/shipping-profiles?limit=1"),
 	]);
+
+	/** Profil realnie obsługujący wysyłkę = ten, do którego podpięte są metody dostawy. */
+	const profileIdFromOptions = options.shipping_options.find(
+		(o) => Boolean(o.shipping_profile_id),
+	)?.shipping_profile_id;
+
 	return {
 		salesChannelId: channels.sales_channels[0]?.id ?? null,
-		shippingProfileId: profiles.shipping_profiles[0]?.id ?? null,
+		shippingProfileId: profileIdFromOptions ?? profiles.shipping_profiles[0]?.id ?? null,
 	};
 });
 
