@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import {
+	Area,
 	AreaChart,
 	Bar,
 	BarChart,
