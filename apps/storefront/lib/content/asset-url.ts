@@ -67,10 +67,10 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 /**
  * Czy `next/image` ma pominąć optymalizację (`unoptimized`).
  *
- * Domyślnie OPTYMALIZUJEMY (downscale do realnego rozmiaru + AVIF/WebP + cache 1 rok),
- * bo to eliminuje wolne, wielomegabajtowe oryginały z R2 i daje natychmiastowe ładowanie.
+ * Domyślnie OPTYMALIZUJEMY assety z repo (`/images/…` poza `/images/cms/`).
  *
- * `unoptimized` zostaje tylko gdy optymalizator i tak by nie zadziałał:
+ * `unoptimized` dla hero CMS (`/images/cms/`, `/cms-uploads/`) — pełna jakość
+ * bez ponownej kompresji Next.js (WebP z panelu już jest przygotowany).
  * - SVG (Next pomija, wymaga `dangerouslyAllowSVG`),
  * - hosty lokalne (optymalizator Vercela ich nie dosięgnie),
  * - względne ścieżki backendu Medusa bez pliku w `public/` (optymalizator je 404-uje).
@@ -85,13 +85,20 @@ export function isCmsImageUnoptimized(url: string): boolean {
 
 	if (url.startsWith("http")) {
 		try {
-			const host = new URL(url).hostname;
+			const parsed = new URL(url);
+			const host = parsed.hostname;
 			if (host === "localhost" || host === "127.0.0.1") return true;
+			// Zdalne hero CMS (R2) — serwuj oryginał bez ponownej kompresji.
+			if (parsed.pathname.toLowerCase().includes("/cms-uploads/")) return true;
 		} catch {
 			return true;
 		}
-		// R2 / CDN / Medusa prod → przepuszczamy przez Next/Vercel Image Optimization.
 		return false;
+	}
+
+	// Hero CMS — już zoptymalizowany WebP/JPG z panelu; bez ponownej kompresji Next.js.
+	if (pathname.includes("/images/cms/") || pathname.includes("/cms-uploads/")) {
+		return true;
 	}
 
 	// Ścieżki serwowane przez backend (brak pliku w `public/`) — nie da się zoptymalizować.
