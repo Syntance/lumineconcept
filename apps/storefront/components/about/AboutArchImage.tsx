@@ -26,7 +26,7 @@ export function AboutArchImage({
       height={960}
       priority={priority}
       fetchPriority={priority ? "high" : undefined}
-      sizes="(max-width: 768px) 9.75rem, (max-width: 1280px) 40vw, 22.68rem"
+      sizes="(max-width: 768px) 10.725rem, (max-width: 1280px) 40vw, 22.68rem"
       quality={92}
       unoptimized={isCmsImageUnoptimized(src)}
       className={cn("block h-auto w-full", ABOUT_MEDIA_WIDTH_CLASS, ABOUT_MEDIA_WIDTH_MOBILE_CLASS, className)}

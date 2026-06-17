@@ -1,9 +1,9 @@
 /** Wspólna szerokość zdjęć — desktop; mobile w ABOUT_MEDIA_WIDTH_MOBILE_CLASS. */
 export const ABOUT_MEDIA_WIDTH_CLASS = "max-w-[19.44rem] sm:max-w-[22.68rem]" as const;
 
-/** Mobile-only — znacznie mniejsze zdjęcia, wyśrodkowane w kolumnie. */
+/** Mobile-only — wyśrodkowane w kolumnie (+10% względem 9.75rem). */
 export const ABOUT_MEDIA_WIDTH_MOBILE_CLASS =
-	"max-md:mx-auto max-md:max-w-[9.75rem]" as const;
+	"max-md:mx-auto max-md:max-w-[10.725rem]" as const;
 
 /** Odstęp od środka (gutter) — lewa kolumna z tekstem wyrównanym w prawo. */
 export const ABOUT_TEXT_GUTTER_RIGHT = "lg:pr-4" as const;

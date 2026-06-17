@@ -21,7 +21,7 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 			className="relative bg-brand-50 max-md:mt-0 -mt-20 sm:-mt-24 lg:-mt-28"
 		>
 			<AboutSectionColumns
-				className="pb-16 pt-0 sm:pb-20 lg:pb-24 max-md:gap-6 max-md:pb-14"
+				className="pb-16 pt-0 sm:pb-20 lg:pb-24 max-md:gap-6 max-md:pb-6"
 				mobileMediaFirst
 				textClassName={`${ABOUT_TEXT_GUTTER_RIGHT} flex flex-col items-end max-md:items-center lg:pt-14 xl:pt-16`}
 				mediaClassName={`relative z-20 max-md:mt-0 max-md:flex max-md:justify-center lg:-mt-48 xl:-mt-56 ${ABOUT_MEDIA_COLUMN_END}`}
