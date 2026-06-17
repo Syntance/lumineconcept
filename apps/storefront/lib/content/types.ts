@@ -158,8 +158,10 @@ export type AboutPageContent = {
 	missionImageUrl?: string;
 	missionImageAlt?: string;
 	missionLabel?: string;
+	closingParagraphs?: string[];
 	closingImageUrl?: string;
 	closingImageAlt?: string;
+	closingLabel?: string;
 };
 
 export type PageContent = {

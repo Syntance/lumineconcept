@@ -200,8 +200,10 @@ const aboutPageContentSchema = z.object({
 	missionImageUrl: cmsOptionalAssetUrlSchema.optional(),
 	missionImageAlt: z.string().optional(),
 	missionLabel: z.string().optional(),
+	closingParagraphs: z.array(z.string().min(1)).optional(),
 	closingImageUrl: cmsOptionalAssetUrlSchema.optional(),
 	closingImageAlt: z.string().optional(),
+	closingLabel: z.string().optional(),
 });
 
 export const pageContentSchema = z.object({
@@ -680,6 +682,7 @@ export function preparePageContentForSave(_pageId: string, content: PageContent)
 		else about.closingImageUrl = about.closingImageUrl.trim();
 		about.introParagraphs = normalizeAboutParagraphsForSave(about.introParagraphs);
 		about.missionParagraphs = normalizeAboutParagraphsForSave(about.missionParagraphs);
+		about.closingParagraphs = normalizeAboutParagraphsForSave(about.closingParagraphs);
 		next.about = Object.keys(about).length ? about : undefined;
 	}
 	return next;

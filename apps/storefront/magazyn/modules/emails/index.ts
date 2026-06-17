@@ -1,6 +1,8 @@
 /** Publiczne API modułu maili. */
 export { EmailEditor } from "./email-editor";
 export { default as MailePage, dynamic as mailePageDynamic } from "./page";
+export { default as EmailEditorPage } from "./email-editor-page";
+export { EmailsList } from "./emails-list";
 export {
 	getAllEmailTemplates,
 	saveEmailTemplate,

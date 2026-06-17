@@ -1,0 +1,47 @@
+export type MonthlySalesPoint = {
+	month: string;
+	monthKey: string;
+	revenueMinor: number;
+	orderCount: number;
+};
+
+export type DistributionRow = {
+	name: string;
+	value: number;
+	share: number;
+	color: string;
+};
+
+export type TopProductRow = {
+	title: string;
+	quantity: number;
+	revenueMinor: number;
+};
+
+export type OrderStatusRow = {
+	label: string;
+	count: number;
+	share: number;
+	color: string;
+};
+
+export type SalesStatistics = {
+	rangeLabel: string;
+	currencyCode: string;
+	monthly: MonthlySalesPoint[];
+	shippingMethods: DistributionRow[];
+	paymentMethods: DistributionRow[];
+	topProducts: TopProductRow[];
+	statusBreakdown: OrderStatusRow[];
+	totals: {
+		revenueMinor: number;
+		orderCount: number;
+		uniqueCustomers: number;
+		averageOrderMinor: number;
+	};
+	/** Bieżący miesiąc vs poprzedni — do KPI na przeglądzie. */
+	trends: {
+		revenueChangePct: number | null;
+		ordersChangePct: number | null;
+	};
+};

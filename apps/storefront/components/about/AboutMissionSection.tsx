@@ -1,5 +1,5 @@
 import {
-  ABOUT_MEDIA_GUTTER_RIGHT,
+  ABOUT_MEDIA_COLUMN_START,
   ABOUT_MISSION_TEXT_TOP_OFFSET,
   ABOUT_TEXT_GUTTER_LEFT,
 } from "@/components/about/about-media";
@@ -18,8 +18,11 @@ type AboutMissionSectionProps = {
 export function AboutMissionSection({ sections }: AboutMissionSectionProps) {
   return (
     <section aria-labelledby="about-mission-heading" className="relative bg-brand-50">
-      {/* Dolna połowa — biała; górna zostaje kremowa (jak mockup). */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-[15%] bottom-0 bg-white" />
+      {/* Środkowe 47% — białe, rozciągnięte w górę; dolna krawędź bez zmian. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-[16%] z-0 h-[47%] bg-white"
+      />
 
       {/* Pionowy separator — środek strony, 150px, kolor nagłówków. */}
       <div
@@ -32,7 +35,7 @@ export function AboutMissionSection({ sections }: AboutMissionSectionProps) {
           className="px-0 pt-4 sm:pt-6 lg:pt-8"
           mediaOnEnd={false}
           mobileMediaFirst
-          mediaClassName={`flex w-full justify-center md:justify-end ${ABOUT_MEDIA_GUTTER_RIGHT}`}
+          mediaClassName={ABOUT_MEDIA_COLUMN_START}
           textClassName={cn(ABOUT_TEXT_GUTTER_LEFT, ABOUT_MISSION_TEXT_TOP_OFFSET)}
           media={
             <AboutMediaBlock
