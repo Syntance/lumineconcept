@@ -78,6 +78,35 @@ async function readJsonUploadResponse(
 	};
 }
 
+function isNetworkFetchError(error: unknown): boolean {
+	return error instanceof TypeError && error.message === "Failed to fetch";
+}
+
+function wrapUploadFetchError(error: unknown, stage: "api" | "presign" | "r2"): Error {
+	if (isNetworkFetchError(error)) {
+		if (stage === "r2") {
+			return new Error(
+				"Przeglądarka nie mogła wysłać pliku do magazynu R2. W Cloudflare R2 włącz CORS (metoda PUT) dla domeny sklepu i panelu.",
+			);
+		}
+		if (stage === "presign") {
+			return new Error(
+				"Nie udało się połączyć z serwerem uploadu. Odśwież stronę i spróbuj ponownie.",
+			);
+		}
+		return new Error(
+			"Połączenie przerwane podczas wysyłania pliku. Spróbuj mniejszy plik (JPG/WebP) lub ponów upload za chwilę.",
+		);
+	}
+	if (error instanceof Error) return error;
+	return new Error("Upload nie powiódł się. Spróbuj ponownie.");
+}
+
+function isR2PresignUnavailableMessage(message: string | null | undefined): boolean {
+	if (!message) return false;
+	return /wymagają R2|R2_PRESIGN|magazyn plików niedostępny|S3_\*/i.test(message);
+}
+
 async function readPresignResponse(
 	res: Response,
 ): Promise<{ ok: boolean; uploadUrl?: string; publicUrl?: string; error: string | null }> {
@@ -106,34 +135,51 @@ async function readPresignResponse(
 	return { ok: false, error: "Nie udało się przygotować uploadu do magazynu plików." };
 }
 
-/** Pliki > ~4 MB — presigned PUT prosto do R2 (pełna jakość, bez kompresji). */
+/** Pliki > ~4 MB na produkcji — presigned PUT prosto do R2 (pełna jakość, bez kompresji). */
 async function uploadViaPresigned(file: File): Promise<string> {
 	const contentType = resolveUploadContentType(file);
 
-	const presignRes = await fetch("/api/magazyn/cms-upload/presign", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		credentials: "same-origin",
-		body: JSON.stringify({
-			filename: file.name,
-			contentType,
-			size: file.size,
-		}),
-	});
+	let presignRes: Response;
+	try {
+		presignRes = await fetch("/api/magazyn/cms-upload/presign", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			credentials: "same-origin",
+			body: JSON.stringify({
+				filename: file.name,
+				contentType,
+				size: file.size,
+			}),
+		});
+	} catch (error) {
+		throw wrapUploadFetchError(error, "presign");
+	}
 
 	const presign = await readPresignResponse(presignRes);
 	if (!presign.ok || !presign.uploadUrl || !presign.publicUrl) {
+		// Lokalny dev bez R2 — API route ma limit 100 MB (next.config), omija presign.
+		if (
+			process.env.NODE_ENV === "development" &&
+			isR2PresignUnavailableMessage(presign.error)
+		) {
+			return uploadViaApi(file);
+		}
 		throw new Error(
 			presign.error ??
 				`Nie udało się wysłać pliku powyżej ${VERCEL_SAFE_UPLOAD_MB} MB. Sprawdź konfigurację R2 (S3_*) i CORS na bucket.`,
 		);
 	}
 
-	const putRes = await fetch(presign.uploadUrl, {
-		method: "PUT",
-		body: file,
-		headers: { "Content-Type": contentType },
-	});
+	let putRes: Response;
+	try {
+		putRes = await fetch(presign.uploadUrl, {
+			method: "PUT",
+			body: file,
+			headers: { "Content-Type": contentType },
+		});
+	} catch (error) {
+		throw wrapUploadFetchError(error, "r2");
+	}
 
 	if (!putRes.ok) {
 		throw new Error(
@@ -148,16 +194,21 @@ async function uploadViaApi(file: File): Promise<string> {
 	const formData = new FormData();
 	formData.append("files", file);
 
-	const res = await fetch("/api/magazyn/cms-upload", {
-		method: "POST",
-		body: formData,
-		credentials: "same-origin",
-	});
+	let res: Response;
+	try {
+		res = await fetch("/api/magazyn/cms-upload", {
+			method: "POST",
+			body: formData,
+			credentials: "same-origin",
+		});
+	} catch (error) {
+		throw wrapUploadFetchError(error, "api");
+	}
 
 	const payload = await readJsonUploadResponse(res);
 
 	if (!payload.ok) {
-		if (res.status === 413) {
+		if (res.status === 413 && process.env.NODE_ENV !== "development") {
 			return uploadViaPresigned(file);
 		}
 		throw new Error(payload.error ?? "Upload nie powiódł się. Spróbuj ponownie.");
@@ -169,10 +220,21 @@ async function uploadViaApi(file: File): Promise<string> {
 }
 
 async function uploadCmsImage(file: File): Promise<string> {
-	if (file.size > VERCEL_SAFE_UPLOAD_BYTES) {
-		return uploadViaPresigned(file);
+	const isDev = process.env.NODE_ENV === "development";
+	const useDirectApi = isDev || file.size <= VERCEL_SAFE_UPLOAD_BYTES;
+
+	if (useDirectApi) {
+		try {
+			return await uploadViaApi(file);
+		} catch (error) {
+			if (!isDev && file.size > VERCEL_SAFE_UPLOAD_BYTES) {
+				return uploadViaPresigned(file);
+			}
+			throw error;
+		}
 	}
-	return uploadViaApi(file);
+
+	return uploadViaPresigned(file);
 }
 
 type Props = {
@@ -238,10 +300,12 @@ export function OgImageField({
 					if (url) onChange(url);
 				}
 			} catch (uploadError) {
+				const message =
+					uploadError instanceof Error ? uploadError.message : "Upload nie powiódł się.";
 				setError(
-					uploadError instanceof Error
-						? uploadError.message
-						: "Upload nie powiódł się. Sprawdź połączenie i spróbuj ponownie.",
+					isNetworkFetchError(uploadError)
+						? "Połączenie przerwane podczas wysyłania pliku. Spróbuj ponownie za chwilę."
+						: message || "Upload nie powiódł się. Sprawdź połączenie i spróbuj ponownie.",
 				);
 			} finally {
 				setUploading(false);
