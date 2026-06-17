@@ -7,7 +7,8 @@ import {
 	PRZELEWY24_PROVIDER_ID,
 	SYSTEM_PAYMENT_PROVIDER_ID,
 } from "@magazyn/modules/orders/order-payment-provider";
-import { orderStatusBadge } from "@magazyn/modules/orders/order-status";
+import { isMagazynActiveOrder, orderStatusBadge } from "@magazyn/modules/orders/order-status";
+import { resolveOrderTotalMinor, resolveShippingTotalMinor } from "@magazyn/modules/orders/order-totals";
 import type { OrderStatus } from "@magazyn/modules/orders/order-types";
 import type {
 	DistributionRow,
@@ -42,10 +43,24 @@ type MedusaOrder = {
 	email?: string | null;
 	created_at?: string | null;
 	total?: number | null;
+	item_total?: number | null;
+	shipping_total?: number | null;
+	tax_total?: number | null;
+	discount_total?: number | null;
 	status?: OrderStatus | null;
-	shipping_methods?: Array<{ name?: string | null }> | null;
+	shipping_methods?: Array<{
+		name?: string | null;
+		amount?: number | null;
+		subtotal?: number | null;
+		total?: number | null;
+		raw_amount?: { value?: string | number } | number | null;
+	}> | null;
 	payment_collections?: Array<{
-		payments?: Array<{ provider_id?: string | null; canceled_at?: string | null }> | null;
+		payments?: Array<{
+			provider_id?: string | null;
+			amount?: number | null;
+			canceled_at?: string | null;
+		}> | null;
 	}> | null;
 	items?: MedusaOrderItem[] | null;
 };
@@ -55,12 +70,20 @@ const STATS_FIELDS = [
 	"email",
 	"created_at",
 	"total",
+	"item_total",
+	"shipping_total",
+	"tax_total",
+	"discount_total",
 	"status",
 	"items.title",
 	"items.quantity",
 	"items.total",
 	"shipping_methods.name",
+	"shipping_methods.amount",
+	"shipping_methods.subtotal",
+	"shipping_methods.total",
 	"payment_collections.payments.provider_id",
+	"payment_collections.payments.amount",
 	"payment_collections.payments.canceled_at",
 ].join(",");
 
@@ -96,6 +119,7 @@ function buildMonthSlots(): MonthlySalesPoint[] {
 			monthKey,
 			month: monthLabelFromKey(monthKey),
 			revenueMinor: 0,
+			shippingCostMinor: 0,
 			orderCount: 0,
 		});
 	}
@@ -153,6 +177,7 @@ export async function getSalesStatistics(): Promise<SalesStatistics> {
 	let offset = 0;
 	let total = Infinity;
 	let revenueMinor = 0;
+	let shippingCostMinor = 0;
 	let orderCount = 0;
 
 	const cutoff = new Date();
@@ -180,17 +205,20 @@ export async function getSalesStatistics(): Promise<SalesStatistics> {
 			}
 
 			const status = order.status ?? "pending";
-			if (status === "draft" || status === "archived") continue;
+			if (!isMagazynActiveOrder(status)) continue;
 
-			const orderTotal = toMinor(order.total);
+			const orderTotal = resolveOrderTotalMinor(order);
+			const orderShipping = resolveShippingTotalMinor(order);
 			const monthKey = monthKeyFromDate(createdAt);
 			const monthSlot = monthlyMap.get(monthKey);
 			if (monthSlot) {
 				monthSlot.revenueMinor += orderTotal;
+				monthSlot.shippingCostMinor += orderShipping;
 				monthSlot.orderCount += 1;
 			}
 
 			revenueMinor += orderTotal;
+			shippingCostMinor += orderShipping;
 			orderCount += 1;
 
 			if (order.email) customers.add(order.email.toLowerCase());
@@ -260,6 +288,8 @@ export async function getSalesStatistics(): Promise<SalesStatistics> {
 		statusBreakdown,
 		totals: {
 			revenueMinor,
+			shippingCostMinor,
+			incomeMinor: revenueMinor - shippingCostMinor,
 			orderCount,
 			uniqueCustomers: customers.size,
 			averageOrderMinor: orderCount > 0 ? Math.round(revenueMinor / orderCount) : 0,
@@ -268,6 +298,10 @@ export async function getSalesStatistics(): Promise<SalesStatistics> {
 			revenueChangePct: pctChange(
 				currentMonth?.revenueMinor ?? 0,
 				previousMonth?.revenueMinor ?? 0,
+			),
+			incomeChangePct: pctChange(
+				(currentMonth?.revenueMinor ?? 0) - (currentMonth?.shippingCostMinor ?? 0),
+				(previousMonth?.revenueMinor ?? 0) - (previousMonth?.shippingCostMinor ?? 0),
 			),
 			ordersChangePct: pctChange(currentMonth?.orderCount ?? 0, previousMonth?.orderCount ?? 0),
 		},

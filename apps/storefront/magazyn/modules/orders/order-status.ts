@@ -49,6 +49,17 @@ export function orderStatusBadge(status: OrderStatus): StatusBadge {
 	return STATUS[status] ?? { label: status, tone: "neutral" };
 }
 
+/** Aktywne zamówienia — bez archiwizowanych, anulowanych i szkiców (statystyki, podsumowania). */
+const MAGAZYN_ACTIVE_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set([
+	"pending",
+	"completed",
+	"requires_action",
+]);
+
+export function isMagazynActiveOrder(status: OrderStatus | string): boolean {
+	return MAGAZYN_ACTIVE_ORDER_STATUSES.has(status as OrderStatus);
+}
+
 export function paymentStatusBadge(
 	status: OrderPaymentStatus,
 	orderStatus?: OrderStatus,

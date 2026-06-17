@@ -4,7 +4,7 @@ import { AboutArchImage } from "@/components/about/AboutArchImage";
 import { AboutMediaBlock } from "@/components/about/AboutMediaBlock";
 import { AboutSectionColumns } from "@/components/about/AboutSectionColumns";
 import { AboutSectionLabel } from "@/components/about/AboutSectionLabel";
-import { ABOUT_SECTION_HEADING_CLASS } from "@/components/about/about-typography";
+import { ABOUT_SECTION_HEADING_CLASS, ABOUT_SIDE_CAPTION_CLASS } from "@/components/about/about-typography";
 import type { ResolvedAboutSections } from "@/lib/content/about";
 
 type AboutIntroSectionProps = {
@@ -17,14 +17,6 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
       aria-labelledby="about-intro-heading"
       className="relative bg-brand-50 -mt-20 sm:-mt-24 lg:-mt-28"
     >
-      {sections.sideCaption ? (
-        <div className="pointer-events-none absolute inset-y-16 right-3 hidden xl:block" aria-hidden>
-          <p className="font-gilroy text-[0.65rem] font-medium uppercase tracking-[0.35em] text-brand-400 [writing-mode:vertical-rl] rotate-180">
-            {sections.sideCaption}
-          </p>
-        </div>
-      ) : null}
-
       <AboutSectionColumns
         className="pb-16 pt-0 sm:pb-20 lg:pb-24"
         textClassName={`${ABOUT_TEXT_GUTTER_RIGHT} lg:pt-14 xl:pt-16`}
@@ -41,21 +33,30 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
           </>
         }
         media={
-          <AboutMediaBlock
-            image={
-              <AboutArchImage
-                src={sections.introImageUrl}
-                alt={sections.introImageAlt}
-                priority
-                className="w-full max-w-none"
-              />
-            }
-            label={
-              sections.introLabel ? (
-                <AboutSectionLabel>{sections.introLabel}</AboutSectionLabel>
-              ) : undefined
-            }
-          />
+          <div className="flex items-stretch gap-2 sm:gap-3">
+            <AboutMediaBlock
+              image={
+                <AboutArchImage
+                  src={sections.introImageUrl}
+                  alt={sections.introImageAlt}
+                  priority
+                  className="w-full max-w-none"
+                />
+              }
+              label={
+                sections.introLabel ? (
+                  <AboutSectionLabel>{sections.introLabel}</AboutSectionLabel>
+                ) : undefined
+              }
+            />
+            {sections.sideCaption ? (
+              <div className="hidden items-center md:flex md:translate-x-[60px] md:translate-y-[250px]" aria-hidden>
+                <p className={ABOUT_SIDE_CAPTION_CLASS}>
+                  {sections.sideCaption}
+                </p>
+              </div>
+            ) : null}
+          </div>
         }
       />
     </section>

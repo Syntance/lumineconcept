@@ -9,7 +9,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { formatPrice } from "@magazyn/core/lib/format";
+import { formatChartAxisPrice, formatPrice } from "@magazyn/core/lib/format";
 import type { SalesStatistics } from "@magazyn/modules/analytics/sales-types";
 
 const CHART_STROKE = "oklch(0.58 0.08 55)";
@@ -25,7 +25,7 @@ const chartTooltipStyle = {
 export function OverviewDashboardCharts({ sales }: { sales: SalesStatistics }) {
 	const chartData = sales.monthly.map((point) => ({
 		miesiac: point.month,
-		przychod: point.revenueMinor / 100,
+		przychodMinor: point.revenueMinor,
 	}));
 
 	return (
@@ -62,18 +62,20 @@ export function OverviewDashboardCharts({ sales }: { sales: SalesStatistics }) {
 							tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
 							axisLine={false}
 							tickLine={false}
-							tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
+							tickFormatter={(minor: number) =>
+								formatChartAxisPrice(minor, sales.currencyCode)
+							}
 						/>
 						<Tooltip
 							contentStyle={chartTooltipStyle}
 							formatter={(v) => {
 								if (typeof v !== "number") return ["—"];
-								return [formatPrice(Math.round(v * 100), sales.currencyCode), "Przychód"];
+								return [formatPrice(v, sales.currencyCode), "Przychód"];
 							}}
 						/>
 						<Area
 							type="monotone"
-							dataKey="przychod"
+							dataKey="przychodMinor"
 							stroke={CHART_STROKE}
 							strokeWidth={2}
 							fill="url(#overview-revenue-grad)"

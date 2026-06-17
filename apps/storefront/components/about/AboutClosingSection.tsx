@@ -13,6 +13,7 @@ import {
   ABOUT_MISSION_TEXT_TOP_OFFSET,
   ABOUT_SIGNET_ASPECT_CLASS,
   ABOUT_SIGNET_IMAGE,
+  ABOUT_SIGNET_WIDTH_CLASS,
   ABOUT_TEXT_GUTTER_RIGHT,
 } from "@/components/about/about-media";
 import { AboutBodyText } from "@/components/about/AboutBodyText";
@@ -44,7 +45,8 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
       <div
         aria-hidden
         className={cn(
-          "pointer-events-none absolute left-1/2 z-[2] hidden w-30 -translate-x-1/2 -translate-y-1/2 md:block",
+          "pointer-events-none absolute left-1/2 z-[2] hidden -translate-x-1/2 -translate-y-1/2 md:block",
+          ABOUT_SIGNET_WIDTH_CLASS,
           ABOUT_CLOSING_SIGNET_TOP,
         )}
       >
@@ -54,7 +56,7 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
             alt=""
             fill
             className="object-contain object-center"
-            sizes="120px"
+            sizes="144px"
           />
         </div>
       </div>

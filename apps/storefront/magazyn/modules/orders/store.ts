@@ -7,6 +7,7 @@ import { formatPrice, toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { formatLineItemDetailsLines } from "@/lib/cart/format-line-item-for-email";
 import { expressFeeMinor, isExpressDelivery } from "./order-express";
+import { resolveOrderTotalMinor, resolveShippingTotalMinor } from "./order-totals";
 import type {
 	AdminOrderDetail,
 	AdminOrderRow,
@@ -18,6 +19,7 @@ import type {
 	OrderPaymentStatus,
 	OrderStatus,
 } from "./order-types";
+import { isMagazynActiveOrder } from "./order-status";
 
 export type {
 	AdminOrderDetail,
@@ -148,49 +150,6 @@ function toMinorUnits(amount: number | null | undefined): number {
 	return toMinorUnitsFromDecimal(amount);
 }
 
-function amountFromUnknown(v: unknown): number {
-	if (v === null || v === undefined) return 0;
-	if (typeof v === "number" && Number.isFinite(v)) return v;
-	if (typeof v === "string" && v.trim() !== "") {
-		const n = Number(v);
-		if (Number.isFinite(n)) return n;
-	}
-	if (typeof v === "object" && v !== null && "value" in v) {
-		return amountFromUnknown((v as { value: unknown }).value);
-	}
-	return 0;
-}
-
-/**
- * `shipping_total` bywa 0 mimo przypiętej metody dostawy — wtedy bierzemy
- * kwotę z `shipping_methods` albo różnicę total − produkty.
- */
-function resolveShippingTotal(order: MedusaOrder): number {
-	const header = amountFromUnknown(order.shipping_total);
-	if (header > 0) return toMinorUnits(header);
-
-	const fromMethods = (order.shipping_methods ?? []).reduce((sum, method) => {
-		const raw =
-			method.amount ??
-			method.total ??
-			method.subtotal ??
-			method.raw_amount;
-		return sum + amountFromUnknown(raw);
-	}, 0);
-	if (fromMethods > 0) return toMinorUnits(fromMethods);
-
-	if ((order.shipping_methods?.length ?? 0) > 0) {
-		const total = amountFromUnknown(order.total);
-		const itemTotal = amountFromUnknown(order.item_total);
-		const tax = amountFromUnknown(order.tax_total);
-		const discount = amountFromUnknown(order.discount_total);
-		const derived = total - itemTotal - tax + discount;
-		if (derived > 0) return toMinorUnits(derived);
-	}
-
-	return 0;
-}
-
 const LIST_FIELDS = [
 	"id",
 	"display_id",
@@ -200,9 +159,18 @@ const LIST_FIELDS = [
 	"email",
 	"currency_code",
 	"total",
+	"item_total",
+	"shipping_total",
+	"tax_total",
+	"discount_total",
 	"created_at",
 	"metadata",
 	"items.quantity",
+	"shipping_methods.amount",
+	"shipping_methods.subtotal",
+	"shipping_methods.total",
+	"payment_collections.payments.amount",
+	"payment_collections.payments.canceled_at",
 	"shipping_address.first_name",
 	"shipping_address.last_name",
 	"billing_address.first_name",
@@ -244,26 +212,30 @@ const DETAIL_FIELDS = [
 	"fulfillments.items.line_item_id",
 ].join(",");
 
-const SUMMARY_LIST_FIELDS = ["id", "status", "payment_status", "total", "currency_code"].join(",");
+const SUMMARY_LIST_FIELDS = [
+	"id",
+	"status",
+	"payment_status",
+	"total",
+	"item_total",
+	"shipping_total",
+	"currency_code",
+	"shipping_methods.amount",
+	"shipping_methods.subtotal",
+	"shipping_methods.total",
+	"payment_collections.payments.amount",
+	"payment_collections.payments.canceled_at",
+].join(",");
 
 const SUMMARY_PAGE_SIZE = 100;
 
-/** Aktywne zamówienia — bez archiwizowanych, anulowanych i szkiców (np. podsumowanie pulpitu). */
-const MAGAZYN_ACTIVE_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set([
+/** Zamówienia na liście Magazynu — aktywne + anulowane (bez archiwizowanych i szkiców). */
+const MAGAZYN_LIST_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set([
 	"pending",
 	"completed",
 	"requires_action",
-]);
-
-/** Zamówienia na liście Magazynu — aktywne + anulowane (bez archiwizowanych i szkiców). */
-const MAGAZYN_LIST_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set([
-	...MAGAZYN_ACTIVE_ORDER_STATUSES,
 	"canceled",
 ]);
-
-function isMagazynActiveOrder(status: OrderStatus | string): boolean {
-	return MAGAZYN_ACTIVE_ORDER_STATUSES.has(status as OrderStatus);
-}
 
 function isMagazynListOrder(status: OrderStatus | string): boolean {
 	return MAGAZYN_LIST_ORDER_STATUSES.has(status as OrderStatus);
@@ -305,7 +277,7 @@ export async function getAdminOrdersOverviewSummary(): Promise<AdminOrdersOvervi
 			if (!isMagazynActiveOrder(status)) continue;
 
 			const paymentStatus = order.payment_status ?? "not_paid";
-			const totalMinor = toMinorUnits(order.total);
+			const totalMinor = resolveOrderTotalMinor(order);
 
 			summary.orderCount += 1;
 			summary.totalMinor += totalMinor;
@@ -344,7 +316,7 @@ export async function listAdminOrders(): Promise<AdminOrderRow[]> {
 				email: order.email ?? "",
 				customerName: customerNameFrom(order),
 				currencyCode: (order.currency_code ?? "pln").toUpperCase(),
-				total: toMinorUnits(order.total),
+				total: resolveOrderTotalMinor(order),
 				itemCount: (order.items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0),
 				createdAt: order.created_at ?? "",
 				expressDelivery: isExpressDelivery(metadata),
@@ -404,10 +376,10 @@ function mapMedusaOrderToDetail(
 			metadata: normalizeMetadata(item.metadata),
 		})),
 		itemTotal: toMinorUnits(order.item_total),
-		shippingTotal: resolveShippingTotal(order),
+		shippingTotal: resolveShippingTotalMinor(order),
 		taxTotal: toMinorUnits(order.tax_total),
 		discountTotal: toMinorUnits(order.discount_total),
-		total: toMinorUnits(order.total),
+		total: resolveOrderTotalMinor(order),
 		shippingAddress: mapAddress(order.shipping_address),
 		billingAddress: mapAddress(order.billing_address),
 		shippingMethodName: order.shipping_methods?.[0]?.name ?? null,
