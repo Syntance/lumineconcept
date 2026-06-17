@@ -27,8 +27,11 @@ export type OrderStatusRow = {
 	color: string;
 };
 
+import type { SalesPeriodPreset } from "./sales-period";
+
 export type SalesStatistics = {
 	rangeLabel: string;
+	periodPreset: SalesPeriodPreset;
 	currencyCode: string;
 	monthly: MonthlySalesPoint[];
 	shippingMethods: DistributionRow[];

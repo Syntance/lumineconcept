@@ -53,8 +53,9 @@ export type Ga4AnalyticsSlice = AnalyticsSourceState & {
 export type PosthogAnalyticsSlice = AnalyticsSourceState & {
 	kpi?: AnalyticsKpi;
 	traffic?: DailyPoint[];
+	channels?: ChannelRow[];
+	topPages?: TopPageRow[];
 	funnel?: FunnelStep[];
-	topEvents?: TopEventRow[];
 };
 
 export type AnalyticsDashboardData = {

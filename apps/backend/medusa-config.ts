@@ -85,7 +85,7 @@ export default defineConfig({
   admin: {
     disable: ADMIN_DISABLED,
     backendUrl: BACKEND_URL,
-    maxUploadFileSize: 10 * 1024 * 1024,
+    maxUploadFileSize: 20 * 1024 * 1024,
   },
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL!,

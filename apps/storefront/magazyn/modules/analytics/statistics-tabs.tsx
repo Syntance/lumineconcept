@@ -18,7 +18,7 @@ const TABS: Array<{ id: StatisticsTab; label: string; description: string }> = [
 	{
 		id: "analytics",
 		label: "Analityka",
-		description: "Ruch i konwersja z Google Analytics 4 oraz PostHog",
+		description: "Ruch na stronie, źródła ruchu i konwersja",
 	},
 ];
 
@@ -61,7 +61,15 @@ export function StatisticsTabs({ sales, analytics }: Props) {
 
 			<p className="text-sm text-muted-foreground">{activeMeta.description}</p>
 
-			{tab === "sales" ? <SalesStatisticsView data={sales} /> : <AnalyticsPanel data={analytics} />}
+			{tab === "sales" ? (
+				<SalesStatisticsView data={sales} />
+			) : (
+				<AnalyticsPanel
+					data={analytics}
+					periodLabel={sales.rangeLabel}
+					storeOrders={sales.totals.orderCount}
+				/>
+			)}
 		</div>
 	);
 }
