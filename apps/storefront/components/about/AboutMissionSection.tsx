@@ -17,11 +17,11 @@ type AboutMissionSectionProps = {
 
 export function AboutMissionSection({ sections }: AboutMissionSectionProps) {
 	return (
-		<section aria-labelledby="about-mission-heading" className="relative bg-brand-50 max-md:py-12">
-			{/* Środkowe 47% — białe (desktop bez zmian). */}
+		<section aria-labelledby="about-mission-heading" className="relative bg-brand-50 max-md:py-0">
+			{/* Biały pas misji — tylko desktop. */}
 			<div
 				aria-hidden
-				className="pointer-events-none absolute inset-x-0 top-[16%] z-0 h-[47%] bg-white max-lg:hidden"
+				className="pointer-events-none absolute inset-x-0 top-[16%] z-0 h-[47%] max-md:hidden bg-white max-lg:hidden"
 			/>
 
 			{/* Pionowy separator — środek strony (desktop bez zmian). */}
@@ -30,7 +30,7 @@ export function AboutMissionSection({ sections }: AboutMissionSectionProps) {
 				className="pointer-events-none absolute left-1/2 top-[calc(15%-100px)] z-[1] hidden h-[150px] w-px -translate-x-1/2 bg-brand-800 lg:block"
 			/>
 
-			<div className="relative z-10 mx-auto max-w-7xl px-4 pb-16 sm:pb-20 lg:pb-24 max-md:px-5 max-md:pb-14">
+			<div className="relative z-10 mx-auto max-w-7xl px-4 pb-16 sm:pb-20 lg:pb-24 max-md:px-5 max-md:pb-8">
 				<AboutSectionColumns
 					className="px-0 pt-4 sm:pt-6 lg:pt-8 max-md:gap-6 max-md:pt-0"
 					mediaOnEnd={false}

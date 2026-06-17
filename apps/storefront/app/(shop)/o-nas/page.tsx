@@ -52,7 +52,7 @@ export default async function ONasPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
       />
-      <div className="font-gilroy [&_h1]:font-binerka [&_h2]:font-binerka">
+      <div className="font-gilroy max-md:bg-brand-50 [&_h1]:font-binerka [&_h2]:font-binerka">
         <AboutHeroSection hero={about.hero} />
         <AboutIntroSection sections={about.sections} />
         <AboutMissionSection sections={about.sections} />

@@ -32,13 +32,12 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
 	return (
 		<section
 			aria-labelledby="about-closing-heading"
-			className="relative bg-brand-50 pb-[150px] pt-4 sm:pb-[170px] max-md:pb-24"
+			className="relative bg-brand-50 pb-[150px] pt-4 sm:pb-[170px] max-md:pb-12 max-md:pt-0"
 		>
 			<div
 				aria-hidden
 				className={cn(
-					"pointer-events-none absolute inset-x-0 z-0 -translate-y-1/2 bg-brand-100",
-					"max-md:top-[calc(50%-60px)] max-md:h-[48%] max-md:min-h-[18rem]",
+					"pointer-events-none absolute inset-x-0 z-0 max-md:hidden -translate-y-1/2 bg-brand-100",
 					ABOUT_CLOSING_BRAND100_BAND_TOP,
 					ABOUT_CLOSING_BRAND100_BAND_HEIGHT,
 				)}
@@ -83,7 +82,7 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
 			<div
 				aria-hidden
 				className={cn(
-					"pointer-events-none absolute inset-x-0 bottom-0 z-0 bg-white",
+					"pointer-events-none absolute inset-x-0 bottom-0 z-0 max-md:hidden bg-white",
 					ABOUT_CLOSING_FOOTER_WHITE_BAND_HEIGHT,
 				)}
 			/>
@@ -120,7 +119,7 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
 					ABOUT_TEXT_GUTTER_RIGHT,
 					ABOUT_MISSION_TEXT_TOP_OFFSET,
 					ABOUT_CLOSING_TEXT_TOP_OFFSET,
-					"flex flex-col items-end max-md:items-center max-md:pt-6",
+					"flex flex-col items-end max-md:items-center max-md:pt-0",
 				)}
 				mediaClassName={cn(
 					"relative z-20 max-md:flex max-md:justify-center",

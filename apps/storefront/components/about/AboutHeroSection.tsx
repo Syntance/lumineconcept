@@ -15,7 +15,6 @@ export function AboutHeroSection({ hero }: AboutHeroSectionProps) {
 			aria-labelledby="about-hero-heading"
 			className={cn(
 				"relative overflow-hidden bg-brand-900 text-white",
-				"max-md:flex max-md:min-h-[72svh] max-md:flex-col",
 			)}
 		>
 			<div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -45,7 +44,7 @@ export function AboutHeroSection({ hero }: AboutHeroSectionProps) {
 				className={cn(
 					"relative z-10 px-4 pt-8 sm:pt-10",
 					BREADCRUMBS_ALIGN_CLASS,
-					"max-md:px-5 max-xl:pl-10 max-xl:pr-5 sm:max-xl:pl-12",
+					"max-md:px-5 max-md:pb-0 max-md:pt-4 max-xl:pl-10 max-xl:pr-5 sm:max-xl:pl-12",
 				)}
 			>
 				<Breadcrumbs
@@ -60,11 +59,11 @@ export function AboutHeroSection({ hero }: AboutHeroSectionProps) {
 			<div
 				className={cn(
 					"relative z-10 mx-auto max-w-7xl px-4 pb-32 pt-10 sm:pb-40 sm:pt-14 lg:pb-48 lg:pt-16",
-					"max-md:flex max-md:flex-1 max-md:flex-col max-md:items-center max-md:justify-end max-md:px-5 max-md:pb-16 max-md:pt-8 max-md:text-center",
+					"max-md:mx-auto max-md:px-5 max-md:pb-[52px] max-md:pt-3 max-md:text-center",
 					"max-xl:pl-10 max-xl:pr-5 sm:max-xl:pl-12",
 				)}
 			>
-				<div className="max-w-xl max-md:mx-auto">
+				<div className="max-w-xl max-md:mx-auto max-md:mt-[60px]">
 					<h1
 						id="about-hero-heading"
 						className="font-binerka text-5xl leading-none tracking-[0.12em] text-white sm:text-6xl lg:text-7xl max-md:text-[2.75rem]"
