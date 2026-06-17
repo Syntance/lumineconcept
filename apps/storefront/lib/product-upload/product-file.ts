@@ -87,7 +87,7 @@ async function uploadViaMedusa(file: File): Promise<ProductUploadResult> {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(120_000),
   });
 
   if (!res.ok) {
