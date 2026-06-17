@@ -15,7 +15,11 @@ import {
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { formatPrice } from "@magazyn/core/lib/format";
 import { cn } from "@magazyn/core/lib/cn";
-import type { AnalyticsDashboardData, AnalyticsKpi } from "./types";
+import type { AnalyticsDashboardData, AnalyticsKpi, AnalyticsSourceState } from "./types";
+
+function getSourceMessage(slice: AnalyticsSourceState): string {
+	return slice.status === "connected" ? slice.label : slice.reason;
+}
 
 const CHART_STROKE = "oklch(0.58 0.08 55)";
 
@@ -201,8 +205,8 @@ export function AnalyticsPanel({ data }: AnalyticsPanelProps) {
 				<div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-foreground">
 					<p className="font-medium">Źródła analityki nie są skonfigurowane.</p>
 					<ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
-						{data.ga4.status !== "connected" ? <li>GA4: {data.ga4.reason}</li> : null}
-						{data.posthog.status !== "connected" ? <li>PostHog: {data.posthog.reason}</li> : null}
+						<li>GA4: {getSourceMessage(data.ga4)}</li>
+						<li>PostHog: {getSourceMessage(data.posthog)}</li>
 					</ul>
 					<p className="mt-2 text-xs text-muted-foreground">
 						Storefront wysyła eventy przez <code className="text-foreground">NEXT_PUBLIC_GA4_ID</code> i{" "}

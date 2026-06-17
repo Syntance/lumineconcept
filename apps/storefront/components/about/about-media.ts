@@ -27,3 +27,25 @@ export const ABOUT_MISSION_TEXT_TOP_OFFSET =
 
 /** Zdjęcie domknięcia — nachodzi na dół sekcji misji (między sekcją 3 a 4). */
 export const ABOUT_CLOSING_MEDIA_TOP_OFFSET = "md:-mt-[250px]" as const;
+
+/** Biały pas nad footerem — sekcja domknięcia. */
+export const ABOUT_CLOSING_FOOTER_WHITE_BAND_HEIGHT = "h-[130px]" as const;
+
+/** Odstęp środka półkola od dołu sekcji — środek na krawędzi footera (size-20 → promień 40px). */
+export const ABOUT_CLOSING_SEPARATOR_CENTER_BOTTOM = "bottom-0" as const;
+
+/** Góra półkola — dół linii pionowej (promień size-20 = 40px). */
+export const ABOUT_CLOSING_SEPARATOR_LINE_BOTTOM = "bottom-10" as const;
+
+/** Tekst domknięcia — podniesienie względem domyślnego wyrównania do zdjęcia. */
+export const ABOUT_CLOSING_TEXT_TOP_OFFSET = "md:-mt-[50px]" as const;
+
+/** Opaska brand-100 — sekcja domknięcia. */
+export const ABOUT_CLOSING_BRAND100_BAND_HEIGHT = "h-[530px]" as const;
+export const ABOUT_CLOSING_BRAND100_BAND_TOP = "top-[calc(50%-100px)]" as const;
+
+/** Sygnet na styku brand-50 i opaska brand-100 (górna krawędź pasu). */
+export const ABOUT_CLOSING_SIGNET_TOP = "top-[calc(50%-365px)]" as const;
+
+export const ABOUT_SIGNET_IMAGE = "/images/lumine-signet-brown.png" as const;
+export const ABOUT_SIGNET_ASPECT_CLASS = "aspect-421/396" as const;

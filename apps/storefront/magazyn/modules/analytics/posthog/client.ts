@@ -1,6 +1,7 @@
 import "server-only";
 
 import { analyticsEnv } from "../env";
+import { resolvePosthogProjectId } from "./resolve-project";
 import type {
 	AnalyticsKpi,
 	DailyPoint,
@@ -24,10 +25,12 @@ type PosthogQueryResponse = {
 	columns?: string[];
 };
 
-async function posthogQuery(body: Record<string, unknown>): Promise<PosthogQueryResponse> {
-	const apiKey = analyticsEnv.posthogPersonalApiKey;
-	const projectId = analyticsEnv.posthogProjectId;
-	if (!apiKey || !projectId) {
+async function posthogQuery(
+	projectId: string,
+	body: Record<string, unknown>,
+): Promise<PosthogQueryResponse> {
+	const apiKey = analyticsEnv.posthogApiKey;
+	if (!apiKey) {
 		throw new Error("Brak konfiguracji PostHog.");
 	}
 
@@ -98,12 +101,23 @@ function buildKpi(metrics: {
 	};
 }
 
+const POSTHOG_DISCONNECTED_REASON =
+	"Brak klucza PostHog. Panel próbuje: POSTHOG_PERSONAL_API_KEY → POSTHOG_API_KEY → NEXT_PUBLIC_POSTHOG_KEY.";
+
 export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogAnalyticsSlice> {
 	if (!analyticsEnv.posthogConfigured) {
 		return {
 			status: "disconnected",
+			reason: POSTHOG_DISCONNECTED_REASON,
+		};
+	}
+
+	const projectId = await resolvePosthogProjectId();
+	if (!projectId) {
+		return {
+			status: "disconnected",
 			reason:
-				"Uzupełnij POSTHOG_PERSONAL_API_KEY, POSTHOG_PROJECT_ID i opcjonalnie POSTHOG_HOST.",
+				"Nie udało się ustalić POSTHOG_PROJECT_ID. Ustaw ID ręcznie lub dodaj POSTHOG_PERSONAL_API_KEY (project key phc_ zwykle nie ma dostępu do Query API).",
 		};
 	}
 
@@ -118,7 +132,7 @@ export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogA
 			revenueResponse,
 			topEventsResponse,
 		] = await Promise.all([
-			posthogQuery({
+			posthogQuery(projectId, {
 				query: {
 					kind: "TrendsQuery",
 					dateRange: { date_from: dateFrom },
@@ -134,31 +148,31 @@ export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogA
 					filterTestAccounts: true,
 				},
 			}),
-			posthogQuery({
+			posthogQuery(projectId, {
 				query: {
 					kind: "HogQLQuery",
 					query: `SELECT uniq(person_id) AS users FROM events WHERE timestamp >= now() - INTERVAL ${rangeDays} DAY`,
 				},
 			}),
-			posthogQuery({
+			posthogQuery(projectId, {
 				query: {
 					kind: "HogQLQuery",
 					query: `SELECT count() AS pageviews FROM events WHERE event = '$pageview' AND timestamp >= now() - INTERVAL ${rangeDays} DAY`,
 				},
 			}),
-			posthogQuery({
+			posthogQuery(projectId, {
 				query: {
 					kind: "HogQLQuery",
 					query: `SELECT count() AS purchases FROM events WHERE event = 'purchase' AND timestamp >= now() - INTERVAL ${rangeDays} DAY`,
 				},
 			}),
-			posthogQuery({
+			posthogQuery(projectId, {
 				query: {
 					kind: "HogQLQuery",
 					query: `SELECT sum(toFloat(coalesce(properties.value, properties['$value']))) AS revenue FROM events WHERE event = 'purchase' AND timestamp >= now() - INTERVAL ${rangeDays} DAY`,
 				},
 			}),
-			posthogQuery({
+			posthogQuery(projectId, {
 				query: {
 					kind: "HogQLQuery",
 					query: `SELECT event, count() AS c FROM events WHERE timestamp >= now() - INTERVAL ${rangeDays} DAY GROUP BY event ORDER BY c DESC LIMIT 8`,
@@ -168,7 +182,7 @@ export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogA
 
 		const funnelCounts = await Promise.all(
 			ECOMMERCE_FUNNEL.map(async ({ event }) => {
-				const response = await posthogQuery({
+				const response = await posthogQuery(projectId, {
 					query: {
 						kind: "HogQLQuery",
 						query: `SELECT count() AS c FROM events WHERE event = '${event}' AND timestamp >= now() - INTERVAL ${rangeDays} DAY`,
@@ -208,7 +222,7 @@ export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogA
 
 		return {
 			status: "connected",
-			label: `PostHog · projekt ${analyticsEnv.posthogProjectId}`,
+			label: `PostHog · projekt ${projectId}`,
 			kpi: buildKpi({
 				sessions,
 				users,
