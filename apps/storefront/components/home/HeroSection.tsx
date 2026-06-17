@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import type { HeroContent } from "@/lib/content/types";
+import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";
@@ -75,6 +76,7 @@ export async function HeroSection({
 						loading="eager"
 						fetchPriority="high"
 						sizes="100vw"
+						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
 						placeholder={desktopBlurDataURL ? "blur" : "empty"}
 						blurDataURL={desktopBlurDataURL}
 						className="absolute inset-0 h-full w-full select-none object-cover object-top"

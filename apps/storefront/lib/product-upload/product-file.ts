@@ -1,8 +1,9 @@
 import "server-only";
 import { put } from "@vercel/blob";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { resolveMedusaAdminEmail } from "@/magazyn/core/medusa/admin-email";
-import { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB, MAX_UPLOAD_BYTES } from "./constants";
+import { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB, MAX_UPLOAD_BYTES, VERCEL_SAFE_UPLOAD_MB } from "./constants";
 
 export { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB, MAX_UPLOAD_BYTES } from "./constants";
 
@@ -260,6 +261,9 @@ export function formatCmsUploadError(error: unknown): string {
   if (msg === "R2_UPLOAD_FAILED" || msg.endsWith("_TIMEOUT")) {
     return "Upload do magazynu plików nie powiódł się. Spróbuj ponownie.";
   }
+  if (msg === "R2_PRESIGN_UNAVAILABLE") {
+    return `Pliki powyżej ${VERCEL_SAFE_UPLOAD_MB} MB wymagają R2 (S3_* na Vercel). Zmniejsz plik lub skonfiguruj magazyn.`;
+  }
   if (msg === "MEDUSA_UPLOAD_UNAVAILABLE") {
     return "Magazyn plików niedostępny. Ustaw S3/R2 (S3_*) na Vercel lub MEDUSA_ADMIN_EMAIL + MEDUSA_ADMIN_PASSWORD.";
   }
@@ -315,6 +319,105 @@ export async function uploadCmsAssetFile(file: File): Promise<ProductUploadResul
   }
 
   return uploadViaMedusa(file);
+}
+
+export type CmsPresignedUpload = {
+  uploadUrl: string;
+  publicUrl: string;
+};
+
+function inferCmsMimeFromMeta(filename: string, contentType: string): string | null {
+  const type = contentType.toLowerCase();
+  if (CMS_IMAGE_TYPES.has(type)) return type;
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  const fromExt = CMS_EXT_TO_MIME[ext];
+  return fromExt && CMS_IMAGE_TYPES.has(fromExt) ? fromExt : null;
+}
+
+function isHeicMeta(filename: string, contentType: string): boolean {
+  const type = contentType.toLowerCase();
+  if (type === "image/heic" || type === "image/heif" || type === "image/heic-sequence") {
+    return true;
+  }
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  return ext === "heic" || ext === "heif";
+}
+
+export function validateCmsUploadMeta(
+  filename: string,
+  contentType: string,
+  size: number,
+): string | null {
+  if (isHeicMeta(filename, contentType)) {
+    return "Format HEIC (iPhone) nie jest obsługiwany. Wyeksportuj zdjęcie jako JPG lub WebP.";
+  }
+  if (size > MAX_CMS_UPLOAD_BYTES) {
+    return `Plik jest za duży (maks. ${MAX_CMS_UPLOAD_MB} MB). Zapisz jako JPG/WebP lub zmniejsz rozdzielczość.`;
+  }
+  if (size <= 0) return "Nieprawidłowy rozmiar pliku.";
+  if (!inferCmsMimeFromMeta(filename, contentType)) {
+    return "Dozwolone formaty: JPG, PNG, WEBP, GIF, AVIF.";
+  }
+  return null;
+}
+
+function buildCmsUploadKey(filename: string): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).slice(2, 8);
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+  return `cms-uploads/${timestamp}-${random}-${safeName}`;
+}
+
+function getOrCreateR2Client(config: NonNullable<ReturnType<typeof getR2Config>>): S3Client {
+  if (!cachedR2) {
+    cachedR2 = new S3Client({
+      region: process.env.S3_REGION?.trim() || "auto",
+      endpoint: config.endpoint,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+      },
+    });
+  }
+  return cachedR2;
+}
+
+/** Presigned PUT — upload z przeglądarki prosto do R2 (omija limit body Vercel ~4.5 MB). */
+export async function createCmsPresignedUpload(params: {
+  filename: string;
+  contentType: string;
+  size: number;
+}): Promise<CmsPresignedUpload> {
+  const validationError = validateCmsUploadMeta(
+    params.filename,
+    params.contentType,
+    params.size,
+  );
+  if (validationError) throw new Error(validationError);
+
+  const r2 = getR2Config();
+  if (!r2) throw new Error("R2_PRESIGN_UNAVAILABLE");
+
+  const resolvedType = inferCmsMimeFromMeta(params.filename, params.contentType);
+  if (!resolvedType) throw new Error("Dozwolone formaty: JPG, PNG, WEBP, GIF, AVIF.");
+
+  const key = buildCmsUploadKey(params.filename);
+  const client = getOrCreateR2Client(r2);
+
+  const uploadUrl = await getSignedUrl(
+    client,
+    new PutObjectCommand({
+      Bucket: r2.bucket,
+      Key: key,
+      ContentType: resolvedType,
+      ContentLength: params.size,
+    }),
+    { expiresIn: 600 },
+  );
+
+  const base = r2.fileUrl.replace(/\/$/, "");
+  return { uploadUrl, publicUrl: `${base}/${key}` };
 }
 
 export async function uploadProductFile(file: File): Promise<ProductUploadResult> {

@@ -72,9 +72,10 @@ describe("resolveCmsAssetUrl", () => {
 		expect(resolveCmsAssetUrl("/images/cms/x.webp")).toBe("/images/cms/x.webp");
 	});
 
-	it("optymalizuje zdalne obrazy R2/CDN przez next/image", () => {
-		expect(isCmsImageUnoptimized("https://cdn.example.com/cms-uploads/hero.webp")).toBe(false);
-		expect(isCmsImageUnoptimized("https://pub-abc.r2.dev/cms-uploads/x.webp")).toBe(false);
+	it("serwuje hero CMS w pełnej jakości (bez ponownej kompresji next/image)", () => {
+		expect(isCmsImageUnoptimized("https://cdn.example.com/cms-uploads/hero.webp")).toBe(true);
+		expect(isCmsImageUnoptimized("https://pub-abc.r2.dev/cms-uploads/x.webp")).toBe(true);
+		expect(isCmsImageUnoptimized("/images/cms/hero.webp")).toBe(true);
 	});
 
 	it("pomija optymalizację dla SVG i hostów lokalnych", () => {

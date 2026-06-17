@@ -4,7 +4,12 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useId, useState } from "react";
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
-import { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB } from "@/lib/product-upload/constants";
+import {
+	MAX_CMS_UPLOAD_BYTES,
+	MAX_CMS_UPLOAD_MB,
+	VERCEL_SAFE_UPLOAD_BYTES,
+	VERCEL_SAFE_UPLOAD_MB,
+} from "@/lib/product-upload/constants";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
 
@@ -17,7 +22,18 @@ function isHeicFile(file: File): boolean {
 	return ext === "heic" || ext === "heif";
 }
 
-async function readUploadResponse(
+function resolveUploadContentType(file: File): string {
+	if (file.type) return file.type;
+	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+	if (ext === "png") return "image/png";
+	if (ext === "webp") return "image/webp";
+	if (ext === "gif") return "image/gif";
+	if (ext === "avif") return "image/avif";
+	return "application/octet-stream";
+}
+
+async function readJsonUploadResponse(
 	res: Response,
 ): Promise<{ ok: boolean; urls: string[]; error: string | null }> {
 	const contentType = res.headers.get("content-type") ?? "";
@@ -41,7 +57,7 @@ async function readUploadResponse(
 		return {
 			ok: false,
 			urls: [],
-			error: `Plik jest za duży dla serwera. Zapisz jako JPG/WebP (do ${MAX_CMS_UPLOAD_MB} MB).`,
+			error: `Serwer Vercel odrzucił plik (limit ~${VERCEL_SAFE_UPLOAD_MB} MB przez API). Większe pliki wysyłamy bezpośrednio do R2.`,
 		};
 	}
 	if (res.status === 401) {
@@ -58,8 +74,105 @@ async function readUploadResponse(
 	return {
 		ok: false,
 		urls: [],
-		error: `Upload nie powiódł się — serwer zwrócił nieoczekiwaną odpowiedź. Spróbuj JPG/WebP do ${MAX_CMS_UPLOAD_MB} MB.`,
+		error: `Upload nie powiódł się — nieoczekiwana odpowiedź serwera. Spróbuj JPG/WebP do ${MAX_CMS_UPLOAD_MB} MB.`,
 	};
+}
+
+async function readPresignResponse(
+	res: Response,
+): Promise<{ ok: boolean; uploadUrl?: string; publicUrl?: string; error: string | null }> {
+	const contentType = res.headers.get("content-type") ?? "";
+	const text = await res.text();
+
+	if (contentType.includes("application/json") && text) {
+		try {
+			const payload = JSON.parse(text) as {
+				uploadUrl?: string;
+				publicUrl?: string;
+				error?: string | null;
+			};
+			const error = payload.error ?? null;
+			return {
+				ok: res.ok && !error && Boolean(payload.uploadUrl && payload.publicUrl),
+				uploadUrl: payload.uploadUrl,
+				publicUrl: payload.publicUrl,
+				error: error ?? (res.ok ? null : "Nie udało się przygotować uploadu."),
+			};
+		} catch {
+			// fall through
+		}
+	}
+
+	return { ok: false, error: "Nie udało się przygotować uploadu do magazynu plików." };
+}
+
+/** Pliki > ~4 MB — presigned PUT prosto do R2 (pełna jakość, bez kompresji). */
+async function uploadViaPresigned(file: File): Promise<string> {
+	const contentType = resolveUploadContentType(file);
+
+	const presignRes = await fetch("/api/magazyn/cms-upload/presign", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "same-origin",
+		body: JSON.stringify({
+			filename: file.name,
+			contentType,
+			size: file.size,
+		}),
+	});
+
+	const presign = await readPresignResponse(presignRes);
+	if (!presign.ok || !presign.uploadUrl || !presign.publicUrl) {
+		throw new Error(
+			presign.error ??
+				`Nie udało się wysłać pliku powyżej ${VERCEL_SAFE_UPLOAD_MB} MB. Sprawdź konfigurację R2 (S3_*) i CORS na bucket.`,
+		);
+	}
+
+	const putRes = await fetch(presign.uploadUrl, {
+		method: "PUT",
+		body: file,
+		headers: { "Content-Type": contentType },
+	});
+
+	if (!putRes.ok) {
+		throw new Error(
+			"Upload do R2 nie powiódł się. W Cloudflare R2 włącz CORS (PUT) dla domeny sklepu i panelu.",
+		);
+	}
+
+	return presign.publicUrl;
+}
+
+async function uploadViaApi(file: File): Promise<string> {
+	const formData = new FormData();
+	formData.append("files", file);
+
+	const res = await fetch("/api/magazyn/cms-upload", {
+		method: "POST",
+		body: formData,
+		credentials: "same-origin",
+	});
+
+	const payload = await readJsonUploadResponse(res);
+
+	if (!payload.ok) {
+		if (res.status === 413) {
+			return uploadViaPresigned(file);
+		}
+		throw new Error(payload.error ?? "Upload nie powiódł się. Spróbuj ponownie.");
+	}
+
+	const url = payload.urls[0];
+	if (!url) throw new Error("Upload nie zwrócił adresu pliku.");
+	return url;
+}
+
+async function uploadCmsImage(file: File): Promise<string> {
+	if (file.size > VERCEL_SAFE_UPLOAD_BYTES) {
+		return uploadViaPresigned(file);
+	}
+	return uploadViaApi(file);
 }
 
 type Props = {
@@ -102,7 +215,7 @@ export function OgImageField({
 				}
 				if (file.size > MAX_CMS_UPLOAD_BYTES) {
 					setError(
-						`Plik „${file.name}” jest za duży (maks. ${MAX_CMS_UPLOAD_MB} MB). Zapisz jako JPG/WebP.`,
+						`Plik „${file.name}” jest za duży (maks. ${MAX_CMS_UPLOAD_MB} MB).`,
 					);
 					return;
 				}
@@ -111,23 +224,11 @@ export function OgImageField({
 			setUploading(true);
 			setError(null);
 			try {
-				const formData = new FormData();
-				for (const file of toUpload) formData.append("files", file);
-
-				const res = await fetch("/api/magazyn/cms-upload", {
-					method: "POST",
-					body: formData,
-					credentials: "same-origin",
-				});
-
-				const payload = await readUploadResponse(res);
-
-				if (!payload.ok) {
-					setError(payload.error ?? "Upload nie powiódł się. Spróbuj ponownie.");
-					return;
+				const urls: string[] = [];
+				for (const file of toUpload) {
+					urls.push(await uploadCmsImage(file));
 				}
 
-				const urls = payload.urls;
 				if (urls.length === 0) return;
 
 				if (batchMode) {
@@ -136,8 +237,12 @@ export function OgImageField({
 					const url = urls[0];
 					if (url) onChange(url);
 				}
-			} catch {
-				setError("Upload nie powiódł się. Sprawdź połączenie i spróbuj ponownie.");
+			} catch (uploadError) {
+				setError(
+					uploadError instanceof Error
+						? uploadError.message
+						: "Upload nie powiódł się. Sprawdź połączenie i spróbuj ponownie.",
+				);
 			} finally {
 				setUploading(false);
 			}
@@ -222,8 +327,8 @@ export function OgImageField({
 			<p className="text-xs text-muted-foreground">
 				{description ??
 					(batchMode
-						? "Zdjęcia zapisują się automatycznie w CMS. Na stronie sklepu pojawią się po Redeploy (~2–3 min)."
-						: "Przeciągnij zdjęcie na pole lub wybierz plik. Zapisz formularz, potem Redeploy u góry panelu (~2–3 min na prod).")}
+						? "Zdjęcia w pełnej jakości (do 20 MB). Na stronie sklepu pojawią się po Redeploy (~2–3 min)."
+						: "Pełna jakość — bez kompresji w panelu. Zapisz formularz, potem Redeploy u góry (~2–3 min na prod).")}
 			</p>
 		</div>
 	);
