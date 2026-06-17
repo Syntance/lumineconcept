@@ -4,9 +4,63 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useId, useState } from "react";
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
-import { MAX_CMS_UPLOAD_BYTES } from "@/lib/product-upload/constants";
+import { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB } from "@/lib/product-upload/constants";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
+
+const HEIC_TYPES = new Set(["image/heic", "image/heif", "image/heic-sequence"]);
+
+function isHeicFile(file: File): boolean {
+	const type = file.type.toLowerCase();
+	if (HEIC_TYPES.has(type)) return true;
+	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	return ext === "heic" || ext === "heif";
+}
+
+async function readUploadResponse(
+	res: Response,
+): Promise<{ ok: boolean; urls: string[]; error: string | null }> {
+	const contentType = res.headers.get("content-type") ?? "";
+	const text = await res.text();
+
+	if (contentType.includes("application/json") && text) {
+		try {
+			const payload = JSON.parse(text) as { urls?: string[]; error?: string | null };
+			const error = payload.error ?? null;
+			return {
+				ok: res.ok && !error,
+				urls: payload.urls ?? [],
+				error: error ?? (res.ok ? null : "Upload nie powiódł się. Spróbuj ponownie."),
+			};
+		} catch {
+			// niepoprawny JSON — poniżej komunikat ogólny
+		}
+	}
+
+	if (res.status === 413) {
+		return {
+			ok: false,
+			urls: [],
+			error: `Plik jest za duży dla serwera. Zapisz jako JPG/WebP (do ${MAX_CMS_UPLOAD_MB} MB).`,
+		};
+	}
+	if (res.status === 401) {
+		return { ok: false, urls: [], error: "Sesja wygasła — zaloguj się ponownie." };
+	}
+	if (res.status >= 502) {
+		return {
+			ok: false,
+			urls: [],
+			error: "Serwer chwilowo niedostępny. Odśwież stronę i spróbuj ponownie.",
+		};
+	}
+
+	return {
+		ok: false,
+		urls: [],
+		error: `Upload nie powiódł się — serwer zwrócił nieoczekiwaną odpowiedź. Spróbuj JPG/WebP do ${MAX_CMS_UPLOAD_MB} MB.`,
+	};
+}
 
 type Props = {
 	label: string;
@@ -40,9 +94,15 @@ export function OgImageField({
 
 			const toUpload = batchMode ? images : images.slice(0, 1);
 			for (const file of toUpload) {
+				if (isHeicFile(file)) {
+					setError(
+						"Format HEIC (iPhone) nie jest obsługiwany. Wyeksportuj zdjęcie jako JPG lub WebP.",
+					);
+					return;
+				}
 				if (file.size > MAX_CMS_UPLOAD_BYTES) {
 					setError(
-						`Plik „${file.name}” jest za duży (maks. ${Math.floor(MAX_CMS_UPLOAD_BYTES / (1024 * 1024))} MB). Zapisz jako JPG/WebP.`,
+						`Plik „${file.name}” jest za duży (maks. ${MAX_CMS_UPLOAD_MB} MB). Zapisz jako JPG/WebP.`,
 					);
 					return;
 				}
@@ -60,20 +120,14 @@ export function OgImageField({
 					credentials: "same-origin",
 				});
 
-				let payload: { urls?: string[]; error?: string | null };
-				try {
-					payload = (await res.json()) as { urls?: string[]; error?: string | null };
-				} catch {
-					setError("Upload nie powiódł się — nieprawidłowa odpowiedź serwera.");
-					return;
-				}
+				const payload = await readUploadResponse(res);
 
-				if (!res.ok || payload.error) {
+				if (!payload.ok) {
 					setError(payload.error ?? "Upload nie powiódł się. Spróbuj ponownie.");
 					return;
 				}
 
-				const urls = payload.urls ?? [];
+				const urls = payload.urls;
 				if (urls.length === 0) return;
 
 				if (batchMode) {

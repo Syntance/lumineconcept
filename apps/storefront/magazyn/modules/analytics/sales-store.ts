@@ -17,9 +17,10 @@ import type {
 	SalesStatistics,
 	TopProductRow,
 } from "./sales-types";
+import type { SalesPeriod } from "./sales-period";
+import { getOverviewSalesPeriod } from "./sales-period";
 
 const PAGE_SIZE = 100;
-const MONTHS_BACK = 6;
 
 const STATUS_COLORS: Record<string, string> = {
 	success: "#10b981",
@@ -109,12 +110,13 @@ function monthLabelFromKey(key: string): string {
 	return date.toLocaleDateString(magazynConfig.locale, { month: "short" });
 }
 
-function buildMonthSlots(): MonthlySalesPoint[] {
+function buildMonthSlots(rangeStart: Date, rangeEnd: Date): MonthlySalesPoint[] {
 	const slots: MonthlySalesPoint[] = [];
-	const now = new Date();
-	for (let i = MONTHS_BACK - 1; i >= 0; i -= 1) {
-		const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-		const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+	const cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
+	const endMonth = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), 1);
+
+	while (cursor <= endMonth) {
+		const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
 		slots.push({
 			monthKey,
 			month: monthLabelFromKey(monthKey),
@@ -122,7 +124,9 @@ function buildMonthSlots(): MonthlySalesPoint[] {
 			shippingCostMinor: 0,
 			orderCount: 0,
 		});
+		cursor.setMonth(cursor.getMonth() + 1);
 	}
+
 	return slots;
 }
 
@@ -165,9 +169,14 @@ function toDistribution(
 		}));
 }
 
-/** Agreguje statystyki sprzedaży z zamówień Medusa (ostatnie 6 miesięcy). */
-export async function getSalesStatistics(): Promise<SalesStatistics> {
-	const monthlyMap = new Map(buildMonthSlots().map((slot) => [slot.monthKey, { ...slot }]));
+/** Agreguje statystyki sprzedaży z zamówień Medusa dla wybranego okresu. */
+export async function getSalesStatistics(period?: SalesPeriod): Promise<SalesStatistics> {
+	const resolved = period ?? getOverviewSalesPeriod();
+	const { rangeStart, rangeEnd, rangeLabel, preset } = resolved;
+
+	const monthlyMap = new Map(
+		buildMonthSlots(rangeStart, rangeEnd).map((slot) => [slot.monthKey, { ...slot }]),
+	);
 	const shippingCounts = new Map<string, number>();
 	const paymentCounts = new Map<string, number>();
 	const statusCounts = new Map<string, { count: number; color: string }>();
@@ -179,11 +188,6 @@ export async function getSalesStatistics(): Promise<SalesStatistics> {
 	let revenueMinor = 0;
 	let shippingCostMinor = 0;
 	let orderCount = 0;
-
-	const cutoff = new Date();
-	cutoff.setMonth(cutoff.getMonth() - (MONTHS_BACK - 1));
-	cutoff.setDate(1);
-	cutoff.setHours(0, 0, 0, 0);
 
 	while (offset < total) {
 		const data = await adminFetch<{ orders: MedusaOrder[]; count: number }>(
@@ -199,10 +203,11 @@ export async function getSalesStatistics(): Promise<SalesStatistics> {
 			if (!createdAt) continue;
 
 			const created = new Date(createdAt);
-			if (created < cutoff) {
+			if (created < rangeStart) {
 				offset = total;
 				break;
 			}
+			if (created > rangeEnd) continue;
 
 			const status = order.status ?? "pending";
 			if (!isMagazynActiveOrder(status)) continue;
@@ -271,15 +276,9 @@ export async function getSalesStatistics(): Promise<SalesStatistics> {
 		.sort((a, b) => b.revenueMinor - a.revenueMinor)
 		.slice(0, 5);
 
-	const firstMonth = monthly[0];
-	const lastMonth = monthly[monthly.length - 1];
-	const rangeLabel =
-		firstMonth && lastMonth
-			? `${firstMonth.month} – ${lastMonth.month} ${new Date().getFullYear()}`
-			: "Ostatnie 6 miesięcy";
-
 	return {
 		rangeLabel,
+		periodPreset: preset,
 		currencyCode: magazynConfig.currency.toUpperCase(),
 		monthly,
 		shippingMethods: toDistribution(shippingCounts, SHIPPING_COLORS),

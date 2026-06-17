@@ -2,9 +2,9 @@ import "server-only";
 import { put } from "@vercel/blob";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { resolveMedusaAdminEmail } from "@/magazyn/core/medusa/admin-email";
-import { MAX_CMS_UPLOAD_BYTES, MAX_UPLOAD_BYTES } from "./constants";
+import { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB, MAX_UPLOAD_BYTES } from "./constants";
 
-export { MAX_CMS_UPLOAD_BYTES, MAX_UPLOAD_BYTES } from "./constants";
+export { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB, MAX_UPLOAD_BYTES } from "./constants";
 
 const ALLOWED_TYPES = new Set([
   "image/png",
@@ -184,10 +184,7 @@ async function uploadViaR2(
 
   const contentType =
     inferCmsMimeType(file) ?? inferMimeType(file) ?? (file.type || "application/octet-stream");
-  const body =
-    typeof file.stream === "function"
-      ? file.stream()
-      : new Uint8Array(await file.arrayBuffer());
+  const body = new Uint8Array(await file.arrayBuffer());
 
   await withUploadTimeout(
     cachedR2.send(
@@ -195,7 +192,7 @@ async function uploadViaR2(
         Bucket: config.bucket,
         Key: key,
         Body: body,
-        ContentLength: file.size,
+        ContentLength: body.byteLength,
         ContentType: contentType,
       }),
     ),
@@ -255,23 +252,38 @@ export function formatCmsUploadError(error: unknown): string {
     return "Upload trwa zbyt długo. Spróbuj ponownie lub mniejszy plik (JPG/WebP).";
   }
   if (msg.startsWith("MEDUSA_UPLOAD_FAILED_413")) {
-    return "Plik jest za duży dla serwera (maks. 10 MB). Zapisz jako JPG/WebP.";
+    return `Plik jest za duży dla serwera (maks. ${MAX_CMS_UPLOAD_MB} MB). Zapisz jako JPG/WebP.`;
   }
   if (msg.startsWith("MEDUSA_UPLOAD_FAILED_")) {
-    return "Serwer odrzucił plik. Spróbuj JPG/WebP do 10 MB.";
+    return `Serwer odrzucił plik. Spróbuj JPG/WebP do ${MAX_CMS_UPLOAD_MB} MB.`;
   }
   if (msg === "R2_UPLOAD_FAILED" || msg.endsWith("_TIMEOUT")) {
     return "Upload do magazynu plików nie powiódł się. Spróbuj ponownie.";
   }
+  if (msg === "MEDUSA_UPLOAD_UNAVAILABLE") {
+    return "Magazyn plików niedostępny. Ustaw S3/R2 (S3_*) na Vercel lub MEDUSA_ADMIN_EMAIL + MEDUSA_ADMIN_PASSWORD.";
+  }
   if (msg.startsWith("MEDUSA_")) {
-    return "Upload nie powiódł się. Spróbuj JPG/WebP do 10 MB.";
+    return `Upload nie powiódł się. Spróbuj JPG/WebP do ${MAX_CMS_UPLOAD_MB} MB.`;
   }
   return msg;
 }
 
+function isHeicFile(file: File): boolean {
+  const type = file.type.toLowerCase();
+  if (type === "image/heic" || type === "image/heif" || type === "image/heic-sequence") {
+    return true;
+  }
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return ext === "heic" || ext === "heif";
+}
+
 export function validateCmsUploadFile(file: File): string | null {
+  if (isHeicFile(file)) {
+    return "Format HEIC (iPhone) nie jest obsługiwany. Wyeksportuj zdjęcie jako JPG lub WebP.";
+  }
   if (file.size > MAX_CMS_UPLOAD_BYTES) {
-    return `Plik jest za duży (maks. ${Math.floor(MAX_CMS_UPLOAD_BYTES / (1024 * 1024))} MB). Zapisz jako JPG/WebP lub zmniejsz rozdzielczość.`;
+    return `Plik jest za duży (maks. ${MAX_CMS_UPLOAD_MB} MB). Zapisz jako JPG/WebP lub zmniejsz rozdzielczość.`;
   }
   if (!inferCmsMimeType(file)) {
     return "Dozwolone formaty: JPG, PNG, WEBP, GIF, AVIF.";
