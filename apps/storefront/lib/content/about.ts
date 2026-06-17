@@ -28,8 +28,10 @@ export type ResolvedAboutSections = {
 	missionImageUrl: string;
 	missionImageAlt: string;
 	missionLabel: string;
+	closingParagraphs: string[];
 	closingImageUrl: string;
 	closingImageAlt: string;
+	closingLabel: string;
 };
 
 export type ResolvedAboutPage = {
@@ -70,8 +72,13 @@ export function resolveAboutSections(about?: AboutPageContent): ResolvedAboutSec
 		missionImageUrl: resolveImageUrl(merged.missionImageUrl, ABOUT_STATIC_IMAGES.mission),
 		missionImageAlt: merged.missionImageAlt?.trim() || ABOUT_PAGE_DEFAULT.missionImageAlt || "",
 		missionLabel: merged.missionLabel?.trim() || ABOUT_PAGE_DEFAULT.missionLabel || "",
+		closingParagraphs:
+			normalizeAboutParagraphsForSave(
+				merged.closingParagraphs?.filter((p) => p.trim().length > 0),
+			) ?? ABOUT_PAGE_DEFAULT.closingParagraphs ?? [],
 		closingImageUrl: resolveImageUrl(merged.closingImageUrl, ABOUT_STATIC_IMAGES.closing),
 		closingImageAlt: merged.closingImageAlt?.trim() || ABOUT_PAGE_DEFAULT.closingImageAlt || "",
+		closingLabel: merged.closingLabel?.trim() || ABOUT_PAGE_DEFAULT.closingLabel || "",
 	};
 }
 

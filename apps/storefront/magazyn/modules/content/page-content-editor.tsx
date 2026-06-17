@@ -17,7 +17,7 @@ import type {
 	Testimonial,
 } from "@/lib/content/types";
 import { ABOUT_HERO_DEFAULT } from "@/lib/content/defaults";
-import { flattenAboutBodyParagraphs } from "@/lib/content/about-text";
+import { formatAboutParagraphsForEditor } from "@/lib/content/about-text";
 import { isCmsImageUnoptimized, resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { usePreventWindowFileDrop } from "@magazyn/core/hooks/use-prevent-window-file-drop";
 import { savePageContentAction } from "./content-actions";
@@ -185,7 +185,7 @@ function AboutSectionsEditor({
 	const about = value ?? {};
 
 	function paragraphsToText(paragraphs: string[] | undefined): string {
-		return flattenAboutBodyParagraphs(paragraphs);
+		return formatAboutParagraphsForEditor(paragraphs);
 	}
 
 	function textToParagraphs(text: string): string[] {
@@ -264,6 +264,19 @@ function AboutSectionsEditor({
 			</div>
 			<div className="flex flex-col gap-3 rounded-lg border border-border p-3">
 				<p className="text-sm font-medium">Domknięcie strony</p>
+				<textarea
+					value={paragraphsToText(about.closingParagraphs)}
+					onChange={(e) => onChange({ ...about, closingParagraphs: textToParagraphs(e.target.value) })}
+					rows={6}
+					className={inputClass}
+					placeholder="Tekst w kolumnie obok zdjęcia — Enter = nowa linia"
+				/>
+				<Input
+					value={about.closingLabel ?? ""}
+					onChange={(e) => onChange({ ...about, closingLabel: e.target.value })}
+					placeholder="Etykieta nad zdjęciem"
+					className="h-10"
+				/>
 				<Input
 					value={about.closingImageAlt ?? ""}
 					onChange={(e) => onChange({ ...about, closingImageAlt: e.target.value })}

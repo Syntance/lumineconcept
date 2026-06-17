@@ -1,0 +1,275 @@
+import "server-only";
+
+import { adminFetch } from "@magazyn/core/medusa/client";
+import { toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
+import { magazynConfig } from "@magazyn/magazyn.config";
+import {
+	PRZELEWY24_PROVIDER_ID,
+	SYSTEM_PAYMENT_PROVIDER_ID,
+} from "@magazyn/modules/orders/order-payment-provider";
+import { orderStatusBadge } from "@magazyn/modules/orders/order-status";
+import type { OrderStatus } from "@magazyn/modules/orders/order-types";
+import type {
+	DistributionRow,
+	MonthlySalesPoint,
+	OrderStatusRow,
+	SalesStatistics,
+	TopProductRow,
+} from "./sales-types";
+
+const PAGE_SIZE = 100;
+const MONTHS_BACK = 6;
+
+const STATUS_COLORS: Record<string, string> = {
+	success: "#10b981",
+	info: "#0ea5e9",
+	warning: "#f59e0b",
+	danger: "#ef4444",
+	neutral: "#94a3b8",
+	refund: "#8b5cf6",
+};
+
+const SHIPPING_COLORS = ["#AF7C61", "#725750", "#C9A48D", "#8f7a74", "#b8956a", "#6b5b54"];
+
+type MedusaOrderItem = {
+	title?: string | null;
+	quantity?: number | null;
+	total?: number | null;
+};
+
+type MedusaOrder = {
+	id: string;
+	email?: string | null;
+	created_at?: string | null;
+	total?: number | null;
+	status?: OrderStatus | null;
+	shipping_methods?: Array<{ name?: string | null }> | null;
+	payment_collections?: Array<{
+		payments?: Array<{ provider_id?: string | null; canceled_at?: string | null }> | null;
+	}> | null;
+	items?: MedusaOrderItem[] | null;
+};
+
+const STATS_FIELDS = [
+	"id",
+	"email",
+	"created_at",
+	"total",
+	"status",
+	"items.title",
+	"items.quantity",
+	"items.total",
+	"shipping_methods.name",
+	"payment_collections.payments.provider_id",
+	"payment_collections.payments.canceled_at",
+].join(",");
+
+function toMinor(amount: number | null | undefined): number {
+	return toMinorUnitsFromDecimal(amount);
+}
+
+function toPercent(part: number, total: number): number {
+	if (total <= 0) return 0;
+	return Math.round((part / total) * 1000) / 10;
+}
+
+function monthKeyFromDate(iso: string): string {
+	const date = new Date(iso);
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	return `${year}-${month}`;
+}
+
+function monthLabelFromKey(key: string): string {
+	const [year, month] = key.split("-");
+	const date = new Date(Number(year), Number(month) - 1, 1);
+	return date.toLocaleDateString(magazynConfig.locale, { month: "short" });
+}
+
+function buildMonthSlots(): MonthlySalesPoint[] {
+	const slots: MonthlySalesPoint[] = [];
+	const now = new Date();
+	for (let i = MONTHS_BACK - 1; i >= 0; i -= 1) {
+		const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+		const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+		slots.push({
+			monthKey,
+			month: monthLabelFromKey(monthKey),
+			revenueMinor: 0,
+			orderCount: 0,
+		});
+	}
+	return slots;
+}
+
+function paymentProviderLabel(providerId: string | null | undefined): string {
+	if (!providerId) return "Nieznana";
+	if (providerId === PRZELEWY24_PROVIDER_ID) return "Przelewy24";
+	if (providerId === SYSTEM_PAYMENT_PROVIDER_ID) return "Przelew tradycyjny";
+	if (providerId.includes("paypo")) return "PayPo";
+	if (providerId.includes("blik")) return "BLIK";
+	return providerId.replace(/^pp_/, "").replace(/_/g, " ");
+}
+
+function primaryPaymentProvider(order: MedusaOrder): string | null {
+	for (const collection of order.payment_collections ?? []) {
+		for (const payment of collection.payments ?? []) {
+			if (payment.canceled_at) continue;
+			if (payment.provider_id) return payment.provider_id;
+		}
+	}
+	return null;
+}
+
+function pctChange(current: number, previous: number): number | null {
+	if (previous <= 0) return current > 0 ? 100 : null;
+	return Math.round(((current - previous) / previous) * 1000) / 10;
+}
+
+function toDistribution(
+	counts: Map<string, number>,
+	colors: string[],
+): DistributionRow[] {
+	const total = [...counts.values()].reduce((sum, value) => sum + value, 0);
+	return [...counts.entries()]
+		.sort((a, b) => b[1] - a[1])
+		.map(([name, value], index) => ({
+			name,
+			value,
+			share: toPercent(value, total),
+			color: colors[index % colors.length] ?? "#AF7C61",
+		}));
+}
+
+/** Agreguje statystyki sprzedaży z zamówień Medusa (ostatnie 6 miesięcy). */
+export async function getSalesStatistics(): Promise<SalesStatistics> {
+	const monthlyMap = new Map(buildMonthSlots().map((slot) => [slot.monthKey, { ...slot }]));
+	const shippingCounts = new Map<string, number>();
+	const paymentCounts = new Map<string, number>();
+	const statusCounts = new Map<string, { count: number; color: string }>();
+	const productMap = new Map<string, TopProductRow>();
+	const customers = new Set<string>();
+
+	let offset = 0;
+	let total = Infinity;
+	let revenueMinor = 0;
+	let orderCount = 0;
+
+	const cutoff = new Date();
+	cutoff.setMonth(cutoff.getMonth() - (MONTHS_BACK - 1));
+	cutoff.setDate(1);
+	cutoff.setHours(0, 0, 0, 0);
+
+	while (offset < total) {
+		const data = await adminFetch<{ orders: MedusaOrder[]; count: number }>(
+			`/admin/orders?limit=${PAGE_SIZE}&offset=${offset}&order=-created_at&fields=${STATS_FIELDS}`,
+		);
+
+		total = data.count ?? 0;
+		const orders = data.orders ?? [];
+		if (orders.length === 0) break;
+
+		for (const order of orders) {
+			const createdAt = order.created_at;
+			if (!createdAt) continue;
+
+			const created = new Date(createdAt);
+			if (created < cutoff) {
+				offset = total;
+				break;
+			}
+
+			const status = order.status ?? "pending";
+			if (status === "draft" || status === "archived") continue;
+
+			const orderTotal = toMinor(order.total);
+			const monthKey = monthKeyFromDate(createdAt);
+			const monthSlot = monthlyMap.get(monthKey);
+			if (monthSlot) {
+				monthSlot.revenueMinor += orderTotal;
+				monthSlot.orderCount += 1;
+			}
+
+			revenueMinor += orderTotal;
+			orderCount += 1;
+
+			if (order.email) customers.add(order.email.toLowerCase());
+
+			const statusBadge = orderStatusBadge(status);
+			const statusEntry = statusCounts.get(statusBadge.label) ?? {
+				count: 0,
+				color: STATUS_COLORS[statusBadge.tone] ?? "#94a3b8",
+			};
+			statusEntry.count += 1;
+			statusCounts.set(statusBadge.label, statusEntry);
+
+			const shippingName = order.shipping_methods?.[0]?.name?.trim() || "Nie podano";
+			shippingCounts.set(shippingName, (shippingCounts.get(shippingName) ?? 0) + 1);
+
+			const paymentLabel = paymentProviderLabel(primaryPaymentProvider(order));
+			paymentCounts.set(paymentLabel, (paymentCounts.get(paymentLabel) ?? 0) + 1);
+
+			for (const item of order.items ?? []) {
+				const title = item.title?.trim() || "Produkt";
+				const quantity = item.quantity ?? 0;
+				const itemRevenue = toMinor(item.total);
+				const existing = productMap.get(title);
+				if (existing) {
+					existing.quantity += quantity;
+					existing.revenueMinor += itemRevenue;
+				} else {
+					productMap.set(title, { title, quantity, revenueMinor: itemRevenue });
+				}
+			}
+		}
+
+		offset += orders.length;
+	}
+
+	const monthly = [...monthlyMap.values()];
+	const currentMonth = monthly.at(-1);
+	const previousMonth = monthly.at(-2);
+
+	const statusBreakdown: OrderStatusRow[] = [...statusCounts.entries()]
+		.sort((a, b) => b[1].count - a[1].count)
+		.map(([label, { count, color }]) => ({
+			label,
+			count,
+			share: toPercent(count, orderCount),
+			color,
+		}));
+
+	const topProducts = [...productMap.values()]
+		.sort((a, b) => b.revenueMinor - a.revenueMinor)
+		.slice(0, 5);
+
+	const firstMonth = monthly[0];
+	const lastMonth = monthly[monthly.length - 1];
+	const rangeLabel =
+		firstMonth && lastMonth
+			? `${firstMonth.month} – ${lastMonth.month} ${new Date().getFullYear()}`
+			: "Ostatnie 6 miesięcy";
+
+	return {
+		rangeLabel,
+		currencyCode: magazynConfig.currency.toUpperCase(),
+		monthly,
+		shippingMethods: toDistribution(shippingCounts, SHIPPING_COLORS),
+		paymentMethods: toDistribution(paymentCounts, SHIPPING_COLORS),
+		topProducts,
+		statusBreakdown,
+		totals: {
+			revenueMinor,
+			orderCount,
+			uniqueCustomers: customers.size,
+			averageOrderMinor: orderCount > 0 ? Math.round(revenueMinor / orderCount) : 0,
+		},
+		trends: {
+			revenueChangePct: pctChange(
+				currentMonth?.revenueMinor ?? 0,
+				previousMonth?.revenueMinor ?? 0,
+			),
+			ordersChangePct: pctChange(currentMonth?.orderCount ?? 0, previousMonth?.orderCount ?? 0),
+		},
+	};
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { EmailTemplate } from "./template-types";
+import type { EmailTemplate, EmailTemplateType } from "./template-types";
 
 /**
  * Client Component wrapper dla EmailEditor z wyłączonym SSR.
@@ -21,6 +21,20 @@ const EmailEditorDynamic = dynamic(
 	},
 );
 
-export function EmailEditorWrapper({ initialTemplates }: { initialTemplates: EmailTemplate[] }) {
-	return <EmailEditorDynamic initialTemplates={initialTemplates} />;
+export function EmailEditorWrapper({
+	initialTemplates,
+	initialType,
+	hideTemplatePicker,
+}: {
+	initialTemplates: EmailTemplate[];
+	initialType?: EmailTemplateType;
+	hideTemplatePicker?: boolean;
+}) {
+	return (
+		<EmailEditorDynamic
+			initialTemplates={initialTemplates}
+			initialType={initialType}
+			hideTemplatePicker={hideTemplatePicker}
+		/>
+	);
 }

@@ -24,6 +24,12 @@ function normalizeAboutBodyLineBreaks(text: string): string {
 		.join("\n");
 }
 
+/** Wartość textarea w CMS — bez trimEnd, żeby spacja na końcu linii nie znikała podczas pisania. */
+export function formatAboutParagraphsForEditor(paragraphs: string[] | undefined): string {
+	if (!paragraphs?.length) return "";
+	return paragraphs.map((paragraph) => paragraph.replace(/\r\n/g, "\n")).join("\n");
+}
+
 /** Zapis CMS — zawsze jeden element tablicy z `\n`. */
 export function normalizeAboutParagraphsForSave(
 	paragraphs: string[] | undefined,
