@@ -60,7 +60,7 @@ export const ABOUT_HERO_DEFAULT: HeroContent = {
 	headline: "O NAS",
 	subtitle: "Kim jesteśmy?",
 	description: " ",
-	ctaLabel: "Sklep",
+	ctaLabel: "Zobacz sklep",
 	ctaHref: "/sklep",
 };
 

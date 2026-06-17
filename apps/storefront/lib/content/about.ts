@@ -1,5 +1,6 @@
 import { ABOUT_PAGE_DEFAULT, ABOUT_HERO_DEFAULT } from "./defaults";
 import { normalizeAboutParagraphsForSave } from "./about-text";
+import { normalizeHeroCtaHref } from "./cta-href";
 import { resolveCmsAssetUrl } from "./asset-url";
 import type { AboutPageContent, HeroContent, PageContent } from "./types";
 
@@ -15,6 +16,8 @@ export type ResolvedAboutHero = {
 	headline: string;
 	subtitle?: string;
 	backgroundUrl: string;
+	ctaLabel: string;
+	ctaHref: string;
 };
 
 export type ResolvedAboutSections = {
@@ -49,6 +52,8 @@ export function resolveAboutHero(hero?: HeroContent): ResolvedAboutHero {
 		headline: merged.headline.trim() || ABOUT_HERO_DEFAULT.headline,
 		subtitle: merged.subtitle?.trim() || ABOUT_HERO_DEFAULT.subtitle,
 		backgroundUrl: resolveImageUrl(merged.desktopImageUrl, ABOUT_STATIC_IMAGES.hero),
+		ctaLabel: merged.ctaLabel?.trim() || ABOUT_HERO_DEFAULT.ctaLabel,
+		ctaHref: normalizeHeroCtaHref(merged.ctaHref || ABOUT_HERO_DEFAULT.ctaHref),
 	};
 }
 

@@ -1,10 +1,14 @@
-/** Gilroy — wartości z brandbooku (mm + tracking 60 → 0.06em). */
+/** Gilroy — px do lg (mobile + tablet); od lg brandbook (mm + tracking). */
 export const ABOUT_BODY_TEXT_CLASS =
-  "font-gilroy text-[4.56mm] leading-[6.83mm] tracking-[0.06em]" as const;
+	"font-gilroy text-[17px] leading-[1.55] tracking-[0.04em] lg:text-[4.56mm] lg:leading-[6.83mm] lg:tracking-[0.06em]" as const;
 
 /** Binerka — nagłówki sekcji treści (intro, misja itd.). */
 export const ABOUT_SECTION_HEADING_CLASS =
-  "font-binerka text-4xl tracking-[0.14em] text-brand-800 sm:text-5xl lg:text-6xl" as const;
+	"font-binerka text-4xl tracking-[0.14em] text-brand-800 sm:text-5xl lg:text-6xl" as const;
+
+/** Poziomy caption intro na mobile (zamiast pionowego napisu desktop). */
+export const ABOUT_MOBILE_CAPTION_CLASS =
+	"font-gilroy text-xs font-semibold uppercase tracking-[0.2em] text-brand-800" as const;
 
 /** Pionowy napis boczny przy zdjęciu intro (~2.4× bazowy 0.65rem, kolor nagłówków). */
 export const ABOUT_SIDE_CAPTION_CLASS =
