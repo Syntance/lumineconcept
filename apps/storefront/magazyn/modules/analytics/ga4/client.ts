@@ -57,9 +57,12 @@ function buildKpi(metrics: {
 
 export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4AnalyticsSlice> {
 	if (!analyticsEnv.ga4Configured) {
+		const measurementHint = analyticsEnv.ga4MeasurementId
+			? ` (storefront ma ${analyticsEnv.ga4MeasurementId} — to nie wystarczy do Data API)`
+			: "";
 		return {
 			status: "disconnected",
-			reason: "Uzupełnij GA4_PROPERTY_ID i GA4_SERVICE_ACCOUNT_JSON w .env.",
+			reason: `Uzupełnij GA4_PROPERTY_ID i GA4_SERVICE_ACCOUNT_JSON${measurementHint}.`,
 		};
 	}
 

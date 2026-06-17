@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { formatPrice } from "@magazyn/core/lib/format";
@@ -24,7 +25,7 @@ function KpiCard({
 }: {
 	label: string;
 	value: string;
-	hint?: React.ReactNode;
+	hint?: ReactNode;
 }) {
 	return (
 		<div className="rounded-xl border border-border bg-card p-5">

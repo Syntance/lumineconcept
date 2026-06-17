@@ -1,4 +1,4 @@
-import { LayoutGrid, Mail, Package, FileText, Settings, ShoppingBag, Tags, type LucideIcon } from "lucide-react";
+import { BarChart3, LayoutGrid, Mail, Package, FileText, Settings, ShoppingBag, Tags, type LucideIcon } from "lucide-react";
 import { magazynConfig } from "../../magazyn.config";
 import type { ModulesToggle } from "../config/types";
 
@@ -25,6 +25,7 @@ export function buildNavItems(): NavItem[] {
 	const base = magazynConfig.basePath;
 	const items: NavItem[] = [
 		{ href: `${base}/panel`, label: "Przegląd", icon: LayoutGrid, exact: true },
+		{ href: `${base}/panel/statystyki`, label: "Statystyki", icon: BarChart3, exact: false },
 	];
 
 	for (const key of ORDER) {
