@@ -65,11 +65,25 @@ export function OverviewKpiSection({
 				</Link>
 			</div>
 
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 				<KpiCard
 					label="Przychód"
 					value={formatPrice(sales.totals.revenueMinor, sales.currencyCode)}
 					hint={<TrendHint value={sales.trends.revenueChangePct} suffix="vs. poprzedni miesiąc" />}
+				/>
+				<KpiCard
+					label="Koszty dostawy"
+					value={formatPrice(sales.totals.shippingCostMinor, sales.currencyCode)}
+					hint={
+						<p className="mt-1 text-xs text-muted-foreground">
+							Opłaty za dostawę od klientów
+						</p>
+					}
+				/>
+				<KpiCard
+					label="Dochód"
+					value={formatPrice(sales.totals.incomeMinor, sales.currencyCode)}
+					hint={<TrendHint value={sales.trends.incomeChangePct} suffix="vs. poprzedni miesiąc" />}
 				/>
 				<KpiCard
 					label="Zamówienia"

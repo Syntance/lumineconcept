@@ -2,6 +2,8 @@ export type MonthlySalesPoint = {
 	month: string;
 	monthKey: string;
 	revenueMinor: number;
+	/** Suma opłat za dostawę pobranych od klientów (grosze). */
+	shippingCostMinor: number;
 	orderCount: number;
 };
 
@@ -35,6 +37,10 @@ export type SalesStatistics = {
 	statusBreakdown: OrderStatusRow[];
 	totals: {
 		revenueMinor: number;
+		/** Suma opłat za dostawę od klientów — do odjęcia od przychodu. */
+		shippingCostMinor: number;
+		/** Przychód minus koszty dostawy (wartość produktów). */
+		incomeMinor: number;
 		orderCount: number;
 		uniqueCustomers: number;
 		averageOrderMinor: number;
@@ -42,6 +48,7 @@ export type SalesStatistics = {
 	/** Bieżący miesiąc vs poprzedni — do KPI na przeglądzie. */
 	trends: {
 		revenueChangePct: number | null;
+		incomeChangePct: number | null;
 		ordersChangePct: number | null;
 	};
 };

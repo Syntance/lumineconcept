@@ -45,7 +45,9 @@ export const ABOUT_CLOSING_BRAND100_BAND_HEIGHT = "h-[530px]" as const;
 export const ABOUT_CLOSING_BRAND100_BAND_TOP = "top-[calc(50%-100px)]" as const;
 
 /** Sygnet na styku brand-50 i opaska brand-100 (górna krawędź pasu). */
-export const ABOUT_CLOSING_SIGNET_TOP = "top-[calc(50%-365px)]" as const;
+export const ABOUT_CLOSING_SIGNET_TOP = "top-[calc(50%-375px)]" as const;
 
 export const ABOUT_SIGNET_IMAGE = "/images/lumine-signet-brown.png" as const;
 export const ABOUT_SIGNET_ASPECT_CLASS = "aspect-421/396" as const;
+/** Sygnet domknięcia — +20% względem bazowych 120px (w-30). */
+export const ABOUT_SIGNET_WIDTH_CLASS = "w-36" as const;

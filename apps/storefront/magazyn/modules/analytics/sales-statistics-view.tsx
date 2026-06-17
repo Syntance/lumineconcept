@@ -15,7 +15,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { formatPrice } from "@magazyn/core/lib/format";
+import { formatChartAxisPrice, formatPrice } from "@magazyn/core/lib/format";
 import type { SalesStatistics } from "./sales-types";
 
 const CHART_STROKE = "oklch(0.58 0.08 55)";
@@ -31,14 +31,19 @@ const chartTooltipStyle = {
 export function SalesStatisticsView({ data }: { data: SalesStatistics }) {
 	const chartData = data.monthly.map((point) => ({
 		miesiac: point.month,
-		przychod: point.revenueMinor / 100,
+		przychodMinor: point.revenueMinor,
 		zamowienia: point.orderCount,
 	}));
 
 	return (
 		<div className="flex flex-col gap-6">
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 				<StatCard label="Przychód" value={formatPrice(data.totals.revenueMinor, data.currencyCode)} />
+				<StatCard
+					label="Koszty dostawy"
+					value={formatPrice(data.totals.shippingCostMinor, data.currencyCode)}
+				/>
+				<StatCard label="Dochód" value={formatPrice(data.totals.incomeMinor, data.currencyCode)} />
 				<StatCard label="Zamówienia" value={data.totals.orderCount.toLocaleString("pl-PL")} />
 				<StatCard label="Klienci" value={data.totals.uniqueCustomers.toLocaleString("pl-PL")} />
 				<StatCard
@@ -68,18 +73,20 @@ export function SalesStatisticsView({ data }: { data: SalesStatistics }) {
 								tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
 								axisLine={false}
 								tickLine={false}
-								tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
+								tickFormatter={(minor: number) =>
+									formatChartAxisPrice(minor, data.currencyCode)
+								}
 							/>
 							<Tooltip
 								contentStyle={chartTooltipStyle}
 								formatter={(v) => {
 									if (typeof v !== "number") return ["—"];
-									return [formatPrice(Math.round(v * 100), data.currencyCode)];
+									return [formatPrice(v, data.currencyCode), "Przychód"];
 								}}
 							/>
 							<Area
 								type="monotone"
-								dataKey="przychod"
+								dataKey="przychodMinor"
 								stroke={CHART_STROKE}
 								strokeWidth={2}
 								fill="url(#sales-revenue-grad)"
