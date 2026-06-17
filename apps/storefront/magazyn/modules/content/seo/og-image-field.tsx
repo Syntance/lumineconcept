@@ -10,6 +10,10 @@ import {
 	VERCEL_SAFE_UPLOAD_BYTES,
 	VERCEL_SAFE_UPLOAD_MB,
 } from "@/lib/product-upload/constants";
+import {
+	canCompressCmsImage,
+	compressCmsImageForUpload,
+} from "@/lib/product-upload/compress-cms-image";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
 
@@ -190,6 +194,21 @@ async function uploadViaPresigned(file: File): Promise<string> {
 	return presign.publicUrl;
 }
 
+/** Gdy presign PUT pada (CORS R2, limit Vercel), kompresuj i wyślij przez API — serwer uploaduje do R2. */
+async function uploadViaPresignedWithApiFallback(file: File): Promise<string> {
+	try {
+		return await uploadViaPresigned(file);
+	} catch (error) {
+		if (!canCompressCmsImage(file)) throw error;
+		const message = error instanceof Error ? error.message : "";
+		if (/za duży|HEIC|Dozwolone formaty|Nieprawidłowy rozmiar/i.test(message)) {
+			throw error;
+		}
+		const compressed = await compressCmsImageForUpload(file);
+		return uploadViaApi(compressed);
+	}
+}
+
 async function uploadViaApi(file: File): Promise<string> {
 	const formData = new FormData();
 	formData.append("files", file);
@@ -209,7 +228,15 @@ async function uploadViaApi(file: File): Promise<string> {
 
 	if (!payload.ok) {
 		if (res.status === 413 && process.env.NODE_ENV !== "development") {
-			return uploadViaPresigned(file);
+			if (canCompressCmsImage(file)) {
+				try {
+					const compressed = await compressCmsImageForUpload(file);
+					return uploadViaApi(compressed);
+				} catch {
+					// presign (pełna jakość) albo komunikat z kompresji poniżej
+				}
+			}
+			return uploadViaPresignedWithApiFallback(file);
 		}
 		throw new Error(payload.error ?? "Upload nie powiódł się. Spróbuj ponownie.");
 	}
@@ -228,13 +255,13 @@ async function uploadCmsImage(file: File): Promise<string> {
 			return await uploadViaApi(file);
 		} catch (error) {
 			if (!isDev && file.size > VERCEL_SAFE_UPLOAD_BYTES) {
-				return uploadViaPresigned(file);
+				return uploadViaPresignedWithApiFallback(file);
 			}
 			throw error;
 		}
 	}
 
-	return uploadViaPresigned(file);
+	return uploadViaPresignedWithApiFallback(file);
 }
 
 type Props = {
