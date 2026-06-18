@@ -3,6 +3,8 @@ import { put } from "@vercel/blob";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { resolveMedusaAdminEmail } from "@/magazyn/core/medusa/admin-email";
+import { inferCmsMimeFromMeta, inferCmsMimeType } from "./cms-mime";
+import { normalizeCmsImageFileToWebp } from "./normalize-cms-image.server";
 import { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB, MAX_UPLOAD_BYTES, VERCEL_SAFE_UPLOAD_MB } from "./constants";
 
 export { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB, MAX_UPLOAD_BYTES } from "./constants";
@@ -215,33 +217,6 @@ export function validateProductUploadFile(file: File): string | null {
   return null;
 }
 
-const CMS_IMAGE_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/pjpeg",
-  "image/webp",
-  "image/gif",
-  "image/avif",
-]);
-
-const CMS_EXT_TO_MIME: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  webp: "image/webp",
-  gif: "image/gif",
-  avif: "image/avif",
-};
-
-function inferCmsMimeType(file: File): string | null {
-  const type = file.type.toLowerCase();
-  if (CMS_IMAGE_TYPES.has(type)) return type;
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  const fromExt = CMS_EXT_TO_MIME[ext];
-  return fromExt && CMS_IMAGE_TYPES.has(fromExt) ? fromExt : null;
-}
-
 export function formatCmsUploadError(error: unknown): string {
   if (!(error instanceof Error)) {
     return "Upload nie powiódł się. Spróbuj ponownie.";
@@ -300,13 +275,17 @@ export async function uploadCmsAssetFile(file: File): Promise<ProductUploadResul
   const validationError = validateCmsUploadFile(file);
   if (validationError) throw new Error(validationError);
 
+  const normalized = await normalizeCmsImageFileToWebp(file);
+  const normalizedValidation = validateCmsUploadFile(normalized);
+  if (normalizedValidation) throw new Error(normalizedValidation);
+
   const r2 = getR2Config();
   if (r2) {
     try {
-      return await uploadViaR2(file, r2, "cms-uploads", LARGE_R2_UPLOAD_TIMEOUT_MS);
+      return await uploadViaR2(normalized, r2, "cms-uploads", LARGE_R2_UPLOAD_TIMEOUT_MS);
     } catch (error) {
       try {
-        return await uploadViaMedusa(file);
+        return await uploadViaMedusa(normalized);
       } catch {
         if (error instanceof Error && error.message === "R2_UPLOAD_TIMEOUT") {
           throw new Error(
@@ -318,21 +297,13 @@ export async function uploadCmsAssetFile(file: File): Promise<ProductUploadResul
     }
   }
 
-  return uploadViaMedusa(file);
+  return uploadViaMedusa(normalized);
 }
 
 export type CmsPresignedUpload = {
   uploadUrl: string;
   publicUrl: string;
 };
-
-function inferCmsMimeFromMeta(filename: string, contentType: string): string | null {
-  const type = contentType.toLowerCase();
-  if (CMS_IMAGE_TYPES.has(type)) return type;
-  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-  const fromExt = CMS_EXT_TO_MIME[ext];
-  return fromExt && CMS_IMAGE_TYPES.has(fromExt) ? fromExt : null;
-}
 
 function isHeicMeta(filename: string, contentType: string): boolean {
   const type = contentType.toLowerCase();

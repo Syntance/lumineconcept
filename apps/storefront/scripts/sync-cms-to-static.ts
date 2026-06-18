@@ -14,8 +14,8 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
+import sharp from "sharp";
 
 const MEDUSA_URL = (
 	process.env.MEDUSA_BACKEND_URL ||
@@ -93,7 +93,8 @@ function parseMaybeJson(value: unknown): unknown {
 	}
 }
 
-const IMAGE_EXT = /\.(jpe?g|png|webp|gif|avif)$/i;
+const IMAGE_EXT = /\.(jpe?g|png|webp|gif|avif|svg)$/i;
+const CMS_WEBP_QUALITY = 92;
 
 function isRemoteImageUrl(value: string): boolean {
 	return /^https?:\/\//i.test(value) && IMAGE_EXT.test(value.split("?")[0] ?? "");
@@ -109,7 +110,7 @@ function collectRemoteImageUrls(node: unknown, acc: Set<string>): void {
 	}
 }
 
-/** Stabilna, bezkolizyjna nazwa pliku: <hash8>-<oryginalna-nazwa>. */
+/** Stabilna, bezkolizyjna nazwa pliku: <hash8>-<oryginalna-nazwa>.webp (SVG bez zmian). */
 function localFilenameFor(url: string): string {
 	const hash = crypto.createHash("sha1").update(url).digest("hex").slice(0, 8);
 	let base = "asset";
@@ -118,7 +119,21 @@ function localFilenameFor(url: string): string {
 	} catch {
 		/* keep default */
 	}
-	return `${hash}-${base}`;
+	if (/\.svg$/i.test(base)) {
+		return `${hash}-${base}`;
+	}
+	const stem = base.replace(/\.[^.]+$/, "") || "asset";
+	return `${hash}-${stem}.webp`;
+}
+
+async function writeNormalizedCmsImage(buffer: Buffer, filepath: string): Promise<void> {
+	if (/\.svg$/i.test(filepath)) {
+		fs.writeFileSync(filepath, buffer);
+		return;
+	}
+
+	const webp = await sharp(buffer).webp({ quality: CMS_WEBP_QUALITY, effort: 4 }).toBuffer();
+	fs.writeFileSync(filepath, webp);
 }
 
 async function downloadImage(url: string, filename: string): Promise<boolean> {
@@ -127,8 +142,14 @@ async function downloadImage(url: string, filename: string): Promise<boolean> {
 		console.warn(`    ⚠ pominięto (HTTP ${res.status}): ${url}`);
 		return false;
 	}
+
+	const chunks: Buffer[] = [];
+	for await (const chunk of Readable.fromWeb(res.body as never)) {
+		chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+	}
+	const buffer = Buffer.concat(chunks);
 	const filepath = path.join(CMS_IMAGES_DIR, filename);
-	await pipeline(Readable.fromWeb(res.body as never), fs.createWriteStream(filepath));
+	await writeNormalizedCmsImage(buffer, filepath);
 	return true;
 }
 

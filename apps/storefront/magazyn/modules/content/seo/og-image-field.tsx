@@ -13,6 +13,7 @@ import {
 import {
 	canCompressCmsImage,
 	compressCmsImageForUpload,
+	prepareCmsImageForUpload,
 } from "@/lib/product-upload/compress-cms-image";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
@@ -315,7 +316,8 @@ export function OgImageField({
 			try {
 				const urls: string[] = [];
 				for (const file of toUpload) {
-					urls.push(await uploadCmsImage(file));
+					const prepared = await prepareCmsImageForUpload(file);
+					urls.push(await uploadCmsImage(prepared));
 				}
 
 				if (urls.length === 0) return;

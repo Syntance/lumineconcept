@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { Instagram } from "lucide-react";
 import { TrackedOutboundLink } from "@/components/analytics/TrackedOutboundLink";
-import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 
 const IG_GRID_SLOTS = 6;
 
@@ -42,7 +41,7 @@ export function InstagramGridTracked({ posts, profileUrl }: Props) {
                     sizes="(max-width: 640px) 16vw, (max-width: 1024px) 14vw, 160px"
                     className="object-contain object-center"
                     loading={i < 3 ? "eager" : "lazy"}
-                    unoptimized={isCmsImageUnoptimized(post.imageUrl)}
+                    quality={90}
                   />
                 </div>
               </TrackedOutboundLink>
