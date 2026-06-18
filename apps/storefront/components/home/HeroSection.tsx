@@ -14,9 +14,8 @@ const HERO_BG_HEIGHT = 966;
 /**
  * Hero — desktop: ultrawide + overlay; mobile: zdjęcie + CTA w 80svh.
  *
- * Tło z CMS. Next.js Image Optimization generuje responsive srcset
- * (downskalowanie dla mobile, AVIF/WebP, cache 1 rok).
- * Po deployu prebuild (`sync-cms-to-static`) kopiuje obraz źródłowy do
+ * Tło z CMS. Mobile: Next.js Image Optimization (srcset, AVIF/WebP, max ~1536px po sync).
+ * Desktop: pełna szerokość; po deployu prebuild (`sync-cms-to-static`) kopiuje obraz źródłowy do
  * `/public/images/cms/…` — Next.js go optymalizuje w locie.
  * Bez obrazu w CMS: placeholder (brand-800), bez fallbacku z repo.
  */
