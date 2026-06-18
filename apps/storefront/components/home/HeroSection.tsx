@@ -58,13 +58,14 @@ export async function HeroSection({
 
 			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
 				{/*
-				 * Desktopowe tło hero to element LCP. `eager` + `fetchPriority="high"`
-				 * zamiast `lazy` — element LCP nie może być leniwie ładowany (flaga
-				 * Lighthouse). Świadomie NIE używamy `priority`: dodałby bezwarunkowy
-				 * `<link rel=preload>`, który na mobile (gdzie ten obraz jest `hidden`)
-				 * ściągałby ultraszerokie tło z wysokim priorytetem, konkurując z LCP
-				 * wersji mobilnej. Next.js Image Optimization generuje responsive srcset
-				 * — downskalowanie dla różnych viewportów, AVIF/WebP, cache 1 rok.
+				 * Desktopowe tło hero (2560px ultrawide) to element LCP TYLKO na desktop.
+				 * `loading="lazy"`: na mobile ten kontener jest `hidden` (display:none),
+				 * więc leniwy obraz NIGDY nie wchodzi w viewport → NIE pobiera się i nie
+				 * konkuruje z mobilnym LCP. (`eager` ściągał ultrawide nawet pod
+				 * display:none — główny żłob bajtów na mobile.) Na desktop obraz jest nad
+				 * linią zgięcia → ładuje się natychmiast, a `<link rel=preload media>=1024>`
+				 * (z `page.tsx`) nadaje mu wysoki priorytet. Bez `priority`/`fetchPriority`,
+				 * by nie wstrzykiwać bezwarunkowego preloadu konkurującego na mobile.
 				 */}
 				{desktopImageUrl ? (
 					<Image
@@ -72,8 +73,7 @@ export async function HeroSection({
 						alt=""
 						width={HERO_BG_WIDTH}
 						height={HERO_BG_HEIGHT}
-						loading="eager"
-						fetchPriority="high"
+						loading="lazy"
 						sizes="100vw"
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
 						placeholder={desktopBlurDataURL ? "blur" : "empty"}

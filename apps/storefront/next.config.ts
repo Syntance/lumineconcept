@@ -176,6 +176,13 @@ const nextConfig: NextConfig = {
     /** Route Handlers (`/api/upload` — pliki klientów w koszyku). */
     proxyClientMaxBodySize: "100mb",
     /**
+     * Inline'uje krytyczny CSS do HTML zamiast render-blocking `<link>`.
+     * Eliminuje ~600ms blokady renderowania (Tailwind v4 ~23.7 KiB) na
+     * pierwszym wejściu — kluczowe dla LCP/FCP na mobile pod throttlingiem.
+     * CSP dopuszcza `style-src 'unsafe-inline'`, więc inline `<style>` przechodzi.
+     */
+    inlineCss: true,
+    /**
      * Tree-shakuje „mega" pakiety, z których importujemy pojedyncze symbole.
      * Głównie lucide-react (~200 ikon), ale też radix i posthog — bez tego
      * cały barrel trafiał do client bundle.
