@@ -65,12 +65,48 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 }
 
 /**
+ * Czy mobilne tło hero (`MobileHeroImageBand`) ma iść przez `next/image` (resize + srcset).
+ * WebP z CMS dotyczy formatu — wymiary nadal wymagają skalowania (LCP na mobile).
+ */
+export function optimizeCmsHeroImage(url: string): boolean {
+	if (!url) return false;
+
+	const pathname = (url.split("?")[0] ?? "").toLowerCase();
+	if (pathname.endsWith(".svg")) return false;
+
+	if (url.startsWith("http")) {
+		try {
+			const parsed = new URL(url);
+			const host = parsed.hostname;
+			if (host === "localhost" || host === "127.0.0.1") return false;
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	if (pathname.includes("/images/cms/") || pathname.includes("/cms-uploads/")) {
+		return true;
+	}
+
+	if (
+		pathname.startsWith("/static/") ||
+		pathname.startsWith("/uploads/") ||
+		pathname.startsWith("/products/")
+	) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
  * Czy `next/image` ma pominąć optymalizację (`unoptimized`).
  *
  * Domyślnie OPTYMALIZUJEMY assety z repo (`/images/…` poza `/images/cms/`).
  *
- * `unoptimized` dla hero CMS (`/images/cms/`, `/cms-uploads/`) — pełna jakość
- * bez ponownej kompresji Next.js (WebP z panelu już jest przygotowany).
+ * `unoptimized` dla hero CMS desktop i miniatur — bez ponownego skalowania Next.js.
+ * Mobile hero używa `optimizeCmsHeroImage()` zamiast tej funkcji.
  * - SVG (Next pomija, wymaga `dangerouslyAllowSVG`),
  * - hosty lokalne (optymalizator Vercela ich nie dosięgnie),
  * - względne ścieżki backendu Medusa bez pliku w `public/` (optymalizator je 404-uje).

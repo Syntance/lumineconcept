@@ -3,6 +3,7 @@ import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
 import {
 	isCmsImageUnoptimized,
 	isStorefrontPublicAssetPath,
+	optimizeCmsHeroImage,
 	resolveCmsAssetUrl,
 } from "@/lib/content/asset-url";
 
@@ -92,5 +93,21 @@ describe("resolveCmsAssetUrl", () => {
 	it("pomija optymalizację dla ścieżek backendu bez pliku w public", () => {
 		expect(isCmsImageUnoptimized("/static/hero.webp")).toBe(true);
 		expect(isCmsImageUnoptimized("/uploads/x.webp")).toBe(true);
+	});
+});
+
+describe("optimizeCmsHeroImage", () => {
+	it("włącza next/image dla mobilnego hero CMS (resize + srcset)", () => {
+		expect(optimizeCmsHeroImage("/images/cms/hero.webp")).toBe(true);
+		expect(optimizeCmsHeroImage("https://pub-abc.r2.dev/cms-uploads/x.webp")).toBe(true);
+	});
+
+	it("wyłącza optymalizację dla SVG i localhost", () => {
+		expect(optimizeCmsHeroImage("/images/cms/logo.svg")).toBe(false);
+		expect(optimizeCmsHeroImage("http://localhost:9000/static/hero.webp")).toBe(false);
+	});
+
+	it("wyłącza optymalizację dla ścieżek backendu bez pliku w public", () => {
+		expect(optimizeCmsHeroImage("/static/hero.webp")).toBe(false);
 	});
 });
