@@ -79,7 +79,16 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Preload hero images dla LCP - desktop i mobile */}
+      {/*
+       * Preload TYLKO desktopowego tła (media >= 1024). Desktop serwuje surowy
+       * URL (`unoptimized`), więc preload pokrywa się 1:1 z faktycznym `<img>`.
+       *
+       * Mobilnego hero NIE preloadujemy ręcznie — `next/image priority`
+       * w `MobileHeroImageBand` sam wstrzykuje `<link rel=preload imagesrcset>`
+       * z DOKŁADNIE tym samym (zoptymalizowanym) URL-em, który pobiera `<img>`.
+       * Ręczny preload surowego URL-a wskazywał inny zasób → podwójne pobranie
+       * i późne odkrycie elementu LCP na mobile (7 s pod throttlingiem 4G).
+       */}
       {heroData.desktopImageUrl && (
         <link
           rel="preload"
@@ -87,15 +96,6 @@ export default async function HomePage() {
           href={heroData.desktopImageUrl}
           fetchPriority="high"
           media="(min-width: 1024px)"
-        />
-      )}
-      {heroData.mobileImageUrl && heroData.mobileImageUrl !== heroData.desktopImageUrl && (
-        <link
-          rel="preload"
-          as="image"
-          href={heroData.mobileImageUrl}
-          fetchPriority="high"
-          media="(max-width: 1023px)"
         />
       )}
       

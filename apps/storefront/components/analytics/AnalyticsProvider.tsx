@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { CONSENT_EVENT, getConsent } from "@/lib/consent/consent";
-import { initPostHog, optIn, optOut } from "@/lib/analytics/destinations/posthog";
+import { optIn, optOut } from "@/lib/analytics/destinations/posthog";
 import {
   grantConsent as grantMetaConsent,
   initMetaPixel,
@@ -47,11 +47,13 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cleanupFn: (() => void) | undefined;
 
-    // Delay 0 — PostHog i Pixel ładują się lazy, nie blokują LCP.
-    // Opóźnienie > 0 powoduje utratę eventów powracających userów (opt_out_capturing_by_default).
+    // Delay 0 — sama logika consentu jest tania i nie blokuje LCP.
+    // PostHog ładuje się leniwie przy pierwszym capture() (patrz `ensurePostHog`),
+    // a Meta Pixel (fbevents.js ~98 KB) DOPIERO po zgodzie marketingowej — bez
+    // zgody (np. test PageSpeed) te skrypty nie konkurują o pasmo w oknie LCP.
+    // optIn()/optOut() ustawiają `_pendingConsent` zanim chunk PostHog się dociągnie,
+    // więc page_view powracających userów nie jest gubiony.
     const timeoutId = setTimeout(() => {
-      initPostHog();
-      initMetaPixel();
       // Segment jako GA4 user property — wymiar dla wszystkich eventów.
       setGA4UserSegment(ANALYTICS_SEGMENT);
 
@@ -77,6 +79,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (marketing) {
+          // Pixel ładujemy leniwie — dopiero gdy jest zgoda marketingowa.
+          initMetaPixel();
           grantMetaConsent();
         } else {
           revokeMetaConsent();
