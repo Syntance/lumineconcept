@@ -156,17 +156,12 @@ async function writeNormalizedCmsImage(
 		return;
 	}
 
-	let pipeline = sharp(buffer);
+	let pipeline = sharp(buffer).rotate();
 	if (maxLongEdge) {
-		const meta = await sharp(buffer).metadata();
-		const width = meta.width ?? 0;
-		const height = meta.height ?? 0;
-		if (Math.max(width, height) > maxLongEdge) {
-			pipeline = sharp(buffer).resize(maxLongEdge, maxLongEdge, {
-				fit: "inside",
-				withoutEnlargement: true,
-			});
-		}
+		pipeline = pipeline.resize(maxLongEdge, maxLongEdge, {
+			fit: "inside",
+			withoutEnlargement: true,
+		});
 	}
 
 	const webp = await pipeline.webp({ quality: CMS_WEBP_QUALITY, effort: 4 }).toBuffer();

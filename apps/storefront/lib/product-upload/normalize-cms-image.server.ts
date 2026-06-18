@@ -13,7 +13,10 @@ export async function normalizeCmsImageFileToWebp(file: File): Promise<File> {
 	}
 
 	const input = Buffer.from(await file.arrayBuffer());
-	const webp = await sharp(input).webp({ quality: CMS_WEBP_QUALITY, effort: 4 }).toBuffer();
+	const webp = await sharp(input)
+		.rotate()
+		.webp({ quality: CMS_WEBP_QUALITY, effort: 4 })
+		.toBuffer();
 	const baseName = file.name.replace(/\.[^.]+$/, "") || "cms";
 	return new File([new Uint8Array(webp)], `${baseName}.webp`, { type: "image/webp" });
 }

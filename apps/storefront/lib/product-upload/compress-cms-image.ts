@@ -18,7 +18,7 @@ export function canCompressCmsImage(file: File): boolean {
 	return type.startsWith("image/") || /\.(jpe?g|png|webp|gif|avif)$/i.test(file.name);
 }
 
-function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+function loadImageFromFileLegacy(file: File): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const url = URL.createObjectURL(file);
 		const img = new Image();
@@ -32,6 +32,37 @@ function loadImageFromFile(file: File): Promise<HTMLImageElement> {
 		};
 		img.src = url;
 	});
+}
+
+type RasterSource = {
+	source: CanvasImageSource;
+	width: number;
+	height: number;
+	close?: () => void;
+};
+
+/** JPEG z telefonu — EXIF orientacja (createImageBitmap) przed canvas/sharp. */
+async function loadRasterFromFile(file: File): Promise<RasterSource> {
+	if (typeof createImageBitmap !== "undefined") {
+		try {
+			const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+			return {
+				source: bitmap,
+				width: bitmap.width,
+				height: bitmap.height,
+				close: () => bitmap.close(),
+			};
+		} catch {
+			/* fallback */
+		}
+	}
+
+	const img = await loadImageFromFileLegacy(file);
+	return {
+		source: img,
+		width: img.naturalWidth,
+		height: img.naturalHeight,
+	};
 }
 
 function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob | null> {
@@ -110,19 +141,22 @@ export async function convertCmsImageToWebp(file: File): Promise<File> {
 	}
 	if (!canCompressCmsImage(file)) return file;
 
-	const img = await loadImageFromFile(file);
-	const { naturalWidth, naturalHeight } = img;
-	const encoded = await encodeWebpAtDim(
-		img,
-		naturalWidth,
-		naturalHeight,
-		Number.POSITIVE_INFINITY,
-		CMS_WEBP_QUALITY,
-	);
-	if (!encoded) {
-		throw new Error("Nie udało się przekonwertować obrazu do WebP.");
+	const raster = await loadRasterFromFile(file);
+	try {
+		const encoded = await encodeWebpAtDim(
+			raster.source,
+			raster.width,
+			raster.height,
+			Number.POSITIVE_INFINITY,
+			CMS_WEBP_QUALITY,
+		);
+		if (!encoded) {
+			throw new Error("Nie udało się przekonwertować obrazu do WebP.");
+		}
+		return new File([encoded], webpFilename(file.name), { type: "image/webp" });
+	} finally {
+		raster.close?.();
 	}
-	return new File([encoded], webpFilename(file.name), { type: "image/webp" });
 }
 
 /**
@@ -141,14 +175,16 @@ export async function prepareCmsImageForUpload(file: File): Promise<File> {
 export async function compressCmsImageForUpload(file: File): Promise<File> {
 	if (file.size <= UPLOAD_TARGET_BYTES) return file;
 
-	const img = await loadImageFromFile(file);
-	const { naturalWidth, naturalHeight } = img;
-
-	for (const maxDim of [3840, 3200, 2560, 1920, 1600]) {
-		const encoded = await encodeUnderLimit(img, naturalWidth, naturalHeight, maxDim);
-		if (encoded) {
-			return new File([encoded], webpFilename(file.name), { type: "image/webp" });
+	const raster = await loadRasterFromFile(file);
+	try {
+		for (const maxDim of [3840, 3200, 2560, 1920, 1600]) {
+			const encoded = await encodeUnderLimit(raster.source, raster.width, raster.height, maxDim);
+			if (encoded) {
+				return new File([encoded], webpFilename(file.name), { type: "image/webp" });
+			}
 		}
+	} finally {
+		raster.close?.();
 	}
 
 	throw new Error(
