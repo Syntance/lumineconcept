@@ -1,13 +1,19 @@
 import { Loader2 } from "lucide-react";
 
-/** Stan ładowania PDP — jednolity krem zamiast skeletonu. */
-export function ProductPageLoading() {
+type PageLoadingScreenProps = {
+  ariaLabel?: string;
+};
+
+/** Jednolity krem ze spinnerem — PDP, listing sklepu, nawigacja między sekcjami. */
+export function PageLoadingScreen({
+  ariaLabel = "Ładowanie",
+}: PageLoadingScreenProps) {
   return (
     <div
       className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-brand-50"
       role="status"
       aria-live="polite"
-      aria-label="Ładowanie produktu"
+      aria-label={ariaLabel}
     >
       <Loader2
         className="h-10 w-10 animate-spin text-brand-700 motion-reduce:animate-none"
@@ -15,4 +21,9 @@ export function ProductPageLoading() {
       />
     </div>
   );
+}
+
+/** @deprecated Użyj PageLoadingScreen — alias dla stron produktu. */
+export function ProductPageLoading() {
+  return <PageLoadingScreen ariaLabel="Ładowanie produktu" />;
 }
