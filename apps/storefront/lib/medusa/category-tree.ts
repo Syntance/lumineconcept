@@ -134,6 +134,28 @@ export function buildMedusaCategoryScopeMap(
   return map;
 }
 
+/** Bezpośrednie podkategorie roota listingu (filtry w sidebarze). */
+export function getDirectListingCategoryHandles(
+  tree: CategoryTreeNode[],
+  listingRootHandle: string,
+): string[] {
+  const root = findCategoryNodeByHandle(tree, listingRootHandle);
+  if (!root?.category_children?.length) return [];
+  return [...root.category_children]
+    .filter((node) => node.is_active !== false)
+    .sort(compareCategoriesBySortOrder)
+    .map((node) => node.handle);
+}
+
+/** Czy segment URL to handle podkategorii listingu (nie produktu). */
+export function isDirectListingCategorySlug(
+  tree: CategoryTreeNode[],
+  listingRootHandle: string,
+  slug: string,
+): boolean {
+  return getDirectListingCategoryHandles(tree, listingRootHandle).includes(slug);
+}
+
 /** Rozwiń aktywną kategorię UI do listy ID dla API Medusy. */
 export function medusaCategoryIdsForScope(
   activeCategoryId: string | undefined,

@@ -14,7 +14,7 @@ export type ShopBreadcrumbItem = {
 const HOME: ShopBreadcrumbItem = { label: "Strona główna", href: "/" };
 const SHOP: ShopBreadcrumbItem = { label: "Sklep", href: "/sklep" };
 
-/** URL listingu dla kategorii — dedykowane trasy (certyfikaty) lub `?kat=` na gotowe-wzory. */
+/** URL listingu dla kategorii — segment ścieżki zamiast `?kat=`. */
 export function categoryListingHref(
   handle: string,
   listingBasePath: string,
@@ -22,7 +22,80 @@ export function categoryListingHref(
   if (handle === LISTING_CATEGORY_HANDLE.certyfikaty) return "/sklep/certyfikaty";
   if (handle === LISTING_CATEGORY_HANDLE.gotoweWzory) return "/sklep/gotowe-wzory";
   if (handle === LISTING_CATEGORY_HANDLE.logo3d) return "/sklep/logo-3d";
-  return `${listingBasePath}?kat=${encodeURIComponent(handle)}`;
+  return `${listingBasePath}/${encodeURIComponent(handle)}`;
+}
+
+const DEFAULT_LISTING_SORT = "-created_at";
+
+/** Dołącza `sort` do href (query tylko dla sortowania). */
+function withSortParam(href: string, sort?: string): string {
+  if (!sort || sort === DEFAULT_LISTING_SORT) return href;
+  const params = new URLSearchParams();
+  params.set("sort", sort);
+  return `${href}?${params.toString()}`;
+}
+
+/**
+ * Kanoniczny URL listingu dla aktywnej kategorii — segment ścieżki + opcjonalnie `?sort=`.
+ */
+export function buildActiveCategoryListingHref(options: {
+  categoryId: string | undefined;
+  defaultListingCategoryId: string;
+  listingBasePath: string;
+  productBasePath: string;
+  categoryFilters: Array<{ id: string; handle: string; name: string }>;
+  sort?: string;
+}): string {
+  const {
+    categoryId,
+    defaultListingCategoryId,
+    listingBasePath,
+    productBasePath,
+    categoryFilters,
+    sort,
+  } = options;
+
+  const isDefault =
+    !categoryId || categoryId === defaultListingCategoryId;
+
+  if (isDefault) {
+    return withSortParam(productBasePath, sort);
+  }
+
+  const match = categoryFilters.find((c) => c.id === categoryId);
+  const handle = match?.handle ?? categoryId;
+  return withSortParam(categoryListingHref(handle, listingBasePath), sort);
+}
+
+/** Wyciąga handle podkategorii z pathname listingu (np. `/sklep/gotowe-wzory/cenniki`). */
+export function listingCategoryHandleFromPathname(
+  pathname: string,
+  productBasePath: string,
+): string | null {
+  const normalizedBase = productBasePath.replace(/\/$/, "");
+  const normalizedPath = pathname.replace(/\/$/, "") || "/";
+  if (normalizedPath === normalizedBase) return null;
+  if (!normalizedPath.startsWith(`${normalizedBase}/`)) return null;
+  const segment = normalizedPath.slice(normalizedBase.length + 1).split("/")[0];
+  return segment || null;
+}
+
+/** Mapuje pathname listingu (+ filtry) na ID kategorii Medusy. */
+export function categoryIdFromListingPath(options: {
+  pathname: string;
+  productBasePath: string;
+  defaultListingCategoryId: string;
+  categoryFilters: Array<{ id: string; handle: string; name: string }>;
+}): string {
+  const handle = listingCategoryHandleFromPathname(
+    options.pathname,
+    options.productBasePath,
+  );
+  if (!handle) return options.defaultListingCategoryId;
+  const match = options.categoryFilters.find(
+    (c) => c.handle === handle || c.id === handle,
+  );
+  return match?.id ?? options.defaultListingCategoryId;
 }
 
 /** Łańcuch od dziecka roota listingu do węzła (bez roota). */

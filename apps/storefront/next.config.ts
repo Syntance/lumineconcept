@@ -128,6 +128,31 @@ const nextConfig: NextConfig = {
         destination: "/",
         permanent: true,
       },
+      /** Stare linki z `?kat=` → segment ścieżki. */
+      {
+        source: "/sklep/gotowe-wzory",
+        has: [{ type: "query", key: "kat", value: "certyfikaty" }],
+        destination: "/sklep/certyfikaty",
+        permanent: true,
+      },
+      {
+        source: "/sklep/gotowe-wzory",
+        has: [{ type: "query", key: "kat", value: "(?<handle>[^&]+)" }],
+        destination: "/sklep/gotowe-wzory/:handle",
+        permanent: true,
+      },
+      {
+        source: "/sklep/certyfikaty",
+        has: [{ type: "query", key: "kat", value: "certyfikaty" }],
+        destination: "/sklep/certyfikaty",
+        permanent: true,
+      },
+      {
+        source: "/sklep/certyfikaty",
+        has: [{ type: "query", key: "kat", value: "(?<handle>[^&]+)" }],
+        destination: "/sklep/gotowe-wzory/:handle",
+        permanent: true,
+      },
     ];
   },
 

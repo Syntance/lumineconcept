@@ -1,40 +1,11 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import {
-  buildMedusaCategoryScopeMap,
-  buildListingCategoryFilters,
-  categoryIdByHandle,
-  categoryIdFromKatParam,
-  LISTING_CATEGORY_HANDLE,
-  medusaCategoryIdsForScope,
-  type CategoryTreeNode,
-} from "@/lib/medusa/category-tree";
-import { getProducts, getProductCategories } from "@/lib/medusa/products";
-import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
-import { buildMetadata } from "@/lib/content/metadata";
-import { pickTestimonials, resolveTrustBarDisplay } from "@/lib/content/cms-wiring";
-import { PageFaqSection } from "@/components/content/PageFaqSection";
-import { ShopListingBreadcrumbsClient } from "@/components/shop/ShopListingBreadcrumbsClient";
-import { ShopListingCategoryProvider } from "@/components/shop/ShopListingCategoryContext";
-import { medusaProductToSimple } from "@/lib/products/simple-product";
-import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/global-config";
-import { ShopGridClient } from "./client";
-
-const INITIAL_PAGE_SIZE = 12;
+  generateGotoweWzoryListingMetadata,
+  GotoweWzoryListingPage,
+} from "@/components/shop/GotoweWzoryListingPage";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [seo, settings] = await Promise.all([
-    getPageSeo("gotowe-wzory"),
-    getSiteSettings(),
-  ]);
-  return buildMetadata({
-    seo,
-    fallbackTitle: "Gotowe wzory z plexi — cenniki, tabliczki, menu, QR | Lumine Concept",
-    fallbackDescription:
-      "Gotowe cenniki, tabliczki, menu, QR i wizytowniki z plexi. Kup online — realizacja ok. 10 dni roboczych.",
-    siteSettings: settings,
-    path: "/sklep/gotowe-wzory",
-  });
+  return generateGotoweWzoryListingMetadata();
 }
 
 export const revalidate = 60;
@@ -42,136 +13,8 @@ export const revalidate = 60;
 export default async function GotoweWzoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kat?: string; sort?: string }>;
+  searchParams: Promise<{ sort?: string }>;
 }) {
   const params = await searchParams;
-  const order = params.sort ?? "-created_at";
-
-  const globalConfigPromise = getGlobalProductConfig().catch(
-    () => EMPTY_GLOBAL_CONFIG,
-  );
-
-  const [allCategories, settings, pageContent] = await Promise.all([
-    getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
-    getSiteSettings(),
-    getPageContent("gotowe-wzory"),
-  ]);
-
-  const categoryTree = allCategories as unknown as CategoryTreeNode[];
-  const defaultGotoweWzoryId = categoryIdByHandle(
-    categoryTree,
-    LISTING_CATEGORY_HANDLE.gotoweWzory,
-  );
-  const resolvedKatId = params.kat
-    ? categoryIdFromKatParam(categoryTree, params.kat)
-    : undefined;
-
-  const listCategoryId = params.kat ? resolvedKatId : defaultGotoweWzoryId;
-
-  const medusaCategoryScopeMap = buildMedusaCategoryScopeMap(
-    categoryTree,
-    LISTING_CATEGORY_HANDLE.gotoweWzory,
-  );
-  const categoryFilters = buildListingCategoryFilters(
-    categoryTree,
-    LISTING_CATEGORY_HANDLE.gotoweWzory,
-  );
-  const medusaListingCategoryIds = medusaCategoryIdsForScope(
-    listCategoryId,
-    medusaCategoryScopeMap,
-  );
-
-  const productsResponse = await getProducts({
-    limit: INITIAL_PAGE_SIZE,
-    offset: 0,
-    order,
-    category_id: medusaListingCategoryIds,
-  }).catch(() => null);
-
-  const globalConfig = await globalConfigPromise;
-
-  const initialCategoryId = params.kat ? resolvedKatId : defaultGotoweWzoryId;
-  const categories = allCategories;
-  const products = productsResponse?.products ?? [];
-  const totalCount = productsResponse?.count ?? 0;
-  const trustBar = resolveTrustBarDisplay(settings?.trustBar);
-  const displayTestimonials = pickTestimonials(pageContent.testimonials, 2);
-
-  const initialProducts = products.map((p) =>
-    medusaProductToSimple(p as unknown as Record<string, unknown>),
-  );
-
-  return (
-    <ShopListingCategoryProvider initialCategoryId={listCategoryId}>
-      {/* Hero */}
-      <section className="bg-brand-50 pt-10 pb-14 lg:pt-12 lg:pb-20">
-        <div className="container mx-auto px-4">
-          <ShopListingBreadcrumbsClient
-            className="mb-0"
-            tree={categoryTree}
-            listingRootHandle={LISTING_CATEGORY_HANDLE.gotoweWzory}
-            listingBasePath="/sklep/gotowe-wzory"
-          />
-        </div>
-        <div className="container mx-auto max-w-7xl px-4 pt-10 text-center lg:pt-16">
-          <h1 className="font-display text-4xl tracking-[0.06em] text-brand-800 lg:text-5xl">
-            Gotowe wzory z plexi
-          </h1>
-          <p className="mt-4 mx-auto max-w-2xl text-lg text-brand-800 leading-relaxed">
-            Cenniki, tabliczki, oznaczenia, logo — spersonalizuj na własne potrzeby.
-          </p>
-        </div>
-      </section>
-
-      {/* Product grid with infinite scroll */}
-      <section className="bg-white py-10 lg:py-14">
-        <div className="container mx-auto max-w-7xl px-4">
-          <Suspense fallback={null}>
-            <ShopGridClient
-              initialProducts={initialProducts}
-              totalCount={totalCount}
-              initialFilter={initialCategoryId}
-              defaultListingCategoryId={defaultGotoweWzoryId ?? ""}
-              initialSort={params.sort ?? "-created_at"}
-              categoryFilters={categoryFilters}
-              categories={categories.map((c) => ({ id: c.id, name: c.name }))}
-              productBasePath="/sklep/gotowe-wzory"
-              globalColors={globalConfig.colors}
-              medusaCategoryScopeMap={medusaCategoryScopeMap}
-            />
-          </Suspense>
-        </div>
-      </section>
-
-      {/* Trust bar */}
-      <section className="border-t border-brand-100 bg-brand-50 py-12 lg:py-16">
-        <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-base text-brand-800">
-            <span>{trustBar.followers} obserwujących</span>
-            <span className="text-brand-300">·</span>
-            <span>{trustBar.realizations} realizacji</span>
-            <span className="text-brand-300">·</span>
-            <span>{trustBar.shippingLabel}</span>
-          </div>
-
-          {displayTestimonials.length > 0 && (
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
-              {displayTestimonials.map((t) => (
-                <blockquote key={t.id} className="rounded-xl bg-white p-6 text-left shadow-sm">
-                  <p className="text-base italic text-brand-800 leading-relaxed">
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-                  <footer className="mt-3 text-sm text-brand-500">
-                    — {t.name}{t.company ? `, ${t.company}` : ""}
-                  </footer>
-                </blockquote>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <PageFaqSection faq={pageContent.faq} />
-    </ShopListingCategoryProvider>
-  );
+  return <GotoweWzoryListingPage searchParams={params} />;
 }

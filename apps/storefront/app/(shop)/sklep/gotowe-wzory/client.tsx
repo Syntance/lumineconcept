@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ProductCard } from "@/components/product/ProductCard";
 import { FilterSidebar } from "@/components/product/FilterSidebar";
 import { FilterDrawer } from "@/components/product/FilterDrawer";
@@ -15,6 +16,11 @@ import { useAnalytics } from "@/lib/analytics/useAnalytics";
 import { MIN_PRODUCT_SEARCH_LENGTH } from "@/lib/products/product-search";
 import { useShopListingCategoryOptional } from "@/components/shop/ShopListingCategoryContext";
 import { medusaCategoryIdsForScope } from "@/lib/medusa/category-tree";
+import {
+  buildActiveCategoryListingHref,
+  categoryIdFromListingPath,
+  productBreadcrumbContextFromBasePath,
+} from "@/lib/medusa/shop-breadcrumbs";
 import { extractFilterConfig, type SimpleProduct } from "@/lib/products/simple-product";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
 
@@ -82,6 +88,29 @@ function getBadge(tags: string[]): "bestseller" | "nowość" | null {
   return null;
 }
 
+/**
+ * Ta sama sekcja listingu gotowe-wzory — aktualizacja URL bez RSC (brak migania grida).
+ * Przejścia na /sklep/certyfikaty wymagają pełnej nawigacji (inny hero).
+ */
+function shouldUseHistoryForListingUrl(
+  currentPath: string,
+  targetHref: string,
+): boolean {
+  const targetPath = targetHref.split("?")[0] ?? targetHref;
+  if (
+    targetPath === "/sklep/certyfikaty" ||
+    currentPath === "/sklep/certyfikaty"
+  ) {
+    return false;
+  }
+  const listingPrefix = "/sklep/gotowe-wzory";
+  const currentIsListing =
+    currentPath === listingPrefix || currentPath.startsWith(`${listingPrefix}/`);
+  const targetIsListing =
+    targetPath === listingPrefix || targetPath.startsWith(`${listingPrefix}/`);
+  return currentIsListing && targetIsListing;
+}
+
 export function ShopGridClient({
   initialProducts,
   totalCount,
@@ -100,6 +129,11 @@ export function ShopGridClient({
   const medusaScopeKey = JSON.stringify(resolvedMedusaScopeMap);
   const listingCategory = useShopListingCategoryOptional();
   const { track } = useAnalytics();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
+  const { listingBasePath } = productBreadcrumbContextFromBasePath(productBasePath);
 
   const [products, setProducts] = useState<SimpleProduct[]>(initialProducts);
   const [totalFiltered, setTotalFiltered] = useState(totalCount);
@@ -124,6 +158,87 @@ export function ShopGridClient({
   const isFirstListEffectRef = useRef(true);
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
+  const skipUrlFromFiltersRef = useRef(false);
+
+  const applyCategoryFromPath = useCallback(
+    (path: string) => {
+      const resolvedCategoryId = categoryIdFromListingPath({
+        pathname: path,
+        productBasePath,
+        defaultListingCategoryId,
+        categoryFilters,
+      });
+
+      setFilters((prev) => {
+        if (prev.category === resolvedCategoryId) return prev;
+        return { ...prev, category: resolvedCategoryId, pill: undefined };
+      });
+      listingCategory?.setActiveCategoryId(resolvedCategoryId);
+    },
+    [
+      categoryFilters,
+      defaultListingCategoryId,
+      listingCategory,
+      productBasePath,
+    ],
+  );
+
+  const syncCategoryToUrl = useCallback(
+    (categoryId: string | undefined, sort: string) => {
+      const href = buildActiveCategoryListingHref({
+        categoryId,
+        defaultListingCategoryId,
+        listingBasePath,
+        productBasePath,
+        categoryFilters,
+        sort,
+      });
+      const current =
+        `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+      if (href === current) return;
+
+      skipUrlFromFiltersRef.current = true;
+
+      if (shouldUseHistoryForListingUrl(pathname, href)) {
+        window.history.pushState(null, "", href);
+        return;
+      }
+
+      startTransition(() => {
+        router.push(href, { scroll: false });
+      });
+    },
+    [
+      categoryFilters,
+      defaultListingCategoryId,
+      listingBasePath,
+      pathname,
+      productBasePath,
+      router,
+      searchParams,
+      startTransition,
+    ],
+  );
+
+  useEffect(() => {
+    if (skipUrlFromFiltersRef.current) {
+      skipUrlFromFiltersRef.current = false;
+      return;
+    }
+
+    applyCategoryFromPath(pathname);
+  }, [
+    pathname,
+    applyCategoryFromPath,
+  ]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      applyCategoryFromPath(window.location.pathname);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [applyCategoryFromPath]);
 
   const filterFingerprint = useMemo(
     () =>
@@ -206,7 +321,6 @@ export function ShopGridClient({
     let cancelled = false;
     const f = filtersRef.current;
     setListLoading(true);
-    setProducts([]);
 
     fetch(buildProductsUrl(0, PAGE_SIZE, f, resolvedMedusaScopeMap))
       .then(async (res) => {
@@ -251,9 +365,13 @@ export function ShopGridClient({
     if (!next.search && searchInput) {
       setSearchInput("");
     }
+    const prevCategory = filtersRef.current.category;
     setFilters(next);
     if (next.category !== undefined) {
       listingCategory?.setActiveCategoryId(next.category);
+    }
+    if (next.category !== prevCategory) {
+      syncCategoryToUrl(next.category, next.sort);
     }
     track("product_filtered", {
       category: next.category,
@@ -266,7 +384,7 @@ export function ShopGridClient({
       sort: next.sort,
       search: next.search,
     });
-  }, [searchInput, listingCategory, track]);
+  }, [searchInput, listingCategory, syncCategoryToUrl, track]);
 
   const showLoadMore = !listLoading && products.length > 0 && products.length < totalFiltered;
 
@@ -325,17 +443,7 @@ export function ShopGridClient({
           onFiltersChange={handleFiltersChange}
         />
 
-        {listLoading && products.length === 0 ? (
-          <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:mt-4 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-[3/4] rounded-lg bg-brand-100" />
-                <div className="mt-3 h-4 w-3/4 rounded bg-brand-100" />
-                <div className="mt-2 h-4 w-1/3 rounded bg-brand-100" />
-              </div>
-            ))}
-          </div>
-        ) : products.length > 0 ? (
+        {products.length > 0 ? (
           <>
             <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:mt-4 lg:grid-cols-3">
               {products.map((product, index) => (
