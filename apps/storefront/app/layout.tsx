@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import { Providers } from "@/providers/Providers";
 import { CookieConsent } from "@/components/common/CookieConsent";
 import { ConsentModeScript } from "@/components/analytics/ConsentModeScript";
+import { DeferredGoogleAnalytics } from "@/components/analytics/DeferredGoogleAnalytics";
 import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
 
@@ -124,7 +124,7 @@ export default function RootLayout({
         {/* Hero preload generowany przez next/image priority w HeroSection (URL z CMS). */}
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <ConsentModeScript />
-        {GA4_ID ? <GoogleAnalytics gaId={GA4_ID} /> : null}
+        {GA4_ID ? <DeferredGoogleAnalytics gaId={GA4_ID} /> : null}
       </head>
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">
         <CookieConsent />
