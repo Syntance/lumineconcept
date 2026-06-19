@@ -1,7 +1,19 @@
-import { sendGAEvent } from "@next/third-parties/google";
 import type { AnalyticsEventName } from "../events/registry";
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID ?? "";
+
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+  }
+}
+
+/** Kolejka dataLayer — działa przed i po załadowaniu gtag.js (Consent Mode). */
+function pushGACommand(...args: unknown[]): void {
+  if (typeof window === "undefined") return;
+  window.dataLayer = window.dataLayer ?? [];
+  window.dataLayer.push(args);
+}
 
 const ECOMMERCE_EVENTS = new Set<AnalyticsEventName>([
   "product_view",
@@ -74,7 +86,7 @@ function pickProductViewParams(
  */
 export function setGA4UserSegment(segment: string): void {
   if (!GA4_ID || typeof window === "undefined") return;
-  sendGAEvent("set", "user_properties", { segment });
+  pushGACommand("set", "user_properties", { segment });
 }
 
 export function sendGA4Event(
@@ -82,65 +94,71 @@ export function sendGA4Event(
   payload: Record<string, unknown>,
 ): void {
   if (!GA4_ID || typeof window === "undefined") return;
-  // page_view handled natively by @next/third-parties/google (App Router auto-tracks route changes)
-  if (name === "page_view") return;
+
+  if (name === "page_view") {
+    pushGACommand("event", "page_view", {
+      page_path: payload.page_path,
+      page_title: payload.title,
+    });
+    return;
+  }
 
   if (name === "search") {
-    sendGAEvent("event", "search", {
+    pushGACommand("event", "search", {
       search_term: payload.search_term,
     });
     return;
   }
 
   if (name === "product_view") {
-    sendGAEvent("event", "view_item", pickProductViewParams(payload));
+    pushGACommand("event", "view_item", pickProductViewParams(payload));
     return;
   }
 
   if (name === "view_item_list") {
-    sendGAEvent("event", "view_item_list", pickEcommerceParams(payload));
+    pushGACommand("event", "view_item_list", pickEcommerceParams(payload));
     return;
   }
 
   if (name === "view_cart") {
-    sendGAEvent("event", "view_cart", pickEcommerceParams(payload));
+    pushGACommand("event", "view_cart", pickEcommerceParams(payload));
     return;
   }
 
   if (name === "add_to_cart") {
-    sendGAEvent("event", "add_to_cart", pickEcommerceParams(payload));
+    pushGACommand("event", "add_to_cart", pickEcommerceParams(payload));
     return;
   }
 
   if (name === "remove_from_cart") {
-    sendGAEvent("event", "remove_from_cart", pickEcommerceParams(payload));
+    pushGACommand("event", "remove_from_cart", pickEcommerceParams(payload));
     return;
   }
 
   if (name === "begin_checkout") {
-    sendGAEvent("event", "begin_checkout", pickEcommerceParams(payload));
+    pushGACommand("event", "begin_checkout", pickEcommerceParams(payload));
     return;
   }
 
   if (name === "add_shipping_info") {
-    sendGAEvent("event", "add_shipping_info", pickEcommerceParams(payload));
+    pushGACommand("event", "add_shipping_info", pickEcommerceParams(payload));
     return;
   }
 
   if (name === "add_payment_info") {
-    sendGAEvent("event", "add_payment_info", pickEcommerceParams(payload));
+    pushGACommand("event", "add_payment_info", pickEcommerceParams(payload));
     return;
   }
 
   if (name === "purchase") {
-    sendGAEvent("event", "purchase", pickEcommerceParams(payload));
+    pushGACommand("event", "purchase", pickEcommerceParams(payload));
     return;
   }
 
   if (ECOMMERCE_EVENTS.has(name)) {
-    sendGAEvent("event", name, pickEcommerceParams(payload));
+    pushGACommand("event", name, pickEcommerceParams(payload));
     return;
   }
 
-  sendGAEvent("event", name, sanitizePayloadForGA4(payload));
+  pushGACommand("event", name, sanitizePayloadForGA4(payload));
 }
