@@ -31,16 +31,17 @@ export function MobileHeroImageBand({
 				width={MOBILE_HERO_BAND_WIDTH}
 				height={MOBILE_HERO_BAND_HEIGHT}
 				/*
-				 * `priority` = kluczowe dla LCP na mobile:
-				 *   – Next.js 15 / React 19 wywołuje `ReactDOM.preload()` który trafia
-				 *     do `<head>` natychmiast, nawet gdy komponent jest zagnieżdżony
-				 *     głęboko w async tree (czego zwykły `<link rel=preload>` w JSX nie
-				 *     gwarantuje przy streaming SSR).
-				 *   – Ustawia też `loading="eager"` i `fetchPriority="high"` implicite.
-				 *   – Preload nie jest media-scoped (obowiązuje też na desktop), ale
-				 *     mobile hero to tylko ~75 KB — koszt pomijalny.
+				 * UWAGA: `priority` + `unoptimized` w Next.js 16 NIE dodaje
+				 * `fetchpriority="high"` na element <img> ani na <link rel="preload"> —
+				 * tylko bez `unoptimized` to robi. Dlatego ustawiamy oba atrybuty jawnie:
+				 *   – `fetchPriority="high"` → bezpośredni sygnał dla przeglądarki (LCP)
+				 *   – `loading="eager"` → blokuje lazy loading
+				 *   – `priority` → dodaje <link rel="preload"> w <head> (wczesna dyskowerya)
 				 */
 				priority={priority}
+				// Jawne atrybuty HTML — konieczne obok `priority`, bo ten z `unoptimized` ich nie dodaje
+				fetchPriority={priority ? "high" : "auto"}
+				loading={priority ? "eager" : "lazy"}
 				sizes="100vw"
 				/*
 				 * `unoptimized` — plik to już WebP q92 z prebuild; nie kompresujemy
