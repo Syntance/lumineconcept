@@ -214,7 +214,7 @@ export async function saveProductAction(payload: ProductPayload): Promise<SavePr
 
 	try {
 		if (data.id) {
-			await updateAdminProduct(data.id, values);
+			await updateAdminProduct(data.id, values, previousHandle);
 		} else {
 			await createAdminProduct(values);
 		}

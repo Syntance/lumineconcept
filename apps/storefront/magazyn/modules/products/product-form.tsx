@@ -12,6 +12,7 @@ import type { AdminProductDetail, CategoryOption, ConfigOption } from "./store";
 import type { AdminPromoCode, ProductOption } from "@magazyn/modules/promotions/types";
 import { ProductPromotionsSection } from "@magazyn/modules/promotions/product-promotions-section";
 import { saveProductAction, uploadImagesAction } from "./actions";
+import { resolveProductHandleForSave } from "./product-handle";
 import { ProductImagesEditor } from "./product-images-editor";
 import { ProductConfigSection } from "./product-config-section";
 import {
@@ -100,6 +101,17 @@ export function ProductForm({
 	const [saved, setSaved] = useState(false);
 	const [uploading, setUploading] = useState(false);
 	const [saving, startSave] = useTransition();
+
+	const previewHandle = useMemo(
+		() =>
+			resolveProductHandleForSave({
+				id: product?.id,
+				title,
+				handle: product?.handle,
+				status,
+			}),
+		[product?.id, product?.handle, title, status],
+	);
 
 	const disabledColorIdsForActiveSlot = useMemo(() => {
 		const active = getActiveDisabledBySlot(colorSlotState);
@@ -412,6 +424,19 @@ export function ProductForm({
 				<div className="flex flex-col gap-1.5">
 					<label htmlFor={titleId} className="text-sm font-medium">Nazwa</label>
 					<Input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="np. Lampa stołowa" required className="h-10" />
+					{product?.id ? (
+						<p className="text-xs text-muted-foreground">
+							Adres po zapisie:{" "}
+							<span className="font-mono text-foreground">/{previewHandle}</span>
+							{product.handle !== previewHandle ? (
+								<span className="text-amber-700"> (aktualnie: /{product.handle})</span>
+							) : null}
+						</p>
+					) : (
+						<p className="text-xs text-muted-foreground">
+							Adres: <span className="font-mono text-foreground">/{previewHandle}</span>
+						</p>
+					)}
 				</div>
 
 				<div className="flex flex-col gap-1.5">
