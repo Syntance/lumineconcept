@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ProductSearchResult } from "@lumine/types";
-import { shouldServeImageDirect } from "@/lib/images/serve-direct";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { formatPrice } from "@/lib/utils";
 
 interface SearchResultsProps {
@@ -37,9 +37,10 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
                     fill
                     loading="lazy"
                     quality={75}
+                    placeholder="blur"
+                    blurDataURL={BRAND_BLUR_DATA_URL}
                     sizes="42px"
                     className="relative z-10 object-cover"
-                    unoptimized={shouldServeImageDirect(product.thumbnail)}
                   />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center text-brand-300 text-xs">

@@ -17,10 +17,7 @@ import {
   PRODUCT_IMAGE_ASPECT_CLASS,
 } from "@/lib/products/product-image-aspect";
 import type { GlobalConfigOption } from "@/lib/products/global-config";
-import {
-	lazyBlurPlaceholderProps,
-	shouldServeImageDirect,
-} from "@/lib/images/serve-direct";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { PriceDisplay } from "./PriceDisplay";
 
 export type ProductCardFrameVariant = "square" | "arch-up" | "arch-down";
@@ -149,12 +146,12 @@ export function ProductCard({
               width={imageWidth}
               height={imageHeight}
               loading={priority ? "eager" : "lazy"}
-              fetchPriority={priority ? "high" : undefined}
               quality={80}
-              {...lazyBlurPlaceholderProps(priority)}
+              placeholder="blur"
+              blurDataURL={BRAND_BLUR_DATA_URL}
               className="relative z-10 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
-              unoptimized={shouldServeImageDirect(thumbnail)}
+              unoptimized={thumbnail.startsWith("http://localhost")}
             />
             {!hideWatermark ? (
               <div

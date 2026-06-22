@@ -10,7 +10,7 @@ import {
 	type ShopCategoryCard,
 } from "@/lib/content/cms-wiring";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
-import { lazyBlurPlaceholderProps } from "@/lib/images/serve-direct";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { SITE_URL, cn } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -156,7 +156,8 @@ export default async function ShopHubPage() {
                       )}
                       sizes="(max-width: 640px) 0px, (max-width: 1280px) 33vw, 420px"
                       unoptimized={isCmsImageUnoptimized(cat.image)}
-                      {...lazyBlurPlaceholderProps(index === 0)}
+                      placeholder="blur"
+                      blurDataURL={cat.blurDataURL ?? BRAND_BLUR_DATA_URL}
                       aria-hidden
                     />
                   </div>
@@ -194,7 +195,8 @@ export default async function ShopHubPage() {
                     className="relative z-10 origin-center object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
                     sizes="(max-width: 640px) 50vw, 0px"
                     unoptimized={isCmsImageUnoptimized(cat.image)}
-                    {...lazyBlurPlaceholderProps(index === 0)}
+                    placeholder="blur"
+                    blurDataURL={cat.blurDataURL ?? BRAND_BLUR_DATA_URL}
                   />
                 </div>
               </Link>
