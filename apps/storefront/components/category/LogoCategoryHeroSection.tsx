@@ -8,6 +8,7 @@ import { MobileHeroImageBand } from "@/components/home/MobileHeroImageBand";
 import { MobileHeroViewport } from "@/components/home/MobileHeroViewport";
 import type { HeroContent } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { resolveLogoHeroWithFallback } from "@/lib/content/hero";
 import { cn } from "@/lib/utils";
 
@@ -24,8 +25,9 @@ const LOGO_MOBILE_HERO_OBJECT = "object-[center_58%]" as const;
  * Desktop: ultrawide z portalem.
  */
 export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) {
-	const { portal, desktopImageUrl, mobileImageUrl } = await resolveLogoHeroWithFallback(hero);
+	const { portal, desktopImageUrl, mobileImageUrl, desktopBlurDataURL, mobileBlurDataURL } = await resolveLogoHeroWithFallback(hero);
 	const mobileDisplayUrl = mobileImageUrl ?? desktopImageUrl;
+	const mobileBlur = mobileBlurDataURL ?? desktopBlurDataURL;
 
 	const breadcrumbsOverlay = (
 		<div className={cn("absolute inset-x-0 top-0 z-20 pt-5", BREADCRUMBS_ALIGN_CLASS)}>
@@ -49,6 +51,7 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 						mobileDisplayUrl ? (
 							<MobileHeroImageBand
 								src={mobileDisplayUrl}
+								blurDataURL={mobileBlur}
 								objectPositionClass={LOGO_MOBILE_HERO_OBJECT}
 							/>
 						) : (
@@ -71,6 +74,8 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 						fetchPriority="high"
 						sizes="100vw"
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
+						placeholder="blur"
+						blurDataURL={desktopBlurDataURL ?? BRAND_BLUR_DATA_URL}
 						className="absolute inset-0 h-full w-full select-none object-cover object-top"
 					/>
 				) : (

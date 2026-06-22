@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAnalytics } from "@/lib/analytics/useAnalytics";
 import { markUpsellReferral } from "@/lib/analytics/upsell-attribution";
-import { shouldServeImageDirect } from "@/lib/images/serve-direct";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 
 interface UpsellProduct {
   id: string;
@@ -65,9 +65,10 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
                   height={48}
                   loading="lazy"
                   quality={75}
+                  placeholder="blur"
+                  blurDataURL={BRAND_BLUR_DATA_URL}
                   sizes="36px"
                   className="relative z-10 rounded-md object-cover"
-                  unoptimized={shouldServeImageDirect(p.thumbnail)}
                 />
               </div>
             ) : (

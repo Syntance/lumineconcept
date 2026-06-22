@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import type { HeroContent } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
 import { HeroImagePreload } from "./HeroImagePreload";
 import { HeroPortalContent } from "./HeroPortalContent";
@@ -31,9 +32,12 @@ export async function HeroSection({
 		portal,
 		desktopImageUrl,
 		mobileImageUrl,
+		desktopBlurDataURL,
+		mobileBlurDataURL,
 	} = await resolveHomeHeroWithFallback(hero);
 
 	const mobileDisplayUrl = mobileImageUrl ?? desktopImageUrl;
+	const mobileBlur = mobileBlurDataURL ?? desktopBlurDataURL;
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
@@ -44,6 +48,7 @@ export async function HeroSection({
 						mobileDisplayUrl ? (
 							<MobileHeroImageBand
 								src={mobileDisplayUrl}
+								blurDataURL={mobileBlur}
 								objectPositionClass="object-[center_58%]"
 							/>
 						) : (
@@ -68,6 +73,8 @@ export async function HeroSection({
 						fetchPriority="high"
 						sizes="100vw"
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
+						placeholder="blur"
+						blurDataURL={desktopBlurDataURL ?? BRAND_BLUR_DATA_URL}
 						className="absolute inset-0 h-full w-full select-none object-cover object-top"
 					/>
 				) : (
