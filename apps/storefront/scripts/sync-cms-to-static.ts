@@ -16,7 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
 import sharp from "sharp";
-import { MOBILE_HERO_MAX_LONG_EDGE } from "../lib/content/cms-hero-image";
+import { CMS_IMAGE_MAX_LONG_EDGE, MOBILE_HERO_MAX_LONG_EDGE } from "../lib/content/cms-hero-image";
 
 const MEDUSA_URL = (
 	process.env.MEDUSA_BACKEND_URL ||
@@ -200,13 +200,17 @@ async function downloadAllImages(parsed: Record<string, unknown>): Promise<Map<s
 	if (mobileHeroUrls.size > 0) {
 		console.log(`   ↳ ${mobileHeroUrls.size} mobilnych hero (max ${MOBILE_HERO_MAX_LONG_EDGE}px)`);
 	}
+	console.log(`   ↳ pozostałe (max ${CMS_IMAGE_MAX_LONG_EDGE}px)`);
 	fs.mkdirSync(CMS_IMAGES_DIR, { recursive: true });
 
 	const urlMap = new Map<string, string>();
 	for (const url of urls) {
 		const filename = localFilenameFor(url);
-		const maxLongEdge = mobileHeroUrls.has(url) ? MOBILE_HERO_MAX_LONG_EDGE : undefined;
-		console.log(`  → ${filename}${maxLongEdge ? " (mobile hero)" : ""}`);
+		const maxLongEdge = mobileHeroUrls.has(url)
+			? MOBILE_HERO_MAX_LONG_EDGE
+			: CMS_IMAGE_MAX_LONG_EDGE;
+		const label = mobileHeroUrls.has(url) ? " (mobile hero)" : "";
+		console.log(`  → ${filename}${label}`);
 		const ok = await downloadImage(url, filename, maxLongEdge);
 		if (ok) urlMap.set(url, `/images/cms/${filename}`);
 	}
