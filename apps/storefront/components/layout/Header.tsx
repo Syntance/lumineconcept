@@ -4,7 +4,6 @@ import type { HeroPrefetchBundles } from "@/lib/content/hero-prefetch";
 import { HeaderMobileToggle } from "./HeaderMobileToggle";
 import { HeaderIcons } from "./HeaderIcons";
 import { HeaderLogoLink } from "./HeaderLogoLink";
-import { HeaderHeroNavLink } from "./HeaderHeroNavLink";
 import { SHOP_HUB_HREF, SHOP_NAV_DROPDOWN } from "./shop-nav";
 
 const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Tablice z logo" }] as const;
@@ -81,14 +80,9 @@ export function Header({ heroPrefetch }: { heroPrefetch: HeroPrefetchBundles }) 
               </div>
             </div>
             {NAV_LEFT.map((link) => (
-              <HeaderHeroNavLink
-                key={link.href}
-                href={link.href}
-                className={NAV_LINK_CLASS}
-                label={link.label}
-                desktopUrls={heroPrefetch.logo3d.desktop}
-                mobileUrls={heroPrefetch.logo3d.mobile}
-              />
+              <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
+                {link.label}
+              </Link>
             ))}
           </nav>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useLayoutEffect } from "react";
 
 const DESKTOP_MQ = "(min-width: 1024px)";
 
@@ -19,7 +19,7 @@ type HeroImageCacheWarmerProps = {
 };
 
 /**
- * Dogrzewa cache hero po idle — uzupełnia preload z layoutu (szczególnie soft-nav na prod).
+ * Prefetch hero po stronie klienta — bez `<link>` w RSC (unika hydration mismatch z hoistem do head).
  */
 export function HeroImageCacheWarmer({
 	desktopUrls,
@@ -30,13 +30,14 @@ export function HeroImageCacheWarmer({
 		warmImageCache(urls);
 	}, [desktopUrls, mobileUrls]);
 
+	useLayoutEffect(() => {
+		warm();
+	}, [warm]);
+
 	useEffect(() => {
-		if (typeof window.requestIdleCallback === "function") {
-			const id = window.requestIdleCallback(warm, { timeout: 1500 });
-			return () => window.cancelIdleCallback(id);
-		}
-		const timer = window.setTimeout(warm, 300);
-		return () => window.clearTimeout(timer);
+		if (typeof window.requestIdleCallback !== "function") return;
+		const id = window.requestIdleCallback(warm, { timeout: 3000 });
+		return () => window.cancelIdleCallback(id);
 	}, [warm]);
 
 	return null;

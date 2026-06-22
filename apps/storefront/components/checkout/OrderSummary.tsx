@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { ExpressToggle } from "@/components/cart/ExpressToggle";
 import { CartConfiguratorDetails } from "@/components/cart/CartConfiguratorDetails";
+import { PromoCodeField } from "@/components/checkout/PromoCodeField";
 import { formatPrice } from "@/lib/utils";
 import {
   normalizeShippingOptionsForDisplay,
@@ -30,6 +31,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
     total,
     expressDelivery,
     expressSurcharge,
+    discountTotal,
     grandTotal,
   } = useCart();
 
@@ -159,6 +161,10 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
         <ExpressToggle compact />
       </div>
 
+      <div className="mb-4">
+        <PromoCodeField compact />
+      </div>
+
       <div className="border-t border-brand-200 pt-4 space-y-2 text-sm">
         <div className="flex justify-between">
           <span className="text-brand-600">Produkty</span>
@@ -185,6 +191,14 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
             <span className="text-brand-600">Express (+50% produktów)</span>
             <span className="font-medium tabular-nums text-brand-800">
               {formatPrice(expressSurcharge)}
+            </span>
+          </div>
+        )}
+        {discountTotal > 0 && (
+          <div className="flex justify-between">
+            <span className="text-brand-600">Zniżka</span>
+            <span className="font-medium tabular-nums text-emerald-700">
+              −{formatPrice(discountTotal)}
             </span>
           </div>
         )}

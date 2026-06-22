@@ -52,10 +52,13 @@ interface CartState {
    */
   hasShippingMethodSelection: boolean;
   tax_total: number;
+  discount_total: number;
   total: number;
   itemCount: number;
   /** Metadata koszyka (Medusa), m.in. express_delivery */
   metadata: Record<string, string>;
+  /** Kody promocyjne zastosowane w koszyku (bez kodów cienia dostawy w UI). */
+  appliedPromoCodes: string[];
 }
 
 interface CartContextType extends CartState {
@@ -81,6 +84,10 @@ interface CartContextType extends CartState {
   removeItem: (lineItemId: string) => Promise<void>;
   refreshCart: () => Promise<void>;
   applyDiscount: (code: string) => Promise<void>;
+  removeDiscount: (code: string) => Promise<void>;
+  /** Suma zniżek z Medusy (PLN, dziesiętne). */
+  discountTotal: number;
+  appliedPromoCodes: string[];
   /** true, gdy w metadata jest express_delivery = true / "true" */
   expressDelivery: boolean;
   setExpressDelivery: (enabled: boolean) => Promise<void>;
@@ -173,9 +180,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     shipping_total: 0,
     hasShippingMethodSelection: false,
     tax_total: 0,
+    discount_total: 0,
     total: 0,
     itemCount: 0,
     metadata: {},
+    appliedPromoCodes: [],
   });
 
   const normalizeCartMetadata = (raw: unknown): Record<string, string> => {
@@ -198,6 +207,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const hasShippingMethodSelection =
         (Array.isArray(shippingMethods) && shippingMethods.length > 0) ||
         shippingT > 0;
+      const promotions = (rawCart.promotions as Array<{ code?: string }> | undefined) ?? [];
+      const appliedPromoCodes = promotions
+        .map((promotion) => promotion.code?.trim())
+        .filter((code): code is string => Boolean(code));
       setCart({
         id: rawCart.id as string,
         items,
@@ -205,9 +218,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         shipping_total: shippingT,
         hasShippingMethodSelection,
         tax_total: numberFromUnknown(rawCart.tax_total) ?? 0,
+        discount_total: numberFromUnknown(rawCart.discount_total) ?? 0,
         total: numberFromUnknown(rawCart.total) ?? 0,
         itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
         metadata: normalizeCartMetadata(rawCart.metadata),
+        appliedPromoCodes,
       });
     },
     [],
@@ -577,6 +592,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         const updated = await cartApi.applyPromotionCode(cart.id, code);
         updateCartState(updated as unknown as Record<string, unknown>);
+        const discount = numberFromUnknown(
+          (updated as Record<string, unknown>).discount_total,
+        ) ?? 0;
+        if (discount <= 0) {
+          const promotions =
+            ((updated as Record<string, unknown>).promotions as Array<{ code?: string }>) ?? [];
+          const hasCode = promotions.some(
+            (promotion) => promotion.code?.toUpperCase() === code.trim().toUpperCase(),
+          );
+          if (!hasCode) {
+            throw new Error("Kod nieprawidłowy lub wygasł");
+          }
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [cart.id, updateCartState],
+  );
+
+  const removeDiscount = useCallback(
+    async (code: string) => {
+      if (!cart.id) return;
+      setIsLoading(true);
+      try {
+        const updated = await cartApi.removePromotionCode(cart.id, code);
+        updateCartState(updated as unknown as Record<string, unknown>);
       } finally {
         setIsLoading(false);
       }
@@ -647,6 +689,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem,
       refreshCart,
       applyDiscount,
+      removeDiscount,
+      discountTotal: cart.discount_total,
+      appliedPromoCodes: cart.appliedPromoCodes,
       expressDelivery,
       setExpressDelivery,
       expressSurcharge,
@@ -666,6 +711,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     removeItem,
     refreshCart,
     applyDiscount,
+    removeDiscount,
     setExpressDelivery,
     shippingEstimate,
   ]);

@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import { loadAdmin } from "@magazyn/core/auth/load";
+import { magazynConfig } from "@magazyn/magazyn.config";
 import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
+import {
+	listProductOptionsForPromo,
+	listPromoCodesForProduct,
+} from "@magazyn/modules/promotions/store";
 import { getAdminProduct, listCategoryOptions, listGlobalConfigOptions } from "./store";
 import { ProductForm } from "./product-form";
 
@@ -12,12 +17,16 @@ export const dynamic = "force-dynamic";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
-	const [product, categories, configOptions, colorCategories] = await loadAdmin(() =>
+	const promotionsEnabled = magazynConfig.modules.promotions === true;
+	const [product, categories, configOptions, colorCategories, productPromos, promoProducts] =
+		await loadAdmin(() =>
 		Promise.all([
 			getAdminProduct(id),
 			listCategoryOptions(),
 			listGlobalConfigOptions(),
 			getColorCategories(),
+			promotionsEnabled ? listPromoCodesForProduct(id) : Promise.resolve([]),
+			promotionsEnabled ? listProductOptionsForPromo() : Promise.resolve([]),
 		]),
 	);
 	if (!product) notFound();
@@ -33,6 +42,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 				categories={categories}
 				configOptions={configOptions}
 				colorCategories={colorCategories}
+				productPromos={productPromos}
+				promoProducts={promoProducts}
 			/>
 		</div>
 	);

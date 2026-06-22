@@ -1,4 +1,4 @@
-import { BarChart3, LayoutGrid, Mail, Package, FileText, Settings, ShoppingBag, Tags, type LucideIcon } from "lucide-react";
+import { BarChart3, LayoutGrid, Mail, Package, FileText, Settings, ShoppingBag, Tags, Ticket, type LucideIcon } from "lucide-react";
 import { magazynConfig } from "../../magazyn.config";
 import type { ModulesToggle } from "../config/types";
 
@@ -13,12 +13,13 @@ const MODULE_NAV: Record<keyof ModulesToggle, { segment: string; label: string; 
 	orders: { segment: "zamowienia", label: "Zamówienia", icon: ShoppingBag },
 	products: { segment: "produkty", label: "Produkty", icon: Package },
 	categories: { segment: "kategorie", label: "Kategorie", icon: Tags },
+	promotions: { segment: "kody-promocyjne", label: "Kody promocyjne", icon: Ticket },
 	emails: { segment: "maile", label: "E-maile", icon: Mail },
 	settings: { segment: "ustawienia", label: "Ustawienia sklepu", icon: Settings },
 	content: { segment: "cms", label: "CMS", icon: FileText },
 };
 
-const ORDER: Array<keyof ModulesToggle> = ["orders", "products", "categories", "content", "emails", "settings"];
+const ORDER: Array<keyof ModulesToggle> = ["orders", "products", "categories", "promotions", "content", "emails", "settings"];
 
 /** Buduje listę linków nawigacji z włączonych modułów (magazyn.config.ts). */
 export function buildNavItems(): NavItem[] {

@@ -121,11 +121,38 @@ export async function removeLineItem(cartId: string, lineItemId: string) {
 }
 
 export async function applyPromotionCode(cartId: string, code: string) {
+  const base = resolveMedusaFetchBase();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+      : {}),
+  };
+
+  const params = cartFieldsSearchParams();
+  const customRes = await fetch(`${base}/store/custom/apply-promo-code`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ cart_id: cartId, code: code.trim() }),
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (customRes.ok) {
+    const data = (await customRes.json()) as { cart: unknown };
+    return data.cart;
+  }
+
+  const err = (await customRes.json().catch(() => ({}))) as { message?: string };
+  if (customRes.status === 400) {
+    throw new Error(err.message ?? "Kod nieprawidłowy lub wygasł");
+  }
+
   const response = await withMedusaTimeout(
     medusa.store.cart.update(
       cartId,
       {
-        promo_codes: [code],
+        promo_codes: [code.trim()],
       },
       CART_RETRIEVE_QUERY,
     ),
@@ -133,6 +160,37 @@ export async function applyPromotionCode(cartId: string, code: string) {
     "cart.update",
   );
   return response.cart;
+}
+
+export async function removePromotionCode(cartId: string, code: string) {
+  const base = resolveMedusaFetchBase();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+      ? { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }
+      : {}),
+  };
+
+  const customRes = await fetch(`${base}/store/custom/remove-promo-code`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ cart_id: cartId, code: code.trim() }),
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (customRes.ok) {
+    const data = (await customRes.json()) as { cart: unknown };
+    return data.cart;
+  }
+
+  const params = cartFieldsSearchParams();
+  const res = await storeApiFetch(`/store/carts/${cartId}/promotions?${params}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ promo_codes: [code.trim()] }),
+  });
+  return parseCartResponse(res);
 }
 
 /**

@@ -9,6 +9,8 @@ import { cn } from "@magazyn/core/lib/cn";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import type { ColorCategoryDefinition, ColorCategoryId } from "./color-categories";
 import type { AdminProductDetail, CategoryOption, ConfigOption } from "./store";
+import type { AdminPromoCode, ProductOption } from "@magazyn/modules/promotions/types";
+import { ProductPromotionsSection } from "@magazyn/modules/promotions/product-promotions-section";
 import { saveProductAction, uploadImagesAction } from "./actions";
 import { ProductImagesEditor } from "./product-images-editor";
 import { ProductConfigSection } from "./product-config-section";
@@ -50,12 +52,21 @@ type Props = {
 	categories: CategoryOption[];
 	configOptions: ConfigOption[];
 	colorCategories: ColorCategoryDefinition[];
+	productPromos?: AdminPromoCode[];
+	promoProducts?: ProductOption[];
 };
 
 const inputClass =
 	"w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export function ProductForm({ product, categories, configOptions, colorCategories }: Props) {
+export function ProductForm({
+	product,
+	categories,
+	configOptions,
+	colorCategories,
+	productPromos = [],
+	promoProducts = [],
+}: Props) {
 	const router = useRouter();
 	const titleId = useId();
 
@@ -554,6 +565,15 @@ export function ProductForm({ product, categories, configOptions, colorCategorie
 						/>
 					}
 				/>
+
+				{product && magazynConfig.modules.promotions ? (
+					<ProductPromotionsSection
+						productId={product.id}
+						productTitle={product.title}
+						promos={productPromos}
+						products={promoProducts}
+					/>
+				) : null}
 			</div>
 
 			<aside className="flex h-fit flex-col gap-5 rounded-xl border border-border bg-card p-5">
