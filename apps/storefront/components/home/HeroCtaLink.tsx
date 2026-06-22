@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
 	forwardRef,
 	type AnchorHTMLAttributes,
@@ -73,13 +73,10 @@ export const HeroCtaLink = forwardRef<HTMLAnchorElement, HeroCtaLinkProps>(
 	function HeroCtaLink({ href, onClick, children, ...rest }, ref) {
 		const { track } = useAnalytics();
 		const normalized = normalizeHeroCtaHref(href);
-		const pathname = usePathname();
-		const searchParams = useSearchParams();
-		const query = searchParams.toString();
-		const currentPath = query ? `${pathname}?${query}` : pathname;
+		const pathname = usePathname() ?? "/";
 
 		const isHashScroll = shouldUseHashScroll(normalized);
-		const displayHref = isHashScroll ? currentPath : hrefWithoutFragment(normalized);
+		const displayHref = isHashScroll ? pathname : hrefWithoutFragment(normalized);
 
 		const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
 			track("cta_click", {
