@@ -4,7 +4,6 @@ import type { HeroContent } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
-import { HeroImagePreload } from "./HeroImagePreload";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";
 import { MobileHeroImageBand } from "./MobileHeroImageBand";
@@ -41,7 +40,6 @@ export async function HeroSection({
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
-			<HeroImagePreload desktopUrl={desktopImageUrl} mobileUrl={mobileDisplayUrl} />
 			<div className="lg:hidden">
 				<MobileHeroViewport
 					image={

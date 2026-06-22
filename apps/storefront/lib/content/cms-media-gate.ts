@@ -36,11 +36,22 @@ export function lookupPublishedMediaUrl(
 	url: string,
 	urlMap: Readonly<Record<string, string>>,
 ): string | undefined {
-	if (url.startsWith("/images/cms/")) return url;
-	if (urlMap[url]) return urlMap[url];
+	const trimmed = url.trim();
+	if (trimmed.startsWith("/images/cms/")) return trimmed;
+	if (urlMap[trimmed]) return urlMap[trimmed];
 
-	const resolved = resolveMedusaMediaUrl(url);
-	if (resolved && urlMap[resolved]) return urlMap[resolved];
+	// Try without query params (e.g. R2 URLs sometimes have cache-busting params).
+	const withoutQuery = trimmed.split("?")[0] ?? trimmed;
+	if (withoutQuery !== trimmed && urlMap[withoutQuery]) return urlMap[withoutQuery];
+
+	const resolved = resolveMedusaMediaUrl(trimmed);
+	if (resolved) {
+		if (urlMap[resolved]) return urlMap[resolved];
+		// Medusa backend uses /static/ path; R2 bucket may expose the same file under
+		// /cms-uploads/. Try swapping the path segment so the map key matches.
+		const altResolved = resolved.replace(/\/static\//, "/cms-uploads/");
+		if (altResolved !== resolved && urlMap[altResolved]) return urlMap[altResolved];
+	}
 
 	return undefined;
 }

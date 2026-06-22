@@ -3,6 +3,28 @@ import { normalizeHeroCtaHref } from "./cta-href";
 import type { HeroContent } from "./types";
 import { HOME_HERO_DEFAULT, LOGO_HERO_DEFAULT } from "./defaults";
 import { resolveCmsAssetUrl } from "./asset-url";
+import { STATIC_CMS_CONTENT } from "./static-cms-content";
+
+type StaticHeroImages = { desktopImageUrl?: string; mobileImageUrl?: string };
+
+/** Ścieżki z ostatniego buildu — zawsze lokalne `/images/cms/…`. Gwarancja działania gdy CMS niedostępny. */
+function getStaticHeroImages(pageKey: "home" | "logo-3d"): StaticHeroImages {
+	try {
+		const pages = (STATIC_CMS_CONTENT as Record<string, unknown>)?.["magazyn_page_content"] as
+			| Record<string, unknown>
+			| undefined;
+		const hero = pages?.[pageKey === "logo-3d" ? "logo-3d" : "home"] as
+			| Record<string, unknown>
+			| undefined;
+		const h = (hero?.["hero"] ?? hero) as Record<string, string> | undefined;
+		return {
+			desktopImageUrl: typeof h?.desktopImageUrl === "string" ? h.desktopImageUrl : undefined,
+			mobileImageUrl: typeof h?.mobileImageUrl === "string" ? h.mobileImageUrl : undefined,
+		};
+	} catch {
+		return {};
+	}
+}
 
 export function heroToPortalConfig(hero: HeroContent): HeroPortalContentConfig {
 	return {
@@ -25,18 +47,16 @@ export function resolveHomeHero(hero?: HeroContent): {
 	mobileBlurDataURL?: string;
 } {
 	const resolved = hero ?? HOME_HERO_DEFAULT;
-	const desktopImageUrl = resolveCmsAssetUrl(resolved.desktopImageUrl?.trim());
+	const staticFallback = getStaticHeroImages("home");
+
+	const desktopImageUrl =
+		resolveCmsAssetUrl(resolved.desktopImageUrl?.trim()) ??
+		resolveCmsAssetUrl(staticFallback.desktopImageUrl);
 	const mobileImageUrl =
-		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) || desktopImageUrl;
-	
-	// Debug: loguj finalne URL-e
-	if (resolved.desktopImageUrl && !desktopImageUrl) {
-		console.error("[Hero] Nie udało się zresolvować desktopImageUrl:", resolved.desktopImageUrl);
-	}
-	if (resolved.mobileImageUrl && !mobileImageUrl) {
-		console.error("[Hero] Nie udało się zresolvować mobileImageUrl:", resolved.mobileImageUrl);
-	}
-	
+		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) ??
+		desktopImageUrl ??
+		resolveCmsAssetUrl(staticFallback.mobileImageUrl);
+
 	return {
 		portal: heroToPortalConfig(resolved),
 		...(desktopImageUrl ? { desktopImageUrl } : {}),
@@ -68,9 +88,15 @@ export function resolveLogoHero(hero?: HeroContent): {
 	mobileBlurDataURL?: string;
 } {
 	const resolved: HeroContent = { ...LOGO_HERO_DEFAULT, ...hero };
-	const desktopImageUrl = resolveCmsAssetUrl(resolved.desktopImageUrl?.trim());
+	const staticFallback = getStaticHeroImages("logo-3d");
+
+	const desktopImageUrl =
+		resolveCmsAssetUrl(resolved.desktopImageUrl?.trim()) ??
+		resolveCmsAssetUrl(staticFallback.desktopImageUrl);
 	const mobileImageUrl =
-		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) || desktopImageUrl;
+		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) ??
+		desktopImageUrl ??
+		resolveCmsAssetUrl(staticFallback.mobileImageUrl);
 
 	return {
 		portal: heroToPortalConfig(resolved),

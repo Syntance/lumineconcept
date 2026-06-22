@@ -10,7 +10,6 @@ import { requireAdminSession } from "@magazyn/core/auth/require-session";
 import { recordAudit } from "@magazyn/core/audit/audit-log";
 import { resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
 import { uploadCmsAssetFile, formatCmsUploadError } from "@/lib/product-upload/product-file";
-import { slugify } from "@magazyn/core/lib/slug";
 import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
 import {
 	createAdminProduct,
@@ -19,6 +18,7 @@ import {
 	type ProductFormValues,
 	updateAdminProduct,
 } from "./store";
+import { resolveProductHandleForSave } from "./product-handle";
 
 export type SaveProductState = { error: string | null; ok: boolean };
 
@@ -149,10 +149,12 @@ const productSchema = z.object({
 export type ProductPayload = z.input<typeof productSchema>;
 
 function toValues(data: z.infer<typeof productSchema>): ProductFormValues {
-	const handle =
-		data.id && data.handle?.trim()
-			? data.handle.trim()
-			: slugify(data.title);
+	const handle = resolveProductHandleForSave({
+		id: data.id,
+		title: data.title,
+		handle: data.handle,
+		status: data.status,
+	});
 
 	return {
 		title: data.title,
@@ -208,10 +210,11 @@ export async function saveProductAction(payload: ProductPayload): Promise<SavePr
 
 	const values = toValues(data);
 	const productHandle = values.handle;
+	const previousHandle = data.handle?.trim();
 
 	try {
 		if (data.id) {
-			await updateAdminProduct(data.id, values, productHandle);
+			await updateAdminProduct(data.id, values);
 		} else {
 			await createAdminProduct(values);
 		}
@@ -228,6 +231,11 @@ export async function saveProductAction(payload: ProductPayload): Promise<SavePr
 		revalidatePath(`/sklep/gotowe-wzory/${productHandle}`);
 		revalidatePath(`/sklep/logo-3d/${productHandle}`);
 		revalidatePath(`/sklep/certyfikaty/${productHandle}`);
+	}
+	if (previousHandle && previousHandle !== productHandle) {
+		revalidatePath(`/sklep/gotowe-wzory/${previousHandle}`);
+		revalidatePath(`/sklep/logo-3d/${previousHandle}`);
+		revalidatePath(`/sklep/certyfikaty/${previousHandle}`);
 	}
 	revalidatePath(PRODUCTS_PATH);
 

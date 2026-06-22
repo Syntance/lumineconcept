@@ -30,17 +30,22 @@ export function MobileHeroImageBand({
 				alt=""
 				width={MOBILE_HERO_BAND_WIDTH}
 				height={MOBILE_HERO_BAND_HEIGHT}
-				loading={priority ? "eager" : "lazy"}
-				fetchPriority={priority ? "high" : undefined}
+				/*
+				 * `priority` = kluczowe dla LCP na mobile:
+				 *   – Next.js 15 / React 19 wywołuje `ReactDOM.preload()` który trafia
+				 *     do `<head>` natychmiast, nawet gdy komponent jest zagnieżdżony
+				 *     głęboko w async tree (czego zwykły `<link rel=preload>` w JSX nie
+				 *     gwarantuje przy streaming SSR).
+				 *   – Ustawia też `loading="eager"` i `fetchPriority="high"` implicite.
+				 *   – Preload nie jest media-scoped (obowiązuje też na desktop), ale
+				 *     mobile hero to tylko ~75 KB — koszt pomijalny.
+				 */
+				priority={priority}
 				sizes="100vw"
 				/*
-				 * Element LCP na mobile. Serwujemy PREBUILT statyczny WebP (q92) prosto
-				 * z `/images/cms/` (CDN, cache 1 rok) — `unoptimized` celowo:
-				 *  - znika round-trip do `/_next/image` (na zimnym teście Lighthouse
-				 *    on-demand optymalizacja to ~2 s luki FCP→LCP; cache edge jest pusty),
-				 *  - `<img src>` = surowy URL = 1:1 z `<link rel=preload>` wstrzykniętym
-				 *    przez `priority` → element LCP odkrywany od razu z HTML.
-				 * Jakość bez zmian (źródło to nasz WebP q92, nie down-encodujemy ponownie).
+				 * `unoptimized` — plik to już WebP q92 z prebuild; nie kompresujemy
+				 * ponownie przez /_next/image. Eliminuje round-trip do edge optimizera
+				 * na zimnym starcie (cache MISS = +2 s FCP→LCP wg Lighthouse).
 				 */
 				unoptimized
 				placeholder="blur"
