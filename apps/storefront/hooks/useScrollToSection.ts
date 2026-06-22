@@ -4,7 +4,7 @@
  * Notion "PostHog i eventy → scroll_to_section".
  *
  * Lista anchorów wzięta wprost z dokumentu — patrz `SECTION_IDS`. Hook
- * wywołujemy globalnie (AnalyticsProvider), bo te same identyfikatory pojawiają
+ * wywołujemy globalnie (AnalyticsEffects), bo te same identyfikatory pojawiają
  * się na wielu podstronach i pojedyncze komponenty same nie wiedzą, czy
  * sekcja istnieje.
  *
