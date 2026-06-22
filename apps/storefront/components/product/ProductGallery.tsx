@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 
 import { ProductWatermark } from "@/components/product/ProductWatermark";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import {
   PRODUCT_GALLERY_MAX_WIDTH_STYLE,
   PRODUCT_IMAGE_ASPECT_CLASS,
@@ -47,21 +48,19 @@ function GalleryMainImage({
   priority: boolean;
 }) {
   return (
-    <>
-      {/* Skeleton tło — zapobiega białemu błyskowi i CLS */}
-      <div className="absolute inset-0 bg-brand-50 animate-pulse" aria-hidden />
-      <Image
-        src={url}
-        alt={alt}
-        fill
-        priority={priority}
-        fetchPriority={priority ? "high" : undefined}
-        loading={priority ? undefined : "lazy"}
-        className="relative z-10 object-cover object-center"
-        sizes="(max-width: 1024px) 100vw, 50vw"
-        unoptimized={medusaImageUnoptimized(url)}
-      />
-    </>
+    <Image
+      src={url}
+      alt={alt}
+      fill
+      priority={priority}
+      fetchPriority={priority ? "high" : undefined}
+      loading={priority ? undefined : "lazy"}
+      placeholder="blur"
+      blurDataURL={BRAND_BLUR_DATA_URL}
+      className="relative z-10 object-cover object-center"
+      sizes="(max-width: 1024px) 100vw, 50vw"
+      unoptimized={medusaImageUnoptimized(url)}
+    />
   );
 }
 
@@ -247,12 +246,13 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                 aria-selected={index === selectedIndex}
                 aria-label={`Zdjęcie ${index + 1} z ${images.length}`}
               >
-                <div className="absolute inset-0 bg-brand-50" aria-hidden />
                 <Image
                   src={image.url}
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
                   fill
                   loading={index === 0 ? "eager" : "lazy"}
+                  placeholder="blur"
+                  blurDataURL={BRAND_BLUR_DATA_URL}
                   sizes="(max-width: 1024px) 3.5rem, 8.25rem"
                   className="relative z-10 object-cover"
                   unoptimized={medusaImageUnoptimized(image.url)}
