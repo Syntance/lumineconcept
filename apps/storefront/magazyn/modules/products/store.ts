@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { cache } from "react";
 import { adminFetch } from "@magazyn/core/medusa/client";
+import { AdminApiError } from "@magazyn/core/medusa/errors";
 import { slugify } from "@magazyn/core/lib/slug";
 import { resolveMedusaMediaUrl, resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
 import { magazynConfig } from "@magazyn/magazyn.config";
@@ -72,6 +73,7 @@ import {
 	MIN_ORDER_QUANTITY_META_KEY,
 } from "@/lib/products/min-order-quantity";
 import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
+import { isDuplicateProductHandle, slugifyProductTitle } from "./product-handle";
 
 export { buildColorOptionTitles } from "@/lib/products/color-slot-config";
 
@@ -644,12 +646,17 @@ export async function createAdminProduct(values: ProductFormValues): Promise<str
 	return productId;
 }
 
-export async function updateAdminProduct(id: string, values: ProductFormValues): Promise<void> {
+export async function updateAdminProduct(
+	id: string,
+	values: ProductFormValues,
+	previousHandle?: string | null,
+): Promise<void> {
 	const imagePayload = productImagesPayload(values.images);
+	const nextHandle = values.handle.trim();
 
 	const body: Record<string, unknown> = {
 		title: values.title.trim(),
-		handle: values.handle.trim(),
+		handle: nextHandle,
 		status: values.status,
 		description: values.description.trim(),
 		thumbnail: imagePayload.thumbnail,
@@ -673,6 +680,35 @@ export async function updateAdminProduct(id: string, values: ProductFormValues):
 
 	if (values.price != null) {
 		await syncProductBasePrice(id, values.price);
+	}
+
+	const prior = previousHandle?.trim() ?? "";
+	if (!prior || prior !== nextHandle || isDuplicateProductHandle(prior)) {
+		await assertProductHandleSynced(id, nextHandle);
+	}
+}
+
+async function assertProductHandleSynced(productId: string, expectedHandle: string): Promise<void> {
+	const readHandle = async (): Promise<string> => {
+		const data = await adminFetch<{ product: { handle: string } }>(
+			`/admin/products/${productId}?fields=handle`,
+			{ fresh: true },
+		);
+		return data.product.handle.trim();
+	};
+
+	if ((await readHandle()) === expectedHandle) return;
+
+	await adminFetch(`/admin/products/${productId}`, {
+		method: "POST",
+		body: JSON.stringify({ handle: expectedHandle }),
+	});
+
+	if ((await readHandle()) !== expectedHandle) {
+		throw new AdminApiError(
+			`Nie udało się ustawić adresu „/${expectedHandle}”. Slug może być już zajęty przez inny produkt.`,
+			409,
+		);
 	}
 }
 
@@ -709,8 +745,11 @@ function buildDuplicateProductTitle(title: string): string {
 }
 
 function buildDuplicateProductHandle(sourceHandle: string, title: string): string {
-	const fromTitle = slugify(buildDuplicateProductTitle(title));
-	if (fromTitle) return fromTitle;
+	const duplicateTitle = buildDuplicateProductTitle(title);
+	const fromTitle = slugifyProductTitle(duplicateTitle);
+	if (fromTitle && fromTitle !== sourceHandle) {
+		return `${fromTitle}-kopia`;
+	}
 	const fromHandle = slugify(`${sourceHandle}-kopia`);
 	if (fromHandle) return fromHandle;
 	return `produkt-kopia-${Date.now().toString(36)}`;
