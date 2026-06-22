@@ -1,5 +1,5 @@
 import { resolveMedusaMediaUrl } from "@magazyn/core/medusa/media-url";
-import { isCmsMediaAssetUrl } from "./cms-media-gate";
+import { isCmsMediaAssetUrl, isLocalCmsDirectMediaEnabled } from "./cms-media-gate";
 
 /** Assety statyczne storefrontu w `public/` — nie prefiksuj backendem Medusa. */
 const STOREFRONT_PUBLIC_PREFIXES = ["/images/", "/icons/"] as const;
@@ -46,14 +46,18 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 		return pathOnly.split("?")[0] || pathOnly;
 	}
 
-	// Nieopublikowane uploady CMS (R2, Medusa `/static/` itd.).
+	// Nieopublikowane uploady CMS (R2, Medusa `/static/` itd.) — prod: gate; dev: bezpośrednio.
 	if (isCmsMediaAssetUrl(trimmed)) {
+		if (isLocalCmsDirectMediaEnabled()) {
+			return resolveMedusaMediaUrl(trimmed) ?? trimmed;
+		}
 		return undefined;
 	}
 
 	const resolved = resolveMedusaMediaUrl(trimmed);
 
 	if (resolved && isCmsMediaAssetUrl(resolved)) {
+		if (isLocalCmsDirectMediaEnabled()) return resolved;
 		return undefined;
 	}
 

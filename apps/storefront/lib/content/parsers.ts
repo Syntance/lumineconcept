@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { normalizeAboutParagraphsForSave } from "./about-text";
 import { resolveCmsAssetUrl } from "./asset-url";
-import { isCmsMediaAssetUrl } from "./cms-media-gate";
+import { isCmsMediaAssetUrl, isLocalCmsDirectMediaEnabled } from "./cms-media-gate";
 import { normalizeHeroCtaHref } from "./cta-href";
 import {
 	ABOUT_HERO_DEFAULT,
@@ -427,6 +427,8 @@ export function parsePageSeoMapForAdmin(raw: unknown): PageSeoMap {
 }
 
 export function parsePageContentMap(raw: unknown): PageContentMap {
+	// Dev: traktuj jak panel — R2 URL-e bez filtrowania.
+	if (isLocalCmsDirectMediaEnabled()) return parsePageContentMapForAdmin(raw);
 	const parsed = parseJsonValue(raw, pageContentMapSchema) ?? {};
 	const merged: PageContentMap = { ...DEFAULT_PAGE_CONTENT };
 	for (const [key, value] of Object.entries(parsed)) {

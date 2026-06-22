@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { serverEnv } from "@magazyn/core/env";
 import { loginWithEmailPassword } from "@magazyn/core/medusa/client";
+import { isLocalCmsDirectMediaEnabled } from "./cms-media-gate";
 import {
 	MAGAZYN_GLOBAL_CONTENT_KEY,
 	MAGAZYN_PAGE_CONTENT_KEY,
@@ -59,10 +60,14 @@ async function fetchStoreMetadataWithRetry(token: string): Promise<Response | nu
 		try {
 			const res = await fetch(url, {
 				headers: { Authorization: `Bearer ${token}` },
-				next: {
-					revalidate: REVALIDATE_SECONDS,
-					tags: [MAGAZYN_CONTENT_CACHE_TAG, "site-settings"],
-				},
+				...(isLocalCmsDirectMediaEnabled()
+					? { cache: "no-store" as const }
+					: {
+							next: {
+								revalidate: REVALIDATE_SECONDS,
+								tags: [MAGAZYN_CONTENT_CACHE_TAG, "site-settings"],
+							},
+						}),
 				signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
 			});
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ProductCard } from "@/components/product/ProductCard";
 import { FilterSidebar } from "@/components/product/FilterSidebar";
@@ -138,6 +139,7 @@ export function ShopGridClient({
   const [products, setProducts] = useState<SimpleProduct[]>(initialProducts);
   const [totalFiltered, setTotalFiltered] = useState(totalCount);
   const [listLoading, setListLoading] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
@@ -156,6 +158,7 @@ export function ShopGridClient({
   });
 
   const isFirstListEffectRef = useRef(true);
+  const prevCategoryRef = useRef(filters.category);
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
   const skipUrlFromFiltersRef = useRef(false);
@@ -315,12 +318,19 @@ export function ShopGridClient({
   useEffect(() => {
     if (isFirstListEffectRef.current) {
       isFirstListEffectRef.current = false;
+      prevCategoryRef.current = filtersRef.current.category;
       return;
     }
 
     let cancelled = false;
     const f = filtersRef.current;
+    const categoryChanged = prevCategoryRef.current !== f.category;
+    prevCategoryRef.current = f.category;
+
     setListLoading(true);
+    if (categoryChanged) {
+      setCategoryLoading(true);
+    }
 
     fetch(buildProductsUrl(0, PAGE_SIZE, f, resolvedMedusaScopeMap))
       .then(async (res) => {
@@ -337,7 +347,12 @@ export function ShopGridClient({
         }
       })
       .finally(() => {
-        if (!cancelled) setListLoading(false);
+        if (!cancelled) {
+          setListLoading(false);
+          if (categoryChanged) {
+            setCategoryLoading(false);
+          }
+        }
       });
 
     return () => {
@@ -445,7 +460,25 @@ export function ShopGridClient({
 
         {products.length > 0 ? (
           <>
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:mt-4 lg:grid-cols-3">
+            <div className="relative mt-4 lg:mt-4">
+              {categoryLoading ? (
+                <div
+                  className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-brand-50/85 backdrop-blur-[1px]"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Ładowanie kategorii"
+                >
+                  <Loader2
+                    className="h-10 w-10 animate-spin text-brand-700 motion-reduce:animate-none"
+                    aria-hidden
+                  />
+                </div>
+              ) : null}
+              <div
+                className={`grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3${
+                  categoryLoading ? " pointer-events-none opacity-60" : ""
+                }`}
+              >
               {products.map((product, index) => (
                 <div key={product.id} className="relative">
                   <ProductCard
@@ -468,6 +501,7 @@ export function ShopGridClient({
                   />
                 </div>
               ))}
+              </div>
             </div>
             {showLoadMore && (
               <div className="mt-8 flex justify-center">
@@ -482,6 +516,18 @@ export function ShopGridClient({
               </div>
             )}
           </>
+        ) : categoryLoading ? (
+          <div
+            className="flex min-h-[16rem] items-center justify-center py-16"
+            role="status"
+            aria-live="polite"
+            aria-label="Ładowanie kategorii"
+          >
+            <Loader2
+              className="h-10 w-10 animate-spin text-brand-700 motion-reduce:animate-none"
+              aria-hidden
+            />
+          </div>
         ) : (
           <div className="py-16 text-center">
             <p className="text-brand-500">
