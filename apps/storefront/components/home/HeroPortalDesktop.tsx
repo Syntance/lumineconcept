@@ -46,6 +46,25 @@ type PortalLayout = {
   height: number;
 };
 
+/** SSR + pierwszy paint — portal widoczny od razu; useLayoutEffect dopasowuje wymiary. */
+const INITIAL_PORTAL_LAYOUT: Record<
+  `${HeroPortalSize}_${HeroPortalAlign}`,
+  PortalLayout
+> = {
+  home_left: { left: 130, width: 720, height: 920 },
+  home_center: { left: 260, width: 760, height: 940 },
+  content_left: { left: 95, width: 660, height: 900 },
+  content_center: { left: 220, width: 700, height: 910 },
+};
+
+function getInitialPortalLayout(
+  align: HeroPortalAlign,
+  portalSize: HeroPortalSize,
+): PortalLayout {
+  const key = `${portalSize}_${align}` as keyof typeof INITIAL_PORTAL_LAYOUT;
+  return INITIAL_PORTAL_LAYOUT[key];
+}
+
 type HeroPortalDesktopProps = {
   align?: HeroPortalAlign;
   content?: HeroPortalContentConfig;
@@ -167,7 +186,9 @@ export function HeroPortalDesktop({
   const homeCtaRef = useRef<HTMLAnchorElement>(null);
   const [scale, setScale] = useState(1);
   const [contentDropPx, setContentDropPx] = useState(0);
-  const [portalLayout, setPortalLayout] = useState<PortalLayout | null>(null);
+  const [portalLayout, setPortalLayout] = useState<PortalLayout>(() =>
+    getInitialPortalLayout(align, portalSize),
+  );
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -182,7 +203,6 @@ export function HeroPortalDesktop({
 
     const update = () => {
       if (!media.matches) {
-        setPortalLayout(null);
         return;
       }
 
@@ -269,21 +289,19 @@ export function HeroPortalDesktop({
             </div>
           ) : null}
 
-          {portalLayout ? (
-            <div
-              className="pointer-events-none absolute z-[3] select-none"
-              aria-hidden
-              style={{
-                left: portalLayout.left,
-                top: -CONTENT_TOP_PX,
-                width: portalLayout.width,
-                height: portalLayout.height,
-                backgroundImage: "url(/images/hero-portal.svg)",
-                backgroundSize: "100% 100%",
-                backgroundRepeat: "no-repeat",
-              }}
-            />
-          ) : null}
+          <div
+            className="pointer-events-none absolute z-[3] select-none"
+            aria-hidden
+            style={{
+              left: portalLayout.left,
+              top: -CONTENT_TOP_PX,
+              width: portalLayout.width,
+              height: portalLayout.height,
+              backgroundImage: "url(/images/hero-portal.svg)",
+              backgroundSize: "100% 100%",
+              backgroundRepeat: "no-repeat",
+            }}
+          />
 
           <PortalContentBlock
             align={align}
