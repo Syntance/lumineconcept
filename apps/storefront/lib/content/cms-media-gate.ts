@@ -19,9 +19,17 @@ export function isCmsMediaAssetUrl(value: unknown): boolean {
 	return /^https?:\/\//i.test(trimmed);
 }
 
-/** Gate zawsze włączony — localhost i prod zachowują się identycznie. */
+/**
+ * Dev = prod: obrazy CMS tylko z mapy prebuild (`/images/cms/…`).
+ * Bez sync mediów (`scripts/sync-cms-to-static.ts`) nowe uploady nie widać lokalnie.
+ */
+export function isLocalCmsDirectMediaEnabled(): boolean {
+	return false;
+}
+
+/** Gate wyłączony tylko na localhost dev; prod i preview bez zmian. */
 export function isRuntimeCmsMediaGateEnabled(_urlMap?: Readonly<Record<string, string>>): boolean {
-	return true;
+	return !isLocalCmsDirectMediaEnabled();
 }
 
 export function lookupPublishedMediaUrl(

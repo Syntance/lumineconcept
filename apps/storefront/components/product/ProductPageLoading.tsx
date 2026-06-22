@@ -4,7 +4,7 @@ type PageLoadingScreenProps = {
   ariaLabel?: string;
 };
 
-/** Jednolity krem ze spinnerem — PDP, listing sklepu, nawigacja między sekcjami. */
+/** Krem ze spinnerem — opcjonalnie importowany w miejscach poza App Router loading.tsx. */
 export function PageLoadingScreen({
   ariaLabel = "Ładowanie",
 }: PageLoadingScreenProps) {

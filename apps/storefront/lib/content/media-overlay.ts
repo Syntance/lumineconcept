@@ -90,7 +90,7 @@ function applyMediaGate(
 /**
  * Live blob z Medusy + mapa z prebuildu:
  * - opublikowany URL → `/images/cms/…`,
- * - nieopublikowany upload CMS → ukryty do sync/prebuild + Redeploy (localhost = prod).
+ * - nieopublikowany upload CMS → ukryty do sync/prebuild + Redeploy (prod); dev: bezpośrednio z CDN.
  */
 export function applyMediaUrlOverlay(
 	blob: RawStoreMetadataBlob,

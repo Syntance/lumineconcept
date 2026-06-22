@@ -52,6 +52,8 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
+    /** Musi obejmować quality z komponentów (np. hero 90, arch 92, karty 80). */
+    qualities: [75, 80, 90, 92],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 31536000,
@@ -178,9 +180,9 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://connect.facebook.net https://eu.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://www.googletagmanager.com https://challenges.cloudflare.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com https://www.google-analytics.com https://images.unsplash.com " + MEDUSA_BACKEND_URL + r2CspOrigin,
+              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com https://www.google-analytics.com https://images.unsplash.com https://*.r2.dev " + MEDUSA_BACKEND_URL + r2CspOrigin,
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://eu.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://connect.facebook.net https://www.facebook.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://api.mailerlite.com https://challenges.cloudflare.com " + MEDUSA_BACKEND_URL + " " + MEILISEARCH_HOST + SENTRY_CSP_HOSTS,
+              "connect-src 'self' https://eu.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://connect.facebook.net https://www.facebook.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://api.mailerlite.com https://challenges.cloudflare.com https://*.r2.dev " + MEDUSA_BACKEND_URL + " " + MEILISEARCH_HOST + SENTRY_CSP_HOSTS,
               "frame-src 'self' https://www.facebook.com https://challenges.cloudflare.com",
               "object-src 'none'",
               "base-uri 'self'",
