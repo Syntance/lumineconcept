@@ -11,14 +11,22 @@ const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Tablice z logo" }] as const;
 
 const NAV_RIGHT_LINKS = [{ href: "/o-nas", label: "O nas" }] as const;
 
-function buildHeaderMobileItems(shopMobileSub: ShopNavLink[]) {
+const GOTOWE_WZORY_HREF = "/sklep/gotowe-wzory" as const;
+
+function buildHeaderMobileItems(gotoweWzorySub: ShopNavLink[]) {
   return [
     {
-      kind: "shop" as const,
-      label: "Sklep",
-      href: SHOP_HUB_HREF,
-      sub: shopMobileSub,
+      kind: "category" as const,
+      label: "Gotowe wzory",
+      href: GOTOWE_WZORY_HREF,
+      sub: gotoweWzorySub,
     },
+    ...NAV_LEFT.map((l) => ({
+      kind: "link" as const,
+      href: l.href,
+      label: l.label,
+      emphasized: true,
+    })),
     ...NAV_RIGHT_LINKS.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
     { kind: "link" as const, href: "/kontakt", label: "Kontakt" },
   ];
@@ -37,12 +45,12 @@ const NAV_LINK_CLASS =
  */
 export function Header({
   heroPrefetch,
-  shopMobileSub,
+  gotoweWzoryMobileSub,
 }: {
   heroPrefetch: HeroPrefetchBundles;
-  shopMobileSub: ShopNavLink[];
+  gotoweWzoryMobileSub: ShopNavLink[];
 }) {
-  const headerMobileItems = buildHeaderMobileItems(shopMobileSub);
+  const headerMobileItems = buildHeaderMobileItems(gotoweWzoryMobileSub);
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-brand-100">
