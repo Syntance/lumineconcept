@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import {
 	MOBILE_HERO_BAND_HEIGHT,
 	MOBILE_HERO_BAND_WIDTH,
@@ -10,8 +9,6 @@ export { MOBILE_HERO_BAND_HEIGHT, MOBILE_HERO_BAND_WIDTH };
 type MobileHeroImageBandProps = {
 	src: string;
 	priority?: boolean;
-	/** Blur placeholder — gdy brak (np. obraz z CMS), pomijamy. */
-	blurDataURL?: string;
 	/** Kadrowanie w pionie — domyślnie wyśrodkowane. */
 	objectPositionClass?: string;
 };
@@ -20,7 +17,6 @@ type MobileHeroImageBandProps = {
 export function MobileHeroImageBand({
 	src,
 	priority = true,
-	blurDataURL,
 	objectPositionClass = "object-center",
 }: MobileHeroImageBandProps) {
 	return (
@@ -43,8 +39,6 @@ export function MobileHeroImageBand({
 				 * Jakość bez zmian (źródło to nasz WebP q92, nie down-encodujemy ponownie).
 				 */
 				unoptimized
-				placeholder="blur"
-				blurDataURL={blurDataURL ?? BRAND_BLUR_DATA_URL}
 				className={`absolute inset-0 h-full w-full select-none object-cover ${objectPositionClass}`}
 			/>
 		</div>
