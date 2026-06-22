@@ -3,8 +3,6 @@ import Image from "next/image";
 import type { HeroContent } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
-import { HeroDesktopImagePreload } from "./HeroDesktopImagePreload";
-import { HeroDesktopImageWarmup } from "./HeroDesktopImageWarmup";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";
 import { MobileHeroImageBand } from "./MobileHeroImageBand";
@@ -41,12 +39,6 @@ export async function HeroSection({
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
-			{desktopImageUrl ? (
-				<>
-					<HeroDesktopImagePreload href={desktopImageUrl} />
-					<HeroDesktopImageWarmup src={desktopImageUrl} />
-				</>
-			) : null}
 			<div className="lg:hidden">
 				<MobileHeroViewport
 					image={
@@ -66,9 +58,7 @@ export async function HeroSection({
 
 			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
 				{/*
-				 * Desktop LCP — `eager` + `fetchPriority` na samym `<img>` (bez `priority`,
-				 * żeby Next nie wstrzykiwał bezwarunkowego preloadu na mobile).
-				 * Preload z `media>=1024` + `HeroDesktopImageWarmup` — soft-nav na prod.
+				 * Desktop LCP — eager + fetchPriority; preload w `(shop)/layout` (media>=1024).
 				 */}
 				{desktopImageUrl ? (
 					<Image

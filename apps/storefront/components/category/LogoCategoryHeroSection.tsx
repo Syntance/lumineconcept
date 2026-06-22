@@ -1,8 +1,6 @@
 import Image from "next/image";
 
 import { Breadcrumbs, BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
-import { HeroDesktopImagePreload } from "@/components/home/HeroDesktopImagePreload";
-import { HeroDesktopImageWarmup } from "@/components/home/HeroDesktopImageWarmup";
 import { HeroPortalDesktop } from "@/components/home/HeroPortalDesktop";
 import { HeroPortalMobile } from "@/components/home/HeroPortalMobile";
 import { MobileHeroImageBand } from "@/components/home/MobileHeroImageBand";
@@ -44,12 +42,6 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
-			{desktopImageUrl ? (
-				<>
-					<HeroDesktopImagePreload href={desktopImageUrl} />
-					<HeroDesktopImageWarmup src={desktopImageUrl} />
-				</>
-			) : null}
 			<div className="lg:hidden">
 				<MobileHeroViewport
 					image={

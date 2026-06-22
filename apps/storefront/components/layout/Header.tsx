@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
+import type { HeroPrefetchBundles } from "@/lib/content/hero-prefetch";
 import { HeaderMobileToggle } from "./HeaderMobileToggle";
 import { HeaderIcons } from "./HeaderIcons";
 import { HeaderLogoLink } from "./HeaderLogoLink";
+import { HeaderHeroNavLink } from "./HeaderHeroNavLink";
 import { SHOP_HUB_HREF, SHOP_NAV_DROPDOWN } from "./shop-nav";
 
 const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Tablice z logo" }] as const;
@@ -33,7 +35,7 @@ const NAV_LINK_CLASS =
  * Reszta headera (logo, linki desktopowe) renderowana na serwerze —
  * brak niepotrzebnej hydratacji na każdej stronie.
  */
-export function Header() {
+export function Header({ heroPrefetch }: { heroPrefetch: HeroPrefetchBundles }) {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-brand-100">
       <a href="#main-content" className="skip-to-content">
@@ -79,14 +81,19 @@ export function Header() {
               </div>
             </div>
             {NAV_LEFT.map((link) => (
-              <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
-                {link.label}
-              </Link>
+              <HeaderHeroNavLink
+                key={link.href}
+                href={link.href}
+                className={NAV_LINK_CLASS}
+                label={link.label}
+                desktopUrls={heroPrefetch.logo3d.desktop}
+                mobileUrls={heroPrefetch.logo3d.mobile}
+              />
             ))}
           </nav>
         </div>
 
-        <HeaderLogoLink />
+        <HeaderLogoLink heroPrefetch={heroPrefetch} />
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:justify-start lg:gap-8 lg:pl-[calc(101.75px+5rem)]">
           <nav className="hidden shrink-0 lg:flex items-center gap-8" aria-label="Nawigacja dodatkowa">
