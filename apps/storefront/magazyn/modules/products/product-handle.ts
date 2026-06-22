@@ -31,3 +31,42 @@ export function resolveProductHandleForSave(input: {
 	void input.status;
 	return slugifyProductTitle(input.title);
 }
+
+type ProductHandleInput = {
+	id: string;
+	title: string;
+	handle: string;
+	created_at?: string | null;
+};
+
+/**
+ * Przypisuje unikalne slugi z tytułów (starszy produkt dostaje bazowy slug).
+ * Przy kolizji: `nazwa-2`, `nazwa-3`, …
+ */
+export function allocateUniqueProductHandles(
+	products: ReadonlyArray<ProductHandleInput>,
+): Map<string, string> {
+	const sorted = [...products].sort((a, b) => {
+		const ta = a.created_at ?? "";
+		const tb = b.created_at ?? "";
+		if (ta !== tb) return ta.localeCompare(tb);
+		return a.id.localeCompare(b.id);
+	});
+
+	const used = new Set<string>();
+	const result = new Map<string, string>();
+
+	for (const product of sorted) {
+		const base = slugifyProductTitle(product.title);
+		let candidate = base;
+		let suffix = 2;
+		while (used.has(candidate)) {
+			candidate = `${base}-${suffix}`;
+			suffix += 1;
+		}
+		used.add(candidate);
+		result.set(product.id, candidate);
+	}
+
+	return result;
+}
