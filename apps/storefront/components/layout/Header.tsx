@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import type { HeroPrefetchBundles } from "@/lib/content/hero-prefetch";
+import type { ShopNavLink } from "@/lib/navigation/shop-mobile-nav";
 import { HeaderMobileToggle } from "./HeaderMobileToggle";
 import { HeaderIcons } from "./HeaderIcons";
 import { HeaderLogoLink } from "./HeaderLogoLink";
@@ -10,18 +11,18 @@ const NAV_LEFT = [{ href: "/sklep/logo-3d", label: "Tablice z logo" }] as const;
 
 const NAV_RIGHT_LINKS = [{ href: "/o-nas", label: "O nas" }] as const;
 
-/** Menu mobilne: Sklep z podlinkami + pozostałe linki. */
-const HEADER_MOBILE_ITEMS = [
-  {
-    kind: "shop" as const,
-    label: "Sklep",
-    href: SHOP_HUB_HREF,
-    sub: SHOP_NAV_DROPDOWN,
-  },
-  ...NAV_LEFT.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
-  ...NAV_RIGHT_LINKS.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
-  { kind: "link" as const, href: "/kontakt", label: "Kontakt" },
-];
+function buildHeaderMobileItems(shopMobileSub: ShopNavLink[]) {
+  return [
+    {
+      kind: "shop" as const,
+      label: "Sklep",
+      href: SHOP_HUB_HREF,
+      sub: shopMobileSub,
+    },
+    ...NAV_RIGHT_LINKS.map((l) => ({ kind: "link" as const, href: l.href, label: l.label })),
+    { kind: "link" as const, href: "/kontakt", label: "Kontakt" },
+  ];
+}
 
 /** Jedna stała klasy (14px × 1.1) — ta sama w SSR i kliencie; unika hydratacji przy mieszanym cache .next. */
 const NAV_LINK_CLASS =
@@ -34,7 +35,15 @@ const NAV_LINK_CLASS =
  * Reszta headera (logo, linki desktopowe) renderowana na serwerze —
  * brak niepotrzebnej hydratacji na każdej stronie.
  */
-export function Header({ heroPrefetch }: { heroPrefetch: HeroPrefetchBundles }) {
+export function Header({
+  heroPrefetch,
+  shopMobileSub,
+}: {
+  heroPrefetch: HeroPrefetchBundles;
+  shopMobileSub: ShopNavLink[];
+}) {
+  const headerMobileItems = buildHeaderMobileItems(shopMobileSub);
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-brand-100">
       <a href="#main-content" className="skip-to-content">
@@ -44,7 +53,7 @@ export function Header({ heroPrefetch }: { heroPrefetch: HeroPrefetchBundles }) 
       <div className="container relative mx-auto flex h-16 items-center px-4 lg:px-8">
         {/* Lewa połowa: od centrum taka sama „luźność” jak po prawej — tekst „dociska” do logo. */}
         <div className="flex min-w-0 flex-1 items-center gap-3 lg:justify-end lg:gap-8 lg:pr-[calc(101.75px+5rem)]">
-          <HeaderMobileToggle items={HEADER_MOBILE_ITEMS} />
+          <HeaderMobileToggle items={headerMobileItems} />
           <nav className="hidden shrink-0 lg:flex items-center gap-8" aria-label="Nawigacja główna">
             <div className="group relative flex items-center">
               <Link
