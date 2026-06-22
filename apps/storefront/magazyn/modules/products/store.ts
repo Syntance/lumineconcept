@@ -73,7 +73,7 @@ import {
 	MIN_ORDER_QUANTITY_META_KEY,
 } from "@/lib/products/min-order-quantity";
 import { getColorCategories } from "@magazyn/modules/settings/color-category-store";
-import { isDuplicateProductHandle, slugifyProductTitle } from "./product-handle";
+import { slugifyProductTitle } from "./product-handle";
 
 export { buildColorOptionTitles } from "@/lib/products/color-slot-config";
 
@@ -649,7 +649,7 @@ export async function createAdminProduct(values: ProductFormValues): Promise<str
 export async function updateAdminProduct(
 	id: string,
 	values: ProductFormValues,
-	previousHandle?: string | null,
+	_previousHandle?: string | null,
 ): Promise<void> {
 	const imagePayload = productImagesPayload(values.images);
 	const nextHandle = values.handle.trim();
@@ -682,10 +682,7 @@ export async function updateAdminProduct(
 		await syncProductBasePrice(id, values.price);
 	}
 
-	const prior = previousHandle?.trim() ?? "";
-	if (!prior || prior !== nextHandle || isDuplicateProductHandle(prior)) {
-		await assertProductHandleSynced(id, nextHandle);
-	}
+	await assertProductHandleSynced(id, nextHandle);
 }
 
 async function assertProductHandleSynced(productId: string, expectedHandle: string): Promise<void> {

@@ -426,10 +426,10 @@ export function ProductForm({
 					<Input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="np. Lampa stołowa" required className="h-10" />
 					{product?.id ? (
 						<p className="text-xs text-muted-foreground">
-							Adres po zapisie:{" "}
+							Adres URL (z nazwy, aktualizuje się przy zapisie):{" "}
 							<span className="font-mono text-foreground">/{previewHandle}</span>
 							{product.handle !== previewHandle ? (
-								<span className="text-amber-700"> (aktualnie: /{product.handle})</span>
+								<span className="text-amber-700"> (teraz w sklepie: /{product.handle})</span>
 							) : null}
 						</p>
 					) : (
