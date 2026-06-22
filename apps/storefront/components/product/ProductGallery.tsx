@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 
 import { ProductWatermark } from "@/components/product/ProductWatermark";
-import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
+import { lazyBlurPlaceholderProps, shouldServeImageDirect } from "@/lib/images/serve-direct";
 import {
   PRODUCT_GALLERY_MAX_WIDTH_STYLE,
   PRODUCT_IMAGE_ASPECT_CLASS,
@@ -28,16 +28,6 @@ const GALLERY_MAX_WIDTH_DESKTOP = PRODUCT_GALLERY_MAX_WIDTH_STYLE;
  */
 const GALLERY_MAX_WIDTH_MULTI = "calc((100dvh - 5.5rem) * 0.71 + 6rem)";
 
-function medusaImageUnoptimized(src: string): boolean {
-  if (!src.startsWith("http")) return false;
-  try {
-    const h = new URL(src).hostname;
-    return h === "localhost" || h === "127.0.0.1";
-  } catch {
-    return false;
-  }
-}
-
 function GalleryMainImage({
   url,
   alt,
@@ -55,11 +45,10 @@ function GalleryMainImage({
       priority={priority}
       fetchPriority={priority ? "high" : undefined}
       loading={priority ? undefined : "lazy"}
-      placeholder="blur"
-      blurDataURL={BRAND_BLUR_DATA_URL}
+      {...lazyBlurPlaceholderProps(priority)}
       className="relative z-10 object-cover object-center"
       sizes="(max-width: 1024px) 100vw, 50vw"
-      unoptimized={medusaImageUnoptimized(url)}
+      unoptimized={shouldServeImageDirect(url)}
     />
   );
 }
@@ -251,11 +240,10 @@ export function ProductGallery({ images, productTitle }: ProductGalleryProps) {
                   alt={image.alt || `${productTitle} - zdjęcie ${index + 1}`}
                   fill
                   loading={index === 0 ? "eager" : "lazy"}
-                  placeholder="blur"
-                  blurDataURL={BRAND_BLUR_DATA_URL}
+                  {...lazyBlurPlaceholderProps(index === 0)}
                   sizes="(max-width: 1024px) 3.5rem, 8.25rem"
                   className="relative z-10 object-cover"
-                  unoptimized={medusaImageUnoptimized(image.url)}
+                  unoptimized={shouldServeImageDirect(image.url)}
                 />
               </button>
             ))}
