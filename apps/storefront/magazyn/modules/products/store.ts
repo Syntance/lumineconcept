@@ -1,6 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { cache } from "react";
+import { revalidateTag } from "next/cache";
 import { adminFetch } from "@magazyn/core/medusa/client";
 import { AdminApiError } from "@magazyn/core/medusa/errors";
 import { slugify } from "@magazyn/core/lib/slug";
@@ -683,6 +684,7 @@ export async function updateAdminProduct(
 	}
 
 	await assertProductHandleSynced(id, nextHandle);
+	revalidateTag("medusa-products", "max");
 }
 
 async function assertProductHandleSynced(productId: string, expectedHandle: string): Promise<void> {
