@@ -644,27 +644,17 @@ export async function createAdminProduct(values: ProductFormValues): Promise<str
 	return productId;
 }
 
-export async function updateAdminProduct(
-	id: string,
-	values: ProductFormValues,
-	existingHandle?: string | null,
-): Promise<void> {
+export async function updateAdminProduct(id: string, values: ProductFormValues): Promise<void> {
 	const imagePayload = productImagesPayload(values.images);
 
 	const body: Record<string, unknown> = {
 		title: values.title.trim(),
+		handle: values.handle.trim(),
 		status: values.status,
 		description: values.description.trim(),
 		thumbnail: imagePayload.thumbnail,
 		images: imagePayload.images,
 	};
-
-	/** Nie nadpisuj handle przy edycji — slug z tytułu mógłby złamać URL produktu. */
-	if (existingHandle) {
-		body.handle = existingHandle;
-	} else {
-		body.handle = values.handle.trim();
-	}
 
 	body.categories = values.categoryIds.map((id) => ({ id }));
 
