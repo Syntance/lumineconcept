@@ -16,7 +16,6 @@ import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
 import { BestsellersSection } from "@/components/home/BestsellersSection";
-import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -39,9 +38,6 @@ export const revalidate = 60;
 export default async function HomePage() {
   const [pageContent, settings] = await Promise.all([getPageContent("home"), getSiteSettings()]);
   const socialSameAs = resolveSocialSameAs(resolveSocialLinks(settings));
-  
-  // Preload hero images dla LCP optimization
-  const heroData = await resolveHomeHeroWithFallback(pageContent.hero);
   
   const orgJsonLd = {
     "@context": "https://schema.org",
@@ -79,26 +75,6 @@ export default async function HomePage() {
 
   return (
     <>
-      {/*
-       * Preload TYLKO desktopowego tła (media >= 1024). Desktop serwuje surowy
-       * URL (`unoptimized`), więc preload pokrywa się 1:1 z faktycznym `<img>`.
-       *
-       * Mobilnego hero NIE preloadujemy ręcznie — `next/image priority`
-       * w `MobileHeroImageBand` sam wstrzykuje `<link rel=preload imagesrcset>`
-       * z DOKŁADNIE tym samym (zoptymalizowanym) URL-em, który pobiera `<img>`.
-       * Ręczny preload surowego URL-a wskazywał inny zasób → podwójne pobranie
-       * i późne odkrycie elementu LCP na mobile (7 s pod throttlingiem 4G).
-       */}
-      {heroData.desktopImageUrl && (
-        <link
-          rel="preload"
-          as="image"
-          href={heroData.desktopImageUrl}
-          fetchPriority="high"
-          media="(min-width: 1024px)"
-        />
-      )}
-      
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}

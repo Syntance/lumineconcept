@@ -3,6 +3,8 @@ import Image from "next/image";
 import type { HeroContent } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
+import { HeroDesktopImagePreload } from "./HeroDesktopImagePreload";
+import { HeroDesktopImageWarmup } from "./HeroDesktopImageWarmup";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";
 import { MobileHeroImageBand } from "./MobileHeroImageBand";
@@ -39,6 +41,12 @@ export async function HeroSection({
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
+			{desktopImageUrl ? (
+				<>
+					<HeroDesktopImagePreload href={desktopImageUrl} />
+					<HeroDesktopImageWarmup src={desktopImageUrl} />
+				</>
+			) : null}
 			<div className="lg:hidden">
 				<MobileHeroViewport
 					image={
@@ -58,14 +66,9 @@ export async function HeroSection({
 
 			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
 				{/*
-				 * Desktopowe tło hero (2560px ultrawide) to element LCP TYLKO na desktop.
-				 * `loading="lazy"`: na mobile ten kontener jest `hidden` (display:none),
-				 * więc leniwy obraz NIGDY nie wchodzi w viewport → NIE pobiera się i nie
-				 * konkuruje z mobilnym LCP. (`eager` ściągał ultrawide nawet pod
-				 * display:none — główny żłob bajtów na mobile.) Na desktop obraz jest nad
-				 * linią zgięcia → ładuje się natychmiast, a `<link rel=preload media>=1024>`
-				 * (z `page.tsx`) nadaje mu wysoki priorytet. Bez `priority`/`fetchPriority`,
-				 * by nie wstrzykiwać bezwarunkowego preloadu konkurującego na mobile.
+				 * Desktop LCP — `eager` + `fetchPriority` na samym `<img>` (bez `priority`,
+				 * żeby Next nie wstrzykiwał bezwarunkowego preloadu na mobile).
+				 * Preload z `media>=1024` + `HeroDesktopImageWarmup` — soft-nav na prod.
 				 */}
 				{desktopImageUrl ? (
 					<Image
@@ -73,7 +76,8 @@ export async function HeroSection({
 						alt=""
 						width={HERO_BG_WIDTH}
 						height={HERO_BG_HEIGHT}
-						loading="lazy"
+						loading="eager"
+						fetchPriority="high"
 						sizes="100vw"
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
 						placeholder={desktopBlurDataURL ? "blur" : "empty"}
