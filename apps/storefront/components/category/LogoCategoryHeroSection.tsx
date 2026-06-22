@@ -1,12 +1,14 @@
 import Image from "next/image";
 
 import { Breadcrumbs, BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
+import { HeroImagePreload } from "@/components/home/HeroImagePreload";
 import { HeroPortalDesktop } from "@/components/home/HeroPortalDesktop";
 import { HeroPortalMobile } from "@/components/home/HeroPortalMobile";
 import { MobileHeroImageBand } from "@/components/home/MobileHeroImageBand";
 import { MobileHeroViewport } from "@/components/home/MobileHeroViewport";
 import type { HeroContent } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { resolveLogoHeroWithFallback } from "@/lib/content/hero";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +44,7 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
+			<HeroImagePreload desktopUrl={desktopImageUrl} mobileUrl={mobileDisplayUrl} />
 			<div className="lg:hidden">
 				<MobileHeroViewport
 					image={
@@ -71,8 +74,8 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 						fetchPriority="high"
 						sizes="100vw"
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
-						placeholder={desktopBlurDataURL ? "blur" : undefined}
-						blurDataURL={desktopBlurDataURL}
+						placeholder="blur"
+						blurDataURL={desktopBlurDataURL ?? BRAND_BLUR_DATA_URL}
 						className="absolute inset-0 h-full w-full select-none object-cover object-top"
 					/>
 				) : (

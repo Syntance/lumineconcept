@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ProductSearchResult } from "@lumine/types";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { formatPrice } from "@/lib/utils";
 
 interface SearchResultsProps {
@@ -30,18 +31,17 @@ export function SearchResults({ results, onSelect }: SearchResultsProps) {
             >
               <div className="relative h-14 w-[2.625rem] shrink-0 overflow-hidden rounded-md bg-brand-50">
                 {product.thumbnail ? (
-                  <>
-                    <div className="absolute inset-0 bg-brand-100" aria-hidden />
-                    <Image
-                      src={product.thumbnail}
-                      alt={product.title}
-                      fill
-                      loading="lazy"
-                      quality={75}
-                      sizes="42px"
-                      className="relative z-10 object-cover"
-                    />
-                  </>
+                  <Image
+                    src={product.thumbnail}
+                    alt={product.title}
+                    fill
+                    loading="lazy"
+                    quality={75}
+                    placeholder="blur"
+                    blurDataURL={BRAND_BLUR_DATA_URL}
+                    sizes="42px"
+                    className="relative z-10 object-cover"
+                  />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center text-brand-300 text-xs">
                     Brak

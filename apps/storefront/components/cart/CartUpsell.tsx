@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAnalytics } from "@/lib/analytics/useAnalytics";
 import { markUpsellReferral } from "@/lib/analytics/upsell-attribution";
+import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 
 interface UpsellProduct {
   id: string;
@@ -57,7 +58,6 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
           >
             {p.thumbnail ? (
               <div className="relative h-12 w-[2.25rem] overflow-hidden rounded-md">
-                <div className="absolute inset-0 bg-brand-50" aria-hidden />
                 <Image
                   src={p.thumbnail}
                   alt={p.title}
@@ -65,6 +65,8 @@ export function CartUpsell({ currentItemIds }: CartUpsellProps) {
                   height={48}
                   loading="lazy"
                   quality={75}
+                  placeholder="blur"
+                  blurDataURL={BRAND_BLUR_DATA_URL}
                   sizes="36px"
                   className="relative z-10 rounded-md object-cover"
                 />
