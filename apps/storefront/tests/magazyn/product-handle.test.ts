@@ -19,6 +19,12 @@ describe("slugifyProductTitle", () => {
 	it("nie dokleja kopia do slug, gdy tytuł ma sufiks (kopia)", () => {
 		expect(slugifyProductTitle("Tabliczka z kodami QR (kopia)")).toBe("tabliczka-z-kodami-qr");
 	});
+
+	it("sluguje cudzysłowy i apostrofy w nazwie", () => {
+		expect(slugifyProductTitle("Tabliczka z kodami QR 'STONE'")).toBe(
+			"tabliczka-z-kodami-qr-stone",
+		);
+	});
 });
 
 describe("resolveProductHandleForSave", () => {
@@ -42,18 +48,18 @@ describe("resolveProductHandleForSave", () => {
 		).toBe("tabliczka-qr-premium");
 	});
 
-	it("ignoruje (kopia) w tytule przy liczeniu nowego slug", () => {
+	it("aktualizuje handle opublikowanej kopii po zmianie nazwy", () => {
 		expect(
 			resolveProductHandleForSave({
 				id: "prod_1",
-				title: "Tabliczka z kodami QR (kopia)",
+				title: "Tabliczka z kodami QR 'STONE'",
 				handle: "tabliczka-z-kodami-qr-fala-kopia",
 				status: "published",
 			}),
-		).toBe("tabliczka-z-kodami-qr");
+		).toBe("tabliczka-z-kodami-qr-stone");
 	});
 
-	it("nie zmienia handle opublikowanego produktu bez „kopia” w slug", () => {
+	it("aktualizuje handle opublikowanego produktu po zmianie nazwy", () => {
 		expect(
 			resolveProductHandleForSave({
 				id: "prod_1",
@@ -61,18 +67,7 @@ describe("resolveProductHandleForSave", () => {
 				handle: "tabliczka-qr-premium",
 				status: "published",
 			}),
-		).toBe("tabliczka-qr-premium");
-	});
-
-	it("synchronizuje handle opublikowanej kopii, dopóki slug zawiera kopia", () => {
-		expect(
-			resolveProductHandleForSave({
-				id: "prod_1",
-				title: "Tabliczka QR Premium",
-				handle: "tabliczka-qr-kopia",
-				status: "published",
-			}),
-		).toBe("tabliczka-qr-premium");
+		).toBe("nowa-nazwa-marketingowa");
 	});
 });
 

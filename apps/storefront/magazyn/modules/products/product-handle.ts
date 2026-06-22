@@ -7,7 +7,7 @@ export function stripCopySuffixFromTitle(title: string): string {
 	return title.trim().replace(COPY_TITLE_SUFFIX, "").trim();
 }
 
-/** Handle z duplikatu (`…-kopia`, `produkt-kopia-…`) — po zmianie nazwy trzeba zsynchronizować URL. */
+/** Handle z duplikatu (`…-kopia`, `produkt-kopia-…`) — sygnał do wymuszonej resynchronizacji. */
 export function isDuplicateProductHandle(handle: string): boolean {
 	return /(?:^|-)kopia(?:-|$)/.test(handle);
 }
@@ -17,9 +17,8 @@ export function slugifyProductTitle(title: string): string {
 }
 
 /**
- * Nowy produkt / szkic: slug z tytułu (bez „(kopia)”).
- * Opublikowany: stabilny handle (SEO), chyba że to wciąż „kopia” z duplikatu
- * lub slug nie zgadza się z oczekiwanym adresem po zmianie nazwy kopii.
+ * Slug URL zawsze z aktualnej nazwy produktu (bez sufiksu „(kopia)”).
+ * Po zmianie tytułu w magazynie adres aktualizuje się przy zapisie.
  */
 export function resolveProductHandleForSave(input: {
 	id?: string;
@@ -27,17 +26,8 @@ export function resolveProductHandleForSave(input: {
 	handle?: string;
 	status: "draft" | "published";
 }): string {
-	const fromTitle = slugifyProductTitle(input.title);
-	if (!input.id) return fromTitle;
-
-	const existing = input.handle?.trim() ?? "";
-	if (!existing) return fromTitle;
-
-	const shouldSyncFromTitle = input.status === "draft" || isDuplicateProductHandle(existing);
-
-	if (shouldSyncFromTitle) {
-		return fromTitle;
-	}
-
-	return existing;
+	void input.id;
+	void input.handle;
+	void input.status;
+	return slugifyProductTitle(input.title);
 }
