@@ -6,6 +6,7 @@ import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
+import { PromoCodeField } from "./PromoCodeField";
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges";
 import { isP24CircuitOpen, recordP24Failure } from "@/lib/checkout/p24-circuit-breaker";
 import { cartToEcommercePayload } from "@/lib/analytics/medusa-items";
@@ -1118,6 +1119,7 @@ export function CheckoutForm() {
                 if (name) updateField("shippingOptionName", name);
               }}
             />
+            <PromoCodeField />
             {shippingSaveError && (
               <p className="text-sm text-red-600" role="alert">
                 {shippingSaveError}

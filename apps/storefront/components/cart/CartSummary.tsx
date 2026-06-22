@@ -11,6 +11,7 @@ export function CartSummary() {
     hasShippingMethodSelection,
     expressDelivery,
     expressSurcharge,
+    discountTotal,
     grandTotal,
   } = useCart();
 
@@ -48,6 +49,12 @@ export function CartSummary() {
         <span className="text-brand-500">Dostawa</span>
         <span className="tabular-nums text-brand-700">{shippingLabel}</span>
       </div>
+      {discountTotal > 0 && (
+        <div className="flex justify-between">
+          <span className="text-brand-500">Zniżka</span>
+          <span className="tabular-nums text-emerald-700">−{formatPrice(discountTotal)}</span>
+        </div>
+      )}
       <div className="h-px bg-brand-100" />
       <div className="flex justify-between pt-0.5 text-base">
         <span className="font-medium text-brand-800">Razem</span>

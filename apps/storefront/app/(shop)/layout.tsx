@@ -2,7 +2,6 @@ import type { HeroPrefetchBundles } from "@/lib/content/hero-prefetch";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { HeroCriticalImagePrefetch } from "@/components/home/HeroCriticalImagePrefetch";
 import { HeroImageCacheWarmer } from "@/components/home/HeroImageCacheWarmer";
 import { getHeroPrefetchBundles } from "@/lib/content/hero-prefetch";
 
@@ -23,7 +22,6 @@ export default async function ShopLayout({
 
   return (
     <>
-      <HeroCriticalImagePrefetch bundles={heroPrefetch} />
       <HeroImageCacheWarmer
         desktopUrls={desktopPrefetchUrls}
         mobileUrls={mobilePrefetchUrls}

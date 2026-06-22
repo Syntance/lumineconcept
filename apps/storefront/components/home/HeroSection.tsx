@@ -58,7 +58,7 @@ export async function HeroSection({
 
 			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
 				{/*
-				 * Desktop LCP — eager + fetchPriority; preload w `(shop)/layout` (media>=1024).
+				 * Desktop LCP — eager + fetchPriority; prefetch w HeroImageCacheWarmer (layout sklepu).
 				 */}
 				{desktopImageUrl ? (
 					<Image
