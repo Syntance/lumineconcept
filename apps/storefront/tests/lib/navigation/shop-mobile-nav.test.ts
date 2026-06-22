@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
-import { buildShopMobileNavSub } from "@/lib/navigation/shop-mobile-nav";
+import { buildGotoweWzoryMobileSub } from "@/lib/navigation/shop-mobile-nav";
 
 const tree: CategoryTreeNode[] = [
 	{
@@ -15,16 +15,12 @@ const tree: CategoryTreeNode[] = [
 	},
 ];
 
-describe("buildShopMobileNavSub", () => {
-	it("zawiera główne sekcje i podkategorie bez duplikatu certyfikatów", () => {
-		const sub = buildShopMobileNavSub(tree);
+describe("buildGotoweWzoryMobileSub", () => {
+	it("zwraca podkategorie gotowych wzorów bez roota i tablic z logo", () => {
+		const sub = buildGotoweWzoryMobileSub(tree);
 
-		expect(sub.map((item) => item.label)).toEqual([
-			"Gotowe wzory",
-			"Tablice z logo",
-			"Certyfikaty",
-			"Cenniki",
-		]);
-		expect(sub[3]?.href).toBe("/sklep/gotowe-wzory/cenniki");
+		expect(sub.map((item) => item.label)).toEqual(["Cenniki", "Certyfikaty"]);
+		expect(sub[0]?.href).toBe("/sklep/gotowe-wzory/cenniki");
+		expect(sub[1]?.href).toBe("/sklep/certyfikaty");
 	});
 });

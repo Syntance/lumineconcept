@@ -6,9 +6,9 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export type MobileNavItem =
-  | { kind: "link"; href: string; label: string }
+  | { kind: "link"; href: string; label: string; emphasized?: boolean }
   | {
-      kind: "shop";
+      kind: "category";
       label: string;
       href: string;
       sub: ReadonlyArray<{ href: string; label: string }>;
@@ -82,7 +82,9 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
                   <Link
                     href={entry.href}
                     onClick={onClose}
-                    className="block rounded-lg px-4 py-3 text-[17.6px] font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                    className={`block rounded-lg px-4 py-3 text-[17.6px] text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors ${
+                      entry.emphasized ? "font-semibold" : "font-medium"
+                    }`}
                   >
                     {entry.label}
                   </Link>
@@ -92,23 +94,25 @@ export function MobileNav({ isOpen, onClose, items }: MobileNavProps) {
                   <Link
                     href={entry.href}
                     onClick={onClose}
-                    className="block rounded-lg px-4 py-3 text-[17.6px] font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                    className="block rounded-lg px-4 py-3 text-[17.6px] font-semibold text-brand-800 hover:bg-brand-50 hover:text-brand-900 transition-colors"
                   >
                     {entry.label}
                   </Link>
-                  <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-brand-100 pl-2" role="list">
-                    {entry.sub.map((sub) => (
-                      <li key={sub.href}>
-                        <Link
-                          href={sub.href}
-                          onClick={onClose}
-                          className="block rounded-lg px-4 py-2.5 text-[16.5px] text-brand-600 hover:bg-brand-50 hover:text-brand-900 transition-colors"
-                        >
-                          {sub.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                  {entry.sub.length > 0 ? (
+                    <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-brand-100 pl-2" role="list">
+                      {entry.sub.map((sub) => (
+                        <li key={sub.href}>
+                          <Link
+                            href={sub.href}
+                            onClick={onClose}
+                            className="block rounded-lg px-4 py-2.5 text-[16.5px] font-normal text-brand-600 hover:bg-brand-50 hover:text-brand-900 transition-colors"
+                          >
+                            {sub.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </li>
               ),
             )}

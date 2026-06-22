@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { HeroImageCacheWarmer } from "@/components/home/HeroImageCacheWarmer";
 import { getHeroPrefetchBundles } from "@/lib/content/hero-prefetch";
 import { getProductCategories } from "@/lib/medusa/products";
-import { buildShopMobileNavSub } from "@/lib/navigation/shop-mobile-nav";
+import { buildGotoweWzoryMobileSub } from "@/lib/navigation/shop-mobile-nav";
 import type { CategoryTreeNode } from "@/lib/medusa/category-tree";
 
 export default async function ShopLayout({
@@ -16,7 +16,7 @@ export default async function ShopLayout({
 }) {
   const heroPrefetch = await getHeroPrefetchBundles();
   const categories = await getProductCategories().catch(() => []);
-  const shopMobileSub = buildShopMobileNavSub(categories as CategoryTreeNode[]);
+  const gotoweWzoryMobileSub = buildGotoweWzoryMobileSub(categories as CategoryTreeNode[]);
   const desktopPrefetchUrls = [
     ...heroPrefetch.home.desktop,
     ...heroPrefetch.logo3d.desktop,
@@ -34,7 +34,7 @@ export default async function ShopLayout({
       />
       {/* Serwerowy RSC — nie wchodzi w bundel „use client” Headera, brak ryzyka rozjazdu hydratacji po HMR */}
       <AnnouncementBar />
-      <Header heroPrefetch={heroPrefetch} shopMobileSub={shopMobileSub} />
+      <Header heroPrefetch={heroPrefetch} gotoweWzoryMobileSub={gotoweWzoryMobileSub} />
       <main id="main-content" className="min-h-screen">
         {children}
       </main>
