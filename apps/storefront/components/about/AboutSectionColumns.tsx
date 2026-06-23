@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 
 import {
+	ABOUT_DESKTOP_GRID_SHELL,
 	ABOUT_MOBILE_BODY_BETWEEN_COLUMNS,
 	ABOUT_MOBILE_MEDIA_LOWER,
 	ABOUT_MEDIA_LABEL_INSET_X,
 	ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
-	ABOUT_INTRO_DESKTOP_MEDIA_OFFSET,
-	ABOUT_INTRO_HEADING_IMAGE_ALIGN_HEIGHT,
+	ABOUT_INTRO_MOBILE_MEDIA_FRAME,
 	ABOUT_PAGE_CONTENT_MAX,
 	ABOUT_PAGE_GUTTER,
 	ABOUT_SECTION_SAFE,
@@ -33,6 +33,8 @@ type AboutSectionColumnsProps = {
 	mobileMediaLower?: string;
 	/** true = tekst lewa kolumna, zdjęcie prawa (domyślnie). false = zdjęcie lewa, tekst prawa. */
 	mediaOnEnd?: boolean;
+	/** Mobile: tekst w kolumnie obok zdjęcia (misja), nie pod spodem. */
+	mobileBodyBesideMedia?: boolean;
 };
 
 type AboutSectionGridShellProps = {
@@ -41,14 +43,14 @@ type AboutSectionGridShellProps = {
 	children: ReactNode;
 };
 
-/** Gutter 60px na pełnej szerokości + max-w-7xl wewnątrz — bez przeskoku przy >1280px. */
-function AboutSectionGridShell({
+/** Mobile/tablet — gutter 60px + max-w-7xl wewnątrz. */
+function AboutMobileGridShell({
 	className,
 	gridClassName,
 	children,
 }: AboutSectionGridShellProps) {
 	return (
-		<div className={cn("w-full min-w-0", ABOUT_PAGE_GUTTER, ABOUT_SECTION_SAFE, className)}>
+		<div className={cn("w-full min-w-0 lg:hidden", ABOUT_PAGE_GUTTER, ABOUT_SECTION_SAFE, className)}>
 			<div className={cn(ABOUT_PAGE_CONTENT_MAX, gridClassName)}>{children}</div>
 		</div>
 	);
@@ -68,75 +70,45 @@ export function AboutSectionColumns({
 	mobileHeadingAlignImageBottom = false,
 	mobileMediaLower = ABOUT_MOBILE_MEDIA_LOWER,
 	mediaOnEnd = true,
+	mobileBodyBesideMedia = false,
 }: AboutSectionColumnsProps) {
 	const textOrder = mediaOnEnd ? "order-1" : "order-2";
 	const mediaOrder = mediaOnEnd ? "order-2" : "order-1";
 	const resolvedDesktopMedia = desktopMedia ?? media;
-	const desktopAlignsHeadingToImage = mobileHeadingAlignImageBottom;
 
+	/** Desktop (lg+) — siatka z commitów 17–18 czerwca: px-4, max-w-7xl, prosty 2-kolumnowy grid. */
 	const desktopGrid = (
-		<AboutSectionGridShell
-			className={className}
-			gridClassName="hidden grid-cols-2 items-start gap-3 lg:grid lg:gap-16 xl:gap-20"
-		>
-			{desktopAlignsHeadingToImage ? (
-				<>
-					<div className={cn("min-w-0 overflow-hidden", textOrder, textClassName)}>
-						<div
-							className={cn(
-								"flex flex-col justify-end",
-								ABOUT_INTRO_HEADING_IMAGE_ALIGN_HEIGHT,
-								ABOUT_INTRO_DESKTOP_MEDIA_OFFSET,
-							)}
-						>
-							{heading}
-						</div>
-						<div className={cn(bodyClassName)}>{body}</div>
-					</div>
+		<div className={cn(ABOUT_DESKTOP_GRID_SHELL, className)}>
+			<div className={cn("min-w-0", textOrder, textClassName)}>
+				{heading}
+				<div className={cn(bodyClassName)}>{body}</div>
+			</div>
 
-					<div
-						className={cn(
-							"relative z-20 min-w-0 max-w-full overflow-x-clip",
-							mediaOrder,
-							mediaClassName,
-							ABOUT_INTRO_DESKTOP_MEDIA_OFFSET,
-						)}
-					>
-						{resolvedDesktopMedia}
-					</div>
-				</>
-			) : (
-				<>
-					<div className={cn("min-w-0", textOrder, textClassName)}>
-						{heading}
-						<div className={cn(bodyClassName)}>{body}</div>
-					</div>
-
-					<div className={cn("min-w-0 max-w-full overflow-x-clip", mediaOrder, mediaClassName)}>
-						{resolvedDesktopMedia}
-					</div>
-				</>
-			)}
-		</AboutSectionGridShell>
+			<div className={cn("min-w-0 max-w-full overflow-x-clip lg:overflow-visible", mediaOrder, mediaClassName)}>
+				{resolvedDesktopMedia}
+			</div>
+		</div>
 	);
 
 	const defaultMobileGrid = (
-		<AboutSectionGridShell
+		<AboutMobileGridShell
 			className={className}
 			gridClassName={cn(
-				"grid grid-cols-2 items-start gap-3 lg:hidden",
+				"grid grid-cols-2 items-start gap-3",
 				mobileHeadingAlignImageBottom ? "hidden" : "grid",
 			)}
 		>
 			<div className={cn("min-w-0", textOrder, textClassName)}>
 				{heading}
-				<div className={cn("hidden", bodyClassName)}>{body}</div>
+				<div className={cn(mobileBodyBesideMedia ? "block" : "hidden", bodyClassName)}>{body}</div>
 			</div>
 
 			<div className={cn("min-w-0", mediaOrder, mobileMediaLower, mediaClassName)}>{media}</div>
 
-			<div className={cn("min-w-0", ABOUT_MOBILE_BODY_BETWEEN_COLUMNS, bodyClassName)}>{body}</div>
-		</AboutSectionGridShell>
+			{mobileBodyBesideMedia ? null : (
+				<div className={cn("min-w-0", ABOUT_MOBILE_BODY_BETWEEN_COLUMNS, bodyClassName)}>{body}</div>
+			)}
+		</AboutMobileGridShell>
 	);
 
 	if (!mobileHeadingAlignImageBottom) {
@@ -150,9 +122,9 @@ export function AboutSectionColumns({
 
 	return (
 		<>
-			<AboutSectionGridShell
+			<AboutMobileGridShell
 				className={className}
-				gridClassName="grid grid-cols-2 grid-rows-[auto_auto_auto] items-stretch gap-x-3 gap-y-0 lg:hidden"
+				gridClassName="grid grid-cols-2 grid-rows-[auto_auto_auto] items-stretch gap-x-3 gap-y-0"
 			>
 				<div
 					className={cn(
@@ -170,31 +142,35 @@ export function AboutSectionColumns({
 						mediaClassName,
 					)}
 				>
-					{media}
+					<div className={ABOUT_INTRO_MOBILE_MEDIA_FRAME}>{media}</div>
 				</div>
 
 				{mediaCaption ? (
-					<div
-						className={cn(
-							"col-start-2 row-start-2 w-full min-w-0",
-							ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
-							ABOUT_MEDIA_LABEL_INSET_X,
-						)}
-					>
-						{mediaCaption}
+					<div className="col-start-2 row-start-2 flex w-full min-w-0 flex-col items-end max-lg:items-end">
+						<div className={ABOUT_INTRO_MOBILE_MEDIA_FRAME}>
+							<div
+								className={cn(
+									ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
+									"w-full shrink-0",
+									ABOUT_MEDIA_LABEL_INSET_X,
+								)}
+							>
+								{mediaCaption}
+							</div>
+						</div>
 					</div>
 				) : null}
 
 				<div
 					className={cn(
-						"col-span-2 row-start-3 min-w-0 max-lg:pt-4 sm:max-lg:pt-5",
-						mobileBodyWrapperClassName ?? "max-lg:w-full max-lg:text-center",
+						"col-span-2 row-start-3 min-w-0 pt-4 sm:pt-5",
+						mobileBodyWrapperClassName ?? "w-full text-center",
 						bodyClassName,
 					)}
 				>
 					{body}
 				</div>
-			</AboutSectionGridShell>
+			</AboutMobileGridShell>
 
 			{desktopGrid}
 		</>

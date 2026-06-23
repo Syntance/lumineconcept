@@ -58,8 +58,11 @@ export function parseLineItemTextFields(
 	for (const [key, raw] of Object.entries(meta)) {
 		const value = raw?.trim();
 		if (!value || !key.startsWith("text_")) continue;
+		if (key.endsWith("_label")) continue;
+		const slug = key.slice("text_".length);
+		const storedLabel = meta[`${key}_label`]?.trim();
 		rows.push({
-			label: humanizeMetaKey(key.slice("text_".length)),
+			label: storedLabel || humanizeMetaKey(slug),
 			value,
 		});
 	}

@@ -14,6 +14,7 @@ import {
 import { formatPrice } from "@magazyn/core/lib/format";
 import { cn } from "@magazyn/core/lib/cn";
 import type { OrderLineItem } from "./order-types";
+import { CopyLinkButton } from "./copy-link-button";
 import { OrderTextFieldTile } from "./order-text-field-tile";
 
 type Props = {
@@ -121,17 +122,18 @@ export function OrderLineItemRow({ item, currencyCode }: Props) {
 										<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
 											Linki QR
 										</p>
-										<ul className="space-y-1">
+										<ul className="space-y-1.5">
 											{links.map((link) => (
-												<li key={link.url}>
+												<li key={link.url} className="flex items-center gap-2">
 													<a
 														href={link.url}
 														target="_blank"
 														rel="noopener noreferrer"
-														className="text-sm text-foreground underline-offset-2 hover:underline"
+														className="min-w-0 flex-1 truncate text-sm text-foreground underline-offset-2 hover:underline"
 													>
 														{link.url}
 													</a>
+													<CopyLinkButton value={link.url} />
 												</li>
 											))}
 										</ul>

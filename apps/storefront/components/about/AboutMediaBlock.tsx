@@ -5,6 +5,7 @@ import {
   ABOUT_MEDIA_LABEL_OVERLAP_ABOVE,
   ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
   ABOUT_MEDIA_WIDTH_CLASS,
+  ABOUT_MEDIA_WIDTH_MOBILE_CLASS,
 } from "@/components/about/about-media";
 import { cn } from "@/lib/utils";
 type AboutMediaBlockProps = {
@@ -26,6 +27,7 @@ export function AboutMediaBlock({
       className={cn(
         "m-0 flex w-full flex-col items-stretch",
         ABOUT_MEDIA_WIDTH_CLASS,
+        ABOUT_MEDIA_WIDTH_MOBILE_CLASS,
         className,
       )}
     >

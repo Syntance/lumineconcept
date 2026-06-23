@@ -393,6 +393,7 @@ export function MiniConfiguratorModal({
     const meta: Record<string, string> = {};
     for (const [optKey, cs] of Object.entries(colorStates)) {
       const key = optKey.toLowerCase().replace(/^kolor\s*/, "").replace(/\s+/g, "_") || "kolor";
+      meta[`color_${key}_label`] = optKey;
       if (cs.selected && cs.selected !== CUSTOM_COLOR_VALUE) {
         meta[`color_${key}`] = cs.selected;
         const hex = colorMap[cs.selected.toLowerCase()];
@@ -407,7 +408,10 @@ export function MiniConfiguratorModal({
     }
     for (const field of textFields) {
       const val = textFieldValues[field.key]?.trim();
-      if (val) meta[`text_${field.key}`] = val;
+      if (val) {
+        meta[`text_${field.key}`] = val;
+        meta[`text_${field.key}_label`] = field.label;
+      }
     }
     for (let i = 0; i < linksCount; i++) {
       const url = links[i]?.trim();

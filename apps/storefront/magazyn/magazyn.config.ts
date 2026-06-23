@@ -27,6 +27,7 @@ export const magazynConfig: MagazynConfig = {
 		products: true,
 		categories: true,
 		promotions: true,
+		shipping: true,
 		emails: true,
 		settings: true,
 		content: true,

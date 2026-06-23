@@ -113,6 +113,7 @@ function appendColorMetadata(
 	matDisabledSet: Set<string>,
 ): void {
 	const key = extractMetaKey(title);
+	meta[`color_${key}_label`] = title;
 	const { selected, customHex, matFinish } = state;
 	if (selected && selected !== CUSTOM_COLOR_VALUE) {
 		meta[`color_${key}`] = selected;
@@ -142,7 +143,10 @@ export function buildManualOrderLineMetadata(
 
 	for (const field of config.textFields) {
 		const value = state.textFieldValues[field.key]?.trim();
-		if (value) meta[`text_${field.key}`] = value;
+		if (value) {
+			meta[`text_${field.key}`] = value;
+			meta[`text_${field.key}_label`] = field.label;
+		}
 	}
 
 	for (let index = 0; index < config.linksCount; index++) {
