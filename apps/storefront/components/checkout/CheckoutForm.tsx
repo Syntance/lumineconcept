@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import DOMPurify from "isomorphic-dompurify";
 import type { Address } from "@lumine/types";
 import { ShippingSelector } from "./ShippingSelector";
 import { PaymentSelector } from "./PaymentSelector";
@@ -43,6 +42,7 @@ import {
   SYSTEM_PAYMENT_PROVIDER_ID,
 } from "@/lib/medusa/checkout";
 import { getPolishRegionId } from "@/lib/medusa/region";
+import { sanitizeOrderNotes } from "@/lib/checkout/sanitize-order-notes";
 
 const POSTAL_CODE_REGEX = /^\d{2}-\d{3}$/;
 const NIP_REGEX = /^\d{10}$/;
@@ -573,13 +573,8 @@ export function CheckoutForm() {
         phSessionId: getPostHogSessionId(),
       };
 
-      // Sanityzuj orderNotes przed wysłaniem (XSS protection)
-      const sanitizedNotes = payment.orderNotes
-        ? DOMPurify.sanitize(payment.orderNotes, {
-            ALLOWED_TAGS: [], // Text-only, bez HTML
-            ALLOWED_ATTR: [],
-          })
-        : "";
+      // Sanityzuj orderNotes przed wysłaniem (XSS protection) — text-only.
+      const sanitizedNotes = sanitizeOrderNotes(payment.orderNotes);
 
       // Przelewy24 = płatność z przekierowaniem. Inicjujemy sesję P24,
       // a finalizację koszyka (utworzenie zamówienia) robi strona powrotu
