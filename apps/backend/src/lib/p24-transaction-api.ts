@@ -75,6 +75,25 @@ async function p24ApiGet<T>(
   return (await res.json()) as T;
 }
 
+/** Wyciąga numeric methodId z odpowiedzi P24 (różne wersje API). */
+export function extractP24MethodId(
+  data: Record<string, unknown> | null | undefined,
+): number | null {
+  if (!data) return null;
+  for (const key of [
+    "methodId",
+    "method",
+    "paymentMethod",
+    "payment_method",
+    "paymentMethodId",
+    "p24_method_id",
+  ]) {
+    const id = Number(data[key]);
+    if (Number.isFinite(id) && id > 0) return id;
+  }
+  return null;
+}
+
 /** Odpytuje P24 o stan transakcji po `sessionId`. */
 export async function fetchP24TransactionBySessionId(
   sessionId: string,
@@ -82,26 +101,45 @@ export async function fetchP24TransactionBySessionId(
 ): Promise<P24TransactionInfo | null> {
   try {
     const result = await p24ApiGet<{
-      data?: {
-        status: number;
-        orderId: number;
-        amount: number;
-        currency: string;
-        methodId?: number;
-        statement?: string;
-      };
+      data?: Record<string, unknown>;
     }>(config, `/transaction/by/sessionId/${encodeURIComponent(sessionId)}`);
     if (!result.data) return null;
-    const methodId = Number(result.data.methodId);
+    const row = result.data;
+    const methodId = extractP24MethodId(row);
     const statement =
-      typeof result.data.statement === "string" ? result.data.statement : undefined;
+      typeof row.statement === "string" ? row.statement : undefined;
     return {
-      status: Number(result.data.status),
-      orderId: Number(result.data.orderId),
-      amount: Number(result.data.amount),
-      currency: String(result.data.currency ?? "PLN"),
-      ...(Number.isFinite(methodId) && methodId > 0 ? { methodId } : {}),
+      status: Number(row.status),
+      orderId: Number(row.orderId),
+      amount: Number(row.amount),
+      currency: String(row.currency ?? "PLN"),
+      ...(methodId ? { methodId } : {}),
       ...(statement ? { statement } : {}),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Odpytuje P24 po numeric `orderId` (id transakcji w panelu P24). */
+export async function fetchP24TransactionByOrderId(
+  orderId: number,
+  config: P24ApiConfig,
+): Promise<P24TransactionInfo | null> {
+  if (!Number.isFinite(orderId) || orderId <= 0) return null;
+  try {
+    const result = await p24ApiGet<{
+      data?: Record<string, unknown>;
+    }>(config, `/transaction/by/orderId/${orderId}`);
+    if (!result.data) return null;
+    const row = result.data;
+    const methodId = extractP24MethodId(row);
+    return {
+      status: Number(row.status),
+      orderId: Number(row.orderId ?? orderId),
+      amount: Number(row.amount),
+      currency: String(row.currency ?? "PLN"),
+      ...(methodId ? { methodId } : {}),
     };
   } catch {
     return null;

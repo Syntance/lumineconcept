@@ -3,7 +3,7 @@ import {
   ContainerRegistrationKeys,
   remoteQueryObjectFromString,
 } from "@medusajs/framework/utils";
-import { loadP24ApiConfig, fetchP24TransactionBySessionId } from "./p24-transaction-api";
+import { loadP24ApiConfig, fetchP24TransactionBySessionId, fetchP24TransactionByOrderId } from "./p24-transaction-api";
 import {
   formatP24PaymentLabel,
   P24_METHOD_ID_METADATA_KEY,
@@ -47,6 +47,21 @@ async function resolveMethodFromSession(
     const sessionId = readP24SessionId(sessionData);
     if (sessionId && p24Config) {
       const tx = await fetchP24TransactionBySessionId(sessionId, p24Config);
+      if (tx?.methodId && tx.methodId > 0) {
+        methodId = tx.methodId;
+      } else if (tx?.orderId && tx.orderId > 0) {
+        const byOrder = await fetchP24TransactionByOrderId(tx.orderId, p24Config);
+        if (byOrder?.methodId && byOrder.methodId > 0) {
+          methodId = byOrder.methodId;
+        }
+      }
+    }
+  }
+
+  if (!methodId) {
+    const p24OrderId = Number(sessionData.order_id ?? sessionData.orderId);
+    if (p24Config && Number.isFinite(p24OrderId) && p24OrderId > 0) {
+      const tx = await fetchP24TransactionByOrderId(p24OrderId, p24Config);
       if (tx?.methodId && tx.methodId > 0) {
         methodId = tx.methodId;
       }
@@ -107,9 +122,52 @@ export async function copyP24PaymentDetailsToOrder(
 
   const sessions =
     order.payment_collections?.flatMap((col) => col.payment_sessions ?? []) ?? [];
-  const p24Session = sessions.find(
+  let p24Session = sessions.find(
     (session) => session.provider_id === PRZELEWY24_PROVIDER_ID,
   );
+
+  // Fallback: provider z payments gdy sesje nie są zlinkowane do order w query.
+  if (!p24Session?.data) {
+    const remoteQuery2 = scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY);
+    const payObject = remoteQueryObjectFromString({
+      entryPoint: "order",
+      variables: { filters: { id: orderId } },
+      fields: [
+        "payment_collections.id",
+        "payment_collections.payments.provider_id",
+      ],
+    });
+    const payRows = await remoteQuery2(payObject);
+    const payOrder = (Array.isArray(payRows) ? payRows[0] : payRows) as
+      | {
+          payment_collections?: Array<{
+            id?: string;
+            payments?: Array<{ provider_id?: string | null }> | null;
+          }> | null;
+        }
+      | undefined;
+    const collectionId = payOrder?.payment_collections?.find((col) =>
+      col.payments?.some((p) => p.provider_id === PRZELEWY24_PROVIDER_ID),
+    )?.id;
+    if (collectionId) {
+      const sessionObject = remoteQueryObjectFromString({
+        entryPoint: "payment_session",
+        variables: {
+          filters: {
+            provider_id: PRZELEWY24_PROVIDER_ID,
+            payment_collection_id: collectionId,
+          },
+        },
+        fields: ["provider_id", "status", "data"],
+      });
+      const sessionRows = await remoteQuery2(sessionObject);
+      const found = (Array.isArray(sessionRows) ? sessionRows[0] : sessionRows) as
+        | P24SessionRow
+        | undefined;
+      if (found?.data) p24Session = found;
+    }
+  }
+
   if (!p24Session?.data) return "no_p24";
 
   const { methodId, methodName } = await resolveMethodFromSession(p24Session.data);

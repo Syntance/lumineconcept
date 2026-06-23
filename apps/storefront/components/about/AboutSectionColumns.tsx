@@ -9,9 +9,13 @@ import {
 	ABOUT_INTRO_MOBILE_MEDIA_FRAME,
 	ABOUT_PAGE_CONTENT_MAX,
 	ABOUT_PAGE_GUTTER,
+	ABOUT_SECTION_MOBILE_BODY_ROW,
 	ABOUT_SECTION_SAFE,
 } from "@/components/about/about-media";
 import { cn } from "@/lib/utils";
+
+/** Mobile — układ jak sekcja 1: zdjęcie + body pod spodem. */
+export type AboutMobileStackedLayout = "intro" | "media-start" | "media-end";
 
 type AboutSectionColumnsProps = {
 	heading?: ReactNode;
@@ -29,6 +33,8 @@ type AboutSectionColumnsProps = {
 	mediaCaption?: ReactNode;
 	/** Mobile: dół nagłówka w linii z dołem zdjęcia (nad podpisem). */
 	mobileHeadingAlignImageBottom?: boolean;
+	/** Mobile: układ z sekcji 1 — intro | zdjęcie lewo | zdjęcie prawo. */
+	mobileStackedLayout?: AboutMobileStackedLayout;
 	/** Nadpisanie domyślnego offsetu zdjęcia na mobile (np. intro wyżej). */
 	mobileMediaLower?: string;
 	/** true = tekst lewa kolumna, zdjęcie prawa (domyślnie). false = zdjęcie lewa, tekst prawa. */
@@ -68,6 +74,7 @@ export function AboutSectionColumns({
 	mobileBodyWrapperClassName,
 	mediaCaption,
 	mobileHeadingAlignImageBottom = false,
+	mobileStackedLayout,
 	mobileMediaLower = ABOUT_MOBILE_MEDIA_LOWER,
 	mediaOnEnd = true,
 	mobileBodyBesideMedia = false,
@@ -75,6 +82,36 @@ export function AboutSectionColumns({
 	const textOrder = mediaOnEnd ? "order-1" : "order-2";
 	const mediaOrder = mediaOnEnd ? "order-2" : "order-1";
 	const resolvedDesktopMedia = desktopMedia ?? media;
+	const resolvedMobileLayout: AboutMobileStackedLayout | null = mobileHeadingAlignImageBottom
+		? "intro"
+		: (mobileStackedLayout ?? null);
+
+	const renderMobileBodyRow = (rowStart: string) => (
+		<div
+			className={cn(
+				"col-span-2",
+				rowStart,
+				ABOUT_SECTION_MOBILE_BODY_ROW,
+				mobileBodyWrapperClassName ?? "w-full text-center",
+				bodyClassName,
+			)}
+		>
+			{body}
+		</div>
+	);
+
+	const mobileMediaCell = (columnClass: string) => (
+		<div
+			className={cn(
+				columnClass,
+				"flex min-h-0 w-full flex-col justify-start",
+				mobileMediaLower,
+				mediaClassName,
+			)}
+		>
+			<div className={ABOUT_INTRO_MOBILE_MEDIA_FRAME}>{media}</div>
+		</div>
+	);
 
 	/** Desktop (lg+) — siatka z commitów 17–18 czerwca: px-4, max-w-7xl, prosty 2-kolumnowy grid. */
 	const desktopGrid = (
@@ -95,7 +132,7 @@ export function AboutSectionColumns({
 			className={className}
 			gridClassName={cn(
 				"grid grid-cols-2 items-start gap-3",
-				mobileHeadingAlignImageBottom ? "hidden" : "grid",
+				resolvedMobileLayout ? "hidden" : "grid",
 			)}
 		>
 			<div className={cn("min-w-0", textOrder, textClassName)}>
@@ -111,10 +148,42 @@ export function AboutSectionColumns({
 		</AboutMobileGridShell>
 	);
 
-	if (!mobileHeadingAlignImageBottom) {
+	if (!resolvedMobileLayout) {
 		return (
 			<>
 				{defaultMobileGrid}
+				{desktopGrid}
+			</>
+		);
+	}
+
+	if (resolvedMobileLayout === "media-start") {
+		return (
+			<>
+				<AboutMobileGridShell
+					className={className}
+					gridClassName="grid grid-cols-2 grid-rows-[auto_auto] items-stretch gap-x-3 gap-y-0"
+				>
+					{mobileMediaCell("col-start-1 row-start-1")}
+					<div className="col-start-2 row-start-1" aria-hidden />
+					{renderMobileBodyRow("row-start-2")}
+				</AboutMobileGridShell>
+				{desktopGrid}
+			</>
+		);
+	}
+
+	if (resolvedMobileLayout === "media-end") {
+		return (
+			<>
+				<AboutMobileGridShell
+					className={className}
+					gridClassName="grid grid-cols-2 grid-rows-[auto_auto] items-stretch gap-x-3 gap-y-0"
+				>
+					<div className="col-start-1 row-start-1" aria-hidden />
+					{mobileMediaCell("col-start-2 row-start-1")}
+					{renderMobileBodyRow("row-start-2")}
+				</AboutMobileGridShell>
 				{desktopGrid}
 			</>
 		);
@@ -161,15 +230,7 @@ export function AboutSectionColumns({
 					</div>
 				) : null}
 
-				<div
-					className={cn(
-						"col-span-2 row-start-3 min-w-0 pt-4 sm:pt-5",
-						mobileBodyWrapperClassName ?? "w-full text-center",
-						bodyClassName,
-					)}
-				>
-					{body}
-				</div>
+				{renderMobileBodyRow("row-start-3")}
 			</AboutMobileGridShell>
 
 			{desktopGrid}
