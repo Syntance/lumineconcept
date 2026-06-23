@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AboutClosingSection } from "@/components/about/AboutClosingSection";
+import { ABOUT_PAGE_CLIP } from "@/components/about/about-media";
 import { AboutHeroSection } from "@/components/about/AboutHeroSection";
 import { AboutIntroSection } from "@/components/about/AboutIntroSection";
 import { AboutMissionSection } from "@/components/about/AboutMissionSection";
@@ -52,7 +53,7 @@ export default async function ONasPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
       />
-      <div className="font-gilroy max-md:bg-brand-50 [&_h1]:font-binerka [&_h2]:font-binerka">
+      <div className={`font-gilroy max-md:bg-brand-50 ${ABOUT_PAGE_CLIP} [&_h1]:font-binerka [&_h2]:font-binerka`}>
         <AboutHeroSection hero={about.hero} />
         <AboutIntroSection sections={about.sections} />
         <AboutMissionSection sections={about.sections} />

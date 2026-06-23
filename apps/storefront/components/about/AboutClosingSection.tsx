@@ -45,7 +45,7 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
       <div
         aria-hidden
         className={cn(
-          "pointer-events-none absolute left-1/2 z-[2] hidden -translate-x-1/2 -translate-y-1/2 md:block",
+          "pointer-events-none absolute left-1/2 z-[2] block -translate-x-1/2 -translate-y-1/2",
           ABOUT_SIGNET_WIDTH_CLASS,
           ABOUT_CLOSING_SIGNET_TOP,
         )}
@@ -73,17 +73,17 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
       {/* Pionowy separator + półkole — środek kuli na krawędzi footera. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute bottom-0 left-1/2 z-[1] hidden md:block"
+        className="pointer-events-none absolute bottom-0 left-1/2 z-[1] block"
       >
         <span
           className={cn(
-            "absolute left-1/2 h-[150px] w-0.5 -translate-x-1/2 bg-brand-400",
+            "absolute left-1/2 h-[100px] w-0.5 -translate-x-1/2 bg-brand-400 md:h-[150px]",
             ABOUT_CLOSING_SEPARATOR_LINE_BOTTOM,
           )}
         />
         <span
           className={cn(
-            "absolute left-1/2 size-20 -translate-x-1/2 translate-y-1/2 rounded-full bg-brand-400",
+            "absolute left-1/2 size-14 -translate-x-1/2 translate-y-1/2 rounded-full bg-brand-400 md:size-20",
             ABOUT_CLOSING_SEPARATOR_CENTER_BOTTOM,
           )}
         />
@@ -91,19 +91,24 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
 
       <AboutSectionColumns
         className="relative z-10"
-        mobileMediaFirst={false}
-        textClassName={cn(ABOUT_TEXT_GUTTER_RIGHT, ABOUT_MISSION_TEXT_TOP_OFFSET, ABOUT_CLOSING_TEXT_TOP_OFFSET)}
+        textClassName={cn(
+          ABOUT_TEXT_GUTTER_RIGHT,
+          ABOUT_MISSION_TEXT_TOP_OFFSET,
+          ABOUT_CLOSING_TEXT_TOP_OFFSET,
+          "max-md:hidden md:flex md:flex-col md:items-end",
+        )}
+        bodyClassName="text-center md:text-right"
         mediaClassName={cn(
           "relative z-20",
           ABOUT_MEDIA_COLUMN_END,
           ABOUT_CLOSING_MEDIA_TOP_OFFSET,
         )}
-        text={
+        body={
           <>
             <h2 id="about-closing-heading" className="sr-only">
               {sections.closingLabel || "Domknięcie strony"}
             </h2>
-            <AboutBodyText paragraphs={sections.closingParagraphs} className="text-right" />
+            <AboutBodyText paragraphs={sections.closingParagraphs} />
           </>
         }
         media={
@@ -113,7 +118,6 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
               <AboutArchImage
                 src={sections.closingImageUrl}
                 alt={sections.closingImageAlt}
-                className="w-full max-w-none"
               />
             }
             label={

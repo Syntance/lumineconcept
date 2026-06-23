@@ -24,6 +24,15 @@ function normalizeAboutBodyLineBreaks(text: string): string {
 		.join("\n");
 }
 
+/** Mobile — jeden akapit, bez łamań wierszy z CMS. */
+export function collapseAboutBodyLinesForMobile(text: string): string {
+	return text
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0)
+		.join(" ");
+}
+
 /** Wartość textarea w CMS — bez trimEnd, żeby spacja na końcu linii nie znikała podczas pisania. */
 export function formatAboutParagraphsForEditor(paragraphs: string[] | undefined): string {
 	if (!paragraphs?.length) return "";
