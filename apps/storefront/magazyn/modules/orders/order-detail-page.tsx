@@ -8,7 +8,7 @@ import { cn } from "@magazyn/core/lib/cn";
 import { OrderLineItemRow } from "./order-line-item-row";
 import { type AdminOrderDetail, getAdminOrder, type OrderAddress } from "./store";
 import { BADGE_TONE_CLASS, fulfillmentStatusBadge, orderStatusBadge, paymentStatusBadge } from "./order-status";
-import { isP24PaymentConfirmed } from "./order-payment-provider";
+import { isP24PaymentConfirmed, orderPaymentMethodLabel } from "./order-payment-provider";
 import { OrderActions } from "./order-actions";
 import { EXPRESS_DELIVERY_LABEL, expressFeeMinor, isExpressDelivery } from "./order-express";
 
@@ -86,6 +86,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
 	const status = orderStatusBadge(order.status);
 	const payment = paymentStatusBadge(order.paymentStatus, order.status);
+	const paymentMethod = orderPaymentMethodLabel(order);
 	const fulfillment = fulfillmentStatusBadge(order.fulfillmentStatus, order.status);
 	const flags = actionFlags(order);
 	const orderNotes = order.metadata.order_notes?.trim() ?? "";
@@ -234,6 +235,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 							<div className="flex items-center justify-between">
 								<dt className="text-muted-foreground">Płatność</dt>
 								<dd><Badge label={payment.label} tone={payment.tone} /></dd>
+							</div>
+							<div className="flex items-center justify-between gap-3">
+								<dt className="text-muted-foreground">Metoda płatności</dt>
+								<dd className="text-right font-medium text-foreground">{paymentMethod}</dd>
 							</div>
 							<div className="flex items-center justify-between">
 								<dt className="text-muted-foreground">Wysyłka</dt>
