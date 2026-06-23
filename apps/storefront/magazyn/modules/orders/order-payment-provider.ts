@@ -16,6 +16,26 @@ export function primaryPaymentProviderId(order: AdminOrderDetail): string | null
 	return active[0]?.providerId ?? order.payments[0]?.providerId ?? null;
 }
 
+/** Czytelna nazwa providera płatności (checkout / Medusa). */
+export function paymentProviderLabel(providerId: string | null | undefined): string {
+	if (!providerId) return "—";
+	if (providerId === PRZELEWY24_PROVIDER_ID) return "Przelewy24";
+	if (providerId === SYSTEM_PAYMENT_PROVIDER_ID) return "Przelew tradycyjny";
+	if (providerId.includes("paypo")) return "PayPo";
+	if (providerId.includes("blik")) return "BLIK";
+	return providerId.replace(/^pp_/, "").replace(/_/g, " ");
+}
+
+/** Metoda płatności zamówienia — metadata sklepu lub provider z Medusy. */
+export function orderPaymentMethodLabel(order: AdminOrderDetail): string {
+	const metaLabel = order.metadata.payment?.trim();
+	if (metaLabel) return metaLabel;
+
+	const providerId =
+		order.metadata.payment_provider_id?.trim() ?? primaryPaymentProviderId(order);
+	return paymentProviderLabel(providerId);
+}
+
 /**
  * „Rozpocznij realizację” tylko gdy płatność poszła przez P24 i jest
  * potwierdzona (captured). Przelew tradycyjny — zawsze „Zaksięguj płatność”.
