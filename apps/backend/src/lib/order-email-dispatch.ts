@@ -8,6 +8,7 @@ import {
   wasOrderEmailSent,
   copyPaymentProviderToOrder,
 } from "./order-checkout-metadata";
+import { copyP24PaymentDetailsToOrder } from "./order-p24-metadata";
 import { orderAwaitingBankTransfer } from "./order-payment-method";
 import { RESEND_DEFAULT_CONTACT_EMAIL } from "./resend-defaults";
 import {
@@ -240,6 +241,16 @@ export async function dispatchOrderPlacedEmails(
         : {}),
       payment_provider_id: params.paymentProviderId,
     };
+  }
+
+  // Tryb server: subscriber order.placed nie odpala — metadata P24 tu.
+  try {
+    await copyP24PaymentDetailsToOrder(scope, params.orderId);
+  } catch (e) {
+    console.warn(
+      `[mail] copyP24PaymentDetailsToOrder order=${params.orderId}:`,
+      e instanceof Error ? e.message : e,
+    );
   }
 
   const email = resolveOrderRecipientEmail(order, params.fallbackEmail);

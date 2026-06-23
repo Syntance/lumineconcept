@@ -1,4 +1,4 @@
-﻿import {
+import {
 	ABOUT_INTRO_DESKTOP_MEDIA_OFFSET,
 	ABOUT_INTRO_DESKTOP_MEDIA_ROW,
 	ABOUT_INTRO_MOBILE_BODY_WRAPPER,
@@ -15,7 +15,7 @@ import { AboutArchImage } from "@/components/about/AboutArchImage";
 import { AboutMediaBlock } from "@/components/about/AboutMediaBlock";
 import { AboutSectionColumns } from "@/components/about/AboutSectionColumns";
 import { AboutSectionLabel } from "@/components/about/AboutSectionLabel";
-import { ABOUT_SECTION_HEADING_CLASS, ABOUT_INTRO_MOBILE_BODY_TEXT_CLASS, ABOUT_SIDE_CAPTION_CLASS } from "@/components/about/about-typography";
+import { ABOUT_SECTION_HEADING_CLASS, ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS, ABOUT_SIDE_CAPTION_CLASS } from "@/components/about/about-typography";
 import type { ResolvedAboutSections } from "@/lib/content/about";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +75,7 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 						{sections.introHeading}
 					</h2>
 				}
-				body={<AboutBodyText paragraphs={sections.introParagraphs} className={ABOUT_INTRO_MOBILE_BODY_TEXT_CLASS} />}
+				body={<AboutBodyText paragraphs={sections.introParagraphs} className={ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS} />}
 				media={introImage}
 				desktopMedia={
 					<div className={ABOUT_INTRO_DESKTOP_MEDIA_ROW}>

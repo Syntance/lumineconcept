@@ -56,9 +56,26 @@ export function readP24MethodIdFromSessionData(
   data: Record<string, unknown> | null | undefined,
 ): number | null {
   if (!data) return null;
+  const fromExtract = extractP24MethodId(data);
+  if (fromExtract) return fromExtract;
   const raw = data.p24_method_id ?? data.methodId;
   const id = Number(raw);
   return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function extractP24MethodId(data: Record<string, unknown>): number | null {
+  for (const key of [
+    "methodId",
+    "method",
+    "paymentMethod",
+    "payment_method",
+    "paymentMethodId",
+    "p24_method_id",
+  ]) {
+    const id = Number(data[key]);
+    if (Number.isFinite(id) && id > 0) return id;
+  }
+  return null;
 }
 
 export function readP24MethodNameFromSessionData(

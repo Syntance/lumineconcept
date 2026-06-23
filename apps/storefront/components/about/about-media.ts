@@ -4,8 +4,8 @@ export const ABOUT_MOBILE_MEDIA_LOWER = "max-lg:-mt-[150px] lg:mt-0" as const;
 /** Hero mobile — równy odstęp nad i pod blokiem nagłówka (h1 + subtitle). */
 export const ABOUT_HERO_MOBILE_HEADLINE_PADDING = "max-lg:py-12" as const;
 
-/** Mobile — treść pod hero obniżona o 100px (nachodzenie sekcji 1 zostaje). */
-export const ABOUT_PAGE_CONTENT_MOBILE_LOWER = "max-lg:mt-[100px] lg:mt-0" as const;
+/** Mobile — treść nachodzi na hero, ale o 100px mniej niż pełne nachodzenie (150px w dół vs wcześniejsze 50px). */
+export const ABOUT_PAGE_CONTENT_MOBILE_LOWER = "max-lg:translate-y-[150px] lg:translate-y-0" as const;
 
 /** Poziomy gutter strony O nas — 60px (mobile/tablet). */
 export const ABOUT_PAGE_GUTTER = "px-[60px]" as const;
@@ -32,10 +32,10 @@ export const ABOUT_INTRO_SIDE_CAPTION_VISIBILITY = "hidden xl:flex" as const;
 
 export const ABOUT_INTRO_SIDE_CAPTION_ALIGN = "shrink-0 xl:translate-y-[300px]" as const;
 
-/** Intro — nachodzenie zdjęcia na hero (mobile = desktop). */
+/** Intro — nachodzenie zdjęcia na hero / sekcję wyżej. */
 export const ABOUT_INTRO_MEDIA_OFFSET = "-mt-48 xl:-mt-56" as const;
 
-/** Intro — nachodzenie sekcji na hero (mobile = desktop). */
+/** Intro — nachodzenie sekcji na hero. */
 export const ABOUT_INTRO_SECTION_OVERLAP = "-mt-20 sm:-mt-24 lg:-mt-28" as const;
 
 /** @deprecated Alias — ABOUT_INTRO_MEDIA_OFFSET. */
@@ -53,9 +53,24 @@ export const ABOUT_MEDIA_LABEL_OVERLAP_ABOVE = "-mb-[6.7%]" as const;
 export const ABOUT_MEDIA_LABEL_OVERLAP_BELOW = "-mt-[6.7%]" as const;
 export const ABOUT_MEDIA_LABEL_INSET_X = "px-[2.9%]" as const;
 
-/** Intro mobile — prawa krawędź tekstu w osi środka zdjęcia. */
+/** Intro mobile — prawa krawędź tekstu w osi środka zdjęcia (2 kolumny + gap-x-3). */
 export const ABOUT_INTRO_MOBILE_BODY_WRAPPER =
 	"max-lg:w-[calc(75%+0.1875rem)] max-lg:text-right" as const;
+
+/** Mobile — wspólny padding wiersza body pod siatką zdjęcia. */
+export const ABOUT_SECTION_MOBILE_BODY_ROW = "min-w-0 pt-4 sm:pt-5" as const;
+
+/** Mobile misja — zdjęcie od lewej krawędzi (jak nagłówki w gutterze 60px). */
+export const ABOUT_MISSION_MOBILE_MEDIA_ALIGN =
+	"max-lg:flex max-lg:items-start max-lg:justify-start" as const;
+
+export const ABOUT_MISSION_MOBILE_MEDIA_BLOCK = "max-lg:mx-0 max-lg:items-start" as const;
+
+/** Mobile misja — tekst obok zdjęcia, wyrównanie do góry obrazu. */
+export const ABOUT_MISSION_MOBILE_TEXT_BESIDE_OFFSET = "max-lg:pt-[3.25rem] lg:pt-0" as const;
+
+/** Mobile — sekcja misji: tekst od lewej krawędzi kolumny (pod siatką). */
+export const ABOUT_MISSION_MOBILE_BODY_WRAPPER = "max-lg:w-full max-lg:text-left" as const;
 
 /** Intro desktop — tekst w kolumnie. */
 export const ABOUT_INTRO_DESKTOP_BODY_EDGE = "lg:w-full lg:max-w-full lg:text-right" as const;
@@ -87,9 +102,9 @@ export const ABOUT_MEDIA_COLUMN_END =
 export const ABOUT_MEDIA_COLUMN_START =
 	"flex w-full flex-col items-start max-lg:items-start lg:items-end lg:pr-[calc(1rem+50px)]" as const;
 
-/** Tekst misji — wyrównanie do góry webp (mobile = desktop). */
+/** Tekst misji — wyrównanie do góry webp (tylko desktop). */
 export const ABOUT_MISSION_TEXT_TOP_OFFSET =
-	"pt-[calc(6.83mm+1rem+2px+19.44rem*960/720*0.064-19.44rem*0.067)] xl:pt-[calc(6.83mm+1rem+2px+22.68rem*960/720*0.064-22.68rem*0.067)]" as const;
+	"max-lg:pt-0 lg:pt-[calc(6.83mm+1rem+2px+19.44rem*960/720*0.064-19.44rem*0.067)] xl:pt-[calc(6.83mm+1rem+2px+22.68rem*960/720*0.064-22.68rem*0.067)]" as const;
 
 /** Zdjęcie domknięcia — nachodzi na dół sekcji misji (mobile = desktop). */
 export const ABOUT_CLOSING_MEDIA_TOP_OFFSET = "-mt-[250px]" as const;
@@ -104,7 +119,7 @@ export const ABOUT_CLOSING_SEPARATOR_CENTER_BOTTOM = "bottom-0" as const;
 export const ABOUT_CLOSING_SEPARATOR_LINE_BOTTOM = "bottom-10" as const;
 
 /** Tekst domknięcia — podniesienie względem domyślnego wyrównania do zdjęcia. */
-export const ABOUT_CLOSING_TEXT_TOP_OFFSET = "-mt-[50px]" as const;
+export const ABOUT_CLOSING_TEXT_TOP_OFFSET = "max-lg:mt-0 lg:-mt-[50px]" as const;
 
 /** Opaska brand-100 — sekcja domknięcia. */
 export const ABOUT_CLOSING_BRAND100_BAND_HEIGHT = "h-[530px]" as const;

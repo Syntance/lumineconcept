@@ -2,9 +2,12 @@
 export const ABOUT_BODY_TEXT_CLASS =
   "font-gilroy text-[17px] leading-[1.55] tracking-[0.04em] lg:text-[4.56mm] lg:leading-[6.83mm] lg:tracking-[0.06em]" as const;
 
-/** Intro mobile — treść sekcji 1, −2px względem bazowego brandbooku. */
-export const ABOUT_INTRO_MOBILE_BODY_TEXT_CLASS =
+/** Intro mobile — treść sekcji; alias: wszystkie sekcje mobile. */
+export const ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS =
   "max-lg:text-[calc(4.56mm-2px)] max-lg:leading-[calc(6.83mm-3px)]" as const;
+
+/** @deprecated Alias — ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS */
+export const ABOUT_INTRO_MOBILE_BODY_TEXT_CLASS = ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS;
 
 /** Binerka — nagłówki sekcji treści (intro, misja itd.). */
 export const ABOUT_SECTION_HEADING_CLASS =
