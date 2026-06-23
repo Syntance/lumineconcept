@@ -1,6 +1,7 @@
 import Image from "next/image";
 
-import { Breadcrumbs, BREADCRUMBS_ALIGN_CLASS } from "@/components/common/Breadcrumbs";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { ABOUT_PAGE_GUTTER } from "@/components/about/about-media";
 import type { ResolvedAboutHero } from "@/lib/content/about";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ export function AboutHeroSection({ hero }: AboutHeroSectionProps) {
         aria-hidden
       />
 
-      <div className={cn("relative z-10 px-4 pt-8 sm:pt-10", BREADCRUMBS_ALIGN_CLASS)}>
+      <div className={cn("relative z-10 pt-8 sm:pt-10", ABOUT_PAGE_GUTTER)}>
         <Breadcrumbs
           className="mb-0 font-gilroy text-sm [&_a]:text-white/75 [&_a:hover]:text-white [&_span]:text-white/90"
           items={[
@@ -45,7 +46,7 @@ export function AboutHeroSection({ hero }: AboutHeroSectionProps) {
         />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 pb-32 pt-10 sm:pb-40 sm:pt-14 lg:pb-48 lg:pt-16">
+      <div className={cn("relative z-10 mx-auto max-w-7xl pb-32 pt-10 sm:pb-40 sm:pt-14 lg:pb-48 lg:pt-16", ABOUT_PAGE_GUTTER)}>
         <div className="max-w-xl">
           <h1
             id="about-hero-heading"
