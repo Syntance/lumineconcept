@@ -5,7 +5,11 @@ import {
 	ABOUT_MOBILE_MEDIA_LOWER,
 	ABOUT_MEDIA_LABEL_INSET_X,
 	ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
+	ABOUT_INTRO_DESKTOP_MEDIA_OFFSET,
+	ABOUT_INTRO_HEADING_IMAGE_ALIGN_HEIGHT,
+	ABOUT_PAGE_CONTENT_MAX,
 	ABOUT_PAGE_GUTTER,
+	ABOUT_SECTION_SAFE,
 } from "@/components/about/about-media";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +35,25 @@ type AboutSectionColumnsProps = {
 	mediaOnEnd?: boolean;
 };
 
+type AboutSectionGridShellProps = {
+	className?: string;
+	gridClassName: string;
+	children: ReactNode;
+};
+
+/** Gutter 60px na pełnej szerokości + max-w-7xl wewnątrz — bez przeskoku przy >1280px. */
+function AboutSectionGridShell({
+	className,
+	gridClassName,
+	children,
+}: AboutSectionGridShellProps) {
+	return (
+		<div className={cn("w-full min-w-0", ABOUT_PAGE_GUTTER, ABOUT_SECTION_SAFE, className)}>
+			<div className={cn(ABOUT_PAGE_CONTENT_MAX, gridClassName)}>{children}</div>
+		</div>
+	);
+}
+
 export function AboutSectionColumns({
 	heading,
 	body,
@@ -49,35 +72,60 @@ export function AboutSectionColumns({
 	const textOrder = mediaOnEnd ? "order-1" : "order-2";
 	const mediaOrder = mediaOnEnd ? "order-2" : "order-1";
 	const resolvedDesktopMedia = desktopMedia ?? media;
-
-	const gridShell = "mx-auto w-full max-w-7xl";
+	const desktopAlignsHeadingToImage = mobileHeadingAlignImageBottom;
 
 	const desktopGrid = (
-		<div
-			className={cn(
-				gridShell,
-				"hidden grid-cols-2 items-start gap-3 md:grid md:gap-16 lg:gap-20",
-				ABOUT_PAGE_GUTTER,
-				className,
-			)}
+		<AboutSectionGridShell
+			className={className}
+			gridClassName="hidden grid-cols-2 items-start gap-3 lg:grid lg:gap-16 xl:gap-20"
 		>
-			<div className={cn("min-w-0", textOrder, textClassName)}>
-				{heading}
-				<div className={cn(bodyClassName)}>{body}</div>
-			</div>
+			{desktopAlignsHeadingToImage ? (
+				<>
+					<div className={cn("min-w-0 overflow-hidden", textOrder, textClassName)}>
+						<div
+							className={cn(
+								"flex flex-col justify-end",
+								ABOUT_INTRO_HEADING_IMAGE_ALIGN_HEIGHT,
+								ABOUT_INTRO_DESKTOP_MEDIA_OFFSET,
+							)}
+						>
+							{heading}
+						</div>
+						<div className={cn(bodyClassName)}>{body}</div>
+					</div>
 
-			<div className={cn("min-w-0", mediaOrder, mediaClassName)}>{resolvedDesktopMedia}</div>
-		</div>
+					<div
+						className={cn(
+							"relative z-20 min-w-0 max-w-full overflow-x-clip",
+							mediaOrder,
+							mediaClassName,
+							ABOUT_INTRO_DESKTOP_MEDIA_OFFSET,
+						)}
+					>
+						{resolvedDesktopMedia}
+					</div>
+				</>
+			) : (
+				<>
+					<div className={cn("min-w-0", textOrder, textClassName)}>
+						{heading}
+						<div className={cn(bodyClassName)}>{body}</div>
+					</div>
+
+					<div className={cn("min-w-0 max-w-full overflow-x-clip", mediaOrder, mediaClassName)}>
+						{resolvedDesktopMedia}
+					</div>
+				</>
+			)}
+		</AboutSectionGridShell>
 	);
 
 	const defaultMobileGrid = (
-		<div
-			className={cn(
-				gridShell,
-				"grid grid-cols-2 items-start gap-3 md:hidden",
+		<AboutSectionGridShell
+			className={className}
+			gridClassName={cn(
+				"grid grid-cols-2 items-start gap-3 lg:hidden",
 				mobileHeadingAlignImageBottom ? "hidden" : "grid",
-				ABOUT_PAGE_GUTTER,
-				className,
 			)}
 		>
 			<div className={cn("min-w-0", textOrder, textClassName)}>
@@ -88,7 +136,7 @@ export function AboutSectionColumns({
 			<div className={cn("min-w-0", mediaOrder, mobileMediaLower, mediaClassName)}>{media}</div>
 
 			<div className={cn("min-w-0", ABOUT_MOBILE_BODY_BETWEEN_COLUMNS, bodyClassName)}>{body}</div>
-		</div>
+		</AboutSectionGridShell>
 	);
 
 	if (!mobileHeadingAlignImageBottom) {
@@ -102,13 +150,9 @@ export function AboutSectionColumns({
 
 	return (
 		<>
-			<div
-				className={cn(
-					gridShell,
-					"grid grid-cols-2 grid-rows-[auto_auto_auto] items-stretch gap-x-3 gap-y-0 md:hidden",
-					ABOUT_PAGE_GUTTER,
-					className,
-				)}
+			<AboutSectionGridShell
+				className={className}
+				gridClassName="grid grid-cols-2 grid-rows-[auto_auto_auto] items-stretch gap-x-3 gap-y-0 lg:hidden"
 			>
 				<div
 					className={cn(
@@ -121,36 +165,36 @@ export function AboutSectionColumns({
 
 				<div
 					className={cn(
-						"col-start-2 row-start-1 row-span-2 flex min-h-0 w-full flex-col justify-start",
+						"col-start-2 row-start-1 flex min-h-0 w-full flex-col justify-start",
 						mobileMediaLower,
 						mediaClassName,
 					)}
 				>
 					{media}
-					{mediaCaption ? (
-						<div
-							className={cn(
-								"w-full min-w-0",
-								ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
-								ABOUT_MEDIA_LABEL_INSET_X,
-							)}
-						>
-							{mediaCaption}
-						</div>
-					) : null}
 				</div>
+
+				{mediaCaption ? (
+					<div
+						className={cn(
+							"col-start-2 row-start-2 w-full min-w-0",
+							ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
+							ABOUT_MEDIA_LABEL_INSET_X,
+						)}
+					>
+						{mediaCaption}
+					</div>
+				) : null}
 
 				<div
 					className={cn(
-						"col-span-2 row-start-3 min-w-0 max-md:pt-4 sm:max-md:pt-5",
-						mobileBodyWrapperClassName ??
-							"max-md:w-full max-md:text-center",
+						"col-span-2 row-start-3 min-w-0 max-lg:pt-4 sm:max-lg:pt-5",
+						mobileBodyWrapperClassName ?? "max-lg:w-full max-lg:text-center",
 						bodyClassName,
 					)}
 				>
 					{body}
 				</div>
-			</div>
+			</AboutSectionGridShell>
 
 			{desktopGrid}
 		</>

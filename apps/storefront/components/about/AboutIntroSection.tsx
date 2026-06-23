@@ -1,9 +1,12 @@
 import {
-	ABOUT_INTRO_HEADING_RAISE,
+	ABOUT_INTRO_DESKTOP_MEDIA_ROW,
 	ABOUT_INTRO_MOBILE_BODY_WRAPPER,
+	ABOUT_INTRO_DESKTOP_BODY_EDGE,
 	ABOUT_INTRO_MOBILE_CONTENT_LOWER,
 	ABOUT_INTRO_MOBILE_MEDIA_LOWER,
+	ABOUT_INTRO_SIDE_CAPTION_ALIGN,
 	ABOUT_MEDIA_COLUMN_END,
+	ABOUT_SECTION_SAFE,
 	ABOUT_TEXT_GUTTER_RIGHT,
 } from "@/components/about/about-media";
 import { AboutBodyText } from "@/components/about/AboutBodyText";
@@ -35,7 +38,7 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 	return (
 		<section
 			aria-labelledby="about-intro-heading"
-			className="relative bg-brand-50 -mt-20 sm:-mt-24 lg:-mt-28"
+			className={cn("relative bg-brand-50 overflow-x-clip", ABOUT_SECTION_SAFE, "-mt-20 sm:-mt-24 lg:-mt-28")}
 		>
 			<AboutSectionColumns
 				className={cn(
@@ -47,19 +50,18 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 				mediaCaption={introLabel}
 				textClassName={cn(
 					ABOUT_TEXT_GUTTER_RIGHT,
-					ABOUT_INTRO_HEADING_RAISE,
-					"max-md:items-start md:flex md:flex-col md:items-end lg:pt-14 xl:pt-16",
+					"max-lg:items-start lg:flex lg:flex-col lg:items-end",
 				)}
 				mobileBodyWrapperClassName={ABOUT_INTRO_MOBILE_BODY_WRAPPER}
-				bodyClassName="max-md:text-right md:text-right"
-				mediaClassName={`relative z-20 sm:-mt-4 lg:-mt-48 xl:-mt-56 ${ABOUT_MEDIA_COLUMN_END}`}
+				bodyClassName={cn("max-lg:text-right lg:text-right", ABOUT_INTRO_DESKTOP_BODY_EDGE)}
+				mediaClassName={cn("relative z-20", ABOUT_MEDIA_COLUMN_END)}
 				heading={
 					<h2
 						id="about-intro-heading"
 						className={cn(
-							"mb-0 text-left md:mb-8 md:text-right",
+							"mb-0 max-w-full text-left lg:text-right",
 							ABOUT_SECTION_HEADING_CLASS,
-							"max-md:text-4xl sm:text-6xl lg:text-7xl",
+							"max-lg:text-4xl sm:text-6xl xl:text-7xl",
 						)}
 					>
 						{sections.introHeading}
@@ -68,11 +70,11 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 				body={<AboutBodyText paragraphs={sections.introParagraphs} className={ABOUT_INTRO_MOBILE_BODY_TEXT_CLASS} />}
 				media={introImage}
 				desktopMedia={
-					<div className="flex items-stretch gap-2 sm:gap-3">
+					<div className={ABOUT_INTRO_DESKTOP_MEDIA_ROW}>
 						<AboutMediaBlock image={introImage} label={introLabel} />
 						{sections.sideCaption ? (
 							<div
-								className="hidden items-center md:flex md:translate-x-[60px] md:translate-y-[250px]"
+								className={cn("hidden items-center lg:flex", ABOUT_INTRO_SIDE_CAPTION_ALIGN)}
 								aria-hidden
 							>
 								<p className={ABOUT_SIDE_CAPTION_CLASS}>{sections.sideCaption}</p>

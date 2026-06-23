@@ -10,18 +10,22 @@ type DeferredGoogleAnalyticsProps = {
  * kolejka `dataLayer` jest przetwarzana po załadowaniu gtag.js.
  */
 export function DeferredGoogleAnalytics({ gaId }: DeferredGoogleAnalyticsProps) {
+  const gaBootstrapScript = `
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${gaId}');
+var s = document.createElement('script');
+s.async = true;
+s.src = 'https://www.googletagmanager.com/gtag/js?id=${gaId}';
+document.head.appendChild(s);
+`;
+
   return (
-    <Script id="ga4-deferred" strategy="lazyOnload">
-      {`
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '${gaId}');
-        var s = document.createElement('script');
-        s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=${gaId}';
-        document.head.appendChild(s);
-      `}
-    </Script>
+    <Script
+      id="ga4-deferred"
+      strategy="lazyOnload"
+      dangerouslySetInnerHTML={{ __html: gaBootstrapScript }}
+    />
   );
 }

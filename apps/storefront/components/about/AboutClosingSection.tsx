@@ -15,6 +15,7 @@ import {
   ABOUT_SIGNET_IMAGE,
   ABOUT_SIGNET_WIDTH_CLASS,
   ABOUT_TEXT_GUTTER_RIGHT,
+  ABOUT_SECTION_SAFE,
 } from "@/components/about/about-media";
 import { AboutBodyText } from "@/components/about/AboutBodyText";
 import { AboutArchImage } from "@/components/about/AboutArchImage";
@@ -30,7 +31,7 @@ type AboutClosingSectionProps = {
 
 export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
   return (
-    <section aria-labelledby="about-closing-heading" className="relative bg-brand-50 pb-[150px] pt-4 sm:pb-[170px]">
+    <section aria-labelledby="about-closing-heading" className={cn("relative overflow-x-clip bg-brand-50 pb-[150px] pt-4 sm:pb-[170px]", ABOUT_SECTION_SAFE)}>
       {/* Poziomy opasek — środek sekcji, brand-100 (#EEE8E0). */}
       <div
         aria-hidden
@@ -95,9 +96,9 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
           ABOUT_TEXT_GUTTER_RIGHT,
           ABOUT_MISSION_TEXT_TOP_OFFSET,
           ABOUT_CLOSING_TEXT_TOP_OFFSET,
-          "max-md:hidden md:flex md:flex-col md:items-end",
+          "max-lg:hidden lg:flex lg:flex-col lg:items-end",
         )}
-        bodyClassName="text-center md:text-right"
+        bodyClassName="text-center lg:text-right"
         mediaClassName={cn(
           "relative z-20",
           ABOUT_MEDIA_COLUMN_END,

@@ -25,28 +25,33 @@ export function MobileHeroImageBand({
 }: MobileHeroImageBandProps) {
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<Image
-				src={src}
-				alt=""
-				width={MOBILE_HERO_BAND_WIDTH}
-				height={MOBILE_HERO_BAND_HEIGHT}
-				/*
-				 * `priority` = kluczowe dla LCP na mobile:
-				 *   – dodaje <link rel="preload" fetchpriority="high"> w <head>
-				 *   – ustawia fetchpriority="high" i loading="eager" na <img>
-				 *
-				 * Bez `unoptimized`: Vercel Image Optimizer serwuje właściwy rozmiar
-				 * (np. 828px dla 2× DPR na 414px) zamiast pełnego 1080px WebP.
-				 * Preload URL = /_next/image?url=...&w=828 = dokładnie to co <img src>.
-				 * Eliminuje mismatch URL między preload a img src.
-				 */
-				priority={priority}
-				sizes="100vw"
-				quality={85}
-				placeholder="blur"
-				blurDataURL={blurDataURL ?? BRAND_BLUR_DATA_URL}
-				className={`absolute inset-0 h-full w-full select-none object-cover ${objectPositionClass}`}
-			/>
+		<Image
+			src={src}
+			alt=""
+			width={MOBILE_HERO_BAND_WIDTH}
+			height={MOBILE_HERO_BAND_HEIGHT}
+			/*
+			 * `priority` = kluczowe dla LCP na mobile:
+			 *   – dodaje <link rel="preload" fetchpriority="high"> w <head>
+			 *   – ustawia loading="eager" na <img>
+			 *
+			 * `fetchPriority` na <img> jawnie (nie tylko via preload link):
+			 *   – Lighthouse "LCP request detection" wymaga fetchpriority="high"
+			 *     bezpośrednio na <img>, nie tylko na <link rel="preload">.
+			 *
+			 * Bez `unoptimized`: Vercel Image Optimizer serwuje właściwy rozmiar
+			 * (np. 828px dla 2× DPR na 414px) zamiast pełnego 1080px WebP.
+			 * Preload URL = /_next/image?url=...&w=828 = dokładnie to co <img src>.
+			 * Eliminuje mismatch URL między preload a img src.
+			 */
+			priority={priority}
+			fetchPriority={priority ? "high" : "auto"}
+			sizes="100vw"
+			quality={85}
+			placeholder="blur"
+			blurDataURL={blurDataURL ?? BRAND_BLUR_DATA_URL}
+			className={`absolute inset-0 h-full w-full select-none object-cover ${objectPositionClass}`}
+		/>
 		</div>
 	);
 }

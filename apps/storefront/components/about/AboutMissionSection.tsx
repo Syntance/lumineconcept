@@ -2,6 +2,7 @@ import {
 	ABOUT_MEDIA_COLUMN_START,
 	ABOUT_MISSION_MOBILE_MEDIA_LOWER,
 	ABOUT_MISSION_TEXT_TOP_OFFSET,
+	ABOUT_SECTION_SAFE,
 	ABOUT_TEXT_GUTTER_LEFT,
 } from "@/components/about/about-media";
 import { AboutBodyText } from "@/components/about/AboutBodyText";
@@ -18,7 +19,7 @@ type AboutMissionSectionProps = {
 
 export function AboutMissionSection({ sections }: AboutMissionSectionProps) {
 	return (
-		<section aria-labelledby="about-mission-heading" className="relative bg-brand-50">
+		<section aria-labelledby="about-mission-heading" className={cn("relative overflow-x-clip bg-brand-50", ABOUT_SECTION_SAFE)}>
 			<div
 				aria-hidden
 				className="pointer-events-none absolute inset-x-0 top-[16%] z-0 h-[47%] bg-white"
@@ -26,21 +27,21 @@ export function AboutMissionSection({ sections }: AboutMissionSectionProps) {
 
 			<div
 				aria-hidden
-				className="pointer-events-none absolute left-1/2 top-[calc(15%-100px)] z-[1] block h-[100px] w-px -translate-x-1/2 bg-brand-800 md:h-[150px]"
+				className="pointer-events-none absolute left-1/2 top-[calc(15%-100px)] z-[1] hidden h-[150px] w-px -translate-x-1/2 bg-brand-800 lg:block"
 			/>
 
-			<div className={cn("relative z-10 mx-auto w-full max-w-7xl pb-16 sm:pb-20 lg:pb-24")}>
+			<div className="relative z-10 w-full pb-16 sm:pb-20 lg:pb-24">
 				<AboutSectionColumns
-					className="px-0 pt-4 sm:pt-6 lg:pt-8"
+					className="pt-4 sm:pt-6 lg:pt-8"
 					mediaOnEnd={false}
 					mobileMediaLower={ABOUT_MISSION_MOBILE_MEDIA_LOWER}
 					mediaClassName={ABOUT_MEDIA_COLUMN_START}
 					textClassName={cn(
 						ABOUT_TEXT_GUTTER_LEFT,
 						ABOUT_MISSION_TEXT_TOP_OFFSET,
-						"max-md:hidden md:flex md:flex-col md:items-start",
+						"max-lg:hidden lg:flex lg:flex-col lg:items-start",
 					)}
-					bodyClassName="text-center md:text-left"
+					bodyClassName="text-center lg:text-left"
 					media={
 						<AboutMediaBlock
 							labelPosition="above"
