@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { AboutClosingSection } from "@/components/about/AboutClosingSection";
-import { ABOUT_PAGE_CLIP } from "@/components/about/about-media";
+import { ABOUT_PAGE_CLIP, ABOUT_PAGE_CONTENT_MOBILE_LOWER } from "@/components/about/about-media";
 import { AboutHeroSection } from "@/components/about/AboutHeroSection";
 import { AboutIntroSection } from "@/components/about/AboutIntroSection";
 import { AboutMissionSection } from "@/components/about/AboutMissionSection";
@@ -55,9 +55,11 @@ export default async function ONasPage() {
       />
       <div className={cn("font-gilroy w-full max-lg:bg-brand-50", ABOUT_PAGE_CLIP, "[&_h1]:font-binerka [&_h2]:font-binerka")}>
         <AboutHeroSection hero={about.hero} />
-        <AboutIntroSection sections={about.sections} />
-        <AboutMissionSection sections={about.sections} />
-        <AboutClosingSection sections={about.sections} />
+        <div className={ABOUT_PAGE_CONTENT_MOBILE_LOWER}>
+          <AboutIntroSection sections={about.sections} />
+          <AboutMissionSection sections={about.sections} />
+          <AboutClosingSection sections={about.sections} />
+        </div>
       </div>
     </>
   );

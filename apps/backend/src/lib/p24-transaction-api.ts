@@ -12,11 +12,19 @@ export type P24SessionData = {
   [k: string]: unknown;
 };
 
+export type P24PaymentMethod = {
+  id: number;
+  name: string;
+  group?: string;
+};
+
 export type P24TransactionInfo = {
   status: number;
   orderId: number;
   amount: number;
   currency: string;
+  methodId?: number;
+  statement?: string;
 };
 
 export type P24ApiConfig = {
@@ -79,17 +87,45 @@ export async function fetchP24TransactionBySessionId(
         orderId: number;
         amount: number;
         currency: string;
+        methodId?: number;
+        statement?: string;
       };
     }>(config, `/transaction/by/sessionId/${encodeURIComponent(sessionId)}`);
     if (!result.data) return null;
+    const methodId = Number(result.data.methodId);
+    const statement =
+      typeof result.data.statement === "string" ? result.data.statement : undefined;
     return {
       status: Number(result.data.status),
       orderId: Number(result.data.orderId),
       amount: Number(result.data.amount),
       currency: String(result.data.currency ?? "PLN"),
+      ...(Number.isFinite(methodId) && methodId > 0 ? { methodId } : {}),
+      ...(statement ? { statement } : {}),
     };
   } catch {
     return null;
+  }
+}
+
+/** Lista metod płatności P24 dla merchanta (BLIK, banki, karty…). */
+export async function fetchP24PaymentMethods(
+  config: P24ApiConfig,
+  language = "pl",
+): Promise<P24PaymentMethod[]> {
+  try {
+    const result = await p24ApiGet<{
+      data?: Array<{ id?: number; name?: string; group?: string }>;
+    }>(config, `/payment/methods/${language}`);
+    return (result.data ?? [])
+      .map((row) => ({
+        id: Number(row.id),
+        name: String(row.name ?? "").trim(),
+        group: typeof row.group === "string" ? row.group : undefined,
+      }))
+      .filter((row) => Number.isFinite(row.id) && row.id > 0 && row.name);
+  } catch {
+    return [];
   }
 }
 

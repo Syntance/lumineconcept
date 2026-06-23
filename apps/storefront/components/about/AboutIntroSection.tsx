@@ -3,6 +3,7 @@
 	ABOUT_INTRO_DESKTOP_MEDIA_ROW,
 	ABOUT_INTRO_MOBILE_BODY_WRAPPER,
 	ABOUT_INTRO_DESKTOP_BODY_EDGE,
+	ABOUT_INTRO_SECTION_OVERLAP,
 	ABOUT_INTRO_SIDE_CAPTION_ALIGN,
 	ABOUT_INTRO_SIDE_CAPTION_VISIBILITY,
 	ABOUT_MEDIA_COLUMN_END,
@@ -42,7 +43,7 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 			className={cn(
 				"relative z-10 bg-brand-50 overflow-x-clip",
 				ABOUT_SECTION_SAFE,
-				"-mt-20 sm:-mt-24 lg:-mt-28",
+				ABOUT_INTRO_SECTION_OVERLAP,
 			)}
 		>
 			<AboutSectionColumns

@@ -306,6 +306,7 @@ describe("getWebhookActionAndData — webhook P24 (urlStatus)", () => {
     expect(result.action).toBe("captured");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect((fetchMock.mock.calls[0] as [string])[0]).toContain("/transaction/verify");
+    expect((result as { data?: Record<string, unknown> }).data?.p24_method_id).toBe(154);
   });
 
   it("zły podpis → FAILED, bez wywołania verify", async () => {

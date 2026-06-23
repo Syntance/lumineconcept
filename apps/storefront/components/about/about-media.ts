@@ -1,6 +1,12 @@
 /** Mobile / tablet — pozycja zdjęcia w kolumnie (< lg). */
 export const ABOUT_MOBILE_MEDIA_LOWER = "max-lg:-mt-[150px] lg:mt-0" as const;
 
+/** Hero mobile — równy odstęp nad i pod blokiem nagłówka (h1 + subtitle). */
+export const ABOUT_HERO_MOBILE_HEADLINE_PADDING = "max-lg:py-12" as const;
+
+/** Mobile — treść pod hero obniżona o 100px (nachodzenie sekcji 1 zostaje). */
+export const ABOUT_PAGE_CONTENT_MOBILE_LOWER = "max-lg:mt-[100px] lg:mt-0" as const;
+
 /** Poziomy gutter strony O nas — 60px (mobile/tablet). */
 export const ABOUT_PAGE_GUTTER = "px-[60px]" as const;
 
@@ -26,8 +32,11 @@ export const ABOUT_INTRO_SIDE_CAPTION_VISIBILITY = "hidden xl:flex" as const;
 
 export const ABOUT_INTRO_SIDE_CAPTION_ALIGN = "shrink-0 xl:translate-y-[300px]" as const;
 
-/** Intro — offset pionowy zdjęcia (nachodzenie na hero), wszystkie breakpointy. */
+/** Intro — nachodzenie zdjęcia na hero (mobile = desktop). */
 export const ABOUT_INTRO_MEDIA_OFFSET = "-mt-48 xl:-mt-56" as const;
+
+/** Intro — nachodzenie sekcji na hero (mobile = desktop). */
+export const ABOUT_INTRO_SECTION_OVERLAP = "-mt-20 sm:-mt-24 lg:-mt-28" as const;
 
 /** @deprecated Alias — ABOUT_INTRO_MEDIA_OFFSET. */
 export const ABOUT_INTRO_DESKTOP_MEDIA_OFFSET = ABOUT_INTRO_MEDIA_OFFSET;

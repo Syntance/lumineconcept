@@ -31,8 +31,28 @@ export function orderPaymentMethodLabel(order: AdminOrderDetail): string {
 	const metaLabel = order.metadata.payment?.trim();
 	if (metaLabel) return metaLabel;
 
+	const methodName =
+		order.metadata.p24_method_name?.trim() ||
+		order.p24MethodName?.trim() ||
+		"";
+	if (methodName) {
+		const providerId =
+			order.metadata.payment_provider_id?.trim() ?? primaryPaymentProviderId(order);
+		if (providerId === PRZELEWY24_PROVIDER_ID) {
+			return `Przelewy24 (${methodName})`;
+		}
+		return methodName;
+	}
+
+	const methodIdRaw =
+		order.metadata.p24_method_id?.trim() || order.p24MethodId?.trim() || "";
+	const methodId = Number(methodIdRaw);
 	const providerId =
 		order.metadata.payment_provider_id?.trim() ?? primaryPaymentProviderId(order);
+	if (providerId === PRZELEWY24_PROVIDER_ID && Number.isFinite(methodId) && methodId > 0) {
+		return `Przelewy24 (metoda #${methodId})`;
+	}
+
 	return paymentProviderLabel(providerId);
 }
 
