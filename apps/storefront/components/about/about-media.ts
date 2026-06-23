@@ -7,20 +7,20 @@ export const ABOUT_HERO_MOBILE_HEADLINE_PADDING = "max-lg:py-12" as const;
 /** Mobile — treść nachodzi na hero, ale o 100px mniej niż pełne nachodzenie (150px w dół vs wcześniejsze 50px). */
 export const ABOUT_PAGE_CONTENT_MOBILE_LOWER = "max-lg:translate-y-[150px] lg:translate-y-0" as const;
 
-/** Poziomy gutter strony O nas — 60px (mobile/tablet). */
-export const ABOUT_PAGE_GUTTER = "px-[60px]" as const;
+/** Poziomy gutter strony O nas — 50px (mobile/tablet). */
+export const ABOUT_PAGE_GUTTER = "px-[50px]" as const;
 
 /** Desktop (lg+) — siatka sekcji jak w commitach 17–18 czerwca. */
 export const ABOUT_DESKTOP_GRID_SHELL =
 	"mx-auto hidden w-full max-w-7xl grid-cols-2 items-start gap-3 px-4 lg:grid lg:gap-16 xl:gap-20" as const;
 
-/** Wewnętrzny limit szerokości treści — mobile/tablet w gutterze 60px. */
+/** Wewnętrzny limit szerokości treści — mobile/tablet w gutterze 50px. */
 export const ABOUT_PAGE_CONTENT_MAX = "mx-auto w-full max-w-7xl min-w-0" as const;
 
 /** Zapobiega wychodzeniu elementów poza gutter. */
 export const ABOUT_PAGE_CLIP = "overflow-x-clip" as const;
 
-/** Sekcja treści — bezpieczna strefa 60px (mobile/tablet). */
+/** Sekcja treści — bezpieczna strefa 50px (mobile/tablet). */
 export const ABOUT_SECTION_SAFE = "overflow-x-clip" as const;
 
 /** Intro desktop — wiersz zdjęcie + napis boczny (100px od zdjęcia). */
@@ -53,14 +53,14 @@ export const ABOUT_MEDIA_LABEL_OVERLAP_ABOVE = "-mb-[6.7%]" as const;
 export const ABOUT_MEDIA_LABEL_OVERLAP_BELOW = "-mt-[6.7%]" as const;
 export const ABOUT_MEDIA_LABEL_INSET_X = "px-[2.9%]" as const;
 
-/** Intro mobile — prawa krawędź tekstu w osi środka zdjęcia (2 kolumny + gap-x-3). */
+/** Intro mobile — prawa krawędź tekstu w osi środka szerokości zdjęcia. */
 export const ABOUT_INTRO_MOBILE_BODY_WRAPPER =
-	"max-lg:w-[calc(75%+0.1875rem)] max-lg:text-right" as const;
+	"max-lg:ml-auto max-lg:mr-[calc(5.3625rem-30px)] max-lg:w-[calc(100%+30px-5.3625rem)] max-lg:text-right max-lg:[&_p]:w-full" as const;
 
 /** Mobile — wspólny padding wiersza body pod siatką zdjęcia. */
 export const ABOUT_SECTION_MOBILE_BODY_ROW = "min-w-0 pt-4 sm:pt-5" as const;
 
-/** Mobile misja — zdjęcie od lewej krawędzi (jak nagłówki w gutterze 60px). */
+/** Mobile misja — zdjęcie od lewej krawędzi (jak nagłówki w gutterze 50px). */
 export const ABOUT_MISSION_MOBILE_MEDIA_ALIGN =
 	"max-lg:flex max-lg:items-start max-lg:justify-start" as const;
 
@@ -69,8 +69,25 @@ export const ABOUT_MISSION_MOBILE_MEDIA_BLOCK = "max-lg:mx-0 max-lg:items-start"
 /** Mobile misja — tekst obok zdjęcia, wyrównanie do góry obrazu. */
 export const ABOUT_MISSION_MOBILE_TEXT_BESIDE_OFFSET = "max-lg:pt-[3.25rem] lg:pt-0" as const;
 
-/** Mobile — sekcja misji: tekst od lewej krawędzi kolumny (pod siatką). */
-export const ABOUT_MISSION_MOBILE_BODY_WRAPPER = "max-lg:w-full max-lg:text-left" as const;
+/** Mobile misja — flex obok zdjęcia: kolumna media + tekst, dokładnie 10px gap. */
+export const ABOUT_MISSION_MOBILE_BESIDE_LAYOUT =
+	"flex flex-row items-start gap-[10px]" as const;
+
+export const ABOUT_MISSION_MOBILE_MEDIA_COL =
+	"max-lg:-ml-[30px] w-[10.725rem] shrink-0 min-w-0 max-w-[10.725rem]" as const;
+
+export const ABOUT_MISSION_MOBILE_TEXT_COL =
+	"min-w-0 flex-1 basis-0 self-stretch" as const;
+
+/** Mobile misja — tekst wypełnia kolumnę do prawej krawędzi guttera. */
+export const ABOUT_MISSION_MOBILE_BODY_WIDTH = "max-lg:w-full" as const;
+
+/** @deprecated Użyj ABOUT_MISSION_MOBILE_BESIDE_LAYOUT — alias dla propsa mobileGridClassName. */
+export const ABOUT_MISSION_MOBILE_GRID = ABOUT_MISSION_MOBILE_BESIDE_LAYOUT;
+
+/** Mobile misja — ten sam pas poziomy co intro (50px → oś środka zdjęcia), wyrównanie od lewej. */
+export const ABOUT_MISSION_MOBILE_BODY_WRAPPER =
+	"max-lg:w-[calc(100%+30px-5.3625rem)] max-lg:text-left max-lg:[&_p]:w-full" as const;
 
 /** Intro desktop — tekst w kolumnie. */
 export const ABOUT_INTRO_DESKTOP_BODY_EDGE = "lg:w-full lg:max-w-full lg:text-right" as const;
@@ -83,7 +100,17 @@ export const ABOUT_MEDIA_WIDTH_CLASS =
 export const ABOUT_MEDIA_WIDTH_MOBILE_CLASS =
 	"max-lg:mx-auto max-lg:w-full max-lg:max-w-[10.725rem]" as const;
 
-/** Mobile intro — wspólna ramka zdjęcia i podpisu (osobne wiersze gridu, ta sama szerokość). */
+/** Mobile — zdjęcie 20px od krawędzi viewportu (gutter 50px → breakout 30px). */
+export const ABOUT_MOBILE_MEDIA_FRAME_RIGHT =
+	"max-lg:ml-auto max-lg:-mr-[30px] max-lg:w-full max-lg:max-w-[10.725rem]" as const;
+
+export const ABOUT_MOBILE_MEDIA_FRAME_LEFT =
+	"max-lg:mr-auto max-lg:-ml-[30px] max-lg:w-full max-lg:max-w-[10.725rem]" as const;
+
+/** @deprecated Alias — ABOUT_MOBILE_MEDIA_FRAME_RIGHT */
+export const ABOUT_INTRO_SECTION_MOBILE_FRAME = ABOUT_MOBILE_MEDIA_FRAME_RIGHT;
+
+/** Mobile intro — wspólna ramka zdjęcia (sekcje media-start/end). */
 export const ABOUT_INTRO_MOBILE_MEDIA_FRAME = ABOUT_MEDIA_WIDTH_MOBILE_CLASS;
 
 /** Arch image — wypełnia kontener rodzica. */
@@ -106,8 +133,8 @@ export const ABOUT_MEDIA_COLUMN_START =
 export const ABOUT_MISSION_TEXT_TOP_OFFSET =
 	"max-lg:pt-0 lg:pt-[calc(6.83mm+1rem+2px+19.44rem*960/720*0.064-19.44rem*0.067)] xl:pt-[calc(6.83mm+1rem+2px+22.68rem*960/720*0.064-22.68rem*0.067)]" as const;
 
-/** Zdjęcie domknięcia — nachodzi na dół sekcji misji (mobile = desktop). */
-export const ABOUT_CLOSING_MEDIA_TOP_OFFSET = "-mt-[250px]" as const;
+/** Zdjęcie domknięcia — nachodzi na dół sekcji misji (tylko desktop). */
+export const ABOUT_CLOSING_MEDIA_TOP_OFFSET = "max-lg:mt-0 lg:-mt-[250px]" as const;
 
 /** Biały pas nad footerem — sekcja domknięcia. */
 export const ABOUT_CLOSING_FOOTER_WHITE_BAND_HEIGHT = "h-[130px]" as const;

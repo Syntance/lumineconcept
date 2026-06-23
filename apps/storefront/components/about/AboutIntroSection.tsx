@@ -1,4 +1,4 @@
-import {
+﻿import {
 	ABOUT_INTRO_DESKTOP_MEDIA_OFFSET,
 	ABOUT_INTRO_DESKTOP_MEDIA_ROW,
 	ABOUT_INTRO_MOBILE_BODY_WRAPPER,
@@ -29,7 +29,7 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 			src={sections.introImageUrl}
 			alt={sections.introImageAlt}
 			priority
-			className="max-lg:mx-0 max-lg:max-w-none"
+			className="max-lg:mx-0 max-lg:max-w-none -mt-48 xl:-mt-56"
 		/>
 	);
 
@@ -53,15 +53,17 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 				mediaCaption={introLabel}
 				textClassName={cn(
 					ABOUT_TEXT_GUTTER_RIGHT,
-					"max-lg:items-start",
+					"max-lg:flex max-lg:w-full max-lg:flex-col max-lg:items-start max-lg:justify-end",
 					"lg:flex lg:flex-col lg:items-end lg:pt-14 xl:pt-16",
 				)}
 				mobileBodyWrapperClassName={ABOUT_INTRO_MOBILE_BODY_WRAPPER}
-				bodyClassName={cn("max-lg:text-right lg:text-right", ABOUT_INTRO_DESKTOP_BODY_EDGE)}
+				bodyClassName={cn(
+					"max-lg:w-full max-lg:text-right lg:text-right",
+					ABOUT_INTRO_DESKTOP_BODY_EDGE,
+				)}
 				mediaClassName={cn(
-					"relative z-20 max-lg:flex max-lg:justify-center",
+					"relative z-20 max-lg:flex max-lg:w-full max-lg:flex-col max-lg:items-end max-lg:justify-start",
 					ABOUT_MEDIA_COLUMN_END,
-					ABOUT_INTRO_DESKTOP_MEDIA_OFFSET,
 				)}
 				heading={
 					<h2

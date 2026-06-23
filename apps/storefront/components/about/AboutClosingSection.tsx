@@ -119,7 +119,7 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
         )}
         bodyClassName="max-lg:text-right lg:text-right"
         mediaClassName={cn(
-          "relative z-20 max-lg:flex max-lg:justify-center",
+          "relative z-20 max-lg:flex max-lg:w-full max-lg:flex-col max-lg:items-end max-lg:justify-start",
           ABOUT_MEDIA_COLUMN_END,
           ABOUT_CLOSING_MEDIA_TOP_OFFSET,
         )}
@@ -136,12 +136,13 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
         }
         media={
           <AboutMediaBlock
+            className="max-lg:mx-0 max-lg:items-end"
             labelPosition="above"
             image={
               <AboutArchImage
                 src={sections.closingImageUrl}
                 alt={sections.closingImageAlt}
-                className="lg:max-w-none"
+                className="max-lg:mx-0 lg:max-w-none"
               />
             }
             label={
