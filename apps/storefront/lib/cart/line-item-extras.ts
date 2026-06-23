@@ -136,7 +136,9 @@ export function hasOrderLineItemPersonalizationDetails(
 ): boolean {
 	if (!metadata) return false;
 	return (
-		Object.keys(metadata).some((k) => k.startsWith("text_") && metadata[k]?.trim()) ||
+		Object.keys(metadata).some(
+			(k) => k.startsWith("text_") && !k.endsWith("_label") && metadata[k]?.trim(),
+		) ||
 		Object.keys(metadata).some((k) => k.startsWith("file_") && metadata[k]?.trim()) ||
 		Object.keys(metadata).some((k) => k.startsWith("link_") && metadata[k]?.trim())
 	);
