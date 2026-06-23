@@ -13,6 +13,15 @@ const COLOR_ELEMENT_LABELS: Record<string, string> = {
   "elementow_3d": "Elementy 3D",
 };
 
+/**
+ * Odwraca extractMetaKey: slug "tabliczki_bazowej" → "Kolor tabliczki bazowej".
+ * Używane gdy slug nie pasuje do słownika COLOR_ELEMENT_LABELS.
+ */
+function slugToColorLabel(slug: string): string {
+  if (slug === "kolor") return "Kolor";
+  return "Kolor " + slug.replace(/_/g, " ");
+}
+
 function hasCertificateStand(meta: Record<string, string> | undefined): boolean {
   const v = meta?.certificate_stand;
   return v === "true" || v === "1";
@@ -178,6 +187,7 @@ function CartSelectedColorRows({
       !k.endsWith("_custom") &&
       !k.endsWith("_mat") &&
       !k.endsWith("_hex") &&
+      !k.endsWith("_label") &&
       meta[k]?.trim(),
   );
 
@@ -190,7 +200,7 @@ function CartSelectedColorRows({
   for (const k of [...paletteKeys].sort()) {
     if (customBases.has(k)) continue;
     const slug = k.slice("color_".length);
-    const label = COLOR_ELEMENT_LABELS[slug] ?? slug.replace(/_/g, " ");
+    const label = meta[`${k}_label`] ?? COLOR_ELEMENT_LABELS[slug] ?? slugToColorLabel(slug);
     const value = (meta[k] ?? "").trim();
     const paletteHex = meta[`${k}_hex`]?.trim();
     const fromMap = paletteMap?.[value.toLowerCase()]?.trim();
@@ -217,7 +227,7 @@ function CartSelectedColorRows({
     if (!k.startsWith("color_") || !k.endsWith("_custom") || !v?.trim()) continue;
     const base = k.replace(/_custom$/, "");
     const slug = base.slice("color_".length);
-    const label = COLOR_ELEMENT_LABELS[slug] ?? "Kolor niestandardowy";
+    const label = meta[`${base}_label`] ?? COLOR_ELEMENT_LABELS[slug] ?? slugToColorLabel(slug);
     const swatch = parseHexLike(v) ?? v.trim();
     let suffix = "";
     if (meta[`${base}_mat`] === "true") suffix = " (mat)";

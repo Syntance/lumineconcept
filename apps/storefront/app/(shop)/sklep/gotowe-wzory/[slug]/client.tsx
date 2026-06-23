@@ -488,11 +488,15 @@ export function ProductPageClient({
 
     for (const field of textFields) {
       const val = textFieldValues[field.key]?.trim();
-      if (val) meta[`text_${field.key}`] = val;
+      if (val) {
+        meta[`text_${field.key}`] = val;
+        meta[`text_${field.key}_label`] = field.label;
+      }
     }
 
     for (const title of colorOptionTitles) {
       const key = extractMetaKey(title);
+      meta[`color_${key}_label`] = title;
       const sel = selectedOptions[title];
       if (sel && sel !== CUSTOM_COLOR_VALUE) {
         meta[`color_${key}`] = sel;
@@ -520,6 +524,7 @@ export function ProductPageClient({
     if (certificateStandAvailable && includeCertificateStand) {
       meta.certificate_stand = "true";
       const standKey = extractMetaKey(STAND_COLOR_OPTION_TITLE);
+      meta[`color_${standKey}_label`] = STAND_COLOR_OPTION_TITLE;
       const standSel = standSelectedColor;
       if (standSel && standSel !== CUSTOM_COLOR_VALUE) {
         meta[`color_${standKey}`] = standSel;

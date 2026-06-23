@@ -40,6 +40,7 @@ export type ModulesToggle = {
 	products: boolean;
 	categories: boolean;
 	promotions: boolean;
+	shipping: boolean;
 	emails: boolean;
 	settings: boolean;
 	content: boolean;
