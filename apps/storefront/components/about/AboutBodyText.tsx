@@ -26,12 +26,12 @@ export function AboutBodyText({ paragraphs, className }: AboutBodyTextProps) {
 				className,
 			)}
 		>
-			<span className="md:hidden">{mobileText}</span>
-			<span className="hidden md:contents">
+			<span className="lg:hidden">{mobileText}</span>
+			<span className="hidden lg:contents">
 				{lines.map((line, index) => (
 					<span
 						key={`${index}-${line.slice(0, 12)}`}
-						className="block whitespace-nowrap"
+						className="block"
 					>
 						{line}
 					</span>

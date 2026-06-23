@@ -85,6 +85,7 @@ export async function BestsellersSection() {
                     hideWatermark
                     imageAspectClassName={PRODUCT_IMAGE_ASPECT_CLASS}
                     imageAreaClassName="bg-white"
+                    imageSizes="(max-width: 767px) calc(50vw - 24px), calc(25vw - 26px)"
                   />
                 </div>
                 <p className="text-center text-lg font-medium leading-snug text-brand-800 line-clamp-2 px-0.5">

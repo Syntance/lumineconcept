@@ -54,6 +54,11 @@ interface ProductCardProps {
   priority?: boolean;
   /** Ukryj znak wodny (np. sekcja Bestsellery — PDP bez zmian). */
   hideWatermark?: boolean;
+  /**
+   * `sizes` dla next/image — nadpisuje domyślne dla siatki 2→4 kol.
+   * Domyślnie: 45 vw mobile / 33 vw tablet / 25 vw desktop.
+   */
+  imageSizes?: string;
 }
 
 function htmlPlainText(html: string): string {
@@ -92,6 +97,7 @@ export function ProductCard({
   hideMaterialRow = false,
   priority = false,
   hideWatermark = false,
+  imageSizes = "(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw",
 }: ProductCardProps) {
   const productHref = href ?? `/sklep/gotowe-wzory/${handle}`;
   const dimensionsLabel = getProductDimensionsLabel(productMetadata, variantMetadata);
@@ -146,11 +152,12 @@ export function ProductCard({
               width={imageWidth}
               height={imageHeight}
               loading={priority ? "eager" : "lazy"}
+              fetchPriority={priority ? "high" : "auto"}
               quality={80}
               placeholder="blur"
               blurDataURL={BRAND_BLUR_DATA_URL}
               className="relative z-10 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
+              sizes={imageSizes}
               unoptimized={thumbnail.startsWith("http://localhost")}
             />
             {!hideWatermark ? (

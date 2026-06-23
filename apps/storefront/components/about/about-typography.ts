@@ -4,7 +4,7 @@ export const ABOUT_BODY_TEXT_CLASS =
 
 /** Intro mobile — treść sekcji 1, −2px względem bazowego brandbooku. */
 export const ABOUT_INTRO_MOBILE_BODY_TEXT_CLASS =
-  "max-md:text-[calc(4.56mm-2px)] max-md:leading-[calc(6.83mm-3px)]" as const;
+  "max-lg:text-[calc(4.56mm-2px)] max-lg:leading-[calc(6.83mm-3px)]" as const;
 
 /** Binerka — nagłówki sekcji treści (intro, misja itd.). */
 export const ABOUT_SECTION_HEADING_CLASS =
@@ -16,4 +16,4 @@ export const ABOUT_SIDE_CAPTION_CLASS =
 
 /** Podpis pod zdjęciem — skala mobile (−20%, jak blok zdjęcia). */
 export const ABOUT_SECTION_LABEL_MOBILE_CLASS =
-  "max-md:px-2.5 max-md:py-1.5 max-md:text-[calc(4.56mm*0.8)] max-md:leading-[calc(6.83mm*0.8)]" as const;
+  "max-lg:px-2.5 max-lg:py-1.5 max-lg:text-[calc(4.56mm*0.8)] max-lg:leading-[calc(6.83mm*0.8)]" as const;

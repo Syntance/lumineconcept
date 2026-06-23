@@ -9,7 +9,7 @@ import { resolveAboutPage } from "@/lib/content/about";
 import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
 import { buildMetadata } from "@/lib/content/metadata";
 import { ORGANIZATION_ID } from "@/lib/geo/organization";
-import { SITE_URL } from "@/lib/utils";
+import { cn, SITE_URL } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const [seo, settings, pageContent] = await Promise.all([
@@ -53,7 +53,7 @@ export default async function ONasPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
       />
-      <div className={`font-gilroy max-md:bg-brand-50 ${ABOUT_PAGE_CLIP} [&_h1]:font-binerka [&_h2]:font-binerka`}>
+      <div className={cn("font-gilroy w-full max-lg:bg-brand-50", ABOUT_PAGE_CLIP, "[&_h1]:font-binerka [&_h2]:font-binerka")}>
         <AboutHeroSection hero={about.hero} />
         <AboutIntroSection sections={about.sections} />
         <AboutMissionSection sections={about.sections} />
