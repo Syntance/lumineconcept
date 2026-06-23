@@ -46,6 +46,11 @@ export async function GET(request: Request) {
 
   const base = getConfiguredMedusaBackendUrl().replace(/\/$/, "");
 
+  const publishableKey =
+    process.env.MEDUSA_PUBLISHABLE_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.trim() ||
+    "";
+
   try {
     const res = await fetch(`${base}/store/custom/reconcile-p24`, {
       method: "POST",
@@ -53,6 +58,7 @@ export async function GET(request: Request) {
         "Content-Type": "application/json",
         Accept: "application/json",
         "x-order-email-secret": secret,
+        ...(publishableKey ? { "x-publishable-api-key": publishableKey } : {}),
       },
       body: "{}",
       signal: AbortSignal.timeout(55_000),
