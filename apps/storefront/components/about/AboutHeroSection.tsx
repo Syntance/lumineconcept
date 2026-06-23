@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import {
+	ABOUT_HERO_MOBILE_HEADLINE_PADDING,
 	ABOUT_PAGE_CONTENT_MAX,
 	ABOUT_PAGE_GUTTER,
 } from "@/components/about/about-media";
@@ -44,32 +45,24 @@ export function AboutHeroSection({ hero }: AboutHeroSectionProps) {
 
       <div
         className={cn(
-          "relative z-10 w-full pt-8 sm:pt-10",
+          "relative z-10 w-full",
           ABOUT_PAGE_GUTTER,
+          "max-lg:text-left",
           "lg:mx-auto lg:max-w-7xl lg:px-4 lg:max-xl:pl-10 lg:max-xl:pr-5 sm:max-xl:pl-12",
         )}
       >
         <div className={cn(ABOUT_PAGE_CONTENT_MAX, "lg:mx-0 lg:max-w-none lg:px-0")}>
-          <Breadcrumbs
-            className="mb-0 font-gilroy text-sm [&_a]:text-white/75 [&_a:hover]:text-white [&_span]:text-white/90"
-            items={[
-              { label: "Strona główna", href: "/" },
-              { label: "O nas" },
-            ]}
-          />
-        </div>
-      </div>
+          <div className="pt-8 sm:pt-10">
+            <Breadcrumbs
+              className="mb-0 font-gilroy text-sm [&_a]:text-white/75 [&_a:hover]:text-white [&_span]:text-white/90"
+              items={[
+                { label: "Strona główna", href: "/" },
+                { label: "O nas" },
+              ]}
+            />
+          </div>
 
-      <div
-        className={cn(
-          "relative z-10 w-full pb-32 pt-10 sm:pb-40 sm:pt-14 lg:pb-48 lg:pt-16",
-          ABOUT_PAGE_GUTTER,
-          "max-lg:text-center",
-          "lg:mx-auto lg:max-w-7xl lg:px-4 lg:max-xl:pl-10 lg:max-xl:pr-5 sm:max-xl:pl-12",
-        )}
-      >
-        <div className={cn(ABOUT_PAGE_CONTENT_MAX, "lg:mx-0 lg:max-w-none lg:px-0")}>
-          <div className="max-w-xl max-lg:mx-auto">
+          <div className={cn("max-w-xl max-lg:mr-auto", ABOUT_HERO_MOBILE_HEADLINE_PADDING, "lg:pb-48 lg:pt-16")}>
             <h1
               id="about-hero-heading"
               className="font-binerka text-5xl leading-none tracking-[0.12em] text-white sm:text-6xl lg:text-7xl max-lg:text-[2.75rem]"

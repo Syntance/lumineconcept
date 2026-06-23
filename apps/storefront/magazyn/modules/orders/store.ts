@@ -20,6 +20,7 @@ import type {
 	OrderStatus,
 } from "./order-types";
 import { isMagazynActiveOrder } from "./order-status";
+import { PRZELEWY24_PROVIDER_ID } from "./order-payment-provider";
 
 export type {
 	AdminOrderDetail,
@@ -70,6 +71,12 @@ type MedusaPayment = {
 	canceled_at?: string | null;
 };
 
+type MedusaPaymentSession = {
+	provider_id?: string | null;
+	status?: string | null;
+	data?: Record<string, unknown> | null;
+};
+
 type MedusaFulfillment = {
 	id: string;
 	shipped_at?: string | null;
@@ -107,7 +114,10 @@ type MedusaOrder = {
 	shipping_address?: MedusaAddress | null;
 	billing_address?: MedusaAddress | null;
 	shipping_methods?: MedusaShippingMethod[] | null;
-	payment_collections?: Array<{ payments?: MedusaPayment[] | null }> | null;
+	payment_collections?: Array<{
+		payments?: MedusaPayment[] | null;
+		payment_sessions?: MedusaPaymentSession[] | null;
+	}> | null;
 	fulfillments?: MedusaFulfillment[] | null;
 };
 
@@ -206,6 +216,9 @@ const DETAIL_FIELDS = [
 	"shipping_methods.total",
 	"*payment_collections.payments",
 	"payment_collections.payments.provider_id",
+	"payment_collections.payment_sessions.provider_id",
+	"payment_collections.payment_sessions.status",
+	"payment_collections.payment_sessions.data",
 	"*fulfillments",
 	"fulfillments.items.id",
 	"fulfillments.items.quantity",
@@ -324,6 +337,26 @@ export async function listAdminOrders(): Promise<AdminOrderRow[]> {
 		});
 }
 
+function readP24MethodFromSessions(
+	collections: MedusaOrder["payment_collections"],
+): { methodId?: string; methodName?: string } {
+	const sessions =
+		collections?.flatMap((collection) => collection.payment_sessions ?? []) ?? [];
+	const p24Session = sessions.find((session) => session.provider_id === PRZELEWY24_PROVIDER_ID);
+	if (!p24Session?.data) return {};
+
+	const data = p24Session.data;
+	const rawId = data.p24_method_id ?? data.methodId;
+	const id = Number(rawId);
+	const rawName = data.p24_method_name;
+	const name = typeof rawName === "string" ? rawName.trim() : "";
+
+	return {
+		...(Number.isFinite(id) && id > 0 ? { methodId: String(id) } : {}),
+		...(name ? { methodName: name } : {}),
+	};
+}
+
 function mapMedusaOrderToDetail(
 	order: MedusaOrder,
 	productThumbnails: Map<string, string | null>,
@@ -349,6 +382,8 @@ function mapMedusaOrderToDetail(
 			quantity: item.quantity ?? 0,
 		})),
 	}));
+
+	const p24Method = readP24MethodFromSessions(order.payment_collections);
 
 	return {
 		id: order.id,
@@ -386,6 +421,8 @@ function mapMedusaOrderToDetail(
 		payments,
 		fulfillments,
 		metadata: normalizeMetadata(order.metadata),
+		p24MethodId: p24Method.methodId,
+		p24MethodName: p24Method.methodName,
 	};
 }
 

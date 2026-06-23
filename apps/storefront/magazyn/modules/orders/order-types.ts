@@ -123,4 +123,7 @@ export type AdminOrderDetail = {
 	payments: OrderPayment[];
 	fulfillments: OrderFulfillment[];
 	metadata: Record<string, string>;
+	/** Szczegół metody P24 z sesji płatności (gdy brak w metadata). */
+	p24MethodId?: string;
+	p24MethodName?: string;
 };

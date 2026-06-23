@@ -66,6 +66,9 @@ interface Przelewy24SessionData {
   currency: string;
   /** Numeryczny identyfikator transakcji nadany przez P24 (z notyfikacji). */
   order_id?: number;
+  /** Metoda płatności w panelu P24 (BLIK, bank, karta…). */
+  p24_method_id?: number;
+  p24_method_name?: string;
   status?: "pending" | "verified";
   [k: string]: unknown;
 }
@@ -279,7 +282,13 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
     if (!sessionId) return { paid: false, data };
 
     let info:
-      | { status?: number; orderId?: number; amount?: number; currency?: string }
+      | {
+          status?: number;
+          orderId?: number;
+          amount?: number;
+          currency?: string;
+          methodId?: number;
+        }
       | undefined;
     try {
       const result = await this.api<{
@@ -288,6 +297,7 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
           orderId: number;
           amount: number;
           currency: string;
+          methodId?: number;
         };
       }>(`/transaction/by/sessionId/${encodeURIComponent(sessionId)}`, "GET");
       info = result.data;
@@ -301,6 +311,11 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
 
     const status = Number(info.status);
     const orderId = Number(info.orderId);
+    const methodId = Number(info.methodId);
+    const methodPatch =
+      Number.isFinite(methodId) && methodId > 0
+        ? { p24_method_id: methodId }
+        : {};
 
     // 2 = transakcja potwierdzona (środki rozliczone) → gotowe.
     if (status === P24_STATUS_PAID) {
@@ -314,7 +329,7 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
       }
       return {
         paid: true,
-        data: { ...data, status: "verified", order_id: orderId },
+        data: { ...data, ...methodPatch, status: "verified", order_id: orderId },
       };
     }
 
@@ -349,7 +364,12 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
         });
         return {
           paid: true,
-          data: { ...data, status: "verified", order_id: orderId },
+          data: {
+            ...data,
+            ...methodPatch,
+            status: "verified",
+            order_id: orderId,
+          },
         };
       } catch (e) {
         this.logger_.warn(
@@ -550,6 +570,10 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
       data: {
         session_id: sessionId,
         amount,
+        ...(Number.isFinite(methodId) && methodId > 0
+          ? { p24_method_id: methodId }
+          : {}),
+        ...(statement ? { p24_statement: statement } : {}),
       },
     };
   }

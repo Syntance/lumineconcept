@@ -9,6 +9,7 @@ import {
   dispatchOrderPlacedEmails,
 } from "../lib/order-email-dispatch";
 import { orderAwaitingBankTransfer } from "../lib/order-payment-method";
+import { copyP24PaymentDetailsToOrder } from "../lib/order-p24-metadata";
 import {
   retrieveOrderForEmail,
 } from "../lib/send-email";
@@ -80,6 +81,17 @@ export default async function orderPlacedHandler({
 
   const emailOrder = orderForEmail ?? (order as unknown as Record<string, unknown>);
   const fallbackEmail = (order?.email as string | undefined) ?? undefined;
+
+  try {
+    await copyP24PaymentDetailsToOrder(container, event.data.id);
+  } catch (e) {
+    console.error("[order-placed] copyP24PaymentDetailsToOrder failed", e);
+    captureError(e, {
+      subscriber: "order-placed",
+      step: "p24-payment-metadata",
+      orderId: event.data.id,
+    });
+  }
 
   if (order?.email || fallbackEmail) {
     const isBankTransfer = orderAwaitingBankTransfer(
