@@ -31,24 +31,18 @@ export function MobileHeroImageBand({
 				width={MOBILE_HERO_BAND_WIDTH}
 				height={MOBILE_HERO_BAND_HEIGHT}
 				/*
-				 * UWAGA: `priority` + `unoptimized` w Next.js 16 NIE dodaje
-				 * `fetchpriority="high"` na element <img> ani na <link rel="preload"> —
-				 * tylko bez `unoptimized` to robi. Dlatego ustawiamy oba atrybuty jawnie:
-				 *   – `fetchPriority="high"` → bezpośredni sygnał dla przeglądarki (LCP)
-				 *   – `loading="eager"` → blokuje lazy loading
-				 *   – `priority` → dodaje <link rel="preload"> w <head> (wczesna dyskowerya)
+				 * `priority` = kluczowe dla LCP na mobile:
+				 *   – dodaje <link rel="preload" fetchpriority="high"> w <head>
+				 *   – ustawia fetchpriority="high" i loading="eager" na <img>
+				 *
+				 * Bez `unoptimized`: Vercel Image Optimizer serwuje właściwy rozmiar
+				 * (np. 828px dla 2× DPR na 414px) zamiast pełnego 1080px WebP.
+				 * Preload URL = /_next/image?url=...&w=828 = dokładnie to co <img src>.
+				 * Eliminuje mismatch URL między preload a img src.
 				 */
 				priority={priority}
-				// Jawne atrybuty HTML — konieczne obok `priority`, bo ten z `unoptimized` ich nie dodaje
-				fetchPriority={priority ? "high" : "auto"}
-				loading={priority ? "eager" : "lazy"}
 				sizes="100vw"
-				/*
-				 * `unoptimized` — plik to już WebP q92 z prebuild; nie kompresujemy
-				 * ponownie przez /_next/image. Eliminuje round-trip do edge optimizera
-				 * na zimnym starcie (cache MISS = +2 s FCP→LCP wg Lighthouse).
-				 */
-				unoptimized
+				quality={85}
 				placeholder="blur"
 				blurDataURL={blurDataURL ?? BRAND_BLUR_DATA_URL}
 				className={`absolute inset-0 h-full w-full select-none object-cover ${objectPositionClass}`}

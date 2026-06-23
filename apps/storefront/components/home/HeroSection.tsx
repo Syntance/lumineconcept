@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { preload } from "react-dom";
 
 import type { HeroContent } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
@@ -38,16 +37,6 @@ export async function HeroSection({
 
 	const mobileDisplayUrl = mobileImageUrl ?? desktopImageUrl;
 	const mobileBlur = mobileBlurDataURL ?? desktopBlurDataURL;
-
-	/*
-	 * Jawny preload z fetchpriority=high dla mobile LCP.
-	 * `priority` prop next/image z `unoptimized` NIE dodaje fetchpriority do
-	 * <link rel="preload"> — tylko samo wywołanie preload() z React 19 to robi.
-	 * Bez tego Lighthouse/PageSpeed obniża score za brakujący fetchpriority.
-	 */
-	if (mobileDisplayUrl) {
-		preload(mobileDisplayUrl, { as: "image", fetchPriority: "high" });
-	}
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
