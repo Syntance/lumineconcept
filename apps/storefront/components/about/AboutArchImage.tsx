@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { ABOUT_MEDIA_WIDTH_CLASS, ABOUT_MEDIA_WIDTH_MOBILE_CLASS } from "@/components/about/about-media";
+import { ABOUT_MEDIA_WIDTH_CLASS } from "@/components/about/about-media";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { cn } from "@/lib/utils";
 
@@ -26,10 +26,10 @@ export function AboutArchImage({
       height={960}
       priority={priority}
       fetchPriority={priority ? "high" : undefined}
-      sizes="(max-width: 768px) 10.725rem, (max-width: 1280px) 40vw, 22.68rem"
+      sizes="(max-width: 768px) 85vw, (max-width: 1280px) 40vw, 22.68rem"
       quality={92}
       unoptimized={isCmsImageUnoptimized(src)}
-      className={cn("block h-auto w-full", ABOUT_MEDIA_WIDTH_CLASS, ABOUT_MEDIA_WIDTH_MOBILE_CLASS, className)}
+      className={cn("block h-auto w-full", ABOUT_MEDIA_WIDTH_CLASS, className)}
       draggable={false}
     />
   );
