@@ -1,16 +1,10 @@
-import Image from "next/image";
-
 import {
 	ABOUT_MEDIA_COLUMN_START,
-	ABOUT_MISSION_MOBILE_MEDIA_ALIGN,
+	ABOUT_MISSION_MOBILE_BODY_WRAPPER,
 	ABOUT_MISSION_MOBILE_MEDIA_BLOCK,
 	ABOUT_MISSION_MOBILE_MEDIA_LOWER,
-	ABOUT_MISSION_MOBILE_TEXT_BESIDE_OFFSET,
 	ABOUT_MISSION_TEXT_TOP_OFFSET,
 	ABOUT_SECTION_SAFE,
-	ABOUT_SIGNET_ASPECT_CLASS,
-	ABOUT_SIGNET_IMAGE,
-	ABOUT_SIGNET_WIDTH_CLASS,
 	ABOUT_TEXT_GUTTER_LEFT,
 } from "@/components/about/about-media";
 import { AboutBodyText } from "@/components/about/AboutBodyText";
@@ -47,17 +41,19 @@ export function AboutMissionSection({ sections }: AboutMissionSectionProps) {
 				<AboutSectionColumns
 					className="lg:pt-0"
 					mediaOnEnd={false}
-					mobileBodyBesideMedia
+					mobileStackedLayout="media-start"
 					mobileMediaLower={ABOUT_MISSION_MOBILE_MEDIA_LOWER}
-					mediaClassName={cn(ABOUT_MEDIA_COLUMN_START, ABOUT_MISSION_MOBILE_MEDIA_ALIGN)}
+					mobileBodyWrapperClassName={ABOUT_MISSION_MOBILE_BODY_WRAPPER}
+					mediaClassName={cn(
+						"relative z-20 max-lg:flex max-lg:w-full max-lg:flex-col max-lg:items-start max-lg:justify-start",
+						ABOUT_MEDIA_COLUMN_START,
+					)}
 					textClassName={cn(
 						ABOUT_TEXT_GUTTER_LEFT,
-						ABOUT_MISSION_MOBILE_TEXT_BESIDE_OFFSET,
 						ABOUT_MISSION_TEXT_TOP_OFFSET,
-						"max-lg:flex max-lg:flex-col max-lg:items-start",
 						"lg:flex lg:flex-col lg:items-start",
 					)}
-					bodyClassName="max-lg:text-left lg:text-left"
+					bodyClassName="max-lg:w-full max-lg:text-left lg:text-left"
 					media={
 						<AboutMediaBlock
 							className={ABOUT_MISSION_MOBILE_MEDIA_BLOCK}
@@ -81,23 +77,6 @@ export function AboutMissionSection({ sections }: AboutMissionSectionProps) {
 							<h2 id="about-mission-heading" className="sr-only">
 								Nasza misja
 							</h2>
-							<div
-								aria-hidden
-								className={cn(
-									"relative mb-3 hidden max-lg:block",
-									ABOUT_SIGNET_WIDTH_CLASS,
-								)}
-							>
-								<div className={cn("relative w-full", ABOUT_SIGNET_ASPECT_CLASS)}>
-									<Image
-										src={ABOUT_SIGNET_IMAGE}
-										alt=""
-										fill
-										className="object-contain object-center"
-										sizes="96px"
-									/>
-								</div>
-							</div>
 							<AboutBodyText
 								paragraphs={sections.missionParagraphs}
 								className={ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS}

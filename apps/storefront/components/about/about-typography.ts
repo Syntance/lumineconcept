@@ -4,7 +4,7 @@ export const ABOUT_BODY_TEXT_CLASS =
 
 /** Intro mobile — treść sekcji; alias: wszystkie sekcje mobile. */
 export const ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS =
-  "max-lg:text-[calc(4.56mm-2px)] max-lg:leading-[calc(6.83mm-3px)]" as const;
+  "max-lg:text-[calc(4.56mm-3px)] max-lg:leading-[calc(6.83mm-4px)]" as const;
 
 /** @deprecated Alias — ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS */
 export const ABOUT_INTRO_MOBILE_BODY_TEXT_CLASS = ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS;

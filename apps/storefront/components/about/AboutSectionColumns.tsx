@@ -7,6 +7,9 @@ import {
 	ABOUT_MEDIA_LABEL_INSET_X,
 	ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
 	ABOUT_INTRO_MOBILE_MEDIA_FRAME,
+	ABOUT_INTRO_SECTION_MOBILE_FRAME,
+	ABOUT_MOBILE_MEDIA_FRAME_LEFT,
+	ABOUT_MOBILE_MEDIA_FRAME_RIGHT,
 	ABOUT_PAGE_CONTENT_MAX,
 	ABOUT_PAGE_GUTTER,
 	ABOUT_SECTION_MOBILE_BODY_ROW,
@@ -41,6 +44,12 @@ type AboutSectionColumnsProps = {
 	mediaOnEnd?: boolean;
 	/** Mobile: tekst w kolumnie obok zdjęcia (misja), nie pod spodem. */
 	mobileBodyBesideMedia?: boolean;
+	/** Mobile: klasy układu obok zdjęcia (misja — flex + gap 10px). */
+	mobileGridClassName?: string;
+	/** Mobile: klasy kolumny ze zdjęciem przy układzie flex (misja). */
+	mobileMediaColClassName?: string;
+	/** Mobile: klasy kolumny z tekstem przy układzie flex (misja). */
+	mobileTextColClassName?: string;
 };
 
 type AboutSectionGridShellProps = {
@@ -49,7 +58,7 @@ type AboutSectionGridShellProps = {
 	children: ReactNode;
 };
 
-/** Mobile/tablet — gutter 60px + max-w-7xl wewnątrz. */
+/** Mobile/tablet — gutter 50px + max-w-7xl wewnątrz. */
 function AboutMobileGridShell({
 	className,
 	gridClassName,
@@ -78,6 +87,9 @@ export function AboutSectionColumns({
 	mobileMediaLower = ABOUT_MOBILE_MEDIA_LOWER,
 	mediaOnEnd = true,
 	mobileBodyBesideMedia = false,
+	mobileGridClassName,
+	mobileMediaColClassName,
+	mobileTextColClassName,
 }: AboutSectionColumnsProps) {
 	const textOrder = mediaOnEnd ? "order-1" : "order-2";
 	const mediaOrder = mediaOnEnd ? "order-2" : "order-1";
@@ -100,7 +112,7 @@ export function AboutSectionColumns({
 		</div>
 	);
 
-	const mobileMediaCell = (columnClass: string) => (
+	const mobileMediaCell = (columnClass: string, frameClass: string) => (
 		<div
 			className={cn(
 				columnClass,
@@ -109,7 +121,7 @@ export function AboutSectionColumns({
 				mediaClassName,
 			)}
 		>
-			<div className={ABOUT_INTRO_MOBILE_MEDIA_FRAME}>{media}</div>
+			<div className={frameClass}>{media}</div>
 		</div>
 	);
 
@@ -127,11 +139,33 @@ export function AboutSectionColumns({
 		</div>
 	);
 
-	const defaultMobileGrid = (
+	const useMissionBesideFlex =
+		mobileBodyBesideMedia && Boolean(mobileGridClassName?.includes("flex"));
+
+	const defaultMobileGrid = useMissionBesideFlex ? (
+		<AboutMobileGridShell className={className} gridClassName={mobileGridClassName ?? ""}>
+			<div
+				className={cn(
+					mediaOrder,
+					mobileMediaLower,
+					mediaClassName,
+					mobileMediaColClassName,
+				)}
+			>
+				{media}
+			</div>
+
+			<div className={cn(textOrder, textClassName, mobileTextColClassName)}>
+				{heading}
+				<div className={cn("block w-full min-w-0", bodyClassName)}>{body}</div>
+			</div>
+		</AboutMobileGridShell>
+	) : (
 		<AboutMobileGridShell
 			className={className}
 			gridClassName={cn(
-				"grid grid-cols-2 items-start gap-3",
+				"grid items-start",
+				mobileGridClassName ?? "grid-cols-2 gap-3",
 				resolvedMobileLayout ? "hidden" : "grid",
 			)}
 		>
@@ -164,7 +198,7 @@ export function AboutSectionColumns({
 					className={className}
 					gridClassName="grid grid-cols-2 grid-rows-[auto_auto] items-stretch gap-x-3 gap-y-0"
 				>
-					{mobileMediaCell("col-start-1 row-start-1")}
+					{mobileMediaCell("col-start-1 row-start-1", ABOUT_MOBILE_MEDIA_FRAME_LEFT)}
 					<div className="col-start-2 row-start-1" aria-hidden />
 					{renderMobileBodyRow("row-start-2")}
 				</AboutMobileGridShell>
@@ -181,7 +215,7 @@ export function AboutSectionColumns({
 					gridClassName="grid grid-cols-2 grid-rows-[auto_auto] items-stretch gap-x-3 gap-y-0"
 				>
 					<div className="col-start-1 row-start-1" aria-hidden />
-					{mobileMediaCell("col-start-2 row-start-1")}
+					{mobileMediaCell("col-start-2 row-start-1", ABOUT_MOBILE_MEDIA_FRAME_RIGHT)}
 					{renderMobileBodyRow("row-start-2")}
 				</AboutMobileGridShell>
 				{desktopGrid}
@@ -193,11 +227,11 @@ export function AboutSectionColumns({
 		<>
 			<AboutMobileGridShell
 				className={className}
-				gridClassName="grid grid-cols-2 grid-rows-[auto_auto_auto] items-stretch gap-x-3 gap-y-0"
+				gridClassName="grid grid-cols-2 grid-rows-[auto_auto] items-start gap-x-3 gap-y-0"
 			>
 				<div
 					className={cn(
-						"col-start-1 row-start-1 flex min-h-0 flex-col justify-end",
+						"col-start-1 row-start-1 flex min-h-0 w-full flex-col items-start justify-end self-stretch",
 						textClassName,
 					)}
 				>
@@ -206,17 +240,14 @@ export function AboutSectionColumns({
 
 				<div
 					className={cn(
-						"col-start-2 row-start-1 flex min-h-0 w-full flex-col justify-start",
+						"col-start-2 row-start-1 flex min-h-0 w-full flex-col items-end justify-start",
 						mobileMediaLower,
 						mediaClassName,
 					)}
 				>
-					<div className={ABOUT_INTRO_MOBILE_MEDIA_FRAME}>{media}</div>
-				</div>
-
-				{mediaCaption ? (
-					<div className="col-start-2 row-start-2 flex w-full min-w-0 flex-col items-end max-lg:items-end">
-						<div className={ABOUT_INTRO_MOBILE_MEDIA_FRAME}>
+					<div className={ABOUT_INTRO_SECTION_MOBILE_FRAME}>
+						<div className="w-full min-w-0 [&_img]:block">{media}</div>
+						{mediaCaption ? (
 							<div
 								className={cn(
 									ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
@@ -226,11 +257,11 @@ export function AboutSectionColumns({
 							>
 								{mediaCaption}
 							</div>
-						</div>
+						) : null}
 					</div>
-				) : null}
+				</div>
 
-				{renderMobileBodyRow("row-start-3")}
+				{renderMobileBodyRow("row-start-2")}
 			</AboutMobileGridShell>
 
 			{desktopGrid}
