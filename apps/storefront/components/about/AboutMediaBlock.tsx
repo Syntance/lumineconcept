@@ -32,7 +32,13 @@ export function AboutMediaBlock({
       )}
     >
       {label && labelPosition === "above" ? (
-        <div className={cn(ABOUT_MEDIA_LABEL_OVERLAP_ABOVE, "w-full shrink-0", ABOUT_MEDIA_LABEL_INSET_X)}>
+        <div
+          className={cn(
+            ABOUT_MEDIA_LABEL_OVERLAP_ABOVE,
+            "w-full shrink-0 max-lg:hidden",
+            ABOUT_MEDIA_LABEL_INSET_X,
+          )}
+        >
           {label}
         </div>
       ) : null}
@@ -42,7 +48,13 @@ export function AboutMediaBlock({
       </div>
 
       {label && labelPosition === "below" ? (
-        <div className={cn(ABOUT_MEDIA_LABEL_OVERLAP_BELOW, "w-full shrink-0", ABOUT_MEDIA_LABEL_INSET_X)}>
+        <div
+          className={cn(
+            ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
+            "w-full shrink-0 max-lg:hidden",
+            ABOUT_MEDIA_LABEL_INSET_X,
+          )}
+        >
           {label}
         </div>
       ) : null}

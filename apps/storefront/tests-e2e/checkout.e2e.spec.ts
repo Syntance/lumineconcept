@@ -165,6 +165,39 @@ async function acceptConsents(page: Page) {
     .check();
 }
 
+/**
+ * Domyka platnosc na sandboxie Przelewy24. Sandbox pokazuje liste metod +
+ * przycisk potwierdzenia testowej platnosci ? selektory sa heurystyczne
+ * (UI P24 sie zmienia), wiec szukamy po widocznym tekscie z fallbackami.
+ * Po sukcesie sandbox przekierowuje na nasz urlReturn (/checkout/przelewy24/return),
+ * ktory pulluje status i domyka koszyk -> /checkout/potwierdzenie.
+ */
+async function payOnP24Sandbox(page: Page) {
+  // 1. Wybor metody testowej (sandbox: "Płatność testowa" / kafelek banku testowego).
+  const testMethod = page
+    .getByText(/p.atno.. testowa|test payment|bank testowy|p24 test/i)
+    .first();
+  if (await testMethod.isVisible({ timeout: 30_000 }).catch(() => false)) {
+    await testMethod.click();
+  }
+
+  // 2. Potwierdzenie ("Zapłacam" / "Zapłać" / "Potwierdzam" / "Pay").
+  const confirm = page
+    .getByRole("button", { name: /zap.a.|potwierdzam|pay\b|kontynuuj/i })
+    .first();
+  if (await confirm.isVisible({ timeout: 30_000 }).catch(() => false)) {
+    await confirm.click();
+  }
+
+  // 3. Niektore warianty sandboxa maja drugi ekran wyniku ("Transakcja poprawna").
+  const result = page
+    .getByRole("button", { name: /powr.t|wr..|kontynuuj|zako.cz/i })
+    .first();
+  if (await result.isVisible({ timeout: 15_000 }).catch(() => false)) {
+    await result.click();
+  }
+}
+
 test.describe("Checkout ? happy path", () => {
   test("od shopu do bramki Przelewy24", async ({ page }) => {
     test.setTimeout(180_000);
@@ -225,5 +258,45 @@ test.describe("Checkout ? happy path", () => {
     ).toBeVisible();
     await expect(page.getByText(/dane do przelewu/i)).toBeVisible();
     await expect(page.getByText(/numer zam.wienia/i)).toBeVisible();
+  });
+
+  // Domykajacy wariant P24 ? wymaga w pelni skonfigurowanego sandboxa
+  // (P24_SANDBOX=1 + metoda testowa). Domyslnie SKIP, bo sandbox UI bywa
+  // niedostepne/zmienne w CI. Wlacz: P24_SANDBOX_E2E=1.
+  test("P24 sandbox ? pelne domkniecie do potwierdzenia", async ({ page }) => {
+    test.skip(
+      process.env.P24_SANDBOX_E2E !== "1",
+      "Ustaw P24_SANDBOX_E2E=1 aby domykac platnosc na sandboxie P24.",
+    );
+    test.setTimeout(240_000);
+
+    await addFirstProductToCart(page);
+    await page.goto("/checkout");
+    await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
+
+    await fillContactStep(page);
+    await goThroughShippingStep(page);
+    await acceptConsents(page);
+
+    const submit = page.getByRole("button", { name: /zamawiam i p.ac./i });
+    await expect(submit).toBeEnabled();
+    await submit.click();
+
+    await page.waitForURL(/przelewy24|secure\.przelewy24|sandbox\.przelewy24/i, {
+      timeout: 60_000,
+    });
+
+    await payOnP24Sandbox(page);
+
+    // Powrot na nasz return page, ktory pulluje status i domyka koszyk.
+    await page.waitForURL(/checkout\/przelewy24\/return|checkout\/potwierdzenie/i, {
+      timeout: 90_000,
+    });
+
+    // Return page moze chwile pollowac webhook ? czekamy na potwierdzenie.
+    await page.waitForURL(/checkout\/potwierdzenie/i, { timeout: 120_000 });
+    await expect(
+      page.getByRole("heading", { name: /zam.wienie przyj.te|dzi.kujemy/i }),
+    ).toBeVisible({ timeout: 30_000 });
   });
 });
