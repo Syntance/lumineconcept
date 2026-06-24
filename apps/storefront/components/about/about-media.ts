@@ -40,7 +40,7 @@ export const ABOUT_INTRO_MOBILE_IMAGE_OVERLAP =
 	"max-lg:-mt-[calc(12rem_-_1.125rem_-_20px)] lg:-mt-48 xl:-mt-56" as const;
 
 /** Intro mobile — przesunięcie nagłówka w prawo. */
-export const ABOUT_INTRO_MOBILE_HEADING_SHIFT_RIGHT = "max-lg:translate-x-[10px]" as const;
+export const ABOUT_INTRO_MOBILE_HEADING_SHIFT_RIGHT = "max-lg:translate-x-[30px]" as const;
 
 /** Intro — nachodzenie sekcji na hero. */
 export const ABOUT_INTRO_SECTION_OVERLAP = "-mt-20 sm:-mt-24 lg:-mt-28" as const;
@@ -75,6 +75,9 @@ export const ABOUT_MISSION_MOBILE_MEDIA_BLOCK = "max-lg:mx-0 max-lg:items-start"
 
 /** Mobile misja — tekst obok zdjęcia, wyrównanie do góry obrazu. */
 export const ABOUT_MISSION_MOBILE_TEXT_BESIDE_OFFSET = "max-lg:pt-[3.25rem] lg:pt-0" as const;
+
+/** Mobile misja — podniesienie nagłówka względem dołu zdjęcia. */
+export const ABOUT_MISSION_MOBILE_HEADING_RAISE = "max-lg:-translate-y-[20px]" as const;
 
 /** Mobile misja — flex obok zdjęcia: kolumna media + tekst, dokładnie 10px gap. */
 export const ABOUT_MISSION_MOBILE_BESIDE_LAYOUT =
@@ -167,7 +170,7 @@ export const ABOUT_CLOSING_MOBILE_HEADING_INSET =
 export const ABOUT_CLOSING_MOBILE_HEADING_COLUMN = "max-lg:items-start" as const;
 
 /** Mobile domknięcie — korekta pionowa nagłówka obok zdjęcia. */
-export const ABOUT_CLOSING_MOBILE_HEADING_LOWER = "max-lg:translate-y-[40px]" as const;
+export const ABOUT_CLOSING_MOBILE_HEADING_LOWER = "max-lg:translate-y-[30px]" as const;
 
 /** Mobile domknięcie — obniżenie tekstu body pod nagłówkiem. */
 export const ABOUT_CLOSING_MOBILE_BODY_LOWER = "max-lg:translate-y-[30px]" as const;
