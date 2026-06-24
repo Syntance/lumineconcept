@@ -11,7 +11,11 @@ export const ABOUT_INTRO_MOBILE_BODY_TEXT_CLASS = ABOUT_SECTION_MOBILE_BODY_TEXT
 
 /** Binerka — nagłówki sekcji treści (intro, misja itd.). */
 export const ABOUT_SECTION_HEADING_CLASS =
-  "font-binerka text-4xl tracking-[0.14em] text-brand-800 sm:text-5xl lg:text-6xl" as const;
+  "font-binerka text-3xl uppercase tracking-[0.14em] text-brand-800 sm:text-4xl lg:text-5xl" as const;
+
+/** Nagłówek obok zdjęcia na mobile/tablet — ten sam rytm co intro „O NAS”. */
+export const ABOUT_SECTION_MOBILE_BESIDE_IMAGE_HEADING_CLASS =
+  "mb-0 max-w-full max-lg:text-3xl sm:text-5xl lg:mb-8 xl:text-6xl max-xl:mb-6" as const;
 
 /** Pionowy napis boczny przy zdjęciu intro (~2.4× bazowy 0.65rem, kolor nagłówków). */
 export const ABOUT_SIDE_CAPTION_CLASS =
