@@ -35,6 +35,13 @@ export const ABOUT_INTRO_SIDE_CAPTION_ALIGN = "shrink-0 xl:translate-y-[300px]" 
 /** Intro — nachodzenie zdjęcia na hero / sekcję wyżej. */
 export const ABOUT_INTRO_MEDIA_OFFSET = "-mt-48 xl:-mt-56" as const;
 
+/** Intro mobile — środek zdjęcia na styku hero / brand-50 (−20px mniej nachodzenia na hero). */
+export const ABOUT_INTRO_MOBILE_IMAGE_OVERLAP =
+	"max-lg:-mt-[calc(12rem_-_1.125rem_-_20px)] lg:-mt-48 xl:-mt-56" as const;
+
+/** Intro mobile — przesunięcie nagłówka w prawo. */
+export const ABOUT_INTRO_MOBILE_HEADING_SHIFT_RIGHT = "max-lg:translate-x-[10px]" as const;
+
 /** Intro — nachodzenie sekcji na hero. */
 export const ABOUT_INTRO_SECTION_OVERLAP = "-mt-20 sm:-mt-24 lg:-mt-28" as const;
 
@@ -85,7 +92,7 @@ export const ABOUT_MISSION_MOBILE_BODY_WIDTH = "max-lg:w-full" as const;
 /** @deprecated Użyj ABOUT_MISSION_MOBILE_BESIDE_LAYOUT — alias dla propsa mobileGridClassName. */
 export const ABOUT_MISSION_MOBILE_GRID = ABOUT_MISSION_MOBILE_BESIDE_LAYOUT;
 
-/** Mobile misja — ten sam pas poziomy co intro (50px → oś środka zdjęcia), wyrównanie od lewej. */
+/** Mobile misja — tekst pod zdjęciem; ten sam pas poziomy co intro (50px → oś środka zdjęcia). */
 export const ABOUT_MISSION_MOBILE_BODY_WRAPPER =
 	"max-lg:w-[calc(100%+30px-5.3625rem)] max-lg:text-left max-lg:[&_p]:w-full" as const;
 
@@ -133,8 +140,12 @@ export const ABOUT_MEDIA_COLUMN_START =
 export const ABOUT_MISSION_TEXT_TOP_OFFSET =
 	"max-lg:pt-0 lg:pt-[calc(6.83mm+1rem+2px+19.44rem*960/720*0.064-19.44rem*0.067)] xl:pt-[calc(6.83mm+1rem+2px+22.68rem*960/720*0.064-22.68rem*0.067)]" as const;
 
+/** Biały pas tła — sekcja misji. */
+export const ABOUT_MISSION_WHITE_BAND_TOP = "top-[16%]" as const;
+export const ABOUT_MISSION_WHITE_BAND_HEIGHT = "h-[calc(47%+140px)]" as const;
+
 /** Zdjęcie domknięcia — nachodzi na dół sekcji misji (tylko desktop). */
-export const ABOUT_CLOSING_MEDIA_TOP_OFFSET = "max-lg:mt-0 lg:-mt-[250px]" as const;
+export const ABOUT_CLOSING_MEDIA_TOP_OFFSET = "max-lg:-mt-[70px] lg:-mt-[250px]" as const;
 
 /** Biały pas nad footerem — sekcja domknięcia. */
 export const ABOUT_CLOSING_FOOTER_WHITE_BAND_HEIGHT = "h-[130px]" as const;
@@ -148,12 +159,45 @@ export const ABOUT_CLOSING_SEPARATOR_LINE_BOTTOM = "bottom-10" as const;
 /** Tekst domknięcia — podniesienie względem domyślnego wyrównania do zdjęcia. */
 export const ABOUT_CLOSING_TEXT_TOP_OFFSET = "max-lg:mt-0 lg:-mt-[50px]" as const;
 
+/** Mobile domknięcie — nagłówek 20px od lewej krawędzi viewportu (gutter 50px → -30px). */
+export const ABOUT_CLOSING_MOBILE_HEADING_INSET =
+	"max-lg:-ml-[30px] max-lg:text-left" as const;
+
+/** Mobile domknięcie — kolumna nagłówka wyrównana do lewej. */
+export const ABOUT_CLOSING_MOBILE_HEADING_COLUMN = "max-lg:items-start" as const;
+
+/** Mobile domknięcie — korekta pionowa nagłówka obok zdjęcia. */
+export const ABOUT_CLOSING_MOBILE_HEADING_LOWER = "max-lg:translate-y-[40px]" as const;
+
+/** Mobile domknięcie — obniżenie tekstu body pod nagłówkiem. */
+export const ABOUT_CLOSING_MOBILE_BODY_LOWER = "max-lg:translate-y-[30px]" as const;
+
+/** Mobile — przelamanie biały / brand-50 (środek zdjęcia, −50px). */
+export const ABOUT_CLOSING_MOBILE_BRAND50_TOP =
+	"max-lg:top-[calc(1rem_-_70px_+_10.725rem_*_960_/_720_/_2_-_50px)]" as const;
+
+/** Mobile — biały pas do przelamania (sięga w strefę nachodzenia zdjęcia na misję). */
+export const ABOUT_CLOSING_MOBILE_WHITE_COVER_TOP = "max-lg:-top-[12rem]" as const;
+export const ABOUT_CLOSING_MOBILE_WHITE_COVER_HEIGHT =
+	"max-lg:h-[calc(12rem_+_1rem_-_70px_+_10.725rem_*_960_/_720_/_2_-_50px)]" as const;
+
+/** Mobile — wysokość brand-50 (od środka zdjęcia do brand-100). */
+export const ABOUT_CLOSING_MOBILE_BRAND50_HEIGHT =
+	"max-lg:h-[calc(10.725rem_*_960_/_720_/_2_+_50px)]" as const;
+
+/** Mobile — początek brand-100 pod nagłówkiem (dół wiersza zdjęcia + offset nagłówka). */
+export const ABOUT_CLOSING_MOBILE_BRAND100_TOP =
+	"max-lg:top-[calc(1rem_-_70px_+_10.725rem_*_960_/_720_+_50px_-_50px)]" as const;
+
 /** Opaska brand-100 — sekcja domknięcia. */
-export const ABOUT_CLOSING_BRAND100_BAND_HEIGHT = "h-[530px]" as const;
-export const ABOUT_CLOSING_BRAND100_BAND_TOP = "top-[calc(50%-100px)]" as const;
+export const ABOUT_CLOSING_BRAND100_BAND_HEIGHT = "max-lg:bottom-0 max-lg:h-auto lg:h-[530px]" as const;
+/** Desktop — środek opaski; mobile — kotwica pod nagłówkiem (patrz MOBILE_BRAND100_TOP). */
+export const ABOUT_CLOSING_BRAND100_BAND_TOP =
+	"max-lg:top-[calc(1rem_-_70px_+_10.725rem_*_960_/_720_+_50px_-_50px)] lg:top-[calc(50%_+_40px)]" as const;
+export const ABOUT_CLOSING_BRAND100_BAND_TRANSFORM = "max-lg:translate-y-0 lg:-translate-y-1/2" as const;
 
 /** Sygnet na styku brand-50 i opaska brand-100. */
-export const ABOUT_CLOSING_SIGNET_TOP = "top-[calc(50%-375px)]" as const;
+export const ABOUT_CLOSING_SIGNET_TOP = "top-[calc(50%_-_235px)]" as const;
 
 export const ABOUT_SIGNET_IMAGE = "/images/lumine-signet-brown.png" as const;
 export const ABOUT_SIGNET_ASPECT_CLASS = "aspect-421/396" as const;

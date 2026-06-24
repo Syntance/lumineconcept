@@ -3,12 +3,22 @@ import Image from "next/image";
 import {
   ABOUT_CLOSING_BRAND100_BAND_HEIGHT,
   ABOUT_CLOSING_BRAND100_BAND_TOP,
+  ABOUT_CLOSING_BRAND100_BAND_TRANSFORM,
   ABOUT_CLOSING_FOOTER_WHITE_BAND_HEIGHT,
   ABOUT_CLOSING_MEDIA_TOP_OFFSET,
+  ABOUT_CLOSING_MOBILE_BRAND50_HEIGHT,
+  ABOUT_CLOSING_MOBILE_BRAND50_TOP,
+  ABOUT_CLOSING_MOBILE_BODY_LOWER,
+  ABOUT_CLOSING_MOBILE_WHITE_COVER_HEIGHT,
+  ABOUT_CLOSING_MOBILE_WHITE_COVER_TOP,
+  ABOUT_CLOSING_MOBILE_HEADING_COLUMN,
+  ABOUT_CLOSING_MOBILE_HEADING_INSET,
+  ABOUT_CLOSING_MOBILE_HEADING_LOWER,
   ABOUT_CLOSING_SEPARATOR_CENTER_BOTTOM,
   ABOUT_CLOSING_SEPARATOR_LINE_BOTTOM,
   ABOUT_CLOSING_SIGNET_TOP,
   ABOUT_CLOSING_TEXT_TOP_OFFSET,
+  ABOUT_INTRO_DESKTOP_BODY_EDGE,
   ABOUT_INTRO_MOBILE_BODY_WRAPPER,
   ABOUT_MEDIA_COLUMN_END,
   ABOUT_MISSION_TEXT_TOP_OFFSET,
@@ -23,7 +33,7 @@ import { AboutArchImage } from "@/components/about/AboutArchImage";
 import { AboutMediaBlock } from "@/components/about/AboutMediaBlock";
 import { AboutSectionColumns } from "@/components/about/AboutSectionColumns";
 import { AboutSectionLabel } from "@/components/about/AboutSectionLabel";
-import { ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS } from "@/components/about/about-typography";
+import { ABOUT_SECTION_HEADING_CLASS, ABOUT_SECTION_MOBILE_BESIDE_IMAGE_HEADING_CLASS, ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS } from "@/components/about/about-typography";
 import type { ResolvedAboutSections } from "@/lib/content/about";
 import { cn } from "@/lib/utils";
 
@@ -36,16 +46,37 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
     <section
       aria-labelledby="about-closing-heading"
       className={cn(
-        "relative bg-brand-50 pb-[150px] pt-4 sm:pb-[170px]",
+        "relative max-lg:bg-white bg-brand-50 pb-[150px] pt-4 sm:pb-[170px]",
         ABOUT_SECTION_SAFE,
         "max-lg:overflow-x-clip",
       )}
     >
-      {/* Opaska brand-100 — jak desktop. */}
+      {/* Mobile — biały pas do połowy zdjęcia (bez kremu nad zdjęciem). */}
       <div
         aria-hidden
         className={cn(
-          "pointer-events-none absolute inset-x-0 z-0 -translate-y-1/2 bg-brand-100",
+          "pointer-events-none absolute inset-x-0 z-[1] hidden bg-white max-lg:block",
+          ABOUT_CLOSING_MOBILE_WHITE_COVER_TOP,
+          ABOUT_CLOSING_MOBILE_WHITE_COVER_HEIGHT,
+        )}
+      />
+
+      {/* Mobile — brand-50 od połowy zdjęcia do ciemnego kremu. */}
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-x-0 z-0 hidden bg-brand-50 max-lg:block",
+          ABOUT_CLOSING_MOBILE_BRAND50_TOP,
+          ABOUT_CLOSING_MOBILE_BRAND50_HEIGHT,
+        )}
+      />
+
+      {/* Opaska brand-100 — mobile pod nagłówkiem; desktop jak wcześniej. */}
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-x-0 z-0 bg-brand-100",
+          ABOUT_CLOSING_BRAND100_BAND_TRANSFORM,
           ABOUT_CLOSING_BRAND100_BAND_TOP,
           ABOUT_CLOSING_BRAND100_BAND_HEIGHT,
         )}
@@ -115,24 +146,39 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
           ABOUT_TEXT_GUTTER_RIGHT,
           ABOUT_MISSION_TEXT_TOP_OFFSET,
           ABOUT_CLOSING_TEXT_TOP_OFFSET,
+          ABOUT_CLOSING_MOBILE_HEADING_COLUMN,
           "lg:flex lg:flex-col lg:items-end",
         )}
-        bodyClassName="max-lg:text-right lg:text-right"
+        bodyClassName={cn(
+          "max-lg:w-full max-lg:text-right lg:text-right",
+          ABOUT_CLOSING_MOBILE_BODY_LOWER,
+          ABOUT_INTRO_DESKTOP_BODY_EDGE,
+        )}
         mediaClassName={cn(
           "relative z-20 max-lg:flex max-lg:w-full max-lg:flex-col max-lg:items-end max-lg:justify-start",
           ABOUT_MEDIA_COLUMN_END,
           ABOUT_CLOSING_MEDIA_TOP_OFFSET,
         )}
+        heading={
+          <h2
+            id="about-closing-heading"
+            className={cn(
+              ABOUT_SECTION_MOBILE_BESIDE_IMAGE_HEADING_CLASS,
+              ABOUT_CLOSING_MOBILE_HEADING_INSET,
+              ABOUT_CLOSING_MOBILE_HEADING_LOWER,
+              "lg:text-right",
+              ABOUT_SECTION_HEADING_CLASS,
+              "lg:sr-only",
+            )}
+          >
+            {sections.closingLabel || "Dla kogo tworzymy?"}
+          </h2>
+        }
         body={
-          <>
-            <h2 id="about-closing-heading" className="sr-only">
-              {sections.closingLabel || "Domknięcie strony"}
-            </h2>
-            <AboutBodyText
-              paragraphs={sections.closingParagraphs}
-              className={ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS}
-            />
-          </>
+          <AboutBodyText
+            paragraphs={sections.closingParagraphs}
+            className={ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS}
+          />
         }
         media={
           <AboutMediaBlock
