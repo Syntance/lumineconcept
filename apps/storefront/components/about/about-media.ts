@@ -30,7 +30,7 @@ export const ABOUT_INTRO_DESKTOP_MEDIA_ROW =
 /** Intro desktop — pionowy napis boczny (tylko xl+, znika po pierwszym breakpoincie w dół). */
 export const ABOUT_INTRO_SIDE_CAPTION_VISIBILITY = "hidden xl:flex" as const;
 
-export const ABOUT_INTRO_SIDE_CAPTION_ALIGN = "shrink-0 xl:translate-y-[300px]" as const;
+export const ABOUT_INTRO_SIDE_CAPTION_ALIGN = "shrink-0 xl:translate-y-[220px]" as const;
 
 /** Intro — nachodzenie zdjęcia na hero / sekcję wyżej. */
 export const ABOUT_INTRO_MEDIA_OFFSET = "-mt-48 xl:-mt-56" as const;
