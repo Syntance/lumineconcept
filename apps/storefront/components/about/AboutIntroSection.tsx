@@ -3,6 +3,8 @@
 	ABOUT_INTRO_DESKTOP_MEDIA_ROW,
 	ABOUT_INTRO_MOBILE_BODY_WRAPPER,
 	ABOUT_INTRO_DESKTOP_BODY_EDGE,
+	ABOUT_INTRO_MOBILE_IMAGE_OVERLAP,
+	ABOUT_INTRO_MOBILE_HEADING_SHIFT_RIGHT,
 	ABOUT_INTRO_SECTION_OVERLAP,
 	ABOUT_INTRO_SIDE_CAPTION_ALIGN,
 	ABOUT_INTRO_SIDE_CAPTION_VISIBILITY,
@@ -15,7 +17,7 @@ import { AboutArchImage } from "@/components/about/AboutArchImage";
 import { AboutMediaBlock } from "@/components/about/AboutMediaBlock";
 import { AboutSectionColumns } from "@/components/about/AboutSectionColumns";
 import { AboutSectionLabel } from "@/components/about/AboutSectionLabel";
-import { ABOUT_SECTION_HEADING_CLASS, ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS, ABOUT_SIDE_CAPTION_CLASS } from "@/components/about/about-typography";
+import { ABOUT_SECTION_HEADING_CLASS, ABOUT_SECTION_MOBILE_BESIDE_IMAGE_HEADING_CLASS, ABOUT_SECTION_MOBILE_BODY_TEXT_CLASS, ABOUT_SIDE_CAPTION_CLASS } from "@/components/about/about-typography";
 import type { ResolvedAboutSections } from "@/lib/content/about";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +31,7 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 			src={sections.introImageUrl}
 			alt={sections.introImageAlt}
 			priority
-			className="max-lg:mx-0 max-lg:max-w-none -mt-48 xl:-mt-56"
+			className={cn("max-lg:mx-0 max-lg:max-w-none", ABOUT_INTRO_MOBILE_IMAGE_OVERLAP)}
 		/>
 	);
 
@@ -69,8 +71,9 @@ export function AboutIntroSection({ sections }: AboutIntroSectionProps) {
 					<h2
 						id="about-intro-heading"
 						className={cn(
-							"mb-0 max-w-full text-left max-lg:text-4xl sm:text-6xl",
-							"lg:mb-8 lg:text-right xl:text-7xl max-xl:mb-6",
+							ABOUT_SECTION_MOBILE_BESIDE_IMAGE_HEADING_CLASS,
+							ABOUT_INTRO_MOBILE_HEADING_SHIFT_RIGHT,
+							"text-left lg:text-right",
 							ABOUT_SECTION_HEADING_CLASS,
 						)}
 					>

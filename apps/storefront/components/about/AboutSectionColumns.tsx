@@ -199,7 +199,18 @@ export function AboutSectionColumns({
 					gridClassName="grid grid-cols-2 grid-rows-[auto_auto] items-stretch gap-x-3 gap-y-0"
 				>
 					{mobileMediaCell("col-start-1 row-start-1", ABOUT_MOBILE_MEDIA_FRAME_LEFT)}
-					<div className="col-start-2 row-start-1" aria-hidden />
+					{heading ? (
+						<div
+							className={cn(
+								"col-start-2 row-start-1 flex min-h-0 w-full flex-col items-start justify-end self-stretch",
+								textClassName,
+							)}
+						>
+							{heading}
+						</div>
+					) : (
+						<div className="col-start-2 row-start-1" aria-hidden />
+					)}
 					{renderMobileBodyRow("row-start-2")}
 				</AboutMobileGridShell>
 				{desktopGrid}
@@ -214,7 +225,18 @@ export function AboutSectionColumns({
 					className={className}
 					gridClassName="grid grid-cols-2 grid-rows-[auto_auto] items-stretch gap-x-3 gap-y-0"
 				>
-					<div className="col-start-1 row-start-1" aria-hidden />
+					{heading ? (
+						<div
+							className={cn(
+								"col-start-1 row-start-1 flex min-h-0 w-full flex-col items-end justify-center self-stretch",
+								textClassName,
+							)}
+						>
+							{heading}
+						</div>
+					) : (
+						<div className="col-start-1 row-start-1" aria-hidden />
+					)}
 					{mobileMediaCell("col-start-2 row-start-1", ABOUT_MOBILE_MEDIA_FRAME_RIGHT)}
 					{renderMobileBodyRow("row-start-2")}
 				</AboutMobileGridShell>
@@ -251,7 +273,7 @@ export function AboutSectionColumns({
 							<div
 								className={cn(
 									ABOUT_MEDIA_LABEL_OVERLAP_BELOW,
-									"w-full shrink-0",
+									"w-full shrink-0 max-lg:hidden",
 									ABOUT_MEDIA_LABEL_INSET_X,
 								)}
 							>
