@@ -15,7 +15,7 @@ export default async function PopupBannersPage() {
 			<header>
 				<h1 className="font-serif text-2xl text-foreground">Banery popup</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
-					Panel promocyjny z lewej krawędzi — treść, link, zdjęcie i targetowanie podstron.
+					Callout popup na środku ekranu — treść, link, zdjęcie i targetowanie podstron.
 				</p>
 			</header>
 			<div className="flex flex-col gap-6 lg:flex-row lg:gap-8">

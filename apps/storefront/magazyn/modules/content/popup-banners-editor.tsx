@@ -1,13 +1,22 @@
 "use client";
 
-import { Loader2, Mail, Plus, Save, Trash2 } from "lucide-react";
+import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { usePreventWindowFileDrop } from "@magazyn/core/hooks/use-prevent-window-file-drop";
+import { cn } from "@magazyn/core/lib/cn";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import { magazynConfig } from "@magazyn/magazyn.config";
-import type { GlobalContent, PopupBanner, PopupBannerTarget, PopupBannersConfig } from "@/lib/content/types";
+import { PopupBannerTabIcon } from "@/components/layout/PopupBannerTabIcon";
+import type { GlobalContent, PopupBanner, PopupBannerTabIcon as TabIcon, PopupBannerTarget, PopupBannersConfig } from "@/lib/content/types";
 import { DEFAULT_POPUP_BANNERS } from "@/lib/content/defaults";
+import {
+	DEFAULT_POPUP_TAB_ICON,
+	DEFAULT_POPUP_TAB_LABEL,
+	POPUP_BANNER_TAB_ICON_OPTIONS,
+	resolvePopupTabIcon,
+	resolvePopupTabLabel,
+} from "@/lib/content/popup-banner-tab-icons";
 import { saveGlobalContentAction } from "./content-actions";
 import { cmsSaveSuccessMessage } from "./cms-save-feedback";
 import { cmsRevalidatePaths } from "./cms-nav";
@@ -64,6 +73,8 @@ export function PopupBannersEditor({ globalContent: initialGlobal }: Props) {
 			title: "",
 			body: "",
 			blurBackground: true,
+			tabLabel: DEFAULT_POPUP_TAB_LABEL,
+			tabIcon: DEFAULT_POPUP_TAB_ICON,
 			order: items.length,
 		};
 		updateConfig({ items: [...items, banner] });
@@ -109,8 +120,8 @@ export function PopupBannersEditor({ globalContent: initialGlobal }: Props) {
 			<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
 				<legend className="px-1 text-sm font-medium">Banery popup</legend>
 				<p className="text-xs text-muted-foreground">
-					Panel wysuwa się z lewej krawędzi. Po zamknięciu zostaje wąski pasek ze skrzynką —
-					kliknięcie przywraca baner. Tekst publikuje się od razu; zdjęcia — po Redeploy u góry.
+					Callout na środku ekranu (~40% szerokości), dopasowany do treści. Po zamknięciu —
+					wąski pasek ze skrzynką z lewej. Tekst live po zapisie; zdjęcia — po Redeploy u góry.
 				</p>
 				<label className="flex items-center gap-2 text-sm">
 					<input
@@ -216,6 +227,56 @@ export function PopupBannersEditor({ globalContent: initialGlobal }: Props) {
 						/>
 						Blur tła strony (domyślnie włączony)
 					</label>
+
+					<div className="flex flex-col gap-3 rounded-lg border border-dashed border-border bg-muted/20 p-3">
+						<span className="text-xs font-medium text-muted-foreground">Pasek po schowaniu (lewa krawędź)</span>
+						<Input
+							value={banner.tabLabel ?? ""}
+							onChange={(e) => updateBanner(index, { tabLabel: e.target.value })}
+							placeholder={DEFAULT_POPUP_TAB_LABEL}
+							className="h-10"
+							maxLength={24}
+						/>
+						<p className="text-[11px] text-muted-foreground">
+							Tekst pionowy na pasku. Domyślnie: „{DEFAULT_POPUP_TAB_LABEL}”.
+						</p>
+						<div className="grid grid-cols-5 gap-2 sm:grid-cols-5">
+							{POPUP_BANNER_TAB_ICON_OPTIONS.map((option) => {
+								const selected =
+									resolvePopupTabIcon(banner.tabIcon) === option.id;
+								return (
+									<button
+										key={option.id}
+										type="button"
+										onClick={() => updateBanner(index, { tabIcon: option.id as TabIcon })}
+										className={cn(
+											"flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-[10px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+											selected
+												? "border-primary bg-primary/10 text-foreground"
+												: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+										)}
+										aria-pressed={selected}
+										aria-label={`Ikona: ${option.label}`}
+									>
+										<PopupBannerTabIcon icon={option.id} className="size-4" />
+										<span className="leading-tight">{option.label}</span>
+									</button>
+								);
+							})}
+						</div>
+						<div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+							<span>Podgląd:</span>
+							<span className="inline-flex items-center gap-1 rounded-r-md border border-l-0 border-border bg-brand-800 px-2 py-1.5 text-[#fffdf8]">
+								<PopupBannerTabIcon
+									icon={resolvePopupTabIcon(banner.tabIcon)}
+									className="size-3.5"
+								/>
+								<span className="text-[9px] font-semibold uppercase tracking-wide">
+									{resolvePopupTabLabel(banner.tabLabel)}
+								</span>
+							</span>
+						</div>
+					</div>
 				</fieldset>
 			))}
 
@@ -232,9 +293,8 @@ export function PopupBannersEditor({ globalContent: initialGlobal }: Props) {
 				Zapisz banery
 			</Button>
 
-			<p className="flex items-center gap-2 text-xs text-muted-foreground">
-				<Mail className="size-3.5 shrink-0" aria-hidden />
-				Po schowaniu baner wraca po kliknięciu paska z lewej krawędzi strony.
+			<p className="text-xs text-muted-foreground">
+				Po schowaniu baner wraca po kliknięciu paska z lewej krawędzi (tekst i ikona konfigurowalne).
 			</p>
 		</form>
 	);

@@ -3,6 +3,7 @@ import { normalizeAboutParagraphsForSave } from "./about-text";
 import { resolveCmsAssetUrl, resolveCmsHeroImageUrl } from "./asset-url";
 import { isCmsMediaAssetUrl, isLocalCmsDirectMediaEnabled } from "./cms-media-gate";
 import { normalizeHeroCtaHref } from "./cta-href";
+import { POPUP_BANNER_TAB_ICON_IDS, resolvePopupTabIcon, resolvePopupTabLabel } from "./popup-banner-tab-icons";
 import {
 	ABOUT_HERO_DEFAULT,
 	ABOUT_PAGE_DEFAULT,
@@ -262,6 +263,8 @@ const popupBannerSchema = z.object({
 	linkLabel: z.string().optional(),
 	imageUrl: cmsOptionalAssetUrlSchema.optional(),
 	blurBackground: z.boolean().optional(),
+	tabLabel: z.string().optional(),
+	tabIcon: z.enum(POPUP_BANNER_TAB_ICON_IDS).optional(),
 	order: z.number().int(),
 });
 
@@ -420,6 +423,8 @@ export function prepareGlobalContentForSave(global: GlobalContent): GlobalConten
 								link: banner.link?.trim() || undefined,
 								linkLabel: banner.linkLabel?.trim() || undefined,
 								imageUrl: banner.imageUrl?.trim() || undefined,
+								tabLabel: banner.tabLabel?.trim() || undefined,
+								tabIcon: banner.tabIcon ? resolvePopupTabIcon(banner.tabIcon) : undefined,
 							}))
 							.filter(
 								(banner) =>
