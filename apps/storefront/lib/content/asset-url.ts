@@ -127,9 +127,18 @@ export function isCmsImageUnoptimized(url: string): boolean {
 		try {
 			const parsed = new URL(url);
 			const host = parsed.hostname;
+			const path = parsed.pathname.toLowerCase();
 			if (host === "localhost" || host === "127.0.0.1") return true;
 			// Zdalne hero CMS (R2) — serwuj oryginał bez ponownej kompresji.
-			if (parsed.pathname.toLowerCase().includes("/cms-uploads/")) return true;
+			if (path.includes("/cms-uploads/")) return true;
+			// Medusa /static/ — panel ładuje bezpośrednio (next/image optimizer często 404).
+			if (
+				path.startsWith("/static/") ||
+				path.startsWith("/uploads/") ||
+				path.startsWith("/products/")
+			) {
+				return true;
+			}
 		} catch {
 			return true;
 		}
