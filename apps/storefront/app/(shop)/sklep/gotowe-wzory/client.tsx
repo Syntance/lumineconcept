@@ -135,6 +135,7 @@ export function ShopGridClient({
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
   const { listingBasePath } = productBreadcrumbContextFromBasePath(productBasePath);
+  const initialUrlSort = searchParams.get("sort");
 
   const [products, setProducts] = useState<SimpleProduct[]>(initialProducts);
   const [totalFiltered, setTotalFiltered] = useState(totalCount);
@@ -151,7 +152,7 @@ export function ShopGridClient({
     category: initialFilter,
     pill:
       initialPill && initialPill !== "" && initialPill !== "all" ? initialPill : undefined,
-    sort: initialSort,
+    sort: initialUrlSort ?? initialSort,
     sizes: [],
     materials: [],
     finishes: [],
