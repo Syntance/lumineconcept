@@ -62,7 +62,8 @@ export type ContentBlockKey =
 	| "checkoutCallout"
 	| "salonLogos"
 	| "instagramTiles"
-	| "bestsellers";
+	| "bestsellers"
+	| "popupBanners";
 
 export type ContentPageConfig = {
 	/** Stabilny identyfikator — nie zmieniaj po wdrożeniu bez migracji danych. */

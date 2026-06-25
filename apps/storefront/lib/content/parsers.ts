@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { normalizeAboutParagraphsForSave } from "./about-text";
-import { resolveCmsAssetUrl } from "./asset-url";
+import { resolveCmsAssetUrl, resolveCmsHeroImageUrl } from "./asset-url";
 import { isCmsMediaAssetUrl, isLocalCmsDirectMediaEnabled } from "./cms-media-gate";
 import { normalizeHeroCtaHref } from "./cta-href";
 import {
@@ -8,6 +8,7 @@ import {
 	ABOUT_PAGE_DEFAULT,
 	DEFAULT_GLOBAL_CONTENT,
 	DEFAULT_PAGE_CONTENT,
+	DEFAULT_POPUP_BANNERS,
 	DEFAULT_SITE_SETTINGS,
 	HOME_HERO_DEFAULT,
 	LOGO_HERO_DEFAULT,
@@ -241,6 +242,34 @@ const instagramTileSchema = z.object({
 	alt: z.string().optional(),
 });
 
+const popupBannerTargetSchema = z.enum([
+	"home",
+	"shop",
+	"logo-3d",
+	"gotowe-wzory",
+	"certyfikaty",
+	"o-nas",
+	"all",
+]);
+
+const popupBannerSchema = z.object({
+	id: z.string().min(1),
+	enabled: z.boolean(),
+	pageIds: z.array(popupBannerTargetSchema).default([]),
+	title: z.string().optional(),
+	body: z.string().optional(),
+	link: z.string().optional(),
+	linkLabel: z.string().optional(),
+	imageUrl: cmsOptionalAssetUrlSchema.optional(),
+	blurBackground: z.boolean().optional(),
+	order: z.number().int(),
+});
+
+const popupBannersConfigSchema = z.object({
+	enabled: z.boolean(),
+	items: z.array(popupBannerSchema).max(20).default([]),
+});
+
 function resolvePublishedImageUrl(raw: string | undefined): string | undefined {
 	if (!raw?.trim()) return undefined;
 	const resolved = resolveCmsAssetUrl(raw);
@@ -324,6 +353,20 @@ function resolvePageContentAssets(content: PageContent): PageContent {
 	};
 }
 
+function resolvePopupBannersAssets(config: GlobalContent["popupBanners"]): GlobalContent["popupBanners"] {
+	if (!config) return config;
+	return {
+		...config,
+		items:
+			config.items?.map((banner) => ({
+				...banner,
+				imageUrl: banner.imageUrl?.trim()
+					? resolveCmsHeroImageUrl(banner.imageUrl.trim())
+					: undefined,
+			})) ?? [],
+	};
+}
+
 function resolveGlobalContentAssets(global: GlobalContent): GlobalContent {
 	return {
 		...global,
@@ -341,6 +384,7 @@ function resolveGlobalContentAssets(global: GlobalContent): GlobalContent {
 				return { ...tile, imageUrl };
 			})
 			.filter((item): item is NonNullable<typeof item> => item !== null),
+		popupBanners: resolvePopupBannersAssets(global.popupBanners),
 	};
 }
 
@@ -363,12 +407,33 @@ export function prepareGlobalContentForSave(global: GlobalContent): GlobalConten
 				imageUrl: tile.imageUrl.trim(),
 			}))
 			.filter((tile) => tile.postUrl !== "" && tile.imageUrl.trim() !== ""),
+		popupBanners: global.popupBanners
+			? {
+					enabled: global.popupBanners.enabled,
+					items:
+						global.popupBanners.items
+							?.map((banner, index) => ({
+								...banner,
+								order: index,
+								title: banner.title?.trim() || undefined,
+								body: banner.body?.trim() || undefined,
+								link: banner.link?.trim() || undefined,
+								linkLabel: banner.linkLabel?.trim() || undefined,
+								imageUrl: banner.imageUrl?.trim() || undefined,
+							}))
+							.filter(
+								(banner) =>
+									banner.title || banner.body || banner.imageUrl || banner.link,
+							) ?? [],
+				}
+			: undefined,
 	};
 }
 
 export const globalContentSchema = z.object({
 	salonLogos: z.array(salonLogoSchema).optional(),
 	instagramTiles: z.array(instagramTileSchema).max(6).optional(),
+	popupBanners: popupBannersConfigSchema.optional(),
 });
 
 export const productFaqSchema = z.array(
@@ -479,6 +544,7 @@ export function parseGlobalContent(raw: unknown): GlobalContent {
 	return resolveGlobalContentAssets({
 		salonLogos: parsed.salonLogos?.length ? parsed.salonLogos : DEFAULT_GLOBAL_CONTENT.salonLogos,
 		instagramTiles: parsed.instagramTiles ?? [],
+		popupBanners: parsed.popupBanners ?? DEFAULT_POPUP_BANNERS,
 	});
 }
 
@@ -489,6 +555,7 @@ export function parseGlobalContentForAdmin(raw: unknown): GlobalContent {
 	return {
 		salonLogos: parsed.salonLogos?.length ? parsed.salonLogos : DEFAULT_GLOBAL_CONTENT.salonLogos,
 		instagramTiles: parsed.instagramTiles ?? [],
+		popupBanners: parsed.popupBanners ?? DEFAULT_POPUP_BANNERS,
 	};
 }
 
