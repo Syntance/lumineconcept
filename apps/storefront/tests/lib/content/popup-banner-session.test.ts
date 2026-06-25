@@ -3,12 +3,13 @@ import {
 	hasPopupBannerEntryShown,
 	markPopupBannerEntryShown,
 	POPUP_BANNER_ENTRY_SESSION_KEY,
+	resetPopupBannerEntrySessionForTests,
 	resolveInitialPopupBannerView,
 } from "@/lib/content/popup-banner-session";
 
 describe("popup-banner-session", () => {
 	afterEach(() => {
-		window.sessionStorage.clear();
+		resetPopupBannerEntrySessionForTests();
 	});
 
 	it("starts as not shown in a fresh session", () => {
@@ -21,5 +22,19 @@ describe("popup-banner-session", () => {
 		expect(window.sessionStorage.getItem(POPUP_BANNER_ENTRY_SESSION_KEY)).toBe("1");
 		expect(hasPopupBannerEntryShown()).toBe(true);
 		expect(resolveInitialPopupBannerView()).toBe("collapsed");
+	});
+
+	it("keeps entry shown in memory after storage is cleared", () => {
+		markPopupBannerEntryShown();
+		window.sessionStorage.clear();
+		expect(hasPopupBannerEntryShown()).toBe(true);
+		expect(resolveInitialPopupBannerView()).toBe("collapsed");
+	});
+
+	it("hydrates memory from sessionStorage on cold read", () => {
+		window.sessionStorage.setItem(POPUP_BANNER_ENTRY_SESSION_KEY, "1");
+		resetPopupBannerEntrySessionForTests();
+		window.sessionStorage.setItem(POPUP_BANNER_ENTRY_SESSION_KEY, "1");
+		expect(hasPopupBannerEntryShown()).toBe(true);
 	});
 });
