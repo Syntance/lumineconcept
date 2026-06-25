@@ -6,7 +6,7 @@ import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
 import { requireAdminSession } from "@magazyn/core/auth/require-session";
-import { uploadCmsAssetFile } from "@/lib/product-upload/product-file";
+import { uploadCmsAssetFile, formatCmsUploadError, validateCmsUploadFile } from "@/lib/product-upload/product-file";
 import { resetEmailTemplate, saveEmailTemplate, setEmailTemplateEnabled } from "./store";
 import { mergeSubject, renderTemplate, sampleRenderContextForTemplate } from "./render-template";
 import { sendTransactionalEmail } from "./send-transactional";
@@ -22,7 +22,6 @@ export type ToggleEnabledActionState = EmailActionState & { template?: EmailTemp
 export type UploadActionState = EmailActionState & { url?: string };
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 const MAILE_PATH = `${magazynConfig.basePath}/panel/maile`;
 
 function handleError(error: unknown, fallback: string): EmailActionState {
@@ -80,9 +79,8 @@ export async function resetTemplateAction(type: unknown): Promise<ResetActionSta
 export async function uploadEmailImageAction(formData: FormData): Promise<UploadActionState> {
 	const file = formData.get("file");
 	if (!(file instanceof File)) return { ok: false, error: "Brak pliku." };
-	if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-		return { ok: false, error: "Dozwolone formaty: JPG, PNG, WEBP, GIF, AVIF." };
-	}
+	const typeError = validateCmsUploadFile(file);
+	if (typeError) return { ok: false, error: typeError };
 	if (file.size > MAX_IMAGE_BYTES) {
 		return { ok: false, error: "Maksymalny rozmiar obrazu to 10 MB." };
 	}
@@ -92,7 +90,7 @@ export async function uploadEmailImageAction(formData: FormData): Promise<Upload
 		const result = await uploadCmsAssetFile(file);
 		return { ok: true, error: null, url: result.url };
 	} catch (error) {
-		return handleError(error, "Upload obrazu nie powiódł się.");
+		return { ok: false, error: formatCmsUploadError(error), url: undefined };
 	}
 }
 
