@@ -19,7 +19,7 @@ export const RECONCILE_WINDOW_MS = 5 * 24 * 60 * 60 * 1000;
  * storefront (strona powrotu) i webhook — nie chcemy ścigać się z klientem,
  * który właśnie wpisuje BLIKa.
  */
-export const RECONCILE_MIN_AGE_MS = 10 * 60 * 1000;
+export const RECONCILE_MIN_AGE_MS = 5 * 60 * 1000;
 
 /** Limit koszyków na jeden przebieg — chroni P24 API i workflow engine. */
 export const RECONCILE_MAX_PER_RUN = 25;
