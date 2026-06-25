@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { inferCmsMimeType } from "@/lib/product-upload/cms-mime";
 
 type Options = {
 	onDropFiles: (files: File[]) => void;
@@ -61,6 +62,8 @@ export function useFileDropZone({ onDropFiles, disabled = false, accept }: Optio
 	};
 }
 
+/** Windows często zostawia pusty `file.type` — rozpoznaj po rozszerzeniu (jak server-side). */
 export function isImageFile(file: File): boolean {
-	return file.type.startsWith("image/");
+	if (file.type.startsWith("image/")) return true;
+	return inferCmsMimeType(file) !== null;
 }

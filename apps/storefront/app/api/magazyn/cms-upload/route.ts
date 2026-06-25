@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@magazyn/core/auth/require-session";
+import { adminUpload } from "@magazyn/core/medusa/client";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
+import { resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
 import {
 	formatCmsUploadError,
 	uploadCmsAssetFile,
@@ -33,8 +35,19 @@ export async function POST(request: Request) {
 
 		const urls: string[] = [];
 		for (const file of files) {
-			const result = await uploadCmsAssetFile(file);
-			urls.push(result.url);
+			try {
+				const result = await uploadCmsAssetFile(file);
+				urls.push(result.url);
+			} catch (inner) {
+				if (inner instanceof Error && inner.message === "MEDUSA_UPLOAD_UNAVAILABLE") {
+					const fallback = resolveMedusaMediaUrls(await adminUpload([file]));
+					if (fallback[0]) {
+						urls.push(fallback[0]);
+						continue;
+					}
+				}
+				throw inner;
+			}
 		}
 
 		return NextResponse.json({ urls, error: null });
