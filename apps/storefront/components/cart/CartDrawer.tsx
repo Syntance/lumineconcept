@@ -16,7 +16,15 @@ const CART_PANEL_MS = 300;
 const CART_OVERLAY_MS = 200;
 
 export function CartDrawer() {
-  const { isOpen, closeCart, items, itemCount, applyDiscount, total } = useCart();
+  const {
+    isOpen,
+    closeCart,
+    items,
+    itemCount,
+    applyDiscount,
+    total,
+    appliedPromoCodes,
+  } = useCart();
   const { track } = useAnalytics();
 
   const [referralCode, setReferralCode] = useState("");
@@ -52,6 +60,10 @@ export function CartDrawer() {
     return () => window.clearTimeout(timer);
   }, [isOpen, render]);
 
+  const visiblePromoCode = appliedPromoCodes.find(
+    (code) => !code.startsWith("__lumine_fs_"),
+  );
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -67,11 +79,19 @@ export function CartDrawer() {
         total,
         currency: "PLN",
       }));
-      const savedCode = localStorage.getItem("lumine_referral");
-      if (savedCode && referralStatus === "idle") setReferralCode(savedCode);
       prevOpenRef.current = true;
     }
-  }, [isOpen, referralStatus, items, total, track]);
+
+    if (visiblePromoCode) {
+      setReferralCode(visiblePromoCode);
+      setReferralStatus("success");
+      setReferralMessage("Kod wykorzystany");
+      return;
+    }
+
+    const savedCode = localStorage.getItem("lumine_referral");
+    if (savedCode && referralStatus === "idle") setReferralCode(savedCode);
+  }, [isOpen, referralStatus, items, total, track, visiblePromoCode]);
 
   useEffect(() => {
     if (!render) return;
@@ -97,9 +117,13 @@ export function CartDrawer() {
       track("referral_code_used", { referral_code: referralCode.trim() });
       setReferralStatus("success");
       setReferralMessage("Kod zastosowany!");
-    } catch {
-      setReferralStatus("error");
-      setReferralMessage("Nieprawidłowy kod");
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message === "Kod wykorzystany"
+          ? "Kod wykorzystany"
+          : "Nieprawidłowy kod";
+      setReferralStatus(message === "Kod wykorzystany" ? "success" : "error");
+      setReferralMessage(message);
     }
   }, [referralCode, applyDiscount, track]);
 
