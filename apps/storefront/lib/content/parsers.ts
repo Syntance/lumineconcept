@@ -185,6 +185,11 @@ const categoryTileSchema = z.object({
 	imageUrl: z.string().min(1),
 });
 
+const bestsellersSchema = z.object({
+	title: z.string().optional(),
+	productIds: z.array(z.string().trim().min(1)).max(4),
+});
+
 const brandingCtaSchema = z.object({
 	desktopBackgroundUrl: cmsOptionalAssetUrlSchema.optional(),
 });
@@ -214,6 +219,7 @@ export const pageContentSchema = z.object({
 	faq: z.array(faqSchema).optional(),
 	gallery: z.array(galleryPhotoSchema).optional(),
 	categoryTiles: z.array(categoryTileSchema).optional(),
+	bestsellers: bestsellersSchema.optional(),
 });
 
 export const pageContentMapSchema = z.record(z.string(), pageContentSchema);
@@ -686,6 +692,20 @@ export function preparePageContentForSave(_pageId: string, content: PageContent)
 		about.missionParagraphs = normalizeAboutParagraphsForSave(about.missionParagraphs);
 		about.closingParagraphs = normalizeAboutParagraphsForSave(about.closingParagraphs);
 		next.about = Object.keys(about).length ? about : undefined;
+	}
+	if (next.bestsellers) {
+		const uniqueIds = [
+			...new Set(next.bestsellers.productIds.map((id) => id.trim()).filter((id) => id.length > 0)),
+		].slice(0, 4);
+		const title = next.bestsellers.title?.trim();
+		if (uniqueIds.length === 0 && !title) {
+			delete next.bestsellers;
+		} else {
+			next.bestsellers = {
+				productIds: uniqueIds,
+				...(title ? { title } : {}),
+			};
+		}
 	}
 	return next;
 }

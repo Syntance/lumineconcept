@@ -24,6 +24,8 @@ import { savePageContentAction } from "./content-actions";
 import { cmsGallerySaveSuccessMessage, cmsSaveSuccessMessage } from "./cms-save-feedback";
 import { newCmsId } from "./cms-id";
 import { OgImageField } from "./seo/og-image-field";
+import { BestsellersEditor } from "./bestsellers-editor";
+import type { CmsProductOption } from "./product-options";
 
 const inputClass =
 	"w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -33,9 +35,10 @@ type Props = {
 	path: string;
 	blocks: ContentBlockKey[];
 	initial: PageContent;
+	productOptions?: CmsProductOption[];
 };
 
-export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
+export function PageContentEditor({ pageId, path, blocks, initial, productOptions = [] }: Props) {
 	const router = useRouter();
 	const [content, setContent] = useState<PageContent>(initial);
 	const [error, setError] = useState<string | null>(null);
@@ -126,6 +129,13 @@ export function PageContentEditor({ pageId, path, blocks, initial }: Props) {
 				<CategoryTilesEditor
 					value={content.categoryTiles ?? []}
 					onChange={(categoryTiles) => setContent((c) => ({ ...c, categoryTiles }))}
+				/>
+			) : null}
+			{blocks.includes("bestsellers") ? (
+				<BestsellersEditor
+					value={content.bestsellers}
+					onChange={(bestsellers) => setContent((c) => ({ ...c, bestsellers }))}
+					products={productOptions}
 				/>
 			) : null}
 			{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}

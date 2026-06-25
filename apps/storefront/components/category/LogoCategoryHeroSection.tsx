@@ -80,8 +80,6 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 					<div className="absolute inset-0 bg-brand-800" aria-hidden />
 				)}
 
-				<div className="pointer-events-none absolute inset-0 bg-black/35" aria-hidden />
-
 				<div className={cn("absolute inset-x-0 top-0 z-20 pt-6", BREADCRUMBS_ALIGN_CLASS)}>
 					<Breadcrumbs
 						className="mb-0 text-sm [&_a]:text-white/80 [&_a:hover]:text-white [&_span]:text-white"

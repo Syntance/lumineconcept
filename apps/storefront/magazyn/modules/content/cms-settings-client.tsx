@@ -9,6 +9,7 @@ import type { GlobalContent, PageContentMap, SiteSettings } from "@/lib/content/
 import { GlobalContentEditor } from "./global-content-editor";
 import { PageContentEditor } from "./page-content-editor";
 import { CmsRedeployButton } from "./cms-redeploy-button";
+import type { CmsProductOption } from "./product-options";
 
 type Props = {
 	siteSettings: SiteSettings;
@@ -16,6 +17,7 @@ type Props = {
 	globalContent: GlobalContent;
 	pages: ContentPageConfig[];
 	activeTab: "global" | string;
+	productOptions?: CmsProductOption[];
 };
 
 const BASE = `${magazynConfig.basePath}/panel/cms`;
@@ -26,6 +28,7 @@ export function CmsSettingsClient({
 	globalContent,
 	pages,
 	activeTab,
+	productOptions = [],
 }: Props) {
 	const pathname = usePathname();
 	const activePage = pages.find((p) => p.id === activeTab);
@@ -48,6 +51,7 @@ export function CmsSettingsClient({
 						path={activePage.path}
 						blocks={activePage.blocks}
 						initial={pageContent[activePage.id as keyof PageContentMap] ?? {}}
+						productOptions={activePage.blocks.includes("bestsellers") ? productOptions : []}
 					/>
 				) : null}
 			</div>

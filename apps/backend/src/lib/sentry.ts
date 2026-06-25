@@ -166,3 +166,24 @@ export function captureError(err: unknown, context?: Record<string, unknown>): v
     Sentry.captureException(err);
   });
 }
+
+/**
+ * Zgłoszenie zdarzenia operacyjnego BEZ wyjątku — np. "reconcile odratował
+ * sierotę" albo "webhook signature fail". To nie są crashe kodu, ale chcemy
+ * o nich wiedzieć (alert), bo sygnalizują że płatność prawie zginęła cicho
+ * albo ktoś podszywa się pod bramkę. Domyślny poziom: "warning".
+ */
+export function captureMessage(
+  message: string,
+  level: Sentry.SeverityLevel = "warning",
+  context?: Record<string, unknown>,
+): void {
+  if (!initialized) return;
+  Sentry.withScope((scope) => {
+    scope.setLevel(level);
+    if (context) {
+      scope.setContext("lumine", redactDeep(context) as Record<string, unknown>);
+    }
+    Sentry.captureMessage(redactEmails(message));
+  });
+}

@@ -21,7 +21,8 @@ export type ContentBlockKey =
 	| "footerText"
 	| "checkoutCallout"
 	| "salonLogos"
-	| "instagramTiles";
+	| "instagramTiles"
+	| "bestsellers";
 
 export type SeoMeta = {
 	metaTitle?: string;
@@ -147,6 +148,14 @@ export type InstagramTile = {
 	alt?: string;
 };
 
+/** Ręcznie wybrane bestsellery — kolejność w tablicy = kolejność na stronie. */
+export type BestsellersContent = {
+	/** Nagłówek sekcji (domyślnie „Bestsellery”). */
+	title?: string;
+	/** ID produktów Medusa (max 4). */
+	productIds: string[];
+};
+
 export type AboutPageContent = {
 	sideCaption?: string;
 	introHeading?: string;
@@ -172,6 +181,7 @@ export type PageContent = {
 	faq?: FaqItem[];
 	gallery?: GalleryPhoto[];
 	categoryTiles?: CategoryTile[];
+	bestsellers?: BestsellersContent;
 };
 
 export type GlobalContent = {

@@ -8,7 +8,6 @@ import {
   ABOUT_CLOSING_MEDIA_TOP_OFFSET,
   ABOUT_CLOSING_MOBILE_BRAND50_HEIGHT,
   ABOUT_CLOSING_MOBILE_BRAND50_TOP,
-  ABOUT_CLOSING_MOBILE_BODY_LOWER,
   ABOUT_CLOSING_MOBILE_WHITE_COVER_HEIGHT,
   ABOUT_CLOSING_MOBILE_WHITE_COVER_TOP,
   ABOUT_CLOSING_MOBILE_HEADING_COLUMN,
@@ -151,7 +150,6 @@ export function AboutClosingSection({ sections }: AboutClosingSectionProps) {
         )}
         bodyClassName={cn(
           "max-lg:w-full max-lg:text-right lg:text-right",
-          ABOUT_CLOSING_MOBILE_BODY_LOWER,
           ABOUT_INTRO_DESKTOP_BODY_EDGE,
         )}
         mediaClassName={cn(

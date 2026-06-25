@@ -1,7 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows";
-import { captureError } from "./sentry";
+import { captureError, captureMessage } from "./sentry";
 import {
   classifyCompleteCartError,
   isReconcilableSession,
@@ -135,6 +135,18 @@ export async function runP24Reconcile(
 
   if (recoveredOrderIds.length > 0) {
     logger.info(`[p24-reconcile] domknięto ${recoveredOrderIds.length} zamówień`);
+    // Alert: płatność prawie zginęła cicho (webhook zgubiony / klient zamknął
+    // stronę powrotu). Reconcile ją odratował — chcemy o tym wiedzieć, bo to
+    // sygnał problemu z webhookiem/return flow, nie normalny stan.
+    captureMessage(
+      `[p24-reconcile] odratowano ${recoveredOrderIds.length} osieroconych płatności P24`,
+      "warning",
+      {
+        job: "reconcile-p24-payments",
+        recovered_count: recoveredOrderIds.length,
+        recovered_order_ids: recoveredOrderIds,
+      },
+    );
   }
 
   return {

@@ -202,7 +202,7 @@ export function AboutSectionColumns({
 					{heading ? (
 						<div
 							className={cn(
-								"col-start-2 row-start-1 flex min-h-0 w-full flex-col items-start justify-end self-stretch",
+								"col-start-2 row-start-1 flex min-h-0 w-full flex-col items-start justify-center self-stretch",
 								textClassName,
 							)}
 						>
