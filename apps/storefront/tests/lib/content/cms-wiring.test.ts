@@ -50,12 +50,29 @@ describe("cms-wiring", () => {
 	});
 
 	it("mapShopCategoryTiles uses CMS tiles when present", () => {
-		const fallback = [{ title: "A", cta: "B", href: "/a", image: "/a.png" }] as const;
+		const fallback = [
+			{ title: "A", cta: "B", href: "/a", image: "/a.png", mobileImage: "/a-mobile.png" },
+		] as const;
 		const mapped = mapShopCategoryTiles(
 			[{ title: "CMS", cta: "Zobacz", href: "/cms", imageUrl: "/cms.webp" }],
 			fallback,
 		);
 		expect(mapped[0]?.title).toBe("CMS");
+		expect(mapped[0]?.mobileImage).toBe("/cms.webp");
+		expect(
+			mapShopCategoryTiles(
+				[
+					{
+						title: "CMS",
+						cta: "Zobacz",
+						href: "/cms",
+						imageUrl: "/cms.webp",
+						mobileImageUrl: "/cms-mobile.webp",
+					},
+				],
+				fallback,
+			)[0]?.mobileImage,
+		).toBe("/cms-mobile.webp");
 		expect(mapShopCategoryTiles(undefined, fallback)[0]?.title).toBe("A");
 	});
 
