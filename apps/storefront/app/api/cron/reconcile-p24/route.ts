@@ -17,9 +17,18 @@ function internalSecret(): string | undefined {
 function isAuthorized(request: Request): boolean {
   const cronSecret = process.env.CRON_SECRET?.trim();
   const auth = request.headers.get("authorization")?.trim();
-  if (cronSecret && auth === `Bearer ${cronSecret}`) return true;
-  // Ręczne wywołanie (np. operator) — ten sam sekret co backend.
+  const bearerToken = auth?.startsWith("Bearer ") ? auth.slice(7).trim() : undefined;
+
+  // Vercel Cron wysyła Authorization: Bearer {CRON_SECRET} gdy ustawiony.
+  if (cronSecret && bearerToken === cronSecret) return true;
+
+  // Gdy CRON_SECRET nie ustawiony — akceptujemy internalSecret jako Bearer
+  // (ustaw CRON_SECRET=ORDER_EMAIL_INTERNAL_SECRET w Vercel, żeby Cron automatycznie
+  // dostawał nagłówek). Fallback chroni przez brak możliwości działania bez sekretu.
   const secret = internalSecret();
+  if (secret && bearerToken === secret) return true;
+
+  // Ręczne wywołanie (np. curl od operatora) z nagłówkiem x-order-email-secret.
   const provided = request.headers.get("x-order-email-secret")?.trim();
   return Boolean(secret && provided && provided === secret);
 }
