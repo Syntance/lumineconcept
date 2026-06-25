@@ -9,6 +9,10 @@ import { CONSENT_EVENT, hasConsentDecision } from "@/lib/consent/consent";
 import { PopupBannerTabIcon } from "./PopupBannerTabIcon";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import {
+	hasPopupBannerEntryShown,
+	markPopupBannerEntryShown,
+} from "@/lib/content/popup-banner-session";
+import {
 	pickPopupBannerForPath,
 	type PopupBannerDisplay,
 } from "@/lib/content/popup-banners";
@@ -59,7 +63,14 @@ export function PopupBanner({ banners, rawItems }: Props) {
 			setView("hidden");
 			return;
 		}
-		setView("open");
+
+		if (!hasPopupBannerEntryShown()) {
+			setView("open");
+			markPopupBannerEntryShown();
+			return;
+		}
+
+		setView("collapsed");
 	}, [canMount, active?.id, pathname]);
 
 	const collapse = useCallback(() => {
