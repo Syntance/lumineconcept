@@ -22,8 +22,11 @@ export function CartDrawer() {
     items,
     itemCount,
     applyDiscount,
+    removeDiscount,
     total,
     appliedPromoCodes,
+    discountTotal,
+    isLoading,
   } = useCart();
   const { track } = useAnalytics();
 
@@ -60,7 +63,7 @@ export function CartDrawer() {
     return () => window.clearTimeout(timer);
   }, [isOpen, render]);
 
-  const visiblePromoCode = appliedPromoCodes.find(
+  const visiblePromoCodes = appliedPromoCodes.filter(
     (code) => !code.startsWith("__lumine_fs_"),
   );
 
@@ -82,16 +85,11 @@ export function CartDrawer() {
       prevOpenRef.current = true;
     }
 
-    if (visiblePromoCode) {
-      setReferralCode(visiblePromoCode);
-      setReferralStatus("success");
-      setReferralMessage("Kod wykorzystany");
-      return;
-    }
-
     const savedCode = localStorage.getItem("lumine_referral");
-    if (savedCode && referralStatus === "idle") setReferralCode(savedCode);
-  }, [isOpen, referralStatus, items, total, track, visiblePromoCode]);
+    if (savedCode && referralStatus === "idle" && visiblePromoCodes.length === 0) {
+      setReferralCode(savedCode);
+    }
+  }, [isOpen, referralStatus, items, total, track, visiblePromoCodes.length]);
 
   useEffect(() => {
     if (!render) return;
@@ -111,12 +109,14 @@ export function CartDrawer() {
   const handleApplyReferral = useCallback(async () => {
     if (!referralCode.trim()) return;
     setReferralStatus("loading");
+    setReferralMessage("");
     try {
       if (applyDiscount) await applyDiscount(referralCode.trim());
       localStorage.setItem("lumine_referral", referralCode.trim());
       track("referral_code_used", { referral_code: referralCode.trim() });
       setReferralStatus("success");
-      setReferralMessage("Kod zastosowany!");
+      setReferralMessage("Kod zastosowany");
+      setReferralCode("");
     } catch (error) {
       const message =
         error instanceof Error && error.message === "Kod wykorzystany"
@@ -126,6 +126,31 @@ export function CartDrawer() {
       setReferralMessage(message);
     }
   }, [referralCode, applyDiscount, track]);
+
+  const handleRemovePromo = useCallback(
+    async (code: string) => {
+      if (!removeDiscount) return;
+      setReferralStatus("loading");
+      setReferralMessage("");
+      try {
+        await removeDiscount(code);
+        try {
+          const saved = localStorage.getItem("lumine_referral");
+          if (saved?.toUpperCase() === code.toUpperCase()) {
+            localStorage.removeItem("lumine_referral");
+          }
+        } catch {
+          /* prywatny tryb */
+        }
+        setReferralStatus("idle");
+        setReferralMessage("");
+      } catch {
+        setReferralStatus("error");
+        setReferralMessage("Nie udało się usunąć kodu");
+      }
+    },
+    [removeDiscount],
+  );
 
   if (!render || !mounted) return null;
 
@@ -231,30 +256,37 @@ export function CartDrawer() {
                       type="text"
                       value={referralCode}
                       onChange={(e) => {
-                        setReferralCode(e.target.value);
+                        setReferralCode(e.target.value.toUpperCase());
                         if (referralStatus !== "idle") setReferralStatus("idle");
+                        setReferralMessage("");
                       }}
                       placeholder="Wpisz kod..."
-                      className="flex-1 rounded-none border border-brand-200 bg-transparent px-3 py-2 text-xs text-brand-700 placeholder:text-brand-300 focus:border-brand-400 focus:outline-none"
+                      aria-label="Kod rabatowy"
+                      className="flex-1 rounded-none border border-brand-200 bg-transparent px-3 py-2 text-xs uppercase text-brand-700 placeholder:normal-case placeholder:text-brand-300 focus:border-brand-400 focus:outline-none"
                     />
                     <button
                       type="button"
-                      onClick={handleApplyReferral}
+                      onClick={() => void handleApplyReferral()}
                       disabled={
-                        referralStatus === "loading" || referralStatus === "success"
+                        !referralCode.trim() ||
+                        referralStatus === "loading" ||
+                        isLoading
                       }
                       className="shrink-0 rounded-none bg-brand-800 px-4 py-2 text-xs font-medium tracking-wide text-white transition-colors hover:bg-brand-700 disabled:opacity-40"
                     >
-                      {referralStatus === "loading" ? "..." : "Zastosuj"}
+                      {referralStatus === "loading" || isLoading ? "..." : "Zastosuj"}
                     </button>
                   </div>
-                  {referralMessage && (
+                  {referralMessage ? (
                     <p
-                      className={`mt-2 text-[11px] ${referralStatus === "success" ? "text-green-600" : "text-red-500"}`}
+                      className={`mt-2 text-[11px] ${
+                        referralStatus === "error" ? "text-red-500" : "text-green-600"
+                      }`}
+                      role={referralStatus === "error" ? "alert" : "status"}
                     >
                       {referralMessage}
                     </p>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
@@ -266,9 +298,55 @@ export function CartDrawer() {
 
             {/* Footer */}
             <div className="border-t border-brand-100">
-              <div className="px-6 pt-5 pb-2">
+              {visiblePromoCodes.length > 0 ? (
+                <div className="space-y-2 px-6 pt-5 pb-3">
+                  <p className="text-xs font-medium tracking-wide text-brand-600">
+                    Aktywne kody
+                  </p>
+                  <ul className="space-y-2" aria-label="Aktywne kody rabatowe">
+                    {visiblePromoCodes.map((code) => (
+                      <li
+                        key={code}
+                        className="flex items-center justify-between gap-3 rounded-none border border-brand-100 bg-brand-50/80 px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-semibold uppercase tracking-wide text-brand-800">
+                            {code}
+                          </p>
+                          <p className="text-[11px] text-brand-500">
+                            {discountTotal > 0 ? "Zniżka aktywna" : "Kod aktywny"}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void handleRemovePromo(code)}
+                          disabled={referralStatus === "loading" || isLoading}
+                          className="shrink-0 text-[11px] font-medium text-brand-700 underline-offset-2 transition-colors hover:text-brand-900 hover:underline disabled:opacity-50"
+                        >
+                          Usuń
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              <div
+                className={`px-6 pb-2 ${visiblePromoCodes.length > 0 ? "pt-2" : "pt-5"}`}
+              >
                 <CartSummary />
               </div>
+
+              {referralMessage && visiblePromoCodes.length === 0 ? (
+                <p
+                  className={`px-6 pb-3 text-[11px] ${
+                    referralStatus === "error" ? "text-red-500" : "text-green-600"
+                  }`}
+                  role={referralStatus === "error" ? "alert" : "status"}
+                >
+                  {referralMessage}
+                </p>
+              ) : null}
 
               <div className="space-y-2.5 px-6 pb-6">
                 <Link
