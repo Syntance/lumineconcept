@@ -47,6 +47,12 @@ function showFailedState(
 
 const POLL_DELAYS_MS = [800, 1200, 1800, 2500, 3000, 3000, 4000, 4000];
 
+/**
+ * Ile razy z rzędu obie odpowiedzi mogą być null (backend niedostępny)
+ * zanim od razu pokażemy "pending" zamiast kręcić spinnerem przez 22 sek.
+ */
+const MAX_CONSECUTIVE_NULL_RESPONSES = 4;
+
 type ReturnState =
   | { kind: "verifying" }
   | { kind: "pending" }
@@ -194,6 +200,7 @@ function Przelewy24ReturnInner() {
     let cancelled = false;
     const startedAt = Date.now();
     let lastRetryUrl = buildP24RetryUrl(cartId);
+    let consecutiveNullResponses = 0;
 
     (async () => {
       for (let i = 0; i <= POLL_DELAYS_MS.length; i++) {
@@ -235,6 +242,19 @@ function Przelewy24ReturnInner() {
           return;
         }
 
+        // Obie odpowiedzi null = backend niedostępny (deploy/restart).
+        // Nie pokazujemy "failed" — klient mógł zapłacić. Po kilku próbach
+        // przechodzimy do "pending" i zostawiamy cron reconcile robotę.
+        if (p24Status === null && completeResult === null) {
+          consecutiveNullResponses += 1;
+          if (consecutiveNullResponses >= MAX_CONSECUTIVE_NULL_RESPONSES) {
+            setState({ kind: "pending" });
+            return;
+          }
+        } else {
+          consecutiveNullResponses = 0;
+        }
+
         if (i < POLL_DELAYS_MS.length) {
           await new Promise((r) => setTimeout(r, POLL_DELAYS_MS[i]));
         }
@@ -259,6 +279,11 @@ function Przelewy24ReturnInner() {
           } catch {
             /* fallback pending poniżej */
           }
+          setState({ kind: "pending" });
+        } else if (finalStatus === null) {
+          // Backend niedostępny (null = fetch się nie powiódł) — nie wiemy czy
+          // płatność przeszła. Pokazujemy "pending" zamiast "failed", żeby klient
+          // nie myślał, że musi płacić ponownie. Cron reconcile domknie zamówienie.
           setState({ kind: "pending" });
         } else {
           setState(showFailedState(lastRetryUrl, cartId, emailSentRef));
