@@ -7,11 +7,11 @@ import {
 	remoteQueryObjectFromString,
 } from "@medusajs/framework/utils";
 import { updateCartPromotionsWorkflow } from "@medusajs/medusa/core-flows";
-import { defaultStoreCartFields } from "@medusajs/medusa/api/store/carts/query-config";
 import {
 	freeShippingPromotionCode,
 	isShadowFreeShippingCode,
 } from "../../../../lib/lumine-promotions";
+import { STORE_CART_REMOTE_QUERY_FIELDS } from "../../../../lib/store-cart-fields";
 
 type Body = {
 	cart_id?: string;
@@ -76,7 +76,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
 	const cartQuery = remoteQueryObjectFromString({
 		entryPoint: "cart",
 		variables: { filters: { id: cartId } },
-		fields: defaultStoreCartFields,
+		fields: STORE_CART_REMOTE_QUERY_FIELDS,
 	});
 	const [cart] = await remoteQuery(cartQuery);
 

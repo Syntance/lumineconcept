@@ -19,6 +19,17 @@ type OrderSummaryProps = {
   selectedShippingOptionId?: string;
 };
 
+function resolveShippingGross(
+  selectedShippingPrice: number | undefined,
+  hasShippingMethodSelection: boolean,
+  shipping_total: number,
+  shippingEstimate: number | null,
+): number | null {
+  if (selectedShippingPrice !== undefined) return selectedShippingPrice;
+  if (hasShippingMethodSelection) return shipping_total;
+  return shippingEstimate;
+}
+
 export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
   const {
     id: cartId,
@@ -32,7 +43,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
     expressDelivery,
     expressSurcharge,
     discountTotal,
-    grandTotal,
+    appliedPromoCodes,
   } = useCart();
 
   /** id → cena z prefetchu; lookup synchroniczny przy zmianie wyboru w Step 2. */
@@ -70,21 +81,38 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
       ? shippingOptionPrices[selectedShippingOptionId]
       : undefined;
 
-  const shippingDisplay = useMemo(() => {
-    // Wybór w checkout ma pierwszeństwo — user może przełączyć kurier ↔ odbiór
-    // zanim ponownie kliknie „Przejdź do płatności”.
-    if (selectedShippingPrice !== undefined) {
-      return selectedShippingPrice;
-    }
-    if (hasShippingMethodSelection) {
-      return shipping_total > 0 ? shipping_total : 0;
-    }
-    return shippingEstimate;
-  }, [
+  const shippingGross = resolveShippingGross(
     selectedShippingPrice,
     hasShippingMethodSelection,
     shipping_total,
     shippingEstimate,
+  );
+
+  const hasAppliedPromo = appliedPromoCodes.some(
+    (code) => !code.startsWith("__lumine_fs_"),
+  );
+
+  /**
+   * Gdy promocja obniża dostawę w koszyku Medusy (`shipping_total === 0`),
+   * nie pokazuj ceny z prefetchu UI — inaczej „Dostawa 25 zł” + „Zniżka −25 zł”
+   * daje błędne „Do zapłaty” (26 zamiast 1).
+   */
+  const shippingDisplay = useMemo(() => {
+    if (
+      hasAppliedPromo &&
+      hasShippingMethodSelection &&
+      shipping_total === 0 &&
+      discountTotal > 0
+    ) {
+      return 0;
+    }
+    return shippingGross;
+  }, [
+    hasAppliedPromo,
+    hasShippingMethodSelection,
+    shipping_total,
+    discountTotal,
+    shippingGross,
   ]);
 
   const shippingLabel =
@@ -95,30 +123,33 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
         : formatPrice(shippingDisplay);
 
   const displayGrandTotal = useMemo(() => {
-    if (selectedShippingPrice !== undefined) {
-      const baseWithoutCommittedShipping = hasShippingMethodSelection
-        ? total - shipping_total
-        : total;
-      return (
-        Math.round(
-          (baseWithoutCommittedShipping +
-            expressSurcharge +
-            selectedShippingPrice) *
-            100,
-        ) / 100
-      );
+    const previewShipping =
+      selectedShippingPrice !== undefined
+        ? selectedShippingPrice
+        : !hasShippingMethodSelection
+          ? (shippingEstimate ?? 0)
+          : null;
+
+    if (previewShipping === null) {
+      return Math.round((total + expressSurcharge) * 100) / 100;
     }
-    if (hasShippingMethodSelection) return grandTotal;
-    const shippingAddon = shippingEstimate ?? 0;
-    return Math.round((total + expressSurcharge + shippingAddon) * 100) / 100;
+
+    const sum =
+      productsSubtotal +
+      expressSurcharge +
+      previewShipping -
+      discountTotal +
+      tax_total;
+    return Math.round(Math.max(0, sum) * 100) / 100;
   }, [
     selectedShippingPrice,
     hasShippingMethodSelection,
-    grandTotal,
     shippingEstimate,
     total,
-    shipping_total,
     expressSurcharge,
+    productsSubtotal,
+    discountTotal,
+    tax_total,
   ]);
 
   return (

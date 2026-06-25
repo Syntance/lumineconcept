@@ -40,6 +40,7 @@ import {
   redirectToOrderConfirmation,
   assertCartReadyForCheckout,
   saveContactDetails,
+  selectShippingOption,
   SYSTEM_PAYMENT_PROVIDER_ID,
 } from "@/lib/medusa/checkout";
 import { getPolishRegionId } from "@/lib/medusa/region";
@@ -77,18 +78,28 @@ function validatePostalCode(code: string): boolean {
   return POSTAL_CODE_REGEX.test(code);
 }
 
-function validateNip(nip: string): boolean {
+function getNipValidationError(nip: string): string | null {
   const cleaned = nip.replace(/[\s-]/g, "");
-  if (!NIP_REGEX.test(cleaned)) return false;
-  
-  // Checksum validation
+  if (!cleaned) return null;
+  if (!NIP_REGEX.test(cleaned)) {
+    return "NIP musi zawierać 10 cyfr";
+  }
   const weights = [6, 5, 7, 2, 3, 4, 5, 6, 7];
   const sum = cleaned
     .slice(0, 9)
     .split("")
     .reduce((acc, digit, i) => acc + parseInt(digit, 10) * (weights[i] || 0), 0);
   const checksum = sum % 11;
-  return checksum === parseInt(cleaned[9] || "0", 10);
+  if (checksum === 10 || checksum !== parseInt(cleaned[9] || "0", 10)) {
+    return "NIP jest nieprawidłowy — sprawdź numer";
+  }
+  return null;
+}
+
+function validateNip(nip: string): boolean {
+  const cleaned = nip.replace(/[\s-]/g, "");
+  if (!cleaned) return false;
+  return getNipValidationError(nip) === null;
 }
 
 type ValidatedField =
@@ -219,7 +230,15 @@ function resetStaleCartAndReload() {
 }
 
 export function CheckoutForm() {
-  const { id: cartId, items, total, refreshCart, isInitialized } = useCart();
+  const {
+    id: cartId,
+    items,
+    total,
+    refreshCart,
+    isInitialized,
+    appliedPromoCodes,
+    shippingOptionId: cartShippingOptionId,
+  } = useCart();
   const { track, identifyLead } = useAnalytics();
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formStarted, setFormStarted] = useState(false);
@@ -519,6 +538,31 @@ export function CheckoutForm() {
     }
   }, [formStarted]);
 
+  const handleShippingSelect = useCallback(
+    async (optionId: string, optionName?: string) => {
+      updateField("shippingOptionId", optionId);
+      if (optionName) updateField("shippingOptionName", optionName);
+      if (!cartId) return;
+      const hasVisiblePromo = appliedPromoCodes.some(
+        (code) => !code.startsWith("__lumine_fs_"),
+      );
+      if (!hasVisiblePromo) return;
+      try {
+        await selectShippingOption(cartId, optionId);
+        await refreshCart();
+      } catch (error) {
+        console.warn("[checkout] sync shipping after promo", error);
+      }
+    },
+    [appliedPromoCodes, cartId, refreshCart, updateField],
+  );
+
+  useEffect(() => {
+    if (!cartShippingOptionId || formData.shippingOptionId) return;
+    updateField("shippingOptionId", cartShippingOptionId);
+  }, [cartShippingOptionId, formData.shippingOptionId, updateField]);
+
+  const nipValidationError = getNipValidationError(formData.nip);
   const isNipValid = validateNip(formData.nip);
   const vatValid =
     !formData.wantInvoice ||
@@ -895,7 +939,7 @@ export function CheckoutForm() {
                   </p>
                 )}
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <label htmlFor="phone" className={LABEL_CLASS}>
                   Telefon <span className="text-red-500">*</span>
                 </label>
@@ -925,7 +969,7 @@ export function CheckoutForm() {
                   </p>
                 )}
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <label htmlFor="postalCode" className={LABEL_CLASS}>
                   Kod pocztowy <span className="text-red-500">*</span>
                 </label>
@@ -952,28 +996,6 @@ export function CheckoutForm() {
                   </p>
                 )}
               </div>
-              <div className="sm:col-span-2">
-                <label htmlFor="address" className={LABEL_CLASS}>
-                  Adres <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="address"
-                  type="text"
-                  autoComplete="street-address"
-                  required
-                  value={formData.address}
-                  onBlur={() => handleFieldBlur("address")}
-                  onChange={(e) => updateField("address", e.target.value)}
-                  className={`${INPUT_CLASS} ${showFieldError("address") ? "border-red-300" : ""}`}
-                  placeholder="ul. Przykładowa 1/2"
-                  aria-invalid={showFieldError("address") ? true : undefined}
-                />
-                {showFieldError("address") && (
-                  <p className="mt-1 text-xs text-red-500" role="alert">
-                    {fieldErrors.address}
-                  </p>
-                )}
-              </div>
               <div>
                 <label htmlFor="city" className={LABEL_CLASS}>
                   Miasto <span className="text-red-500">*</span>
@@ -992,6 +1014,28 @@ export function CheckoutForm() {
                 {showFieldError("city") && (
                   <p className="mt-1 text-xs text-red-500" role="alert">
                     {fieldErrors.city}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="address" className={LABEL_CLASS}>
+                  Adres <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="address"
+                  type="text"
+                  autoComplete="street-address"
+                  required
+                  value={formData.address}
+                  onBlur={() => handleFieldBlur("address")}
+                  onChange={(e) => updateField("address", e.target.value)}
+                  className={`${INPUT_CLASS} ${showFieldError("address") ? "border-red-300" : ""}`}
+                  placeholder="ul. Przykładowa 1/2"
+                  aria-invalid={showFieldError("address") ? true : undefined}
+                />
+                {showFieldError("address") && (
+                  <p className="mt-1 text-xs text-red-500" role="alert">
+                    {fieldErrors.address}
                   </p>
                 )}
               </div>
@@ -1041,9 +1085,9 @@ export function CheckoutForm() {
                       placeholder="0000000000"
                       maxLength={13}
                     />
-                    {formData.nip.length > 0 && !isNipValid && (
-                      <p className="mt-1 text-xs text-red-500">NIP musi zawierać 10 cyfr</p>
-                    )}
+                    {nipValidationError ? (
+                      <p className="mt-1 text-xs text-red-500">{nipValidationError}</p>
+                    ) : null}
                   </div>
                 </div>
               )}
@@ -1136,8 +1180,7 @@ export function CheckoutForm() {
             <ShippingSelector
               selectedOptionId={formData.shippingOptionId}
               onSelect={(id: string, name?: string) => {
-                updateField("shippingOptionId", id);
-                if (name) updateField("shippingOptionName", name);
+                void handleShippingSelect(id, name);
               }}
             />
             <PromoCodeField />
