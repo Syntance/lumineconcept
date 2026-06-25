@@ -101,7 +101,10 @@ export type CategoryTile = {
 	title: string;
 	cta: string;
 	href: string;
+	/** Tło kafelka na desktop (4:5). */
 	imageUrl: string;
+	/** Prawa połowa kafelka na mobile (3:2). Gdy brak — fallback do imageUrl. */
+	mobileImageUrl?: string;
 	blurDataURL?: string;
 };
 

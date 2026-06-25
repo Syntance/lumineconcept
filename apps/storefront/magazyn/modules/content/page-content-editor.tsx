@@ -524,8 +524,17 @@ function CategoryTilesEditor({
 					<Input value={tile.title} onChange={(e) => update(index, { title: e.target.value })} placeholder="Tytuł" className="h-9" />
 					<Input value={tile.cta} onChange={(e) => update(index, { cta: e.target.value })} placeholder="CTA" className="h-9" />
 					<Input value={tile.href} onChange={(e) => update(index, { href: e.target.value })} placeholder="Link" className="h-9 sm:col-span-2" />
-					<div className="sm:col-span-2">
-						<OgImageField label="Obraz" value={tile.imageUrl} onChange={(url) => update(index, { imageUrl: url })} />
+					<div className="sm:col-span-2 grid gap-2">
+						<OgImageField
+							label="Obraz desktop (4:5)"
+							value={tile.imageUrl}
+							onChange={(url) => update(index, { imageUrl: url })}
+						/>
+						<OgImageField
+							label="Obraz mobile (3:2)"
+							value={tile.mobileImageUrl ?? ""}
+							onChange={(url) => update(index, { mobileImageUrl: url })}
+						/>
 					</div>
 				</div>
 			))}

@@ -30,6 +30,7 @@ export type ShopCategoryCard = {
 	cta: string;
 	href: string;
 	image: string;
+	mobileImage: string;
 	blurDataURL?: string;
 };
 
@@ -89,6 +90,7 @@ export function mapShopCategoryTiles(
 		cta: t.cta,
 		href: t.href,
 		image: t.imageUrl,
+		mobileImage: t.mobileImageUrl ?? t.imageUrl,
 		...(t.blurDataURL ? { blurDataURL: t.blurDataURL } : {}),
 	}));
 }

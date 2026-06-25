@@ -53,18 +53,21 @@ const FALLBACK_CATEGORIES: readonly ShopCategoryCard[] = [
     cta: "PRZEGLĄDAJ WZORY",
     href: "/sklep/gotowe-wzory",
     image: "/images/categories/gotowe-wzory-personel.webp",
+    mobileImage: "/images/categories/gotowe-wzory-personel.webp",
   },
   {
     title: "Tablice z logo",
     cta: "Uzyskaj wycenę",
     href: "/sklep/logo-3d",
     image: "/images/categories/logo-kategoria-nail-boss.webp",
+    mobileImage: "/images/categories/logo-kategoria-nail-boss.webp",
   },
   {
     title: "Certyfikaty",
     cta: "Zobacz certyfikaty",
     href: "/sklep/certyfikaty",
     image: "/images/categories/certyfikat-kategoria.png",
+    mobileImage: "/images/categories/certyfikat-kategoria.png",
   },
 ] as const;
 
@@ -188,13 +191,13 @@ export default async function ShopHubPage() {
 
                 <div className="absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden bg-brand-50 max-sm:block">
                   <Image
-                    src={cat.image}
+                    src={cat.mobileImage}
                     alt={cat.title}
                     fill
                     loading={index === 0 ? "eager" : "lazy"}
                     className="relative z-10 origin-center object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
                     sizes="(max-width: 640px) 50vw, 0px"
-                    unoptimized={isCmsImageUnoptimized(cat.image)}
+                    unoptimized={isCmsImageUnoptimized(cat.mobileImage)}
                     placeholder="blur"
                     blurDataURL={cat.blurDataURL ?? BRAND_BLUR_DATA_URL}
                   />

@@ -183,6 +183,7 @@ const categoryTileSchema = z.object({
 	cta: z.string().min(1),
 	href: z.string().min(1).transform(sanitizeCmsHref),
 	imageUrl: z.string().min(1),
+	mobileImageUrl: cmsOptionalAssetUrlSchema.optional(),
 });
 
 const bestsellersSchema = z.object({
@@ -312,7 +313,12 @@ function resolvePageContentAssets(content: PageContent): PageContent {
 			?.map((item) => {
 				const imageUrl = resolvePublishedImageUrl(item.imageUrl);
 				if (!imageUrl) return null;
-				return { ...item, imageUrl };
+				const mobileImageUrl = resolvePublishedImageUrl(item.mobileImageUrl);
+				return {
+					...item,
+					imageUrl,
+					...(mobileImageUrl ? { mobileImageUrl } : {}),
+				};
 			})
 			.filter((item): item is NonNullable<typeof item> => item !== null),
 	};
@@ -706,6 +712,22 @@ export function preparePageContentForSave(_pageId: string, content: PageContent)
 				...(title ? { title } : {}),
 			};
 		}
+	}
+	if (next.categoryTiles) {
+		next.categoryTiles = next.categoryTiles.map((tile) => {
+			const item = {
+				...tile,
+				title: tile.title.trim(),
+				cta: tile.cta.trim(),
+				href: tile.href.trim(),
+				imageUrl: tile.imageUrl.trim(),
+			};
+			if (!item.mobileImageUrl?.trim()) {
+				const { mobileImageUrl: _removed, ...rest } = item;
+				return rest;
+			}
+			return { ...item, mobileImageUrl: item.mobileImageUrl.trim() };
+		});
 	}
 	return next;
 }
