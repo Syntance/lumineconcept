@@ -14,7 +14,6 @@ import {
 } from "@/lib/content/popup-banners";
 import type { PopupBanner } from "@/lib/content/types";
 
-const DISMISS_PREFIX = "lumine_popup_collapsed_";
 /** Opóźnienie po decyzji cookies (zgodne z banerem cookie). */
 const POST_CONSENT_DELAY_MS = 2000;
 
@@ -24,24 +23,6 @@ type Props = {
 };
 
 type ViewState = "hidden" | "open" | "collapsed";
-
-function readCollapsed(id: string): boolean {
-	try {
-		return sessionStorage.getItem(`${DISMISS_PREFIX}${id}`) === "1";
-	} catch {
-		return false;
-	}
-}
-
-function writeCollapsed(id: string, collapsed: boolean): void {
-	try {
-		const key = `${DISMISS_PREFIX}${id}`;
-		if (collapsed) sessionStorage.setItem(key, "1");
-		else sessionStorage.removeItem(key);
-	} catch {
-		/* ignore */
-	}
-}
 
 export function PopupBanner({ banners, rawItems }: Props) {
 	const pathname = usePathname() ?? "/";
@@ -78,20 +59,16 @@ export function PopupBanner({ banners, rawItems }: Props) {
 			setView("hidden");
 			return;
 		}
-		setView(readCollapsed(active.id) ? "collapsed" : "open");
+		setView("open");
 	}, [canMount, active?.id, pathname]);
 
 	const collapse = useCallback(() => {
-		if (!active) return;
-		writeCollapsed(active.id, true);
 		setView("collapsed");
-	}, [active]);
+	}, []);
 
 	const reopen = useCallback(() => {
-		if (!active) return;
-		writeCollapsed(active.id, false);
 		setView("open");
-	}, [active]);
+	}, []);
 
 	if (!canMount || !active || view === "hidden") return null;
 
