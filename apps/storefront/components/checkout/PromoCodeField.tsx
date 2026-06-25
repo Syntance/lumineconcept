@@ -33,9 +33,13 @@ export function PromoCodeField({ compact = false }: Props) {
 			setStatus("success");
 			setMessage("Kod zastosowany");
 			setCode("");
-		} catch {
-			setStatus("error");
-			setMessage("Kod nieprawidłowy lub wygasł");
+		} catch (error) {
+			const utilized =
+				error instanceof Error && error.message === "Kod wykorzystany";
+			setStatus(utilized ? "success" : "error");
+			setMessage(
+				utilized ? "Kod wykorzystany" : "Kod nieprawidłowy lub wygasł",
+			);
 		}
 	}, [applyDiscount, code]);
 
