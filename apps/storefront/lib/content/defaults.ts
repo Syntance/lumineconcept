@@ -4,6 +4,7 @@ import type {
 	BrandingCtaContent,
 	HeroContent,
 	PageContentMap,
+	PopupBannersConfig,
 	SiteSettings,
 } from "./types";
 
@@ -89,10 +90,16 @@ export const DEFAULT_PAGE_CONTENT: PageContentMap = {
 	"o-nas": { hero: ABOUT_HERO_DEFAULT, about: ABOUT_PAGE_DEFAULT },
 };
 
+export const DEFAULT_POPUP_BANNERS: PopupBannersConfig = {
+	enabled: false,
+	items: [],
+};
+
 export const DEFAULT_GLOBAL_CONTENT: GlobalContent = {
 	salonLogos: [
 		{ id: "fallback-1", name: "Sabrija Store", logoUrl: "/images/logos/sabrija-store.png", order: 0 },
 		{ id: "fallback-2", name: "Salon Mia", order: 1 },
 		{ id: "fallback-3", name: "Beauty Lab", order: 2 },
 	],
+	popupBanners: DEFAULT_POPUP_BANNERS,
 };

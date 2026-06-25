@@ -137,6 +137,7 @@ export const CMS_STOREFRONT_WIRING = {
 		footerText: "Footer",
 		salonLogos: "HomeTrustMarquee",
 		instagramTiles: "FooterCTA",
+		popupBanners: "components/layout/PopupBannerLayer.tsx",
 	},
 	pages: {
 		home: { hero: "HeroSection", brandingCta: "FooterCTA" },

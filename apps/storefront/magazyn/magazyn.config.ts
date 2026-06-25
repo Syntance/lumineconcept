@@ -80,6 +80,7 @@ export const magazynConfig: MagazynConfig = {
 			"checkoutCallout",
 			"salonLogos",
 			"instagramTiles",
+			"popupBanners",
 		],
 	},
 

@@ -22,7 +22,8 @@ export type ContentBlockKey =
 	| "checkoutCallout"
 	| "salonLogos"
 	| "instagramTiles"
-	| "bestsellers";
+	| "bestsellers"
+	| "popupBanners";
 
 export type SeoMeta = {
 	metaTitle?: string;
@@ -187,9 +188,33 @@ export type PageContent = {
 	bestsellers?: BestsellersContent;
 };
 
+/** Podstrona docelowa banera popup — `all` = cała witryna. */
+export type PopupBannerTarget = ContentPageId | "all";
+
+export type PopupBanner = {
+	id: string;
+	enabled: boolean;
+	/** Pusta tablica lub zawierająca `all` = wszystkie podstrony. */
+	pageIds: PopupBannerTarget[];
+	title?: string;
+	body?: string;
+	link?: string;
+	linkLabel?: string;
+	imageUrl?: string;
+	/** Domyślnie true — lekki blur tła strony. */
+	blurBackground?: boolean;
+	order: number;
+};
+
+export type PopupBannersConfig = {
+	enabled: boolean;
+	items: PopupBanner[];
+};
+
 export type GlobalContent = {
 	salonLogos?: SalonLogo[];
 	instagramTiles?: InstagramTile[];
+	popupBanners?: PopupBannersConfig;
 };
 
 export type PageSeoMap = Partial<Record<ContentPageId, SeoMeta>>;

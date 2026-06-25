@@ -1,6 +1,7 @@
 import type { HeroPrefetchBundles } from "@/lib/content/hero-prefetch";
 import type { ShopNavLink } from "@/lib/navigation/shop-mobile-nav";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
+import { PopupBannerLayer } from "@/components/layout/PopupBannerLayer";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroImageCacheWarmer } from "@/components/home/HeroImageCacheWarmer";
@@ -34,6 +35,7 @@ export default async function ShopLayout({
       />
       {/* Serwerowy RSC — nie wchodzi w bundel „use client” Headera, brak ryzyka rozjazdu hydratacji po HMR */}
       <AnnouncementBar />
+      <PopupBannerLayer />
       <Header heroPrefetch={heroPrefetch} gotoweWzoryMobileSub={gotoweWzoryMobileSub} />
       <main id="main-content" className="min-h-screen">
         {children}
