@@ -21,6 +21,8 @@ import { ShopGridClient } from "../gotowe-wzory/client";
 
 const INITIAL_PAGE_SIZE = 12;
 
+type PageSearchParams = Promise<{ sort?: string }>;
+
 export async function generateMetadata(): Promise<Metadata> {
   const [seo, settings] = await Promise.all([
     getPageSeo("certyfikaty"),
@@ -38,10 +40,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const revalidate = 60;
 
-export default async function CertyfikatyPage({
+/** searchParams muszą być czytane w Suspense — inaczej Next 15/16 na Vercel zwraca 500. */
+async function CertyfikatyListingWithSearchParams({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: PageSearchParams;
 }) {
   const params = await searchParams;
   const order = params.sort ?? "-created_at";
@@ -162,5 +165,17 @@ export default async function CertyfikatyPage({
 
       <PageFaqSection faq={pageContent.faq} />
     </ShopListingCategoryProvider>
+  );
+}
+
+export default function CertyfikatyPage({
+  searchParams,
+}: {
+  searchParams: PageSearchParams;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <CertyfikatyListingWithSearchParams searchParams={searchParams} />
+    </Suspense>
   );
 }

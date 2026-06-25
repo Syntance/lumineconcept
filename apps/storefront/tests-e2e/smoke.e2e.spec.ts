@@ -28,6 +28,18 @@ test.describe("Smoke", () => {
     ).toBeVisible();
   });
 
+  test("/sklep/gotowe-wzory/cenniki ładuje listę podkategorii", async ({ page }) => {
+    const response = await page.goto("/sklep/gotowe-wzory/cenniki");
+    expect(response?.status()).toBeLessThan(500);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
+  test("/sklep/certyfikaty ładuje listę kategorii", async ({ page }) => {
+    const response = await page.goto("/sklep/certyfikaty");
+    expect(response?.status()).toBeLessThan(500);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
   test("/checkout ładuje formularz (nawet bez produktów może pokazać 'pusty koszyk')", async ({
     page,
   }) => {
