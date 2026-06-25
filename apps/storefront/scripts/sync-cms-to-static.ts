@@ -201,6 +201,9 @@ async function downloadAllImages(parsed: Record<string, unknown>): Promise<Map<s
 		console.log(`   ↳ ${mobileHeroUrls.size} mobilnych hero (max ${MOBILE_HERO_MAX_LONG_EDGE}px)`);
 	}
 	console.log(`   ↳ pozostałe (max ${CMS_IMAGE_MAX_LONG_EDGE}px)`);
+	if (fs.existsSync(CMS_IMAGES_DIR)) {
+		fs.rmSync(CMS_IMAGES_DIR, { recursive: true, force: true });
+	}
 	fs.mkdirSync(CMS_IMAGES_DIR, { recursive: true });
 
 	const urlMap = new Map<string, string>();
