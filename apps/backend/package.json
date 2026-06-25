@@ -14,6 +14,7 @@
     "setup-shipping": "medusa exec ./src/scripts/ensure-lumine-shipping.ts",
     "setup-payment": "medusa exec ./src/scripts/ensure-lumine-payment.ts",
     "backfill-p24-methods": "medusa exec ./src/scripts/backfill-p24-payment-methods.ts",
+    "backfill-invoice-metadata": "medusa exec ./src/scripts/backfill-order-invoice-metadata.ts",
     "delete-orders": "medusa exec ./src/scripts/delete-all-orders.ts",
     "restore:verify": "medusa exec ./src/scripts/restore-from-r2.ts",
     "test": "vitest run",

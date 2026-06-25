@@ -90,8 +90,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 	const fulfillment = fulfillmentStatusBadge(order.fulfillmentStatus, order.status);
 	const flags = actionFlags(order);
 	const orderNotes = order.metadata.order_notes?.trim() ?? "";
+	const companyName =
+		order.metadata.companyName?.trim() ||
+		order.billingAddress?.company?.trim() ||
+		"";
+	const nip = order.metadata.nip?.trim() ?? "";
+	const wantsInvoice =
+		order.metadata.invoice === "tak" ||
+		order.metadata.invoice === "true" ||
+		Boolean(companyName || nip);
 	const metaEntries = Object.entries(order.metadata).filter(
-		([key]) => key in META_LABELS && key !== "order_notes",
+		([key]) =>
+			key in META_LABELS &&
+			key !== "order_notes" &&
+			key !== "nip" &&
+			key !== "companyName" &&
+			key !== "invoice",
 	);
 	const express = isExpressDelivery(order.metadata);
 	const expressFee = expressFeeMinor(order.metadata, order.itemTotal);
@@ -188,6 +202,25 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 								{order.shippingMethodName ? <span className="text-muted-foreground">Dostawa: {order.shippingMethodName}</span> : null}
 							</div>
 						</div>
+
+						{wantsInvoice ? (
+							<dl className="mt-4 grid gap-x-4 gap-y-1.5 rounded-lg border border-border/80 bg-muted/30 p-4 text-sm sm:grid-cols-2">
+								<div className="sm:col-span-2">
+									<dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Faktura VAT</dt>
+									<dd className="mt-1 font-medium text-foreground">Tak</dd>
+								</div>
+								{companyName ? (
+									<div>
+										<dt className="text-muted-foreground">Nazwa firmy</dt>
+										<dd className="font-medium text-foreground">{companyName}</dd>
+									</div>
+								) : null}
+								<div>
+									<dt className="text-muted-foreground">NIP</dt>
+									<dd className="font-medium text-foreground">{nip || "—"}</dd>
+								</div>
+							</dl>
+						) : null}
 
 						<div className="mt-4 grid gap-4 sm:grid-cols-2">
 							<div>
