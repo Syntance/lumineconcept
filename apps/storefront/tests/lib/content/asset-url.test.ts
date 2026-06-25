@@ -90,9 +90,10 @@ describe("resolveCmsAssetUrl", () => {
 		expect(isCmsImageUnoptimized("/icons/logo.svg")).toBe(true);
 	});
 
-	it("pomija optymalizację dla ścieżek backendu bez pliku w public", () => {
+	it("pomija optymalizację dla ścieżek backendu Medusa (względnych i absolutnych)", () => {
 		expect(isCmsImageUnoptimized("/static/hero.webp")).toBe(true);
 		expect(isCmsImageUnoptimized("/uploads/x.webp")).toBe(true);
+		expect(isCmsImageUnoptimized("https://api.example.com/static/hero.webp")).toBe(true);
 	});
 });
 

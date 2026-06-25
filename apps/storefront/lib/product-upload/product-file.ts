@@ -148,7 +148,8 @@ function getR2Config() {
   const accessKeyId = process.env.S3_ACCESS_KEY_ID?.trim();
   const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY?.trim();
   const bucket = process.env.S3_BUCKET?.trim();
-  const fileUrl = process.env.S3_FILE_URL?.trim();
+  const fileUrl =
+    process.env.S3_FILE_URL?.trim() || process.env.NEXT_PUBLIC_S3_FILE_URL?.trim();
 
   if (!endpoint || !accessKeyId || !secretAccessKey || !bucket || !fileUrl) {
     return null;
@@ -236,6 +237,9 @@ export function formatCmsUploadError(error: unknown): string {
   if (msg === "R2_UPLOAD_FAILED" || msg.endsWith("_TIMEOUT")) {
     return "Upload do magazynu plików nie powiódł się. Spróbuj ponownie.";
   }
+  if (msg === "CMS_R2_NOT_CONFIGURED") {
+    return "Upload CMS wymaga R2. Ustaw S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY i S3_FILE_URL w Vercel (projekt storefront → Environment Variables) oraz lokalnie w .env.local.";
+  }
   if (msg === "R2_PRESIGN_UNAVAILABLE") {
     return `Pliki powyżej ${VERCEL_SAFE_UPLOAD_MB} MB wymagają R2 (S3_* na Vercel). Zmniejsz plik lub skonfiguruj magazyn.`;
   }
@@ -270,7 +274,7 @@ export function validateCmsUploadFile(file: File): string | null {
   return null;
 }
 
-/** Assety CMS (hero, galeria, OG) — R2 z timeoutem; fallback Medusa gdy R2 niedostępne. */
+/** Assety CMS (hero, galeria, OG) — wyłącznie R2 (Medusa /static/ nie nadaje się do podglądu w panelu). */
 export async function uploadCmsAssetFile(file: File): Promise<ProductUploadResult> {
   const validationError = validateCmsUploadFile(file);
   if (validationError) throw new Error(validationError);
@@ -280,24 +284,20 @@ export async function uploadCmsAssetFile(file: File): Promise<ProductUploadResul
   if (normalizedValidation) throw new Error(normalizedValidation);
 
   const r2 = getR2Config();
-  if (r2) {
-    try {
-      return await uploadViaR2(normalized, r2, "cms-uploads", LARGE_R2_UPLOAD_TIMEOUT_MS);
-    } catch (error) {
-      try {
-        return await uploadViaMedusa(normalized);
-      } catch {
-        if (error instanceof Error && error.message === "R2_UPLOAD_TIMEOUT") {
-          throw new Error(
-            "Upload do R2 trwa zbyt długo. Sprawdź połączenie lub spróbuj mniejszego pliku (WebP/JPG).",
-          );
-        }
-        throw error instanceof Error ? error : new Error("R2_UPLOAD_FAILED");
-      }
-    }
+  if (!r2) {
+    throw new Error("CMS_R2_NOT_CONFIGURED");
   }
 
-  return uploadViaMedusa(normalized);
+  try {
+    return await uploadViaR2(normalized, r2, "cms-uploads", LARGE_R2_UPLOAD_TIMEOUT_MS);
+  } catch (error) {
+    if (error instanceof Error && error.message === "R2_UPLOAD_TIMEOUT") {
+      throw new Error(
+        "Upload do R2 trwa zbyt długo. Sprawdź połączenie lub spróbuj mniejszego pliku (WebP/JPG).",
+      );
+    }
+    throw error instanceof Error ? error : new Error("R2_UPLOAD_FAILED");
+  }
 }
 
 export type CmsPresignedUpload = {

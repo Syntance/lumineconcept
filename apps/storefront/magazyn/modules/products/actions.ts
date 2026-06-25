@@ -5,10 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
-import { adminUpload } from "@magazyn/core/medusa/client";
 import { requireAdminSession } from "@magazyn/core/auth/require-session";
 import { recordAudit } from "@magazyn/core/audit/audit-log";
-import { resolveMedusaMediaUrls } from "@magazyn/core/medusa/media-url";
 import { uploadCmsAssetFile, formatCmsUploadError } from "@/lib/product-upload/product-file";
 import { revalidateStorefrontMedusaCache } from "@magazyn/core/lib/revalidate-storefront";
 import {
@@ -293,17 +291,8 @@ export async function uploadImagesAction(formData: FormData): Promise<UploadStat
 		await requireAdminSession();
 		const urls: string[] = [];
 		for (const file of files) {
-			try {
-				const result = await uploadCmsAssetFile(file);
-				urls.push(result.url);
-			} catch (inner) {
-				if (inner instanceof Error && inner.message === "MEDUSA_UPLOAD_UNAVAILABLE") {
-					const fallback = resolveMedusaMediaUrls(await adminUpload([file]));
-					if (fallback[0]) urls.push(fallback[0]);
-					continue;
-				}
-				return { urls: [], error: formatCmsUploadError(inner) };
-			}
+			const result = await uploadCmsAssetFile(file);
+			urls.push(result.url);
 		}
 		return { urls, error: null };
 	} catch (error) {
