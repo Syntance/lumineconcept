@@ -19,6 +19,7 @@ import {
   getDistinctId as getPostHogDistinctId,
   getSessionId as getPostHogSessionId,
 } from "@/lib/analytics/destinations/posthog";
+import { getTrafficSourceMetadata } from "@/lib/analytics/traffic-source";
 import { useCart } from "@/hooks/useCart";
 import {
   completeCart,
@@ -43,6 +44,8 @@ import {
 } from "@/lib/medusa/checkout";
 import { getPolishRegionId } from "@/lib/medusa/region";
 import { sanitizeOrderNotes } from "@/lib/checkout/sanitize-order-notes";
+import { isTurnstileEnabled, verifyTurnstileToken } from "@/lib/checkout/turnstile";
+import { TurnstileWidget } from "@/components/checkout/TurnstileWidget";
 
 const POSTAL_CODE_REGEX = /^\d{2}-\d{3}$/;
 const NIP_REGEX = /^\d{10}$/;
@@ -231,6 +234,10 @@ export function CheckoutForm() {
    */
   const [submitSlow, setSubmitSlow] = useState(false);
   const submitSlowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const turnstileEnabled = isTurnstileEnabled();
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileTokenRef = useRef("");
+  turnstileTokenRef.current = turnstileToken;
   const staleResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const beginCheckoutFiredRef = useRef(false);
   const checkoutStartTimeRef = useRef<number | null>(null);
@@ -536,6 +543,7 @@ export function CheckoutForm() {
     !!cartId &&
     items.length > 0 &&
     formData.shippingOptionId !== "" &&
+    (!turnstileEnabled || turnstileToken !== "") &&
     !submitting &&
     !submittingRef.current;
 
@@ -562,6 +570,15 @@ export function CheckoutForm() {
     try {
       await assertCartReadyForCheckout(cartId);
 
+      if (isTurnstileEnabled()) {
+        const ok = await verifyTurnstileToken(turnstileTokenRef.current);
+        if (!ok) {
+          throw new Error(
+            "Weryfikacja zabezpieczająca nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+          );
+        }
+      }
+
       // Snapshot zgód + PostHog ids → cart.metadata (prepare-checkout).
       // completeCart przeniesie je do order.metadata; subscriber bramkuje
       // server-side CAPI (marketing) i PostHog (analytics) + odtwarza distinct_id.
@@ -571,6 +588,7 @@ export function CheckoutForm() {
         consentMarketing: consentSnapshot?.marketing ?? false,
         phDistinctId: getPostHogDistinctId(),
         phSessionId: getPostHogSessionId(),
+        trafficSource: getTrafficSourceMetadata(),
       };
 
       // Sanityzuj orderNotes przed wysłaniem (XSS protection) — text-only.
@@ -586,6 +604,10 @@ export function CheckoutForm() {
           payment.paymentProviderId,
           sanitizedNotes,
           analyticsSnapshot,
+          {
+            companyName: payment.companyName,
+            nip: payment.nip,
+          },
         );
         track("add_payment_info", {
           ...cartToEcommercePayload({
@@ -621,6 +643,10 @@ export function CheckoutForm() {
         payment.paymentProviderId,
         sanitizedNotes,
         analyticsSnapshot,
+        {
+          companyName: payment.companyName,
+          nip: payment.nip,
+        },
       );
       await initPaymentSession(cartId, payment.paymentProviderId);
 
@@ -1164,6 +1190,12 @@ export function CheckoutForm() {
                       cartId,
                       formData.shippingOptionId,
                       providerId,
+                      undefined,
+                      undefined,
+                      {
+                        companyName: formData.companyName,
+                        nip: formData.nip,
+                      },
                     );
                     await refreshCart().catch(() => undefined);
                     updateField("paymentProviderId", providerId);
@@ -1266,6 +1298,13 @@ export function CheckoutForm() {
                 </span>
               </label>
             </div>
+
+            {turnstileEnabled && (
+              <TurnstileWidget
+                onToken={setTurnstileToken}
+                className="flex justify-center"
+              />
+            )}
 
             {submitError && (
               <div

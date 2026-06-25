@@ -32,10 +32,13 @@ type Body = {
   option_id?: string;
   provider_id?: string;
   order_notes?: string;
+  company_name?: string;
+  nip?: string;
   consent_analytics?: boolean;
   consent_marketing?: boolean;
   ph_distinct_id?: string;
   ph_session_id?: string;
+  traffic_source?: string;
 };
 
 /**
@@ -185,8 +188,11 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     // Na końcu — po workflowach, żeby metadata nie została nadpisana.
     // Snapshot zgód + PostHog ids trafia do cart.metadata, a completeCart
     // skopiuje je do order.metadata (subscriber bramkuje server-side eventy).
+    // Traffic source (UTM/direct) także zostaje w metadata dla magazynu.
     await persistCartCheckoutMetadata(scope, cartId, {
       orderNotes,
+      companyName: body.company_name,
+      nip: body.nip,
       paymentProviderId: providerId,
       consent: {
         ...(typeof body.consent_analytics === "boolean"
@@ -198,6 +204,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
         ...(body.ph_distinct_id ? { phDistinctId: body.ph_distinct_id } : {}),
         ...(body.ph_session_id ? { phSessionId: body.ph_session_id } : {}),
       },
+      ...(body.traffic_source ? { trafficSource: body.traffic_source } : {}),
     });
 
     /**
