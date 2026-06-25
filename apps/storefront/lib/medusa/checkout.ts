@@ -771,6 +771,11 @@ export async function prepareCheckout(
     consentMarketing?: boolean;
     phDistinctId?: string;
     phSessionId?: string;
+    trafficSource?: string;
+  },
+  invoice?: {
+    companyName?: string;
+    nip?: string;
   },
 ): Promise<{ paymentCollectionId?: string }> {
   const base = resolveMedusaFetchBase();
@@ -790,6 +795,8 @@ export async function prepareCheckout(
       option_id: optionId,
       provider_id: providerId,
       ...(orderNotes ? { order_notes: orderNotes } : {}),
+      ...(invoice?.companyName ? { company_name: invoice.companyName } : {}),
+      ...(invoice?.nip ? { nip: invoice.nip } : {}),
       ...(analytics?.consentAnalytics != null
         ? { consent_analytics: analytics.consentAnalytics }
         : {}),
@@ -801,6 +808,9 @@ export async function prepareCheckout(
         : {}),
       ...(analytics?.phSessionId
         ? { ph_session_id: analytics.phSessionId }
+        : {}),
+      ...(analytics?.trafficSource
+        ? { traffic_source: analytics.trafficSource }
         : {}),
     }),
   });
