@@ -3,45 +3,16 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useState } from "react";
-import { uploadImagesAction } from "@magazyn/modules/products/actions";
 import { resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB } from "@/lib/product-upload/constants";
 import { CMS_ALLOWED_IMAGE_FORMATS_LABEL } from "@/lib/product-upload/cms-mime";
-import { canCompressCmsImage, compressCmsImageForUpload } from "@/lib/product-upload/compress-cms-image";
+import { uploadCmsImageFromClient } from "@/lib/product-upload/cms-client-upload";
+import {
+	isNetworkFetchError,
+	isServerActionTransportError,
+} from "@/lib/product-upload/cms-upload-errors";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
-
-function isNetworkFetchError(error: unknown): boolean {
-	return error instanceof TypeError && error.message === "Failed to fetch";
-}
-
-function isRetryableUploadError(message: string): boolean {
-	return /413|za duży|limit|R2|nie powiódł|timeout|TIMEOUT/i.test(message);
-}
-
-/** CMS ≤ 20 MB — zawsze Server Action → R2 po stronie serwera (prod + dev). */
-async function uploadCmsImageViaAction(file: File): Promise<string> {
-	const formData = new FormData();
-	formData.append("files", file);
-	const result = await uploadImagesAction(formData);
-	if (result.error) throw new Error(result.error);
-	const url = result.urls[0];
-	if (!url) throw new Error("Upload nie zwrócił adresu pliku.");
-	return url;
-}
-
-async function uploadCmsImage(file: File): Promise<string> {
-	try {
-		return await uploadCmsImageViaAction(file);
-	} catch (error) {
-		const message = error instanceof Error ? error.message : "";
-		if (canCompressCmsImage(file) && isRetryableUploadError(message)) {
-			const compressed = await compressCmsImageForUpload(file);
-			return uploadCmsImageViaAction(compressed);
-		}
-		throw error;
-	}
-}
 
 type Props = {
 	label: string;
@@ -96,7 +67,7 @@ export function OgImageField({
 			try {
 				const urls: string[] = [];
 				for (const file of toUpload) {
-					urls.push(await uploadCmsImage(file));
+					urls.push(await uploadCmsImageFromClient(file));
 				}
 
 				if (urls.length === 0) return;
@@ -113,7 +84,9 @@ export function OgImageField({
 				setError(
 					isNetworkFetchError(uploadError)
 						? "Połączenie przerwane podczas wysyłania pliku. Spróbuj ponownie za chwilę."
-						: message || "Upload nie powiódł się. Sprawdź połączenie i spróbuj ponownie.",
+						: isServerActionTransportError(uploadError)
+							? "Plik jest za duży lub serwer odrzucił upload. Zapisz jako JPG/WebP i spróbuj ponownie."
+							: message || "Upload nie powiódł się. Sprawdź połączenie i spróbuj ponownie.",
 				);
 			} finally {
 				setUploading(false);
