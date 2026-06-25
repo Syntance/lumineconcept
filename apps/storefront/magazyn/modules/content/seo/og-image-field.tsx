@@ -293,7 +293,14 @@ export function OgImageField({
 	const uploadFiles = useCallback(
 		async (files: File[]) => {
 			const images = files.filter(isImageFile);
-			if (images.length === 0) return;
+			if (images.length === 0) {
+				setError(
+					files.length === 0
+						? "Nie wybrano pliku."
+						: "Nierozpoznany format. Dozwolone: JPG, PNG, WEBP, GIF, AVIF.",
+				);
+				return;
+			}
 
 			const toUpload = batchMode ? images : images.slice(0, 1);
 			for (const file of toUpload) {
