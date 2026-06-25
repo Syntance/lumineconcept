@@ -3,28 +3,6 @@ import { normalizeHeroCtaHref } from "./cta-href";
 import type { HeroContent } from "./types";
 import { HOME_HERO_DEFAULT, LOGO_HERO_DEFAULT } from "./defaults";
 import { resolveCmsAssetUrl } from "./asset-url";
-import { STATIC_CMS_CONTENT } from "./static-cms-content";
-
-type StaticHeroImages = { desktopImageUrl?: string; mobileImageUrl?: string };
-
-/** Ścieżki z ostatniego buildu — zawsze lokalne `/images/cms/…`. Gwarancja działania gdy CMS niedostępny. */
-function getStaticHeroImages(pageKey: "home" | "logo-3d"): StaticHeroImages {
-	try {
-		const pages = (STATIC_CMS_CONTENT as Record<string, unknown>)?.["magazyn_page_content"] as
-			| Record<string, unknown>
-			| undefined;
-		const hero = pages?.[pageKey === "logo-3d" ? "logo-3d" : "home"] as
-			| Record<string, unknown>
-			| undefined;
-		const h = (hero?.["hero"] ?? hero) as Record<string, string> | undefined;
-		return {
-			desktopImageUrl: typeof h?.desktopImageUrl === "string" ? h.desktopImageUrl : undefined,
-			mobileImageUrl: typeof h?.mobileImageUrl === "string" ? h.mobileImageUrl : undefined,
-		};
-	} catch {
-		return {};
-	}
-}
 
 export function heroToPortalConfig(hero: HeroContent): HeroPortalContentConfig {
 	return {
@@ -39,6 +17,24 @@ export function heroToPortalConfig(hero: HeroContent): HeroPortalContentConfig {
 	};
 }
 
+function resolveHeroImageUrls(hero: HeroContent): {
+	desktopImageUrl?: string;
+	mobileImageUrl?: string;
+	desktopBlurDataURL?: string;
+	mobileBlurDataURL?: string;
+} {
+	const desktopImageUrl = resolveCmsAssetUrl(hero.desktopImageUrl?.trim());
+	const mobileImageUrl =
+		resolveCmsAssetUrl(hero.mobileImageUrl?.trim()) ?? desktopImageUrl;
+
+	return {
+		...(desktopImageUrl ? { desktopImageUrl } : {}),
+		...(mobileImageUrl ? { mobileImageUrl } : {}),
+		...(hero.desktopBlurDataURL ? { desktopBlurDataURL: hero.desktopBlurDataURL } : {}),
+		...(hero.mobileBlurDataURL ? { mobileBlurDataURL: hero.mobileBlurDataURL } : {}),
+	};
+}
+
 export function resolveHomeHero(hero?: HeroContent): {
 	portal: HeroPortalContentConfig;
 	desktopImageUrl?: string;
@@ -47,22 +43,9 @@ export function resolveHomeHero(hero?: HeroContent): {
 	mobileBlurDataURL?: string;
 } {
 	const resolved = hero ?? HOME_HERO_DEFAULT;
-	const staticFallback = getStaticHeroImages("home");
-
-	const desktopImageUrl =
-		resolveCmsAssetUrl(resolved.desktopImageUrl?.trim()) ??
-		resolveCmsAssetUrl(staticFallback.desktopImageUrl);
-	const mobileImageUrl =
-		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) ??
-		desktopImageUrl ??
-		resolveCmsAssetUrl(staticFallback.mobileImageUrl);
-
 	return {
 		portal: heroToPortalConfig(resolved),
-		...(desktopImageUrl ? { desktopImageUrl } : {}),
-		...(mobileImageUrl ? { mobileImageUrl } : {}),
-		...(resolved.desktopBlurDataURL ? { desktopBlurDataURL: resolved.desktopBlurDataURL } : {}),
-		...(resolved.mobileBlurDataURL ? { mobileBlurDataURL: resolved.mobileBlurDataURL } : {}),
+		...resolveHeroImageUrls(resolved),
 	};
 }
 
@@ -88,22 +71,9 @@ export function resolveLogoHero(hero?: HeroContent): {
 	mobileBlurDataURL?: string;
 } {
 	const resolved: HeroContent = { ...LOGO_HERO_DEFAULT, ...hero };
-	const staticFallback = getStaticHeroImages("logo-3d");
-
-	const desktopImageUrl =
-		resolveCmsAssetUrl(resolved.desktopImageUrl?.trim()) ??
-		resolveCmsAssetUrl(staticFallback.desktopImageUrl);
-	const mobileImageUrl =
-		resolveCmsAssetUrl(resolved.mobileImageUrl?.trim()) ??
-		desktopImageUrl ??
-		resolveCmsAssetUrl(staticFallback.mobileImageUrl);
-
 	return {
 		portal: heroToPortalConfig(resolved),
-		...(desktopImageUrl ? { desktopImageUrl } : {}),
-		...(mobileImageUrl ? { mobileImageUrl } : {}),
-		...(resolved.desktopBlurDataURL ? { desktopBlurDataURL: resolved.desktopBlurDataURL } : {}),
-		...(resolved.mobileBlurDataURL ? { mobileBlurDataURL: resolved.mobileBlurDataURL } : {}),
+		...resolveHeroImageUrls(resolved),
 	};
 }
 

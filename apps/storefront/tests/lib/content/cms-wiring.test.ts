@@ -175,6 +175,20 @@ describe("cms-wiring", () => {
 		);
 		expect(home.desktopImageUrl).toBe("/images/cms/hero.webp");
 		expect(home.mobileImageUrl).toBe("/images/cms/hero-mobile.webp");
+
+		const cleared = resolveHomeHero(
+			mergeHeroWithDefaults(
+				{
+					headline: "CONCEPT",
+					description: "d",
+					ctaLabel: "c",
+					ctaHref: "/sklep",
+				},
+				"home",
+			),
+		);
+		expect(cleared.desktopImageUrl).toBeUndefined();
+		expect(cleared.mobileImageUrl).toBeUndefined();
 	});
 });
 
