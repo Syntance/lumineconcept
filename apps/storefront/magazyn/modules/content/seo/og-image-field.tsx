@@ -6,18 +6,10 @@ import { useCallback, useState } from "react";
 import { uploadImagesAction } from "@magazyn/modules/products/actions";
 import { resolveCmsAdminPreviewUrl } from "@/lib/content/asset-url";
 import { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB } from "@/lib/product-upload/constants";
+import { CMS_ALLOWED_IMAGE_FORMATS_LABEL } from "@/lib/product-upload/cms-mime";
 import { canCompressCmsImage, compressCmsImageForUpload } from "@/lib/product-upload/compress-cms-image";
 import { cn } from "@magazyn/core/lib/cn";
 import { isImageFile, useFileDropZone } from "@magazyn/core/hooks/use-file-drop-zone";
-
-const HEIC_TYPES = new Set(["image/heic", "image/heif", "image/heic-sequence"]);
-
-function isHeicFile(file: File): boolean {
-	const type = file.type.toLowerCase();
-	if (HEIC_TYPES.has(type)) return true;
-	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-	return ext === "heic" || ext === "heif";
-}
 
 function isNetworkFetchError(error: unknown): boolean {
 	return error instanceof TypeError && error.message === "Failed to fetch";
@@ -83,19 +75,13 @@ export function OgImageField({
 				setError(
 					files.length === 0
 						? "Nie wybrano pliku."
-						: "Nierozpoznany format. Dozwolone: JPG, PNG, WEBP, GIF, AVIF.",
+						: `Nierozpoznany format. Dozwolone: ${CMS_ALLOWED_IMAGE_FORMATS_LABEL}.`,
 				);
 				return;
 			}
 
 			const toUpload = batchMode ? images : images.slice(0, 1);
 			for (const file of toUpload) {
-				if (isHeicFile(file)) {
-					setError(
-						"Format HEIC (iPhone) nie jest obsługiwany. Wyeksportuj zdjęcie jako JPG lub WebP.",
-					);
-					return;
-				}
 				if (file.size > MAX_CMS_UPLOAD_BYTES) {
 					setError(
 						`Plik „${file.name}” jest za duży (maks. ${MAX_CMS_UPLOAD_MB} MB).`,
@@ -195,7 +181,7 @@ export function OgImageField({
 				>
 					<input
 						type="file"
-						accept="image/*"
+						accept="image/*,.heic,.heif"
 						multiple={batchMode}
 						className="sr-only"
 						disabled={uploading}

@@ -1,10 +1,15 @@
 import "server-only";
 import sharp from "sharp";
-import { inferCmsMimeType } from "./cms-mime";
+import { inferCmsMimeType, isCmsHeicFile } from "./cms-mime";
 
 const CMS_WEBP_QUALITY = 92;
 
 const SKIP_WEBP_CONVERSION = new Set(["image/gif", "image/svg+xml", "image/webp"]);
+
+function webpFilename(originalName: string): string {
+	const baseName = originalName.replace(/\.[^.]+$/, "") || "cms";
+	return `${baseName}.webp`;
+}
 
 export async function normalizeCmsImageFileToWebp(file: File): Promise<File> {
 	const mime = inferCmsMimeType(file);
@@ -13,10 +18,19 @@ export async function normalizeCmsImageFileToWebp(file: File): Promise<File> {
 	}
 
 	const input = Buffer.from(await file.arrayBuffer());
-	const webp = await sharp(input)
-		.rotate()
-		.webp({ quality: CMS_WEBP_QUALITY, effort: 4 })
-		.toBuffer();
-	const baseName = file.name.replace(/\.[^.]+$/, "") || "cms";
-	return new File([new Uint8Array(webp)], `${baseName}.webp`, { type: "image/webp" });
+	const fromHeic = isCmsHeicFile(file);
+
+	try {
+		const webp = await sharp(input, { failOn: "none" })
+			.rotate()
+			.webp({ quality: CMS_WEBP_QUALITY, effort: 4 })
+			.toBuffer();
+
+		return new File([new Uint8Array(webp)], webpFilename(file.name), { type: "image/webp" });
+	} catch (error) {
+		if (fromHeic) {
+			throw new Error("CMS_HEIC_CONVERSION_FAILED");
+		}
+		throw error instanceof Error ? error : new Error("CMS_IMAGE_CONVERSION_FAILED");
+	}
 }

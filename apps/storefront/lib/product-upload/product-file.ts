@@ -3,7 +3,7 @@ import { put } from "@vercel/blob";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { resolveMedusaAdminEmail } from "@/magazyn/core/medusa/admin-email";
-import { inferCmsMimeFromMeta, inferCmsMimeType } from "./cms-mime";
+import { inferCmsMimeFromMeta, inferCmsMimeType, CMS_ALLOWED_IMAGE_FORMATS_LABEL } from "./cms-mime";
 import { normalizeCmsImageFileToWebp } from "./normalize-cms-image.server";
 import { MAX_CMS_UPLOAD_BYTES, MAX_CMS_UPLOAD_MB, MAX_UPLOAD_BYTES, VERCEL_SAFE_UPLOAD_MB } from "./constants";
 
@@ -240,6 +240,12 @@ export function formatCmsUploadError(error: unknown): string {
   if (msg === "CMS_R2_NOT_CONFIGURED") {
     return "Upload CMS wymaga R2. Ustaw S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY i S3_FILE_URL w Vercel (projekt storefront → Environment Variables) oraz lokalnie w .env.local.";
   }
+  if (msg === "CMS_HEIC_CONVERSION_FAILED") {
+    return "Nie udało się przekonwertować HEIC (iPhone) do WebP. Wyeksportuj zdjęcie jako JPG lub spróbuj ponownie.";
+  }
+  if (msg === "CMS_IMAGE_CONVERSION_FAILED") {
+    return "Nie udało się przetworzyć obrazu. Spróbuj JPG lub WebP.";
+  }
   if (msg === "R2_PRESIGN_UNAVAILABLE") {
     return `Pliki powyżej ${VERCEL_SAFE_UPLOAD_MB} MB wymagają R2 (S3_* na Vercel). Zmniejsz plik lub skonfiguruj magazyn.`;
   }
@@ -252,24 +258,12 @@ export function formatCmsUploadError(error: unknown): string {
   return msg;
 }
 
-function isHeicFile(file: File): boolean {
-  const type = file.type.toLowerCase();
-  if (type === "image/heic" || type === "image/heif" || type === "image/heic-sequence") {
-    return true;
-  }
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  return ext === "heic" || ext === "heif";
-}
-
 export function validateCmsUploadFile(file: File): string | null {
-  if (isHeicFile(file)) {
-    return "Format HEIC (iPhone) nie jest obsługiwany. Wyeksportuj zdjęcie jako JPG lub WebP.";
-  }
   if (file.size > MAX_CMS_UPLOAD_BYTES) {
     return `Plik jest za duży (maks. ${MAX_CMS_UPLOAD_MB} MB). Zapisz jako JPG/WebP lub zmniejsz rozdzielczość.`;
   }
   if (!inferCmsMimeType(file)) {
-    return "Dozwolone formaty: JPG, PNG, WEBP, GIF, AVIF.";
+    return `Dozwolone formaty: ${CMS_ALLOWED_IMAGE_FORMATS_LABEL}.`;
   }
   return null;
 }
@@ -305,29 +299,17 @@ export type CmsPresignedUpload = {
   publicUrl: string;
 };
 
-function isHeicMeta(filename: string, contentType: string): boolean {
-  const type = contentType.toLowerCase();
-  if (type === "image/heic" || type === "image/heif" || type === "image/heic-sequence") {
-    return true;
-  }
-  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-  return ext === "heic" || ext === "heif";
-}
-
 export function validateCmsUploadMeta(
   filename: string,
   contentType: string,
   size: number,
 ): string | null {
-  if (isHeicMeta(filename, contentType)) {
-    return "Format HEIC (iPhone) nie jest obsługiwany. Wyeksportuj zdjęcie jako JPG lub WebP.";
-  }
   if (size > MAX_CMS_UPLOAD_BYTES) {
     return `Plik jest za duży (maks. ${MAX_CMS_UPLOAD_MB} MB). Zapisz jako JPG/WebP lub zmniejsz rozdzielczość.`;
   }
   if (size <= 0) return "Nieprawidłowy rozmiar pliku.";
   if (!inferCmsMimeFromMeta(filename, contentType)) {
-    return "Dozwolone formaty: JPG, PNG, WEBP, GIF, AVIF.";
+    return `Dozwolone formaty: ${CMS_ALLOWED_IMAGE_FORMATS_LABEL}.`;
   }
   return null;
 }
