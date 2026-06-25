@@ -51,6 +51,8 @@ interface CartState {
    * szacunku kuriera do `grandTotal`.
    */
   hasShippingMethodSelection: boolean;
+  /** ID opcji dostawy przypiętej w koszyku Medusy (po apply promo / prepare-checkout). */
+  shippingOptionId: string | null;
   tax_total: number;
   discount_total: number;
   total: number;
@@ -179,6 +181,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     subtotal: 0,
     shipping_total: 0,
     hasShippingMethodSelection: false,
+    shippingOptionId: null,
     tax_total: 0,
     discount_total: 0,
     total: 0,
@@ -204,6 +207,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
       const shippingMethods = rawCart.shipping_methods;
       const shippingT = numberFromUnknown(rawCart.shipping_total) ?? 0;
+      const firstShippingMethod = Array.isArray(shippingMethods)
+        ? (shippingMethods[0] as { shipping_option_id?: string } | undefined)
+        : undefined;
       const hasShippingMethodSelection =
         (Array.isArray(shippingMethods) && shippingMethods.length > 0) ||
         shippingT > 0;
@@ -217,6 +223,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         subtotal: numberFromUnknown(rawCart.subtotal) ?? 0,
         shipping_total: shippingT,
         hasShippingMethodSelection,
+        shippingOptionId: firstShippingMethod?.shipping_option_id?.trim() || null,
         tax_total: numberFromUnknown(rawCart.tax_total) ?? 0,
         discount_total: numberFromUnknown(rawCart.discount_total) ?? 0,
         total: numberFromUnknown(rawCart.total) ?? 0,
@@ -592,18 +599,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         const updated = await cartApi.applyPromotionCode(cart.id, code);
         updateCartState(updated as unknown as Record<string, unknown>);
+        const normalized = code.trim().toUpperCase();
         const discount = numberFromUnknown(
           (updated as Record<string, unknown>).discount_total,
         ) ?? 0;
-        if (discount <= 0) {
-          const promotions =
-            ((updated as Record<string, unknown>).promotions as Array<{ code?: string }>) ?? [];
-          const hasCode = promotions.some(
-            (promotion) => promotion.code?.toUpperCase() === code.trim().toUpperCase(),
-          );
-          if (!hasCode) {
-            throw new Error("Kod nieprawidłowy lub wygasł");
-          }
+        const promotions =
+          ((updated as Record<string, unknown>).promotions as Array<{ code?: string }>) ??
+          [];
+        const hasCode = promotions.some(
+          (promotion) => promotion.code?.toUpperCase() === normalized,
+        );
+        if (discount <= 0 && !hasCode) {
+          throw new Error("Kod nieprawidłowy lub wygasł");
         }
       } finally {
         setIsLoading(false);

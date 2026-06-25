@@ -1,4 +1,5 @@
 import { medusa } from "./client";
+import { ensureCartShippingForPromo } from "./ensure-cart-shipping";
 import { getPolishRegionId } from "./region";
 import {
   cartFieldsSearchParams,
@@ -130,13 +131,23 @@ export async function applyPromotionCode(cartId: string, code: string) {
       : {}),
   };
 
-  const params = cartFieldsSearchParams();
-  const customRes = await fetch(`${base}/store/custom/apply-promo-code`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ cart_id: cartId, code: code.trim() }),
-    signal: AbortSignal.timeout(30_000),
-  });
+  const trimmed = code.trim();
+  const body = JSON.stringify({ cart_id: cartId, code: trimmed });
+
+  const callCustomApply = () =>
+    fetch(`${base}/store/custom/apply-promo-code`, {
+      method: "POST",
+      headers,
+      body,
+      signal: AbortSignal.timeout(30_000),
+    });
+
+  let customRes = await callCustomApply();
+
+  if (!customRes.ok && customRes.status >= 500) {
+    await ensureCartShippingForPromo(cartId).catch(() => undefined);
+    customRes = await callCustomApply();
+  }
 
   if (customRes.ok) {
     const data = (await customRes.json()) as { cart: unknown };
@@ -148,11 +159,13 @@ export async function applyPromotionCode(cartId: string, code: string) {
     throw new Error(err.message ?? "Kod nieprawidłowy lub wygasł");
   }
 
+  await ensureCartShippingForPromo(cartId).catch(() => undefined);
+
   const response = await withMedusaTimeout(
     medusa.store.cart.update(
       cartId,
       {
-        promo_codes: [code.trim()],
+        promo_codes: [trimmed],
       },
       CART_RETRIEVE_QUERY,
     ),

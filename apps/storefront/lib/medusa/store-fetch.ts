@@ -2,7 +2,7 @@ import { resolveMedusaFetchBase } from "./resolve-fetch-base";
 
 /** Pola koszyka wymagane przez UI (sumy pozycji, dostawa). */
 export const CART_FIELDS_QUERY =
-  "+items.total,+items.subtotal,+items.unit_price,+items.quantity,+items.thumbnail,+items.product.thumbnail,+items.product.images.url,+subtotal,+total,+tax_total,+shipping_total,+shipping_methods,+discount_total,+promotions.id,+promotions.code";
+  "+items.total,+items.subtotal,+items.unit_price,+items.quantity,+items.thumbnail,+items.product.thumbnail,+items.product.images.url,+subtotal,+total,+tax_total,+shipping_total,+shipping_methods,+shipping_methods.shipping_option_id,+discount_total,+promotions.id,+promotions.code";
 
 function publishableKey(): string {
   return (

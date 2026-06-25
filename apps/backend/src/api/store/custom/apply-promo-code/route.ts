@@ -7,8 +7,12 @@ import {
 	remoteQueryObjectFromString,
 } from "@medusajs/framework/utils";
 import { updateCartPromotionsWorkflow } from "@medusajs/medusa/core-flows";
-import { defaultStoreCartFields } from "@medusajs/medusa/api/store/carts/query-config";
+import {
+	ensureCartShippingForPromo,
+	promotionTargetsShipping,
+} from "../../../../lib/ensure-cart-shipping-for-promo";
 import { resolvePromotionCodesToApply, freeShippingPromotionCode } from "../../../../lib/lumine-promotions";
+import { STORE_CART_REMOTE_QUERY_FIELDS } from "../../../../lib/store-cart-fields";
 
 type Body = {
 	cart_id?: string;
@@ -79,6 +83,13 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
 		});
 	}
 
+	const promotionIds = allForResolve
+		.filter((promotion) => promoCodes.includes(promotion.code))
+		.map((promotion) => promotion.id);
+	if (await promotionTargetsShipping(scope, promotionIds)) {
+		await ensureCartShippingForPromo(scope, cartId);
+	}
+
 	await updateCartPromotionsWorkflow(scope).run({
 		input: {
 			cart_id: cartId,
@@ -91,7 +102,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
 	const cartQuery = remoteQueryObjectFromString({
 		entryPoint: "cart",
 		variables: { filters: { id: cartId } },
-		fields: defaultStoreCartFields,
+		fields: STORE_CART_REMOTE_QUERY_FIELDS,
 	});
 	const [cart] = await remoteQuery(cartQuery);
 
