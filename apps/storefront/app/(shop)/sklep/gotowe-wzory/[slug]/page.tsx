@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { permanentRedirect } from "next/navigation";
-import { Suspense } from "react";
 import { createProductPage } from "@/lib/products/create-product-page";
 import {
 	generateGotoweWzoryListingMetadata,
 	GotoweWzoryListingPage,
-	type GotoweWzoryListingSearchParams,
 } from "@/components/shop/GotoweWzoryListingPage";
 import {
 	getDirectListingCategoryHandles,
@@ -26,25 +24,10 @@ const productPage = createProductPage({
 const ProductPage = productPage.Page;
 
 type PageParams = Promise<{ slug: string }>;
-type PageSearchParams = Promise<GotoweWzoryListingSearchParams>;
 
 async function loadCategoryTree(): Promise<CategoryTreeNode[]> {
 	const categories = await getProductCategories().catch(() => []);
 	return categories as unknown as CategoryTreeNode[];
-}
-
-/** searchParams muszą być czytane w Suspense — inaczej Next 15/16 na Vercel zwraca 500. */
-async function GotoweWzoryCategoryListing({
-	categoryHandle,
-	searchParams,
-}: {
-	categoryHandle: string;
-	searchParams: PageSearchParams;
-}) {
-	const query = await searchParams;
-	return (
-		<GotoweWzoryListingPage categoryHandle={categoryHandle} searchParams={query} />
-	);
 }
 
 export async function generateStaticParams() {
@@ -93,10 +76,8 @@ export async function generateMetadata({
 
 export default async function GotoweWzorySlugPage({
 	params,
-	searchParams,
 }: {
 	params: PageParams;
-	searchParams: PageSearchParams;
 }) {
 	const { slug } = await params;
 	const tree = await loadCategoryTree();
@@ -106,13 +87,13 @@ export default async function GotoweWzorySlugPage({
 	}
 
 	if (isDirectListingCategorySlug(tree, LISTING_CATEGORY_HANDLE.gotoweWzory, slug)) {
+		/**
+		 * Brak `searchParams` w page — route ma `generateStaticParams` (SSG).
+		 * `searchParams` na SSG → DYNAMIC_SERVER_USAGE → 500 na Vercel.
+		 * Sortowanie z `?sort=` obsługuje ShopGridClient po hydracji.
+		 */
 		return (
-			<Suspense fallback={null}>
-				<GotoweWzoryCategoryListing
-					categoryHandle={slug}
-					searchParams={searchParams}
-				/>
-			</Suspense>
+			<GotoweWzoryListingPage categoryHandle={slug} searchParams={{}} />
 		);
 	}
 

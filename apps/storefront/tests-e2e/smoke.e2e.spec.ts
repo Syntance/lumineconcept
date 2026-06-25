@@ -32,6 +32,7 @@ test.describe("Smoke", () => {
     const response = await page.goto("/sklep/gotowe-wzory/cenniki");
     expect(response?.status()).toBeLessThan(500);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByText(/server error occurred/i)).toHaveCount(0);
   });
 
   test("/sklep/certyfikaty ładuje listę kategorii", async ({ page }) => {
