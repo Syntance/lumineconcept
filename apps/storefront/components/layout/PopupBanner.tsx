@@ -2,87 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { CONSENT_EVENT, hasConsentDecision } from "@/lib/consent/consent";
 import { PopupBannerTabIcon } from "./PopupBannerTabIcon";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
-import {
-	hasPopupBannerEntryShown,
-	markPopupBannerEntryShown,
-} from "@/lib/content/popup-banner-session";
-import {
-	pickPopupBannerForPath,
-	type PopupBannerDisplay,
-} from "@/lib/content/popup-banners";
-import type { PopupBanner } from "@/lib/content/types";
-
-/** Opóźnienie po decyzji cookies (zgodne z banerem cookie). */
-const POST_CONSENT_DELAY_MS = 2000;
+import type { PopupBannerDisplay } from "@/lib/content/popup-banners";
 
 type Props = {
-	banners: PopupBannerDisplay[];
-	rawItems: PopupBanner[];
+	active: PopupBannerDisplay;
+	view: "open" | "collapsed";
+	onCollapse: () => void;
+	onReopen: () => void;
 };
 
-type ViewState = "hidden" | "open" | "collapsed";
-
-export function PopupBanner({ banners, rawItems }: Props) {
-	const pathname = usePathname() ?? "/";
-	const [canMount, setCanMount] = useState(false);
-	const [view, setView] = useState<ViewState>("hidden");
-
-	const active = pickPopupBannerForPath(banners, rawItems, pathname);
-
-	useEffect(() => {
-		let timer: number | undefined;
-
-		function scheduleShow() {
-			timer = window.setTimeout(() => setCanMount(true), POST_CONSENT_DELAY_MS);
-		}
-
-		if (hasConsentDecision()) {
-			scheduleShow();
-		} else {
-			const onConsent = () => scheduleShow();
-			window.addEventListener(CONSENT_EVENT, onConsent, { once: true });
-			return () => {
-				window.removeEventListener(CONSENT_EVENT, onConsent);
-				if (timer !== undefined) window.clearTimeout(timer);
-			};
-		}
-
-		return () => {
-			if (timer !== undefined) window.clearTimeout(timer);
-		};
-	}, []);
-
-	useEffect(() => {
-		if (!canMount || !active) {
-			setView("hidden");
-			return;
-		}
-
-		if (!hasPopupBannerEntryShown()) {
-			setView("open");
-			markPopupBannerEntryShown();
-			return;
-		}
-
-		setView("collapsed");
-	}, [canMount, active?.id, pathname]);
-
-	const collapse = useCallback(() => {
-		setView("collapsed");
-	}, []);
-
-	const reopen = useCallback(() => {
-		setView("open");
-	}, []);
-
-	if (!canMount || !active || view === "hidden") return null;
-
+export function PopupBanner({ active, view, onCollapse, onReopen }: Props) {
 	const blurEnabled = active.blurBackground;
 	const titleId = `popup-banner-title-${active.id}`;
 	const hasText = Boolean(active.title?.trim() || active.body?.trim());
@@ -99,7 +31,7 @@ export function PopupBanner({ banners, rawItems }: Props) {
 						className={`absolute inset-0 border-0 bg-brand-900/30 p-0 ${
 							blurEnabled ? "backdrop-blur-[4px]" : ""
 						}`}
-						onClick={collapse}
+						onClick={onCollapse}
 						aria-label="Zamknij baner"
 					/>
 					<div
@@ -110,7 +42,7 @@ export function PopupBanner({ banners, rawItems }: Props) {
 					>
 						<button
 							type="button"
-							onClick={collapse}
+							onClick={onCollapse}
 							className="absolute right-3 top-3 z-10 inline-flex size-8 items-center justify-center rounded-full bg-brand-50/95 text-brand-700 shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
 							aria-label="Schowaj baner"
 						>
@@ -158,7 +90,7 @@ export function PopupBanner({ banners, rawItems }: Props) {
 									{active.link ? (
 										<Link
 											href={active.link}
-											onClick={collapse}
+											onClick={onCollapse}
 											className="mt-1 inline-flex w-fit items-center justify-center rounded-md bg-brand-800 px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
 										>
 											{active.linkLabel?.trim() || "Zobacz więcej"}
@@ -174,7 +106,7 @@ export function PopupBanner({ banners, rawItems }: Props) {
 			{view === "collapsed" ? (
 				<button
 					type="button"
-					onClick={reopen}
+					onClick={onReopen}
 					className="fixed left-0 top-1/2 z-[9990] flex -translate-y-1/2 flex-col items-center gap-1 rounded-r-lg border border-l-0 border-brand-200 bg-brand-800 px-2 py-3 text-[#fffdf8] shadow-lg transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 motion-safe:animate-in motion-safe:slide-in-from-left motion-safe:duration-200"
 					aria-label={`Otwórz baner: ${active.tabLabel}`}
 				>
