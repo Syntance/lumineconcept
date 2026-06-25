@@ -69,6 +69,30 @@ export function resolveCmsAssetUrl(url: string | null | undefined): string | und
 }
 
 /**
+ * Resolver dla obrazów hero: najpierw lokalna kopia z prebuildu (`/images/cms/…`),
+ * a jeśli jej nie ma — bezpośrednio z R2/CDN. Domena R2 jest już w `remotePatterns`
+ * i CSP `img-src`, więc fallback jest bezpieczny.
+ *
+ * Dzięki temu zmiana hero w CMS jest widoczna natychmiast po zapisie + revalidate,
+ * bez konieczności czekania na prebuild sync.
+ */
+export function resolveCmsHeroImageUrl(url: string | null | undefined): string | undefined {
+	if (!url?.trim()) return undefined;
+
+	// Lokalna kopia z prebuildu — priorytet.
+	const local = resolveCmsAssetUrl(url);
+	if (local) return local;
+
+	// Fallback: R2 lub CDN bezpośrednio.
+	const trimmed = url.trim();
+	if (!isCmsMediaAssetUrl(trimmed)) return undefined;
+
+	// Medusa może wymagać rewrite URL-a (/static/ → pełny adres backendu).
+	const resolved = resolveMedusaMediaUrl(trimmed);
+	return resolved ?? trimmed;
+}
+
+/**
  * Czy mobilne tło hero (`MobileHeroImageBand`) ma iść przez `next/image` (resize + srcset).
  * WebP z CMS dotyczy formatu — wymiary nadal wymagają skalowania (LCP na mobile).
  */

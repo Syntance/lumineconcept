@@ -2,7 +2,7 @@ import type { HeroPortalContentConfig } from "@/components/home/hero-portal-conf
 import { normalizeHeroCtaHref } from "./cta-href";
 import type { HeroContent } from "./types";
 import { HOME_HERO_DEFAULT, LOGO_HERO_DEFAULT } from "./defaults";
-import { resolveCmsAssetUrl } from "./asset-url";
+import { resolveCmsHeroImageUrl } from "./asset-url";
 
 export function heroToPortalConfig(hero: HeroContent): HeroPortalContentConfig {
 	return {
@@ -23,9 +23,9 @@ function resolveHeroImageUrls(hero: HeroContent): {
 	desktopBlurDataURL?: string;
 	mobileBlurDataURL?: string;
 } {
-	const desktopImageUrl = resolveCmsAssetUrl(hero.desktopImageUrl?.trim());
+	const desktopImageUrl = resolveCmsHeroImageUrl(hero.desktopImageUrl?.trim());
 	const mobileImageUrl =
-		resolveCmsAssetUrl(hero.mobileImageUrl?.trim()) ?? desktopImageUrl;
+		resolveCmsHeroImageUrl(hero.mobileImageUrl?.trim()) ?? desktopImageUrl;
 
 	return {
 		...(desktopImageUrl ? { desktopImageUrl } : {}),
