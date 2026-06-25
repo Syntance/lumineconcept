@@ -1,5 +1,6 @@
 import { magazynConfig } from "@magazyn/magazyn.config";
-import type { ContentPageId, PopupBanner, PopupBannersConfig } from "./types";
+import { resolvePopupTabIcon, resolvePopupTabLabel } from "./popup-banner-tab-icons";
+import type { ContentPageId, PopupBanner, PopupBannerTabIcon, PopupBannersConfig } from "./types";
 
 export type PopupBannerDisplay = {
 	id: string;
@@ -9,6 +10,8 @@ export type PopupBannerDisplay = {
 	linkLabel?: string;
 	imageUrl?: string;
 	blurBackground: boolean;
+	tabLabel: string;
+	tabIcon: PopupBannerTabIcon;
 };
 
 export function pathnameMatchesPopupTarget(pathname: string, target: ContentPageId): boolean {
@@ -41,6 +44,8 @@ function toDisplay(banner: PopupBanner): PopupBannerDisplay | null {
 		linkLabel: banner.linkLabel?.trim() || undefined,
 		imageUrl: imageUrl || undefined,
 		blurBackground: banner.blurBackground !== false,
+		tabLabel: resolvePopupTabLabel(banner.tabLabel),
+		tabIcon: resolvePopupTabIcon(banner.tabIcon),
 	};
 }
 

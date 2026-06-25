@@ -1,3 +1,5 @@
+import type { PopupBannerTabIcon } from "./popup-banner-tab-icons";
+
 /** Identyfikator podstrony CMS — stabilny, konfigurowany w magazyn.config.ts. */
 export type ContentPageId =
 	| "home"
@@ -191,6 +193,8 @@ export type PageContent = {
 /** Podstrona docelowa banera popup — `all` = cała witryna. */
 export type PopupBannerTarget = ContentPageId | "all";
 
+export type { PopupBannerTabIcon };
+
 export type PopupBanner = {
 	id: string;
 	enabled: boolean;
@@ -203,6 +207,10 @@ export type PopupBanner = {
 	imageUrl?: string;
 	/** Domyślnie true — lekki blur tła strony. */
 	blurBackground?: boolean;
+	/** Tekst pionowego paska po schowaniu (domyślnie „Oferta”). */
+	tabLabel?: string;
+	/** Ikona paska po schowaniu. */
+	tabIcon?: PopupBannerTabIcon;
 	order: number;
 };
 

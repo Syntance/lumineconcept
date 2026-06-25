@@ -34,6 +34,8 @@ describe("popup-banners", () => {
 		const banners = resolvePopupBannersForStorefront(config);
 		expect(banners).toHaveLength(1);
 		expect(banners[0]?.blurBackground).toBe(true);
+		expect(banners[0]?.tabLabel).toBe("Oferta");
+		expect(banners[0]?.tabIcon).toBe("mail");
 	});
 
 	it("picks first banner for pathname", () => {
