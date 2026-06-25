@@ -352,22 +352,10 @@ function Przelewy24ReturnInner() {
         </p>
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
-            href={`/checkout/przelewy24/start?cart_id=${encodeURIComponent(cartId ?? "")}&retry=1`}
-            className="rounded-md bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-dark transition-colors"
-          >
-            Spróbuj ponownie
-          </Link>
-          <Link
-            href="/checkout"
+            href="/sklep"
             className="rounded-md border border-brand-300 px-8 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-50 transition-colors"
           >
-            Wróć do checkoutu
-          </Link>
-          <Link
-            href="/sklep"
-            className="text-sm text-brand-600 underline hover:text-brand-800 sm:self-center"
-          >
-            Sklep
+            Wróć do sklepu
           </Link>
         </div>
       </div>
