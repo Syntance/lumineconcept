@@ -158,6 +158,34 @@ export async function getProductsByTag(tag: string, limit = 6) {
   }
 }
 
+/** Produkty w kolejności z CMS (pomija brakujące / niewidoczne). */
+export async function getProductsByIds(ids: string[]) {
+  const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter((id) => id.length > 0))];
+  if (uniqueIds.length === 0) return [];
+
+  try {
+    const regionId = await getPolishRegionId();
+    const response = await withMedusaTimeout(
+      medusa.store.product.list({
+        id: uniqueIds,
+        limit: uniqueIds.length,
+        region_id: regionId,
+        fields: "+variants.calculated_price,+variants.metadata,+tags,*images,+thumbnail,+metadata,+description",
+      }),
+      30_000,
+      "product.list(ids)",
+    );
+
+    const byId = new Map(response.products.map((product) => [product.id, product]));
+    return uniqueIds
+      .map((id) => byId.get(id))
+      .filter((product): product is NonNullable<typeof product> => product != null);
+  } catch (e) {
+    logMedusaFailure(`getProductsByIds(${uniqueIds.join(",")})`, e);
+    return [];
+  }
+}
+
 async function _getProductCategories() {
   try {
     const response = await medusa.store.category.list({

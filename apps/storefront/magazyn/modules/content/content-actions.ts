@@ -44,7 +44,11 @@ export async function savePageContentAction(
 		return { ok: false, error: "Nie udało się zapisać treści podstrony." };
 	}
 
-	await revalidateContentCache([path, `${magazynConfig.basePath}/panel/cms/${pageId}`]);
+	const revalidatePaths = [path, `${magazynConfig.basePath}/panel/cms/${pageId}`];
+	if (pageId === "home") {
+		revalidatePaths.push("/sklep");
+	}
+	await revalidateContentCache(revalidatePaths);
 	return { ok: true, error: null };
 }
 

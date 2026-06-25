@@ -13,7 +13,7 @@ const HERO_BG_WIDTH = 2560;
 const HERO_BG_HEIGHT = 966;
 
 /**
- * Hero — desktop: ultrawide + overlay; mobile: zdjęcie + CTA w 80svh.
+ * Hero — desktop: ultrawide + portal; mobile: zdjęcie + CTA w 80svh.
  *
  * Tło z CMS. Mobile: Next.js Image Optimization (srcset, AVIF/WebP, max ~1536px po sync).
  * Desktop: pełna szerokość; po deployu prebuild (`sync-cms-to-static`) kopiuje obraz źródłowy do

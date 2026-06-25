@@ -3,6 +3,7 @@ import { magazynConfig } from "@magazyn/magazyn.config";
 import { notFound } from "next/navigation";
 import { getContentBundle } from "./content-store";
 import { CmsSettingsClient } from "./cms-settings-client";
+import { listProductOptionsForCms } from "./product-options";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,11 @@ export default async function CmsPageEditorPage({ params }: Props) {
 	const page = magazynConfig.content.pages.find((p) => p.id === pageId);
 	if (!page) notFound();
 
-	const bundle = await loadAdmin(getContentBundle);
+	const needsProducts = page.blocks.includes("bestsellers");
+	const [bundle, productOptions] = await Promise.all([
+		loadAdmin(getContentBundle),
+		needsProducts ? listProductOptionsForCms() : Promise.resolve([]),
+	]);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -27,6 +32,7 @@ export default async function CmsPageEditorPage({ params }: Props) {
 				globalContent={bundle.globalContent}
 				pages={magazynConfig.content.pages}
 				activeTab={pageId}
+				productOptions={productOptions}
 			/>
 		</div>
 	);

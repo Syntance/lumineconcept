@@ -61,7 +61,8 @@ export type ContentBlockKey =
 	| "footerText"
 	| "checkoutCallout"
 	| "salonLogos"
-	| "instagramTiles";
+	| "instagramTiles"
+	| "bestsellers";
 
 export type ContentPageConfig = {
 	/** Stabilny identyfikator — nie zmieniaj po wdrożeniu bez migracji danych. */
