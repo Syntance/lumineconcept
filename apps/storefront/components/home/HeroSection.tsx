@@ -79,10 +79,6 @@ export async function HeroSection({
 					<div className="absolute inset-0 bg-brand-800" aria-hidden />
 				)}
 
-				<div
-					className="pointer-events-none absolute inset-0 bg-linear-to-r from-black/45 via-black/15 to-transparent"
-					aria-hidden
-				/>
 
 				<HeroPortalContent content={portal} />
 			</div>

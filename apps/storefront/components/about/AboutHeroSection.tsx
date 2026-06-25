@@ -30,18 +30,11 @@ export function AboutHeroSection({ hero }: AboutHeroSectionProps) {
           sizes="100vw"
           quality={90}
           unoptimized={isCmsImageUnoptimized(hero.backgroundUrl)}
-          className="object-cover object-center opacity-90 max-lg:motion-safe:animate-in max-lg:motion-safe:fade-in max-lg:motion-safe:duration-500"
+          className="object-cover object-center max-lg:motion-safe:animate-in max-lg:motion-safe:fade-in max-lg:motion-safe:duration-500"
           draggable={false}
         />
       </div>
 
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-0 bg-linear-to-b from-brand-900/35 via-brand-900/10 to-brand-900/55",
-          "max-lg:from-brand-900/50 max-lg:via-brand-900/15 max-lg:to-brand-900/60",
-        )}
-        aria-hidden
-      />
 
       <div
         className={cn(
