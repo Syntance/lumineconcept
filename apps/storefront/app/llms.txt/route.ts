@@ -12,7 +12,7 @@ const STATIC_PAGES = [
 	{ label: "Strona główna", path: "/" },
 	{ label: "Sklep", path: "/sklep" },
 	{ label: "Gotowe wzory", path: "/sklep/gotowe-wzory" },
-	{ label: "Tablice z logo", path: "/sklep/logo-3d" },
+	{ label: "Tablice z logo", path: "/sklep/bablize-z-logo" },
 	{ label: "Certyfikaty", path: "/sklep/certyfikaty" },
 	{ label: "Kontakt", path: "/kontakt" },
 	{ label: "Dostawa i płatności", path: "/dostawa-i-platnosci" },

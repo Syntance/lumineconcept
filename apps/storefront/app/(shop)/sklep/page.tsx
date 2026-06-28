@@ -58,7 +58,7 @@ const FALLBACK_CATEGORIES: readonly ShopCategoryCard[] = [
   {
     title: "Tablice z logo",
     cta: "Uzyskaj wycenę",
-    href: "/sklep/logo-3d",
+    href: "/sklep/bablize-z-logo",
     image: "/images/categories/logo-kategoria-nail-boss.webp",
     mobileImage: "/images/categories/logo-kategoria-nail-boss.webp",
   },
@@ -306,7 +306,7 @@ export default async function ShopHubPage() {
             Logo z własnym projektem, cennik pod wymiar — wycena w 24h
           </p>
           <Link
-            href="/sklep/logo-3d"
+            href="/sklep/bablize-z-logo"
             className="mt-6 inline-flex items-center justify-center rounded border border-brand-300 px-8 py-3 text-sm font-medium uppercase tracking-[0.2em] text-brand-800 transition-colors hover:bg-brand-50 hover:text-brand-900"
           >
             Zamów wycenę &rarr;

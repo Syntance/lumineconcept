@@ -4,9 +4,9 @@ import { createProductPage } from "@/lib/products/create-product-page";
 export const revalidate = 3600;
 
 const { Page, generateMetadata, generateStaticParams } = createProductPage({
-  basePath: "/sklep/logo-3d",
+  basePath: "/sklep/bablize-z-logo",
   categoryLabel: "Tablice z logo",
-  categoryHref: "/sklep/logo-3d",
+  categoryHref: "/sklep/bablize-z-logo",
   // requiredTag: "logo-3d",
 });
 

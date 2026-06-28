@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE_URL, changeFrequency: "daily", priority: 1.0, lastModified: now },
     { url: `${SITE_URL}/sklep`, changeFrequency: "daily", priority: 0.9, lastModified: now },
     { url: `${SITE_URL}/sklep/gotowe-wzory`, changeFrequency: "daily", priority: 0.85, lastModified: now },
-    { url: `${SITE_URL}/sklep/logo-3d`, changeFrequency: "daily", priority: 0.85, lastModified: now },
+    { url: `${SITE_URL}/sklep/bablize-z-logo`, changeFrequency: "daily", priority: 0.85, lastModified: now },
     { url: `${SITE_URL}/sklep/certyfikaty`, changeFrequency: "daily", priority: 0.85, lastModified: now },
     // Strony informacyjne / prawne (indeksowalne). `salony-beauty` jest `noindex` (w budowie).
     { url: `${SITE_URL}/o-nas`, changeFrequency: "monthly", priority: 0.65, lastModified: now },

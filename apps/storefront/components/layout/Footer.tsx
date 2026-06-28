@@ -9,7 +9,7 @@ import { FooterCreditLink, FooterSocialLinks } from "@/components/layout/FooterS
 const FOOTER_LINKS = {
   Sklep: [
     { href: "/sklep", label: "Wszystkie produkty" },
-    { href: "/sklep/logo-3d", label: "Tablice z logo" },
+    { href: "/sklep/bablize-z-logo", label: "Tablice z logo" },
     { href: "/sklep/certyfikaty", label: "Certyfikaty" },
     { href: "/salony-beauty", label: "Salony Beauty" },
   ],
