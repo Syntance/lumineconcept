@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
     fallbackDescription:
       "Tablice z logo Twojej marki z plexi (także z podświetleniem LED). Prześlij plik, podaj wymiary i kształt — bezpłatna wycena w 24h.",
     siteSettings: settings,
-    path: "/sklep/logo-3d",
+    path: "/sklep/bablize-z-logo",
   });
 }
 

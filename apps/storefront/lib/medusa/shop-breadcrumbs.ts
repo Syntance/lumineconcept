@@ -21,7 +21,7 @@ export function categoryListingHref(
 ): string {
   if (handle === LISTING_CATEGORY_HANDLE.certyfikaty) return "/sklep/certyfikaty";
   if (handle === LISTING_CATEGORY_HANDLE.gotoweWzory) return "/sklep/gotowe-wzory";
-  if (handle === LISTING_CATEGORY_HANDLE.logo3d) return "/sklep/logo-3d";
+  if (handle === LISTING_CATEGORY_HANDLE.logo3d) return "/sklep/bablize-z-logo";
   return `${listingBasePath}/${encodeURIComponent(handle)}`;
 }
 
@@ -277,10 +277,10 @@ export function productBreadcrumbContextFromBasePath(basePath: string): {
     };
   }
 
-  if (basePath === "/sklep/logo-3d") {
+  if (basePath === "/sklep/bablize-z-logo") {
     return {
       listingRootHandle: LISTING_CATEGORY_HANDLE.logo3d,
-      listingBasePath: "/sklep/logo-3d",
+      listingBasePath: "/sklep/bablize-z-logo",
     };
   }
 

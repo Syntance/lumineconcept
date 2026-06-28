@@ -101,7 +101,17 @@ const nextConfig: NextConfig = {
        */
       {
         source: "/logo-3d",
-        destination: "/sklep/logo-3d",
+        destination: "/sklep/bablize-z-logo",
+        permanent: true,
+      },
+      {
+        source: "/sklep/logo-3d",
+        destination: "/sklep/bablize-z-logo",
+        permanent: true,
+      },
+      {
+        source: "/sklep/logo-3d/:path*",
+        destination: "/sklep/bablize-z-logo/:path*",
         permanent: true,
       },
       {
