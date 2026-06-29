@@ -2,6 +2,7 @@ import Script from "next/script";
 
 type DeferredGoogleAnalyticsProps = {
   gaId: string;
+  nonce?: string;
 };
 
 /**
@@ -9,7 +10,7 @@ type DeferredGoogleAnalyticsProps = {
  * Consent Mode v2: domyślne `denied` ustawia `ConsentModeScript` (beforeInteractive);
  * kolejka `dataLayer` jest przetwarzana po załadowaniu gtag.js.
  */
-export function DeferredGoogleAnalytics({ gaId }: DeferredGoogleAnalyticsProps) {
+export function DeferredGoogleAnalytics({ gaId, nonce }: DeferredGoogleAnalyticsProps) {
   const gaBootstrapScript = `
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
@@ -25,6 +26,7 @@ document.head.appendChild(s);
     <Script
       id="ga4-deferred"
       strategy="lazyOnload"
+      nonce={nonce}
       dangerouslySetInnerHTML={{ __html: gaBootstrapScript }}
     />
   );

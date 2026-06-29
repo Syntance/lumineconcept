@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import localFont from "next/font/local";
 import { Providers } from "@/providers/Providers";
 import { CookieConsent } from "@/components/common/CookieConsent";
@@ -113,18 +114,20 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="pl" className={`${gilroy.variable} ${chronicle.variable} ${binerka.variable}`}>
       <head>
-        {/* Hero preload generowany przez next/image priority w HeroSection (URL z CMS). */}
+        {/* Hero preload AVIF — HeroSection (RSC hoist do <head>). */}
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-        <ConsentModeScript />
-        {GA4_ID ? <DeferredGoogleAnalytics gaId={GA4_ID} /> : null}
+        <ConsentModeScript nonce={nonce} />
+        {GA4_ID ? <DeferredGoogleAnalytics gaId={GA4_ID} nonce={nonce} /> : null}
       </head>
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">
         <CookieConsent />

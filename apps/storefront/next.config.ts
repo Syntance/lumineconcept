@@ -3,18 +3,6 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const MEDUSA_BACKEND_URL =
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "http://localhost:9000";
-const MEILISEARCH_HOST =
-  process.env.NEXT_PUBLIC_MEILISEARCH_HOST ?? "http://localhost:7700";
-
-/**
- * Sentry w przeglądarce wyśle requesty do `*.ingest.sentry.io` (lub do
- * Twojej subdomeny samodzielnej instancji). Dodajemy je do `connect-src`
- * tylko, kiedy publiczny DSN jest skonfigurowany — w dev bez Sentry
- * zostawiamy CSP jak najciaśniejsze.
- */
-const SENTRY_CSP_HOSTS = process.env.NEXT_PUBLIC_SENTRY_DSN
-  ? " https://*.ingest.sentry.io https://*.sentry.io"
-  : "";
 
 /**
  * Publiczne hosty R2 / CDN — muszą być dostępne przy buildzie (Vercel ENV).
@@ -35,7 +23,6 @@ function collectMediaCdnOrigins(): string[] {
 
 const medusaUrl = new URL(MEDUSA_BACKEND_URL);
 const mediaCdnOrigins = collectMediaCdnOrigins();
-const r2CspOrigin = mediaCdnOrigins.length > 0 ? ` ${mediaCdnOrigins.join(" ")}` : "";
 const r2RemotePatterns = mediaCdnOrigins.map((origin) => {
 	const u = new URL(origin);
 	return {
@@ -192,21 +179,6 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(self)",
-          },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://connect.facebook.net https://eu.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://www.googletagmanager.com https://challenges.cloudflare.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://cdn.sanity.io https://www.facebook.com https://www.google-analytics.com https://images.unsplash.com https://*.r2.dev " + MEDUSA_BACKEND_URL + r2CspOrigin,
-              "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://eu.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://connect.facebook.net https://www.facebook.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://api.mailerlite.com https://challenges.cloudflare.com https://*.r2.dev " + MEDUSA_BACKEND_URL + " " + MEILISEARCH_HOST + SENTRY_CSP_HOSTS,
-              "frame-src 'self' https://www.facebook.com https://challenges.cloudflare.com",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join("; "),
           },
         ],
       },
