@@ -1,6 +1,6 @@
 import type { AnalyticsEventName } from "../events/registry";
 
-const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID ?? "";
+const GA4_ID = (process.env.NEXT_PUBLIC_GA4_ID ?? "").trim();
 
 declare global {
   interface Window {

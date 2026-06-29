@@ -1,33 +1,37 @@
-import Script from "next/script";
-
 type DeferredGoogleAnalyticsProps = {
-  gaId: string;
-  nonce?: string;
+	gaId: string;
+	nonce?: string;
 };
 
 /**
- * GA4 poza critical path — `lazyOnload` (po `window.load`), nie `afterInteractive`.
- * Consent Mode v2: domyślne `denied` ustawia `ConsentModeScript` (beforeInteractive);
- * kolejka `dataLayer` jest przetwarzana po załadowaniu gtag.js.
+ * GA4 poza critical path — ładuje się po `window.load` (odpowiednik lazyOnload).
+ * Native inline <script> zamiast next/script — unika appendChild w bootstrap chunku.
+ *
+ * gaId MUSI być trimowany — Vercel ENV często ma trailing \\r\\n, co łamie inline JS.
  */
 export function DeferredGoogleAnalytics({ gaId, nonce }: DeferredGoogleAnalyticsProps) {
-  const gaBootstrapScript = `
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${gaId}');
-var s = document.createElement('script');
-s.async = true;
-s.src = 'https://www.googletagmanager.com/gtag/js?id=${gaId}';
-document.head.appendChild(s);
+	const id = gaId.trim();
+	if (!id) return null;
+
+	const gaBootstrapScript = `
+window.addEventListener('load', function() {
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', ${JSON.stringify(id)});
+  var s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ${JSON.stringify(id)};
+  document.head.appendChild(s);
+});
 `;
 
-  return (
-    <Script
-      id="ga4-deferred"
-      strategy="lazyOnload"
-      nonce={nonce}
-      dangerouslySetInnerHTML={{ __html: gaBootstrapScript }}
-    />
-  );
+	return (
+		<script
+			id="ga4-deferred"
+			nonce={nonce}
+			suppressHydrationWarning
+			dangerouslySetInnerHTML={{ __html: gaBootstrapScript }}
+		/>
+	);
 }
