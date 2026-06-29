@@ -68,3 +68,5 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 		return res.status(422).json({ ok: false, message });
 	}
 }
+
+export const AUTHENTICATE = false;
