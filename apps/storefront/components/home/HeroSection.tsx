@@ -1,25 +1,21 @@
-import Image from "next/image";
-
 import type { HeroContent } from "@/lib/content/types";
-import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
-import { HERO_IMAGE_QUALITY } from "@/lib/content/cms-hero-image";
+import { DESKTOP_HERO_WIDTH, DESKTOP_HERO_HEIGHT, toHeroAvifSrc } from "@/lib/content/cms-hero-image";
 import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";
 import { MobileHeroImageBand } from "./MobileHeroImageBand";
 import { MobileHeroViewport } from "./MobileHeroViewport";
 
-const HERO_BG_WIDTH = 2560;
-const HERO_BG_HEIGHT = 966;
-
 /**
  * Hero — desktop: ultrawide + portal; mobile: zdjęcie + CTA w 80svh.
  *
- * Tło z CMS. Mobile: Next.js Image Optimization (srcset, AVIF/WebP, max ~1536px po sync).
- * Desktop: pełna szerokość; po deployu prebuild (`sync-cms-to-static`) kopiuje obraz źródłowy do
- * `/public/images/cms/…` — Next.js go optymalizuje w locie.
- * Bez obrazu w CMS: placeholder (brand-800), bez fallbacku z repo.
+ * Obrazy hero serwowane jako statyczne pliki z prebuild (sync-cms-to-static):
+ *  – WebP q92 (fallback dla starszych przeglądarek)
+ *  – AVIF q70 (ok. 50% mniej bajtów, nowoczesne przeglądarki)
+ *
+ * Preload AVIF hoistowany do <head> przez React RSC (media query ogranicza do
+ * właściwego viewport, żeby mobile nie pobierał desktop AVIF i odwrotnie).
  */
 export async function HeroSection({
 	hero,
@@ -39,8 +35,38 @@ export async function HeroSection({
 	const mobileDisplayUrl = mobileImageUrl ?? desktopImageUrl;
 	const mobileBlur = mobileBlurDataURL ?? desktopBlurDataURL;
 
+	const mobileAvifSrc = mobileDisplayUrl ? toHeroAvifSrc(mobileDisplayUrl) : null;
+	const desktopAvifSrc = desktopImageUrl ? toHeroAvifSrc(desktopImageUrl) : null;
+
+	const desktopBlur = desktopBlurDataURL ?? BRAND_BLUR_DATA_URL;
+
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
+			{/*
+			 * Preloady AVIF hoistowane przez React do <head>.
+			 * type="image/avif" = przeglądarki bez obsługi AVIF pomijają preload
+			 * (nie marnują pasma na format, którego nie użyją).
+			 * media= = każdy viewport pobiera tylko swój wariant.
+			 */}
+			{mobileAvifSrc && (
+				<link
+					rel="preload"
+					as="image"
+					href={mobileAvifSrc}
+					type="image/avif"
+					media="(max-width: 1023px)"
+				/>
+			)}
+			{desktopAvifSrc && (
+				<link
+					rel="preload"
+					as="image"
+					href={desktopAvifSrc}
+					type="image/avif"
+					media="(min-width: 1024px)"
+				/>
+			)}
+
 			<div className="lg:hidden">
 				<MobileHeroViewport
 					image={
@@ -58,29 +84,32 @@ export async function HeroSection({
 				/>
 			</div>
 
-			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
-				{/*
-				 * Desktop LCP — eager + fetchPriority; prefetch w HeroImageCacheWarmer (layout sklepu).
-				 */}
+			<div
+				className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]"
+				style={{
+					backgroundImage: `url(${desktopBlur})`,
+					backgroundSize: "cover",
+				}}
+			>
 				{desktopImageUrl ? (
-					<Image
-						src={desktopImageUrl}
-						alt=""
-						width={HERO_BG_WIDTH}
-						height={HERO_BG_HEIGHT}
-						loading="eager"
-						fetchPriority="high"
-						sizes="100vw"
-						quality={HERO_IMAGE_QUALITY}
-						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
-						placeholder="blur"
-						blurDataURL={desktopBlurDataURL ?? BRAND_BLUR_DATA_URL}
-						className="absolute inset-0 h-full w-full select-none object-cover object-top"
-					/>
+					<picture>
+						{desktopAvifSrc && <source type="image/avif" srcSet={desktopAvifSrc} />}
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img
+							src={desktopImageUrl}
+							alt=""
+							width={DESKTOP_HERO_WIDTH}
+							height={DESKTOP_HERO_HEIGHT}
+							loading="eager"
+							fetchPriority="high"
+							decoding="async"
+							className="absolute inset-0 h-full w-full select-none object-cover object-top"
+							style={{ color: "transparent" }}
+						/>
+					</picture>
 				) : (
 					<div className="absolute inset-0 bg-brand-800" aria-hidden />
 				)}
-
 
 				<HeroPortalContent content={portal} />
 			</div>

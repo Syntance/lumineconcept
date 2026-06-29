@@ -5,6 +5,19 @@ export const MOBILE_HERO_BAND_HEIGHT = 1350;
 /** Jakość hero HP — spójna z WebP q92 po sync CMS i `next.config` `qualities`. */
 export const HERO_IMAGE_QUALITY = 92;
 
+/** Jakość AVIF hero generowanego w prebuild — ~50% mniej bajtów niż WebP q92 przy zbliżonej percepcji wizualnej. */
+export const CMS_HERO_AVIF_QUALITY = 70;
+
+/**
+ * Zwraca ścieżkę statycznego pliku AVIF dla lokalnego hero WebP z `/images/cms/`.
+ * Plik jest generowany przez `sync-cms-to-static` podczas prebuild dla URL-ów hero (mobile + desktop).
+ * Dla innych ścieżek (remote URL, nie-.webp, poza `/images/cms/`) zwraca null.
+ */
+export function toHeroAvifSrc(webpSrc: string): string | null {
+	if (!webpSrc.startsWith("/images/cms/") || !webpSrc.endsWith(".webp")) return null;
+	return webpSrc.slice(0, -5) + ".avif";
+}
+
 /**
  * Max dłuższy bok mobilnego hero po sync/build.
  * Serwowane `unoptimized` (statyczny WebP), więc to JEST faktyczny rozmiar pliku

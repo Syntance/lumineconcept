@@ -16,7 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
 import sharp from "sharp";
-import { CMS_IMAGE_MAX_LONG_EDGE, DESKTOP_HERO_MAX_LONG_EDGE, MOBILE_HERO_MAX_LONG_EDGE } from "../lib/content/cms-hero-image";
+import { CMS_HERO_AVIF_QUALITY, CMS_IMAGE_MAX_LONG_EDGE, DESKTOP_HERO_MAX_LONG_EDGE, MOBILE_HERO_MAX_LONG_EDGE } from "../lib/content/cms-hero-image";
 
 const MEDUSA_URL = (
 	process.env.MEDUSA_BACKEND_URL ||
@@ -165,32 +165,44 @@ function localFilenameFor(url: string): string {
 	return `${hash}-${stem}.webp`;
 }
 
+function buildSharpPipeline(buffer: Buffer, maxLongEdge?: number): sharp.Sharp {
+	const s = sharp(buffer).rotate();
+	return maxLongEdge
+		? s.resize(maxLongEdge, maxLongEdge, { fit: "inside", withoutEnlargement: true })
+		: s;
+}
+
 async function writeNormalizedCmsImage(
 	buffer: Buffer,
 	filepath: string,
 	maxLongEdge?: number,
+	generateAvif?: boolean,
 ): Promise<void> {
 	if (/\.svg$/i.test(filepath)) {
 		fs.writeFileSync(filepath, buffer);
 		return;
 	}
 
-	let pipeline = sharp(buffer).rotate();
-	if (maxLongEdge) {
-		pipeline = pipeline.resize(maxLongEdge, maxLongEdge, {
-			fit: "inside",
-			withoutEnlargement: true,
-		});
-	}
-
-	const webp = await pipeline.webp({ quality: CMS_WEBP_QUALITY, effort: 4 }).toBuffer();
+	const webp = await buildSharpPipeline(buffer, maxLongEdge)
+		.webp({ quality: CMS_WEBP_QUALITY, effort: 4 })
+		.toBuffer();
 	fs.writeFileSync(filepath, webp);
+
+	if (generateAvif && filepath.endsWith(".webp")) {
+		const avifPath = filepath.replace(/\.webp$/, ".avif");
+		const avif = await buildSharpPipeline(buffer, maxLongEdge)
+			.avif({ quality: CMS_HERO_AVIF_QUALITY, effort: 6 })
+			.toBuffer();
+		fs.writeFileSync(avifPath, avif);
+		console.log(`    ✓ AVIF: ${path.basename(avifPath)} (${Math.round(avif.length / 1024)} KB)`);
+	}
 }
 
 async function downloadImage(
 	url: string,
 	filename: string,
 	maxLongEdge?: number,
+	generateAvif?: boolean,
 ): Promise<boolean> {
 	const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
 	if (!res.ok || !res.body) {
@@ -204,7 +216,7 @@ async function downloadImage(
 	}
 	const buffer = Buffer.concat(chunks);
 	const filepath = path.join(CMS_IMAGES_DIR, filename);
-	await writeNormalizedCmsImage(buffer, filepath, maxLongEdge);
+	await writeNormalizedCmsImage(buffer, filepath, maxLongEdge, generateAvif);
 	return true;
 }
 
@@ -234,18 +246,19 @@ async function downloadAllImages(parsed: Record<string, unknown>): Promise<Map<s
 	const urlMap = new Map<string, string>();
 	for (const url of urls) {
 		const filename = localFilenameFor(url);
+		const isHero = mobileHeroUrls.has(url) || desktopHeroUrls.has(url);
 		const maxLongEdge = mobileHeroUrls.has(url)
 			? MOBILE_HERO_MAX_LONG_EDGE
 			: desktopHeroUrls.has(url)
 				? DESKTOP_HERO_MAX_LONG_EDGE
 				: CMS_IMAGE_MAX_LONG_EDGE;
 		const label = mobileHeroUrls.has(url)
-			? " (mobile hero)"
+			? " (mobile hero + AVIF)"
 			: desktopHeroUrls.has(url)
-				? " (desktop hero)"
+				? " (desktop hero + AVIF)"
 				: "";
 		console.log(`  → ${filename}${label}`);
-		const ok = await downloadImage(url, filename, maxLongEdge);
+		const ok = await downloadImage(url, filename, maxLongEdge, isHero);
 		if (ok) urlMap.set(url, `/images/cms/${filename}`);
 	}
 	return urlMap;
