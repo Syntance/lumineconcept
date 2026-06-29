@@ -63,7 +63,7 @@ export function MobileHeroImageBand({
 					height={MOBILE_HERO_BAND_HEIGHT}
 					loading="eager"
 					fetchPriority={priority ? "high" : "auto"}
-					decoding="async"
+					decoding="auto"
 					className={`absolute inset-0 h-full w-full select-none object-cover ${objectPositionClass}`}
 					style={{ color: "transparent" }}
 				/>
