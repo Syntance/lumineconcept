@@ -10,7 +10,7 @@ type Props = {
 
 export function FooterSocialLinks({ social, className }: Props) {
   const linkClass =
-    className ?? "text-brand-300 hover:text-white transition-colors";
+    className ?? "text-on-brand-800 hover:text-white transition-colors";
 
   return (
     <ul className="mt-4 flex flex-wrap gap-3 text-sm">
@@ -56,7 +56,7 @@ export function FooterCreditLink() {
     <TrackedOutboundLink
       href="https://syntance.dev"
       cta_label="Syntance"
-      className="text-brand-300 underline-offset-2 hover:text-white hover:underline"
+      className="text-on-brand-800 underline underline-offset-2 hover:text-white"
     >
       Syntance
     </TrackedOutboundLink>
