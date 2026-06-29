@@ -16,6 +16,7 @@
     "backfill-p24-methods": "medusa exec ./src/scripts/backfill-p24-payment-methods.ts",
     "backfill-invoice-metadata": "medusa exec ./src/scripts/backfill-order-invoice-metadata.ts",
     "delete-orders": "medusa exec ./src/scripts/delete-all-orders.ts",
+    "fix-admin-email": "medusa exec ./src/scripts/fix-admin-email.ts",
     "restore:verify": "medusa exec ./src/scripts/restore-from-r2.ts",
     "test": "vitest run",
     "test:p24-smoke": "npx tsx ./src/scripts/test-p24-smoke.ts",
