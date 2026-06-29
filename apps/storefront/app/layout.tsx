@@ -4,11 +4,8 @@ import localFont from "next/font/local";
 import { Providers } from "@/providers/Providers";
 import { CookieConsent } from "@/components/common/CookieConsent";
 import { ConsentModeScript } from "@/components/analytics/ConsentModeScript";
-import { DeferredGoogleAnalytics } from "@/components/analytics/DeferredGoogleAnalytics";
 import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
-
-const GA4_ID = (process.env.NEXT_PUBLIC_GA4_ID ?? "").trim();
 
 /**
  * Fonty brandowe — `display: "swap"` gwarantuje SPÓJNE renderowanie marki
@@ -127,7 +124,6 @@ export default async function RootLayout({
         {/* Hero preload AVIF — HeroSection (RSC hoist do <head>). */}
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <ConsentModeScript nonce={nonce} />
-        {GA4_ID ? <DeferredGoogleAnalytics gaId={GA4_ID} nonce={nonce} /> : null}
       </head>
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">
         <CookieConsent />

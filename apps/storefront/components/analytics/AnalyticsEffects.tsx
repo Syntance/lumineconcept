@@ -9,28 +9,12 @@ import {
 	initMetaPixel,
 	revokeConsent as revokeMetaConsent,
 } from "@/lib/analytics/destinations/meta";
+import { setGA4UserSegment, updateGA4Consent } from "@/lib/analytics/destinations/ga4";
 import { captureUtmFromCurrentUrl, track } from "@/lib/analytics/track";
-import { setGA4UserSegment } from "@/lib/analytics/destinations/ga4";
 import { ANALYTICS_SEGMENT } from "@/lib/analytics/segment";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
 import { useScrollToSection } from "@/hooks/useScrollToSection";
 import { useTimeOnPage } from "@/hooks/useTimeOnPage";
-
-declare global {
-	interface Window {
-		gtag?: (...args: unknown[]) => void;
-	}
-}
-
-function updateGoogleConsent(analytics: boolean, marketing: boolean): void {
-	if (typeof window === "undefined" || typeof window.gtag !== "function") return;
-	window.gtag("consent", "update", {
-		analytics_storage: analytics ? "granted" : "denied",
-		ad_storage: marketing ? "granted" : "denied",
-		ad_user_data: marketing ? "granted" : "denied",
-		ad_personalization: marketing ? "granted" : "denied",
-	});
-}
 
 /**
  * Side-effect-only analytics — NIE owija `{children}`.
@@ -55,17 +39,16 @@ export function AnalyticsEffects() {
 		let cleanupFn: (() => void) | undefined;
 
 		const timeoutId = setTimeout(() => {
-			setGA4UserSegment(ANALYTICS_SEGMENT);
-
 			const applyConsent = () => {
 				const consent = getConsent();
 				const analytics = !!consent?.analytics;
 				const marketing = !!consent?.marketing;
 				const wasAnalyticsDeclined = prevAnalyticsConsentRef.current === false;
 
-				updateGoogleConsent(analytics, marketing);
+				updateGA4Consent(analytics, marketing);
 
 				if (analytics) {
+					setGA4UserSegment(ANALYTICS_SEGMENT);
 					optIn();
 					if (wasAnalyticsDeclined) {
 						captureUtmFromCurrentUrl();

@@ -5,14 +5,57 @@ const GA4_ID = (process.env.NEXT_PUBLIC_GA4_ID ?? "").trim();
 declare global {
   interface Window {
     dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
+
+let ga4ScriptLoaded = false;
 
 /** Kolejka dataLayer — działa przed i po załadowaniu gtag.js (Consent Mode). */
 function pushGACommand(...args: unknown[]): void {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer ?? [];
   window.dataLayer.push(args);
+}
+
+function ensureGtagStub(): void {
+  if (typeof window.gtag === "function") return;
+  window.dataLayer = window.dataLayer ?? [];
+  window.gtag = (...args: unknown[]) => {
+    pushGACommand(...args);
+  };
+}
+
+/**
+ * Ładuje gtag.js dopiero po zgodzie na analitykę (Consent Mode v2).
+ * Bez tego wywołania GA4 nie trafia w critical path / Lighthouse TBT.
+ */
+export function loadGA4Script(): void {
+  if (!GA4_ID || typeof window === "undefined" || ga4ScriptLoaded) return;
+  ga4ScriptLoaded = true;
+  ensureGtagStub();
+
+  const s = document.createElement("script");
+  s.async = true;
+  s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA4_ID)}`;
+  document.head.appendChild(s);
+
+  pushGACommand("js", new Date());
+  pushGACommand("config", GA4_ID);
+}
+
+export function updateGA4Consent(analytics: boolean, marketing: boolean): void {
+  if (typeof window === "undefined") return;
+  ensureGtagStub();
+  pushGACommand("consent", "update", {
+    analytics_storage: analytics ? "granted" : "denied",
+    ad_storage: marketing ? "granted" : "denied",
+    ad_user_data: marketing ? "granted" : "denied",
+    ad_personalization: marketing ? "granted" : "denied",
+  });
+  if (analytics) {
+    loadGA4Script();
+  }
 }
 
 const ECOMMERCE_EVENTS = new Set<AnalyticsEventName>([
@@ -85,7 +128,7 @@ function pickProductViewParams(
  * do każdego eventu. Wywoływać raz po inicjalizacji GA4.
  */
 export function setGA4UserSegment(segment: string): void {
-  if (!GA4_ID || typeof window === "undefined") return;
+  if (!GA4_ID || typeof window === "undefined" || !ga4ScriptLoaded) return;
   pushGACommand("set", "user_properties", { segment });
 }
 
@@ -93,7 +136,7 @@ export function sendGA4Event(
   name: AnalyticsEventName,
   payload: Record<string, unknown>,
 ): void {
-  if (!GA4_ID || typeof window === "undefined") return;
+  if (!GA4_ID || typeof window === "undefined" || !ga4ScriptLoaded) return;
 
   if (name === "page_view") {
     pushGACommand("event", "page_view", {

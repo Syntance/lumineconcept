@@ -167,7 +167,9 @@ export function track<E extends AnalyticsEventName>(
   const enriched = withContext(payload as Record<string, unknown>);
   const consent = getConsent();
 
-  sendGA4Event(name, enriched);
+  if (consent?.analytics) {
+    sendGA4Event(name, enriched);
+  }
 
   if (consent?.analytics && !POSTHOG_SERVER_ONLY_EVENTS.has(name)) {
     posthog.capture(name, enriched);
