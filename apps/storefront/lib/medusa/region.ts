@@ -1,4 +1,4 @@
-import { getMedusa } from "./client-lazy";
+import { medusa } from "./client";
 import { isTransientMedusaError, sleep } from "./transient-error";
 
 let cachedRegionId: string | null = process.env.NEXT_PUBLIC_MEDUSA_REGION_ID ?? null;
@@ -18,8 +18,7 @@ export async function getPolishRegionId(): Promise<string> {
         await sleep(pauseBefore);
       }
       try {
-        const sdk = await getMedusa();
-        const response = await sdk.store.region.list();
+        const response = await medusa.store.region.list();
         const plRegion = response.regions.find(
           (r) => r.countries?.some((c) => c.iso_2 === "pl"),
         );
