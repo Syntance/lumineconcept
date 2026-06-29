@@ -36,7 +36,10 @@ async function main() {
 	).replace(/\/$/, "");
 	const emailRaw = process.env.MEDUSA_ADMIN_EMAIL?.trim();
 	const password = process.env.MEDUSA_ADMIN_PASSWORD?.trim();
-	const resolvedEmail = emailRaw;
+	const resolvedEmail =
+		emailRaw?.toLowerCase() === "lumine.strona@gmail.com"
+			? "lumie.strona@gmail.com"
+			: emailRaw;
 
 	console.log("Backend:", backend || "(brak)");
 	console.log("Admin email (env):", emailRaw ? "ustawiony" : "BRAK");
