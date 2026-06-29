@@ -74,7 +74,8 @@ function allocateHandles(products) {
 }
 
 function resolveEmail(email) {
-	return email.trim();
+	const n = email.trim().toLowerCase();
+	return n === "lumine.strona@gmail.com" ? "lumie.strona@gmail.com" : email.trim();
 }
 
 async function main() {
