@@ -26,7 +26,6 @@ uploads/
 static/
 scripts/sync-medusa-product.env
 scripts/fill-product-dimensions.env
-scripts/fill-product-seo.env
 .cache/
 sanity/.sanity/
 .vercel

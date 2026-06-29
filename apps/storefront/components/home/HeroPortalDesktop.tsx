@@ -7,6 +7,7 @@ import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 import {
   HOME_HERO_PORTAL,
+  HERO_SHOP_CTA_DESKTOP_CLASS,
   type HeroPortalAlign,
   type HeroPortalContentConfig,
   type HeroPortalSize,
@@ -36,9 +37,6 @@ const PORTAL_HEIGHT_NUDGE = 0.98;
 /** W SVG proste boki kończą się na y=733 / 1134 wysokości. */
 const PORTAL_STRAIGHT_END = 733 / 1134;
 const PORTAL_WIDTH_RATIO = 900 / 1134;
-
-const CTA_CLASS =
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none border-0 bg-white px-7 py-3 font-gilroy text-[13px] font-semibold uppercase leading-[1.15] tracking-[0.2em] text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
 type PortalLayout = {
   left: number;
@@ -156,7 +154,7 @@ function PortalContentBlock({
         ref={ctaRef}
         href={content.ctaHref}
         aria-label={content.ctaAriaLabel}
-        className={CTA_CLASS}
+        className={HERO_SHOP_CTA_DESKTOP_CLASS}
       >
         {content.ctaLabel}
         {content.ctaShowDownArrow ? (

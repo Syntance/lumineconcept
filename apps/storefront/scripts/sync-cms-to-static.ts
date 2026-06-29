@@ -39,10 +39,8 @@ const METADATA_KEYS = [
 	"magazyn_global_content",
 ] as const;
 
-/** Alias konta serwisowego (literówka w mailu po stronie Medusy). */
+/** Normalizuje email admina przed logowaniem do Medusa. */
 function resolveAdminEmail(email: string): string {
-	const normalized = email.trim().toLowerCase();
-	if (normalized === "lumine.strona@gmail.com") return "lumie.strona@gmail.com";
 	return email.trim();
 }
 
