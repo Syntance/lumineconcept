@@ -16,7 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
 import sharp from "sharp";
-import { CMS_IMAGE_MAX_LONG_EDGE, MOBILE_HERO_MAX_LONG_EDGE } from "../lib/content/cms-hero-image";
+import { CMS_IMAGE_MAX_LONG_EDGE, DESKTOP_HERO_MAX_LONG_EDGE, MOBILE_HERO_MAX_LONG_EDGE } from "../lib/content/cms-hero-image";
 
 const MEDUSA_URL = (
 	process.env.MEDUSA_BACKEND_URL ||
@@ -130,6 +130,25 @@ function collectMobileHeroImageUrls(node: unknown, acc: Set<string>): void {
 	}
 }
 
+/** URL-e pól `desktopImageUrl` — hero desktop HP/kategorii; pełna szerokość 2560 px. */
+function collectDesktopHeroImageUrls(node: unknown, acc: Set<string>): void {
+	if (Array.isArray(node)) {
+		for (const item of node) collectDesktopHeroImageUrls(item, acc);
+		return;
+	}
+	if (!node || typeof node !== "object") return;
+
+	const record = node as Record<string, unknown>;
+	const desktop = record.desktopImageUrl;
+	if (typeof desktop === "string" && isRemoteImageUrl(desktop)) {
+		acc.add(desktop);
+	}
+
+	for (const val of Object.values(record)) {
+		collectDesktopHeroImageUrls(val, acc);
+	}
+}
+
 /** Stabilna, bezkolizyjna nazwa pliku: <hash8>-<oryginalna-nazwa>.webp (SVG bez zmian). */
 function localFilenameFor(url: string): string {
 	const hash = crypto.createHash("sha1").update(url).digest("hex").slice(0, 8);
@@ -196,9 +215,15 @@ async function downloadAllImages(parsed: Record<string, unknown>): Promise<Map<s
 	const mobileHeroUrls = new Set<string>();
 	collectMobileHeroImageUrls(parsed, mobileHeroUrls);
 
+	const desktopHeroUrls = new Set<string>();
+	collectDesktopHeroImageUrls(parsed, desktopHeroUrls);
+
 	console.log(`\n📦 Znaleziono ${urls.size} zdalnych obrazów CMS`);
 	if (mobileHeroUrls.size > 0) {
 		console.log(`   ↳ ${mobileHeroUrls.size} mobilnych hero (max ${MOBILE_HERO_MAX_LONG_EDGE}px)`);
+	}
+	if (desktopHeroUrls.size > 0) {
+		console.log(`   ↳ ${desktopHeroUrls.size} desktop hero (max ${DESKTOP_HERO_MAX_LONG_EDGE}px)`);
 	}
 	console.log(`   ↳ pozostałe (max ${CMS_IMAGE_MAX_LONG_EDGE}px)`);
 	if (fs.existsSync(CMS_IMAGES_DIR)) {
@@ -211,8 +236,14 @@ async function downloadAllImages(parsed: Record<string, unknown>): Promise<Map<s
 		const filename = localFilenameFor(url);
 		const maxLongEdge = mobileHeroUrls.has(url)
 			? MOBILE_HERO_MAX_LONG_EDGE
-			: CMS_IMAGE_MAX_LONG_EDGE;
-		const label = mobileHeroUrls.has(url) ? " (mobile hero)" : "";
+			: desktopHeroUrls.has(url)
+				? DESKTOP_HERO_MAX_LONG_EDGE
+				: CMS_IMAGE_MAX_LONG_EDGE;
+		const label = mobileHeroUrls.has(url)
+			? " (mobile hero)"
+			: desktopHeroUrls.has(url)
+				? " (desktop hero)"
+				: "";
 		console.log(`  → ${filename}${label}`);
 		const ok = await downloadImage(url, filename, maxLongEdge);
 		if (ok) urlMap.set(url, `/images/cms/${filename}`);

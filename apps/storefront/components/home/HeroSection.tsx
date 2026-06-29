@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { HeroContent } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
+import { HERO_IMAGE_QUALITY } from "@/lib/content/cms-hero-image";
 import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
 import { HeroPortalContent } from "./HeroPortalContent";
 import { HeroPortalMobile } from "./HeroPortalMobile";
@@ -70,6 +71,7 @@ export async function HeroSection({
 						loading="eager"
 						fetchPriority="high"
 						sizes="100vw"
+						quality={HERO_IMAGE_QUALITY}
 						unoptimized={isCmsImageUnoptimized(desktopImageUrl)}
 						placeholder="blur"
 						blurDataURL={desktopBlurDataURL ?? BRAND_BLUR_DATA_URL}

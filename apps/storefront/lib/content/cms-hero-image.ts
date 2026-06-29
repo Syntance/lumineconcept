@@ -2,6 +2,9 @@
 export const MOBILE_HERO_BAND_WIDTH = 1080;
 export const MOBILE_HERO_BAND_HEIGHT = 1350;
 
+/** Jakość hero HP — spójna z WebP q92 po sync CMS i `next.config` `qualities`. */
+export const HERO_IMAGE_QUALITY = 92;
+
 /**
  * Max dłuższy bok mobilnego hero po sync/build.
  * Serwowane `unoptimized` (statyczny WebP), więc to JEST faktyczny rozmiar pliku
@@ -9,6 +12,9 @@ export const MOBILE_HERO_BAND_HEIGHT = 1350;
  * mniej bajtów niż 1536 → szybszy LCP pod throttlingiem 4G. Quality (q92) bez zmian.
  */
 export const MOBILE_HERO_MAX_LONG_EDGE = 1280;
+
+/** Max dłuższy bok desktop hero po sync — pełna szerokość layoutu (2560). */
+export const DESKTOP_HERO_MAX_LONG_EDGE = 2560;
 
 export const DESKTOP_HERO_WIDTH = 2560;
 export const DESKTOP_HERO_HEIGHT = 966;
