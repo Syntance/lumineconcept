@@ -115,7 +115,7 @@ export function BestsellersGrid({ title, products, priorityImages = false }: Bes
 					<div className="mt-10 text-center">
 						<Link
 							href="/sklep"
-							className="text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-500 transition-colors hover:text-brand-900"
+							className="text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-readable transition-colors hover:text-brand-900"
 						>
 							Zobacz cały sklep &rarr;
 						</Link>

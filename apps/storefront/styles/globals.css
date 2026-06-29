@@ -26,6 +26,11 @@
   --color-brand-800: #725750;
   --color-brand-900: #4A3530;
 
+  /* Tekst AA na jasnym tle (≥4.5:1 na #fff i brand-50) — wizualnie bliski brand-500. */
+  --color-brand-readable: #816053;
+  /* Tekst AA na brand-800 (≥4.5:1) — wizualnie bliski brand-300, odrobinę jaśniejszy. */
+  --color-on-brand-800: #E5D8CB;
+
   /* Ciemniejszy brąz (hover CTA itd.) — NIE mylić z Tailwind `accent` (shadcn). */
   --color-accent-dark: #725750;
 
