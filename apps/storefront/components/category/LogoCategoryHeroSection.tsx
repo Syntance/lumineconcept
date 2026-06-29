@@ -61,7 +61,7 @@ export async function LogoCategoryHeroSection({ hero }: { hero?: HeroContent }) 
 				/>
 			</div>
 
-			<div className="@container/hero-desktop relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
+			<div className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]">
 				{desktopImageUrl ? (
 					<Image
 						src={desktopImageUrl}

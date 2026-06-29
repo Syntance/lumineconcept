@@ -3,7 +3,7 @@
 import { ArrowDown } from "lucide-react";
 
 import { HeroCtaLink } from "./HeroCtaLink";
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 import {
   HOME_HERO_PORTAL,
@@ -14,7 +14,14 @@ import {
 
 const DESKTOP_MQ = "(min-width: 1024px)";
 
+/** Szerokość hero, przy której blok ma skalę 1 (idealny desktop). */
+const REF_HERO_WIDTH = 1440;
+/** Skala 1 przy 1440px; powyżej rośnie do +30% (cap 1.3 przy ~1872px). Poniżej 1440px bez zmian. */
+const SCALE_MAX = 1.3;
+
 const CONTENT_LEFT = "21.18%";
+/** Przesunięcie treści w dół względem portalu (% wysokości hero). */
+const CONTENT_DROP_RATIO = 0.075;
 /** Wartości px przy skali 1 — skaluje się razem z całym blokiem. */
 const CONTENT_TOP_PX = 96;
 const CONTENT_GAP_PX = 32;
@@ -58,12 +65,6 @@ function getInitialPortalLayout(
   return INITIAL_PORTAL_LAYOUT[key];
 }
 
-function applyPortalLayout(el: HTMLElement, layout: PortalLayout): void {
-  el.style.left = `${layout.left}px`;
-  el.style.width = `${layout.width}px`;
-  el.style.height = `${layout.height}px`;
-}
-
 type HeroPortalDesktopProps = {
   align?: HeroPortalAlign;
   content?: HeroPortalContentConfig;
@@ -104,28 +105,27 @@ function computePortalLayout(
 type PortalContentBlockProps = {
   align: HeroPortalAlign;
   content: HeroPortalContentConfig;
+  contentDropPx: number;
   contentRef: RefObject<HTMLDivElement | null>;
   headlineRef: RefObject<HTMLHeadingElement | null>;
   ctaRef: RefObject<HTMLAnchorElement | null>;
-  /** Ukryty blok pomiarowy — bez translateY (nie wpływa na CLS). */
-  measureOnly?: boolean;
 };
 
 function PortalContentBlock({
   align,
   content,
+  contentDropPx,
   contentRef,
   headlineRef,
   ctaRef,
-  measureOnly = false,
 }: PortalContentBlockProps) {
   const isCenter = align === "center";
 
   return (
     <div
       ref={contentRef}
-      className={`relative z-10 flex w-max flex-col ${isCenter ? "items-center" : "items-start"}${measureOnly ? "" : " hero-portal-content-drop"}`}
-      style={{ gap: CONTENT_GAP_PX }}
+      className={`relative z-10 flex w-max flex-col ${isCenter ? "items-center" : "items-start"}`}
+      style={{ gap: CONTENT_GAP_PX, transform: `translateY(${contentDropPx}px)` }}
     >
       <div className={`flex flex-col gap-4 ${isCenter ? "items-center" : "items-start"}`}>
         <h1
@@ -169,7 +169,6 @@ function PortalContentBlock({
 
 /**
  * Hero desktop (≥ lg): portal + treść w jednym bloku ze wspólnym scale().
- * Skala i drop treści — CSS container query (globals.css), bez setState po hydracji.
  */
 export function HeroPortalDesktop({
   align = "left",
@@ -178,30 +177,40 @@ export function HeroPortalDesktop({
 }: HeroPortalDesktopProps) {
   const isCenter = align === "center";
   const useHomePortalSize = portalSize === "home";
-  const initialPortalLayout = getInitialPortalLayout(align, portalSize);
   const rootRef = useRef<HTMLDivElement>(null);
-  const portalBgRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const ctaRef = useRef<HTMLAnchorElement>(null);
   const homeContentRef = useRef<HTMLDivElement>(null);
   const homeHeadlineRef = useRef<HTMLHeadingElement>(null);
   const homeCtaRef = useRef<HTMLAnchorElement>(null);
+  const [scale, setScale] = useState(1);
+  const [contentDropPx, setContentDropPx] = useState(0);
+  const [portalLayout, setPortalLayout] = useState<PortalLayout>(() =>
+    getInitialPortalLayout(align, portalSize),
+  );
 
   useLayoutEffect(() => {
     const root = rootRef.current;
     const contentEl = contentRef.current;
     const headline = headlineRef.current;
     const cta = ctaRef.current;
-    const portalEl = portalBgRef.current;
-    if (!root || !contentEl || !headline || !cta || !portalEl) return;
+    if (!root || !contentEl || !headline || !cta) return;
 
     const media = window.matchMedia(DESKTOP_MQ);
+    const hero = root.parentElement;
+    if (!hero) return;
 
     const update = () => {
       if (!media.matches) {
         return;
       }
+
+      const heroWidth = hero.getBoundingClientRect().width;
+      const heroHeight = hero.getBoundingClientRect().height;
+      const nextScale = Math.min(SCALE_MAX, heroWidth / REF_HERO_WIDTH);
+      setScale(nextScale);
+      setContentDropPx((heroHeight * CONTENT_DROP_RATIO) / nextScale);
 
       const sizeContent = useHomePortalSize ? homeContentRef.current : contentEl;
       const sizeHeadline = useHomePortalSize ? homeHeadlineRef.current : headline;
@@ -213,22 +222,24 @@ export function HeroPortalDesktop({
 
       if (useHomePortalSize) {
         const ctaCenter = cta.offsetLeft + cta.offsetWidth / 2;
-        applyPortalLayout(portalEl, {
+        setPortalLayout({
           left: ctaCenter - sized.width / 2,
           width: sized.width,
           height: sized.height,
         });
       } else {
-        applyPortalLayout(portalEl, sized);
+        setPortalLayout(sized);
       }
     };
 
     update();
 
     const observer = new ResizeObserver(update);
+    observer.observe(root);
     observer.observe(contentEl);
     observer.observe(headline);
     observer.observe(cta);
+    observer.observe(hero);
 
     if (useHomePortalSize) {
       const homeContent = homeContentRef.current;
@@ -252,8 +263,14 @@ export function HeroPortalDesktop({
   return (
     <div ref={rootRef} className="absolute inset-0">
       <div
-        className={`hero-portal-scale-root absolute top-0 ${isCenter ? "hero-portal-scale-root--center left-1/2" : "hero-portal-scale-root--left"}`}
-        style={isCenter ? undefined : { left: CONTENT_LEFT }}
+        className={isCenter ? "absolute top-0 left-1/2" : "absolute top-0"}
+        style={{
+          ...(isCenter ? {} : { left: CONTENT_LEFT }),
+          transform: isCenter
+            ? `translateX(-50%) scale(${scale})`
+            : `scale(${scale})`,
+          transformOrigin: isCenter ? "top center" : "top left",
+        }}
       >
         <div className="relative" style={{ paddingTop: CONTENT_TOP_PX }}>
           {useHomePortalSize ? (
@@ -264,7 +281,7 @@ export function HeroPortalDesktop({
               <PortalContentBlock
                 align="left"
                 content={HOME_HERO_PORTAL}
-                measureOnly
+                contentDropPx={0}
                 contentRef={homeContentRef}
                 headlineRef={homeHeadlineRef}
                 ctaRef={homeCtaRef}
@@ -273,14 +290,13 @@ export function HeroPortalDesktop({
           ) : null}
 
           <div
-            ref={portalBgRef}
             className="pointer-events-none absolute z-[3] select-none"
             aria-hidden
             style={{
-              left: initialPortalLayout.left,
+              left: portalLayout.left,
               top: -CONTENT_TOP_PX,
-              width: initialPortalLayout.width,
-              height: initialPortalLayout.height,
+              width: portalLayout.width,
+              height: portalLayout.height,
               backgroundImage: "url(/images/hero-portal.svg)",
               backgroundSize: "100% 100%",
               backgroundRepeat: "no-repeat",
@@ -290,6 +306,7 @@ export function HeroPortalDesktop({
           <PortalContentBlock
             align={align}
             content={content}
+            contentDropPx={contentDropPx}
             contentRef={contentRef}
             headlineRef={headlineRef}
             ctaRef={ctaRef}
