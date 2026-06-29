@@ -81,7 +81,7 @@ export async function HeroSection({
 			</div>
 
 			<div
-				className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]"
+				className="@container/hero-desktop relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]"
 				style={{
 					backgroundImage: `url(${desktopBlur})`,
 					backgroundSize: "cover",

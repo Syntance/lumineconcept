@@ -24,6 +24,7 @@ const gilroy = localFont({
   ],
   variable: "--font-gilroy",
   display: "swap",
+  adjustFontFallback: "Arial",
   fallback: ['system-ui', '-apple-system', 'sans-serif'],
 });
 
@@ -33,6 +34,7 @@ const chronicle = localFont({
   ],
   variable: "--font-chronicle",
   display: "swap",
+  adjustFontFallback: "Times New Roman",
   fallback: ['Georgia', 'serif'],
   preload: false,
 });
@@ -42,6 +44,7 @@ const binerka = localFont({
   weight: "400",
   variable: "--font-binerka",
   display: "swap",
+  adjustFontFallback: "Times New Roman",
   fallback: ['Georgia', 'serif'],
   preload: true,
 });
