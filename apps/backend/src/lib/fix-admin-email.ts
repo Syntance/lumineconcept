@@ -52,10 +52,10 @@ export async function fixAdminEmail(
 	const dryRun = options?.dryRun ?? false;
 
 	const user = await userModule.retrieveUser(ADMIN_EMAIL_FIX.userId);
+	if (user.email === ADMIN_EMAIL_FIX.newEmail) {
+		return { ok: true, message: "Email admina jest już poprawny." };
+	}
 	if (user.email !== ADMIN_EMAIL_FIX.oldEmail) {
-		if (user.email === ADMIN_EMAIL_FIX.newEmail) {
-			return { ok: true, message: "Email admina jest już poprawny." };
-		}
 		throw new Error(
 			`Nieoczekiwany email użytkownika ${user.id}: "${user.email}" (oczekiwano "${ADMIN_EMAIL_FIX.oldEmail}").`,
 		);
@@ -71,6 +71,23 @@ export async function fixAdminEmail(
 			{ take: 10 },
 		),
 	]);
+
+	// Auth już zmigrowany (np. po częściowym uruchomieniu) — zostaje tylko rekord user.
+	if (oldProviders.length === 0 && newProviders.length > 0) {
+		logger.info(
+			`[fix-admin-email] ${dryRun ? "DRY RUN" : "UPDATE"} user.email only (auth już na ${ADMIN_EMAIL_FIX.newEmail})`,
+		);
+		if (!dryRun) {
+			await userModule.updateUsers({
+				id: user.id,
+				email: ADMIN_EMAIL_FIX.newEmail,
+			});
+		}
+		return {
+			ok: true,
+			message: `Email admina ${dryRun ? "do ustawienia" : "ustawiony"} na ${ADMIN_EMAIL_FIX.newEmail}.`,
+		};
+	}
 
 	if (newProviders.length > 0 && !dryRun) {
 		for (const conflict of newProviders) {
