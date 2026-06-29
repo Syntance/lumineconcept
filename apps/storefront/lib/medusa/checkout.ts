@@ -3,7 +3,7 @@ import type { HttpTypes } from "@medusajs/types";
 import { clearCheckoutAnalyticsContext } from "@/lib/analytics/checkout-analytics-context";
 import { toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
 import { getCart } from "./cart";
-import { medusa } from "./client";
+import { getMedusa } from "./client-lazy";
 import { resolveMedusaFetchBase } from "./resolve-fetch-base";
 
 /** Po udanym zamówieniu — blokuje ponowny checkout (wstecz w przeglądarce). */
@@ -136,7 +136,7 @@ export async function updateCartAddress(
   shippingAddress: Address,
   billingAddress?: Address,
 ) {
-  const response = await medusa.store.cart.update(cartId, {
+  const response = await (await getMedusa()).store.cart.update(cartId, {
     shipping_address: shippingAddress,
     billing_address: billingAddress ?? shippingAddress,
   });
@@ -144,7 +144,7 @@ export async function updateCartAddress(
 }
 
 export async function setCartEmail(cartId: string, email: string) {
-  const response = await medusa.store.cart.update(cartId, { email });
+  const response = await (await getMedusa()).store.cart.update(cartId, { email });
   return response.cart;
 }
 
@@ -159,7 +159,7 @@ export async function saveContactDetails(
   shippingAddress: Address,
   billingAddress?: Address,
 ) {
-  const response = await medusa.store.cart.update(cartId, {
+  const response = await (await getMedusa()).store.cart.update(cartId, {
     email,
     shipping_address: shippingAddress,
     billing_address: billingAddress ?? shippingAddress,
@@ -168,7 +168,7 @@ export async function saveContactDetails(
 }
 
 export async function getShippingOptions(cartId: string) {
-  const response = await medusa.store.fulfillment.listCartOptions({ cart_id: cartId });
+  const response = await (await getMedusa()).store.fulfillment.listCartOptions({ cart_id: cartId });
   return response.shipping_options;
 }
 
@@ -398,7 +398,7 @@ export async function ensureLumineShippingBootstrap(): Promise<{ ok: boolean }> 
  * zabootstrapować providera przez `ensureLuminePaymentBootstrap()`.
  */
 export async function listPaymentProviders(regionId: string) {
-  const { payment_providers } = (await medusa.store.payment.listPaymentProviders(
+  const { payment_providers } = (await (await getMedusa()).store.payment.listPaymentProviders(
     { region_id: regionId },
   )) as { payment_providers: Array<{ id: string; is_enabled?: boolean }> };
   return payment_providers.filter((p) => p.is_enabled !== false);
@@ -743,7 +743,7 @@ export async function notifyBankTransferPending(input: {
 }
 
 export async function selectShippingOption(cartId: string, optionId: string) {
-  const response = await medusa.store.cart.addShippingMethod(cartId, {
+  const response = await (await getMedusa()).store.cart.addShippingMethod(cartId, {
     option_id: optionId,
   });
   return response.cart;
@@ -846,8 +846,8 @@ export async function initPaymentSession(
   providerId: string,
   freshCart?: HttpTypes.StoreCart,
 ) {
-  const cart = freshCart ?? (await medusa.store.cart.retrieve(cartId)).cart;
-  const response = await medusa.store.payment.initiatePaymentSession(
+  const cart = freshCart ?? (await (await getMedusa()).store.cart.retrieve(cartId)).cart;
+  const response = await (await getMedusa()).store.payment.initiatePaymentSession(
     cart,
     { provider_id: providerId },
   );
@@ -901,7 +901,7 @@ export async function initPrzelewy24Redirect(
   const cart =
     freshCart ??
     (
-      await medusa.store.cart.retrieve(cartId, { fields: P24_SESSION_FIELDS })
+      await (await getMedusa()).store.cart.retrieve(cartId, { fields: P24_SESSION_FIELDS })
     ).cart;
 
   // Idempotencja: reużyj istniejącej, nieopłaconej sesji P24 (ten sam URL bramki)
@@ -910,7 +910,7 @@ export async function initPrzelewy24Redirect(
   const reusable = findReusableP24RedirectUrl(cart as CartWithP24Sessions);
   if (reusable) return reusable;
 
-  const response = (await medusa.store.payment.initiatePaymentSession(cart, {
+  const response = (await (await getMedusa()).store.payment.initiatePaymentSession(cart, {
     provider_id: PRZELEWY24_PROVIDER_ID,
     data: {
       cart_id: cartId,
@@ -1141,7 +1141,7 @@ export async function completeCart(
   let lastErr: unknown = null;
   for (let i = 0; i <= retries; i++) {
     try {
-      const result = (await medusa.store.cart.complete(cartId)) as CompleteCartResponse;
+      const result = (await (await getMedusa()).store.cart.complete(cartId)) as CompleteCartResponse;
       if (result.type === "cart" && (result.error?.message || result.error?.code)) {
         console.warn("[checkout] complete→cart", result.error, result.cart);
       }

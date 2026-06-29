@@ -1,4 +1,4 @@
-import { medusa } from "./client";
+import { getMedusa } from "./client-lazy";
 import { ensureCartShippingForPromo } from "./ensure-cart-shipping";
 import { getPolishRegionId } from "./region";
 import {
@@ -76,8 +76,9 @@ export async function addLineItem(
     return data.cart;
   }
 
+  const sdk = await getMedusa();
   const response = await withMedusaTimeout(
-    medusa.store.cart.createLineItem(
+    sdk.store.cart.createLineItem(
       cartId,
       {
         variant_id: variantId,
@@ -97,8 +98,9 @@ export async function updateLineItem(
   lineItemId: string,
   quantity: number,
 ) {
+  const sdk = await getMedusa();
   const response = await withMedusaTimeout(
-    medusa.store.cart.updateLineItem(
+    sdk.store.cart.updateLineItem(
       cartId,
       lineItemId,
       {
@@ -113,8 +115,9 @@ export async function updateLineItem(
 }
 
 export async function removeLineItem(cartId: string, lineItemId: string) {
+  const sdk = await getMedusa();
   const response = await withMedusaTimeout(
-    medusa.store.cart.deleteLineItem(cartId, lineItemId),
+    sdk.store.cart.deleteLineItem(cartId, lineItemId),
     30_000,
     "cart.deleteLineItem",
   );
@@ -161,8 +164,9 @@ export async function applyPromotionCode(cartId: string, code: string) {
 
   await ensureCartShippingForPromo(cartId).catch(() => undefined);
 
+  const sdk = await getMedusa();
   const response = await withMedusaTimeout(
-    medusa.store.cart.update(
+    sdk.store.cart.update(
       cartId,
       {
         promo_codes: [trimmed],
