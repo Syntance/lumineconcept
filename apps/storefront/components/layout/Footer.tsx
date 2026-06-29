@@ -42,7 +42,7 @@ export async function Footer() {
                 className="h-8 w-auto brightness-0 invert"
               />
             </Link>
-            <p className="mt-4 max-w-xs text-base text-on-brand-800">
+            <p className="mt-4 max-w-xs text-base text-brand-300">
               Produkty plexi i branding dla salonów beauty. Tworzymy z pasją, dostarczamy z precyzją.
             </p>
             {(social.instagram || social.facebook || social.tiktok) && (
@@ -60,7 +60,7 @@ export async function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-base text-on-brand-800 hover:text-white transition-colors"
+                      className="text-base text-brand-300 hover:text-white transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -76,17 +76,17 @@ export async function Footer() {
             </h3>
             <ul className="mt-4 space-y-4">
               <li className="list-none">
-                <p className="text-xs font-medium uppercase tracking-[0.12em] text-on-brand-800 leading-relaxed">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-brand-300 leading-relaxed">
                   {SITE_CONTACT.address}
                 </p>
-                <p className="mt-2 text-xs font-medium uppercase tracking-[0.12em] text-on-brand-800 leading-relaxed">
+                <p className="mt-2 text-xs font-medium uppercase tracking-[0.12em] text-brand-300 leading-relaxed">
                   {SITE_CONTACT.hours}
                 </p>
               </li>
               <li>
                 <a
                   href={`mailto:${SITE_CONTACT.email}`}
-                  className="text-base text-on-brand-800 hover:text-white transition-colors"
+                  className="text-base text-brand-300 hover:text-white transition-colors"
                 >
                   {SITE_CONTACT.email}
                 </a>
@@ -94,7 +94,7 @@ export async function Footer() {
               <li>
                 <Link
                   href={SITE_CONTACT.formHref}
-                  className="text-base text-on-brand-800 hover:text-white transition-colors"
+                  className="text-base text-brand-300 hover:text-white transition-colors"
                 >
                   Formularz kontaktowy
                 </Link>
@@ -107,7 +107,7 @@ export async function Footer() {
           <div className="mb-3 flex justify-center lg:justify-start">
             <FooterCookieSettings />
           </div>
-          <div className="flex flex-col items-center gap-2 text-sm text-on-brand-800 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+          <div className="flex flex-col items-center gap-2 text-sm text-brand-400 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
             <p className="text-center lg:text-left">{copyright}</p>
             <p className="text-center lg:text-right">
               Wdrożenie strony: <FooterCreditLink />

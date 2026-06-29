@@ -63,7 +63,7 @@ export function InstagramGridTracked({ posts, profileUrl }: Props) {
       <TrackedOutboundLink
         href={profileUrl}
         cta_label="Instagram realizacje"
-        className="mt-6 inline-flex items-center gap-2 text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-readable hover:text-brand-900 transition-colors"
+        className="mt-6 inline-flex items-center gap-2 text-[14.2px] font-medium uppercase tracking-[0.216em] text-brand-500 hover:text-brand-900 transition-colors"
       >
         Zobacz nasze realizacje &rarr;
       </TrackedOutboundLink>

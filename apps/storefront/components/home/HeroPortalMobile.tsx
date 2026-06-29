@@ -4,9 +4,11 @@ import { HeroCtaLink } from "./HeroCtaLink";
 
 import {
   HOME_HERO_PORTAL,
-  HERO_SHOP_CTA_MOBILE_CLASS,
   type HeroPortalContentConfig,
 } from "./hero-portal-config";
+
+const SHOP_CTA_CLASS =
+  "inline-flex w-full max-w-[17.5rem] items-center justify-center gap-2 whitespace-nowrap rounded-none border-0 bg-white px-6 py-3.5 font-gilroy text-[11px] font-semibold uppercase tracking-[0.2em] text-black shadow-none outline-none transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-800";
 
 type HeroPortalMobileProps = {
   content?: HeroPortalContentConfig;
@@ -44,7 +46,7 @@ export function HeroPortalMobile({
         <HeroCtaLink
           href={content.ctaHref}
           aria-label={content.ctaAriaLabel}
-          className={`${HERO_SHOP_CTA_MOBILE_CLASS} mt-5 sm:mt-6`}
+          className={`${SHOP_CTA_CLASS} mt-5 sm:mt-6`}
         >
           {content.ctaLabel}
           {content.ctaShowDownArrow ? (
