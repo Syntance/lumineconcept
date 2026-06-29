@@ -1,4 +1,6 @@
+import type { MedusaContainer } from "@medusajs/framework/types";
 import { Modules } from "@medusajs/framework/utils";
+import { setAuthAppMetadataWorkflow } from "@medusajs/medusa/core-flows";
 
 export const ADMIN_EMAIL_FIX = {
 	oldEmail: "lumie.strona@gmail.com",
@@ -12,18 +14,18 @@ type Logger = {
 	error: (msg: string) => void;
 };
 
+type ProviderIdentity = {
+	id: string;
+	provider: string;
+	entity_id: string;
+	auth_identity_id?: string;
+};
+
 type AuthModuleLike = {
 	listProviderIdentities: (
 		filters?: { entity_id?: string; provider?: string },
 		config?: { take?: number },
-	) => Promise<
-		Array<{
-			id: string;
-			provider: string;
-			entity_id: string;
-			auth_identity_id?: string;
-		}>
-	>;
+	) => Promise<ProviderIdentity[]>;
 	updateProviderIdentities: (
 		data:
 			| { id: string; entity_id: string }
@@ -37,10 +39,8 @@ type UserModuleLike = {
 };
 
 export async function fixAdminEmail(
-	scope: {
-		resolve: (key: string) => unknown;
-	},
-	options?: { dryRun?: boolean },
+	scope: MedusaContainer,
+	options?: { dryRun?: boolean; recovery?: boolean },
 ): Promise<{
 	ok: boolean;
 	message: string;
@@ -50,14 +50,20 @@ export async function fixAdminEmail(
 	const authModule = scope.resolve(Modules.AUTH) as AuthModuleLike;
 	const userModule = scope.resolve(Modules.USER) as UserModuleLike;
 	const dryRun = options?.dryRun ?? false;
+	const recovery = options?.recovery ?? false;
 
 	const user = await userModule.retrieveUser(ADMIN_EMAIL_FIX.userId);
 	if (user.email === ADMIN_EMAIL_FIX.newEmail) {
 		return { ok: true, message: "Email admina jest już poprawny." };
 	}
-	if (user.email !== ADMIN_EMAIL_FIX.oldEmail) {
+
+	const allowedEmails = new Set([
+		ADMIN_EMAIL_FIX.oldEmail.toLowerCase(),
+		ADMIN_EMAIL_FIX.newEmail.toLowerCase(),
+	]);
+	if (!allowedEmails.has(user.email.trim().toLowerCase())) {
 		throw new Error(
-			`Nieoczekiwany email użytkownika ${user.id}: "${user.email}" (oczekiwano "${ADMIN_EMAIL_FIX.oldEmail}").`,
+			`Nieoczekiwany email użytkownika ${user.id}: "${user.email}".`,
 		);
 	}
 
@@ -72,44 +78,74 @@ export async function fixAdminEmail(
 		),
 	]);
 
-	// Auth już zmigrowany (np. po częściowym uruchomieniu) — zostaje tylko rekord user.
+	// Auth już na lumine — dokończ rekord user + ewentualnie powiąż auth z userem.
 	if (oldProviders.length === 0 && newProviders.length > 0) {
+		const primary = newProviders[0];
+		if (!primary?.auth_identity_id) {
+			throw new Error("Brak auth_identity_id dla providera lumine.");
+		}
+
 		logger.info(
-			`[fix-admin-email] ${dryRun ? "DRY RUN" : "UPDATE"} user.email only (auth już na ${ADMIN_EMAIL_FIX.newEmail})`,
+			`[fix-admin-email] ${dryRun ? "DRY RUN" : "UPDATE"} recovery=${recovery} provider=${primary.id}`,
 		);
+
 		if (!dryRun) {
+			await setAuthAppMetadataWorkflow(scope).run({
+				input: {
+					authIdentityId: primary.auth_identity_id,
+					actorType: "user",
+					value: user.id,
+				},
+			});
+
 			await userModule.updateUsers({
 				id: user.id,
 				email: ADMIN_EMAIL_FIX.newEmail,
 			});
+
+			for (const extra of newProviders.slice(1)) {
+				const archivedEntity = `archived-${extra.id.slice(-8)}@lumineconcept.internal`;
+				logger.warn(
+					`[fix-admin-email] Archiwizuję dodatkową tożsamość ${extra.id}`,
+				);
+				await authModule.updateProviderIdentities({
+					id: extra.id,
+					entity_id: archivedEntity,
+				});
+			}
 		}
+
 		return {
 			ok: true,
 			message: `Email admina ${dryRun ? "do ustawienia" : "ustawiony"} na ${ADMIN_EMAIL_FIX.newEmail}.`,
+			updatedProviderId: primary.id,
 		};
 	}
 
-	if (newProviders.length > 0 && !dryRun) {
-		for (const conflict of newProviders) {
-			const archivedEntity = `archived-${conflict.id.slice(-8)}@lumineconcept.internal`;
+	// Archiwizuj konflikty lumine tylko przed migracją z lumie (nie w recovery).
+	if (!recovery && newProviders.length > 0 && oldProviders.length > 0) {
+		if (!dryRun) {
+			for (const conflict of newProviders) {
+				const archivedEntity = `archived-${conflict.id.slice(-8)}@lumineconcept.internal`;
+				logger.warn(
+					`[fix-admin-email] Archiwizuję konfliktową tożsamość ${conflict.id} → ${archivedEntity}`,
+				);
+				await authModule.updateProviderIdentities({
+					id: conflict.id,
+					entity_id: archivedEntity,
+				});
+			}
+		} else {
 			logger.warn(
-				`[fix-admin-email] Archiwizuję konfliktową tożsamość ${conflict.id} → ${archivedEntity}`,
+				`[fix-admin-email] DRY RUN: ${newProviders.length} konfliktów dla ${ADMIN_EMAIL_FIX.newEmail}`,
 			);
-			await authModule.updateProviderIdentities({
-				id: conflict.id,
-				entity_id: archivedEntity,
-			});
 		}
-	} else if (newProviders.length > 0 && dryRun) {
-		logger.warn(
-			`[fix-admin-email] DRY RUN: znaleziono ${newProviders.length} konfliktowych tożsamości dla ${ADMIN_EMAIL_FIX.newEmail}`,
-		);
 	}
 
 	const provider = oldProviders[0];
 	if (!provider) {
 		throw new Error(
-			`Brak provider identity emailpass dla "${ADMIN_EMAIL_FIX.oldEmail}".`,
+			`Brak provider identity emailpass dla "${ADMIN_EMAIL_FIX.oldEmail}". Uruchom z recovery=true jeśli auth jest już na ${ADMIN_EMAIL_FIX.newEmail}.`,
 		);
 	}
 
@@ -129,6 +165,16 @@ export async function fixAdminEmail(
 		id: provider.id,
 		entity_id: ADMIN_EMAIL_FIX.newEmail,
 	});
+
+	if (provider.auth_identity_id) {
+		await setAuthAppMetadataWorkflow(scope).run({
+			input: {
+				authIdentityId: provider.auth_identity_id,
+				actorType: "user",
+				value: user.id,
+			},
+		});
+	}
 
 	await userModule.updateUsers({
 		id: user.id,

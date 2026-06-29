@@ -8,16 +8,18 @@ const HEADER = "x-lumine-setup-secret";
  *
  * Autoryzacja (jedna z):
  * - Bearer JWT admina (zalogowany użytkownik z błędnym lub poprawnym emailem),
+ * - Bearer JWT + body.recovery=true (gdy auth jest na lumine, ale brak powiązania z userem),
  * - nagłówek x-lumine-setup-secret = LUMINE_SETUP_SECRET (opcjonalnie na Railway).
  *
- * Body (opcjonalnie): { "dryRun": true }
+ * Body (opcjonalnie): { "dryRun": true, "recovery": true }
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
 	const body =
 		req.body && typeof req.body === "object" && !Array.isArray(req.body)
-			? (req.body as { dryRun?: boolean })
+			? (req.body as { dryRun?: boolean; recovery?: boolean })
 			: {};
 	const dryRun = body.dryRun === true;
+	const recovery = body.recovery === true;
 
 	const expected = process.env.LUMINE_SETUP_SECRET;
 	const providedSecret =
@@ -52,14 +54,14 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 		}
 	}
 
-	if (!secretOk && !adminOk) {
+	if (!secretOk && !adminOk && !(recovery && bearer)) {
 		return res.status(401).json({
-			message: "Wymagany token admina (Bearer) lub poprawny x-lumine-setup-secret.",
+			message: "Wymagany token admina (Bearer), recovery=true lub x-lumine-setup-secret.",
 		});
 	}
 
 	try {
-		const result = await fixAdminEmail(req.scope, { dryRun });
+		const result = await fixAdminEmail(req.scope, { dryRun, recovery });
 		return res.status(result.ok ? 200 : 422).json(result);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Nie udało się zmienić emaila admina.";
