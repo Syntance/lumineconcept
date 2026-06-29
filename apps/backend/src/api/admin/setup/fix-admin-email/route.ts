@@ -15,10 +15,9 @@ const HEADER = "x-lumine-setup-secret";
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
 	const body =
 		req.body && typeof req.body === "object" && !Array.isArray(req.body)
-			? (req.body as { dryRun?: boolean; recovery?: boolean })
+			? (req.body as { dryRun?: boolean })
 			: {};
 	const dryRun = body.dryRun === true;
-	const recovery = body.recovery === true;
 
 	const expected = process.env.LUMINE_SETUP_SECRET;
 	const providedSecret =
@@ -53,14 +52,14 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 		}
 	}
 
-	if (!secretOk && !adminOk && !(recovery && bearer)) {
+	if (!secretOk && !adminOk) {
 		return res.status(401).json({
-			message: "Wymagany token admina (Bearer), recovery=true lub x-lumine-setup-secret.",
+			message: "Wymagany token admina (Bearer) lub poprawny x-lumine-setup-secret.",
 		});
 	}
 
 	try {
-		const result = await fixAdminEmail(req.scope, { dryRun, recovery });
+		const result = await fixAdminEmail(req.scope, { dryRun });
 		return res.status(result.ok ? 200 : 422).json(result);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Nie udało się zmienić emaila admina.";

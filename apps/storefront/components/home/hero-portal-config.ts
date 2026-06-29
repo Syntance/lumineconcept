@@ -33,3 +33,11 @@ export const LOGO_HERO_PORTAL: HeroPortalContentConfig = {
   headlineUppercase: true,
   ctaShowDownArrow: true,
 };
+
+/** Wspólny styl przycisku CTA hero — brand-800 jak nagłówki sekcji (np. Bestsellery). */
+const HERO_SHOP_CTA_BASE =
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none border border-brand-800/20 bg-white font-gilroy font-semibold uppercase tracking-[0.2em] text-brand-800 shadow-none outline-none transition-colors hover:bg-brand-50 hover:text-brand-900 focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2";
+
+export const HERO_SHOP_CTA_MOBILE_CLASS = `${HERO_SHOP_CTA_BASE} w-full max-w-[17.5rem] px-6 py-3.5 text-[11px] focus-visible:ring-offset-brand-800`;
+
+export const HERO_SHOP_CTA_DESKTOP_CLASS = `${HERO_SHOP_CTA_BASE} px-7 py-3 text-[13px] leading-[1.15] focus-visible:ring-offset-transparent`;

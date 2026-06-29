@@ -25,8 +25,7 @@
     "sync-medusa-product": "tsx scripts/sync-medusa-product-from-source.ts",
     "fill-product-dimensions": "tsx scripts/fill-product-dimensions-from-description.ts",
     "fill-product-plexi-thickness": "tsx scripts/fill-product-plexi-thickness.ts",
-    "fill-product-attributes": "tsx scripts/fill-product-attributes-from-description.ts",
-    "fill-product-seo": "tsx scripts/fill-product-seo.ts"
+    "fill-product-attributes": "tsx scripts/fill-product-attributes-from-description.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
