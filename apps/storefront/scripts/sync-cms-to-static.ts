@@ -39,13 +39,6 @@ const METADATA_KEYS = [
 	"magazyn_global_content",
 ] as const;
 
-/** Alias konta serwisowego (literówka w mailu po stronie Medusy). */
-function resolveAdminEmail(email: string): string {
-	const normalized = email.trim().toLowerCase();
-	if (normalized === "lumine.strona@gmail.com") return "lumie.strona@gmail.com";
-	return email.trim();
-}
-
 async function getAdminToken(): Promise<string | null> {
 	if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
 		console.warn("⚠ MEDUSA_ADMIN_EMAIL / MEDUSA_ADMIN_PASSWORD nie ustawione — pomijam sync.");
@@ -55,7 +48,7 @@ async function getAdminToken(): Promise<string | null> {
 	const res = await fetch(`${MEDUSA_URL}/auth/user/emailpass`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ email: resolveAdminEmail(ADMIN_EMAIL), password: ADMIN_PASSWORD }),
+		body: JSON.stringify({ email: ADMIN_EMAIL.trim(), password: ADMIN_PASSWORD }),
 		signal: AbortSignal.timeout(15_000),
 	});
 
