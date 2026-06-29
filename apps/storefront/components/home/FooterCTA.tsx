@@ -86,7 +86,7 @@ function BrandingContact({
 
   if (layout === "stack") {
     return (
-      <div className="flex flex-col items-center gap-2 text-sm text-brand-readable">
+      <div className="flex flex-col items-center gap-2 text-sm text-brand-600">
         <span>Wolisz napisać?</span>
         {email}
         {ig}
@@ -95,7 +95,7 @@ function BrandingContact({
   }
 
   return (
-    <p className={`m-0 w-fit text-center text-brand-readable ${className}`}>
+    <p className={`m-0 w-fit text-center text-brand-600 ${className}`}>
       Wolisz napisać? {email}
       {ig ? (
         <>

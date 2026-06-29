@@ -111,7 +111,7 @@ export function CookieConsent() {
               <button
                 type="button"
                 onClick={() => setMode("preferences")}
-                className="text-xs font-medium uppercase tracking-[0.15em] text-brand-readable underline-offset-2 hover:text-brand-800 hover:underline"
+                className="text-xs font-medium uppercase tracking-[0.15em] text-brand-500 underline-offset-2 hover:text-brand-800 hover:underline"
               >
                 Ustawienia
               </button>
@@ -130,7 +130,7 @@ export function CookieConsent() {
               <li className="flex items-start justify-between gap-4 p-4">
                 <div>
                   <p className="text-sm font-semibold text-brand-800">Niezbędne</p>
-                  <p className="mt-0.5 text-xs text-brand-readable">
+                  <p className="mt-0.5 text-xs text-brand-500">
                     Wymagane do działania koszyka, sesji i bezpieczeństwa. Nie można wyłączyć.
                   </p>
                 </div>
@@ -142,7 +142,7 @@ export function CookieConsent() {
               <li className="flex items-start justify-between gap-4 p-4">
                 <div>
                   <p className="text-sm font-semibold text-brand-800">Analityka</p>
-                  <p className="mt-0.5 text-xs text-brand-readable">
+                  <p className="mt-0.5 text-xs text-brand-500">
                     Google Analytics i PostHog — anonimowe statystyki użycia, nagrania sesji (PostHog).
                   </p>
                 </div>
@@ -156,7 +156,7 @@ export function CookieConsent() {
               <li className="flex items-start justify-between gap-4 p-4">
                 <div>
                   <p className="text-sm font-semibold text-brand-800">Marketing</p>
-                  <p className="mt-0.5 text-xs text-brand-readable">
+                  <p className="mt-0.5 text-xs text-brand-500">
                     Meta Pixel — personalizacja reklam Facebook / Instagram.
                   </p>
                 </div>
