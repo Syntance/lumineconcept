@@ -8,7 +8,7 @@ import { DeferredGoogleAnalytics } from "@/components/analytics/DeferredGoogleAn
 import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
 
-const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID ?? "";
+const GA4_ID = (process.env.NEXT_PUBLIC_GA4_ID ?? "").trim();
 
 /**
  * Fonty brandowe — `display: "swap"` gwarantuje SPÓJNE renderowanie marki

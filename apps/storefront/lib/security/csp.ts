@@ -33,7 +33,8 @@ export function buildContentSecurityPolicy(nonce: string): string {
 		"'self'",
 		`'nonce-${nonce}'`,
 		"'strict-dynamic'",
-		// Fallback dla starszych UA bez strict-dynamic; hosty ignorowane gdy strict-dynamic działa.
+		// Fallback dla starszych UA (Lighthouse): ignorowane gdy nonce + strict-dynamic działają.
+		"'unsafe-inline'",
 		"https:",
 		isDev ? "'unsafe-eval'" : null,
 	]
