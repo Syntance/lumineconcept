@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import {
+	HERO_IMAGE_QUALITY,
 	MOBILE_HERO_BAND_HEIGHT,
 	MOBILE_HERO_BAND_WIDTH,
 } from "@/lib/content/cms-hero-image";
@@ -47,7 +48,7 @@ export function MobileHeroImageBand({
 			priority={priority}
 			fetchPriority={priority ? "high" : "auto"}
 			sizes="100vw"
-			quality={85}
+			quality={HERO_IMAGE_QUALITY}
 			placeholder="blur"
 			blurDataURL={blurDataURL ?? BRAND_BLUR_DATA_URL}
 			className={`absolute inset-0 h-full w-full select-none object-cover ${objectPositionClass}`}
