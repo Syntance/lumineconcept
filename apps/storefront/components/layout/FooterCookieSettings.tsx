@@ -7,7 +7,7 @@ export function FooterCookieSettings() {
     <button
       type="button"
       onClick={() => openConsentBanner()}
-      className="text-base text-brand-300 hover:text-white transition-colors underline-offset-2 hover:underline"
+      className="text-base text-on-brand-800 hover:text-white transition-colors underline-offset-2 hover:underline"
     >
       Ustawienia cookies
     </button>
