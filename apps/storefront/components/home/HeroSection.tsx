@@ -1,3 +1,4 @@
+import { preload } from "react-dom";
 import type { HeroContent } from "@/lib/content/types";
 import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { DESKTOP_HERO_WIDTH, DESKTOP_HERO_HEIGHT, toHeroAvifSrc } from "@/lib/content/cms-hero-image";
@@ -40,32 +41,33 @@ export async function HeroSection({
 
 	const desktopBlur = desktopBlurDataURL ?? BRAND_BLUR_DATA_URL;
 
+	/*
+	 * React 19 preload() API — hoistuje do <head> jako <link rel="preload">.
+	 * fetchPriority: "high" jest kluczowe: preload as="image" ma w Chrome
+	 * domyślnie LOW priorytet i przegrywa z fontami (HIGH). Bez tego AVIF
+	 * startuje z opóźnieniem mimo preloadu. type="image/avif" powoduje, że
+	 * przeglądarki bez obsługi AVIF pomijają preload (nie marnują pasma).
+	 * media= ogranicza preload do właściwego viewport.
+	 */
+	if (mobileAvifSrc) {
+		preload(mobileAvifSrc, {
+			as: "image",
+			fetchPriority: "high",
+			type: "image/avif",
+			media: "(max-width: 1023px)",
+		});
+	}
+	if (desktopAvifSrc) {
+		preload(desktopAvifSrc, {
+			as: "image",
+			fetchPriority: "high",
+			type: "image/avif",
+			media: "(min-width: 1024px)",
+		});
+	}
+
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
-			{/*
-			 * Preloady AVIF hoistowane przez React do <head>.
-			 * type="image/avif" = przeglądarki bez obsługi AVIF pomijają preload
-			 * (nie marnują pasma na format, którego nie użyją).
-			 * media= = każdy viewport pobiera tylko swój wariant.
-			 */}
-			{mobileAvifSrc && (
-				<link
-					rel="preload"
-					as="image"
-					href={mobileAvifSrc}
-					type="image/avif"
-					media="(max-width: 1023px)"
-				/>
-			)}
-			{desktopAvifSrc && (
-				<link
-					rel="preload"
-					as="image"
-					href={desktopAvifSrc}
-					type="image/avif"
-					media="(min-width: 1024px)"
-				/>
-			)}
 
 			<div className="lg:hidden">
 				<MobileHeroViewport
@@ -100,9 +102,9 @@ export async function HeroSection({
 							alt=""
 							width={DESKTOP_HERO_WIDTH}
 							height={DESKTOP_HERO_HEIGHT}
-							loading="eager"
-							fetchPriority="high"
-							decoding="async"
+					loading="eager"
+						fetchPriority="high"
+						decoding="auto"
 							className="absolute inset-0 h-full w-full select-none object-cover object-top"
 							style={{ color: "transparent" }}
 						/>
