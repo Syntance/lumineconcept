@@ -1,10 +1,8 @@
-import Image from "next/image";
-import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import {
-	HERO_IMAGE_QUALITY,
 	MOBILE_HERO_BAND_HEIGHT,
 	MOBILE_HERO_BAND_WIDTH,
+	toHeroAvifSrc,
 } from "@/lib/content/cms-hero-image";
 
 export { MOBILE_HERO_BAND_HEIGHT, MOBILE_HERO_BAND_WIDTH };
@@ -26,47 +24,50 @@ export function MobileHeroImageBand({
 	objectPositionClass = "object-center",
 }: MobileHeroImageBandProps) {
 	/*
-	 * KLUCZOWE dla stabilnego LCP: lokalne hero z `/images/cms/` (oraz R2
-	 * `/cms-uploads/`) jest już zoptymalizowanym, zwymiarowanym WebP (q92,
-	 * np. 720×1280) wygenerowanym w `sync-cms-to-static`. Serwujemy je
-	 * `unoptimized` — bezpośrednio jako statyczny plik z CDN (immutable cache).
+	 * Opcja maksymalna dla LCP:
 	 *
-	 * Dlaczego: przejście przez `/_next/image` dodaje `&dpl=<hash>` do URL, więc
-	 * KAŻDY deploy unieważnia cache optymalizatora. Pierwszy request (ten od
-	 * Lighthouse/PageSpeed) = MISS = generowanie on-demand (0,5–2 s pod
-	 * throttlingiem) przy ZEROWYM zysku rozmiaru (wariant „zoptymalizowany"
-	 * waży tyle samo co źródło). To była przyczyna wysokiego LCP i wahań
-	 * wyniku (raz 92 = ciepły cache, raz 73 = zimny po deployu).
+	 * 1. Statyczny AVIF z prebuild (sync-cms-to-static generuje .avif obok .webp
+	 *    dla każdego hero). AVIF q70 ≈ ~50% mniej bajtów niż WebP q92 przy
+	 *    zbliżonej percepcji wizualnej. Serwowany jako immutable z CDN.
+	 *
+	 * 2. Native <picture> zamiast next/image — brak &dpl= w URL, więc cache
+	 *    immutable nie resetuje się po każdym deployu (to był główny powód
+	 *    wahań 73–92 w PageSpeed).
+	 *
+	 * 3. Preload AVIF z <link rel="preload" type="image/avif"> w HeroSection
+	 *    (RSC, hoistowany do <head>) — tylko dla przeglądarek z obsługą AVIF.
+	 *    Brak AVIF → przeglądarka pobiera WebP fallback z <img src>.
+	 *
+	 * 4. Blur placeholder via CSS background na wrapperze (next/image był
+	 *    jedynym dostarczycielem blur; zastępujemy go bez biblioteki).
 	 */
-	const unoptimized = isCmsImageUnoptimized(src);
+	const avifSrc = toHeroAvifSrc(src);
+	const blur = blurDataURL ?? BRAND_BLUR_DATA_URL;
+
 	return (
-		<div className="relative h-full w-full overflow-hidden">
-		<Image
-			src={src}
-			alt=""
-			width={MOBILE_HERO_BAND_WIDTH}
-			height={MOBILE_HERO_BAND_HEIGHT}
-			/*
-			 * `priority` = kluczowe dla LCP na mobile:
-			 *   – dodaje <link rel="preload" fetchpriority="high"> w <head>
-			 *   – ustawia loading="eager" na <img>
-			 *
-			 * `fetchPriority` na <img> jawnie (nie tylko via preload link):
-			 *   – Lighthouse "LCP request detection" wymaga fetchpriority="high"
-			 *     bezpośrednio na <img>, nie tylko na <link rel="preload">.
-			 *
-			 * Z `unoptimized` preload href === <img src> (statyczny URL), więc
-			 * preload trafia idealnie i nie ma podwójnego pobrania.
-			 */
-			unoptimized={unoptimized}
-			priority={priority}
-			fetchPriority={priority ? "high" : "auto"}
-			sizes="100vw"
-			quality={HERO_IMAGE_QUALITY}
-			placeholder="blur"
-			blurDataURL={blurDataURL ?? BRAND_BLUR_DATA_URL}
-			className={`absolute inset-0 h-full w-full select-none object-cover ${objectPositionClass}`}
-		/>
+		<div
+			className="relative h-full w-full overflow-hidden"
+			style={{
+				backgroundImage: `url(${blur})`,
+				backgroundSize: "cover",
+				backgroundPosition: "center 58%",
+			}}
+		>
+			<picture>
+				{avifSrc && <source type="image/avif" srcSet={avifSrc} />}
+				{/* eslint-disable-next-line @next/next/no-img-element */}
+				<img
+					src={src}
+					alt=""
+					width={MOBILE_HERO_BAND_WIDTH}
+					height={MOBILE_HERO_BAND_HEIGHT}
+					loading="eager"
+					fetchPriority={priority ? "high" : "auto"}
+					decoding="async"
+					className={`absolute inset-0 h-full w-full select-none object-cover ${objectPositionClass}`}
+					style={{ color: "transparent" }}
+				/>
+			</picture>
 		</div>
 	);
 }
