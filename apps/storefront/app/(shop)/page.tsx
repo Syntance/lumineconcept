@@ -35,6 +35,20 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Dłuższy ISR — mniejszy TTFB na cold request (PageSpeed, pierwsze wejście). */
 export const revalidate = 60;
 
+/**
+ * Placeholder rezerwujący przestrzeń BestsellersGrid podczas streaming SSR.
+ * Dopasowane tła (bg-white + bg-brand-50) eliminują color flash;
+ * min-height zapobiega CLS gdy treść wstrzykuje ~500px zawartości.
+ */
+function BestsellersSkeleton() {
+  return (
+    <div aria-hidden="true">
+      <div className="bg-white pt-4 pb-0 md:pt-5" style={{ minHeight: 96 }} />
+      <div className="bg-brand-50" style={{ minHeight: 480 }} />
+    </div>
+  );
+}
+
 export default async function HomePage() {
   const [pageContent, settings] = await Promise.all([getPageContent("home"), getSiteSettings()]);
   const socialSameAs = resolveSocialSameAs(resolveSocialLinks(settings));
@@ -90,7 +104,7 @@ export default async function HomePage() {
 
       <HeroSection hero={pageContent.hero} />
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<BestsellersSkeleton />}>
         <BestsellersSection />
       </Suspense>
 
