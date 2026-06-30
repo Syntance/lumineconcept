@@ -8,12 +8,11 @@ import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
 
 /**
- * Fonty brandowe — `display: "swap"` gwarantuje SPÓJNE renderowanie marki
- * niezależnie od stanu cache. `optional` powodował, że przy zimnym cache font
- * nie zdążał w okno ~100ms i wcale się nie podmieniał (hero „CONCEPT" spadał na
- * serif fallback) — stąd „raz dobra, raz zła czcionka".
+ * Fonty brandowe — `display: "swap"` + `adjustFontFallback` minimalizuje CLS
+ * (metryki fallbacku dopasowane do fontu właściwego → reflow praktycznie zerowy).
  * - Gilroy (body + podtytuł hero): `swap`, preload na krytycznej ścieżce.
- * - Chronicle (display, nagłówki h1-h3): `swap` bez preload (FOUT < niespójność).
+ * - Chronicle (display, nagłówki h1-h3): `preload: true` — usuwa font z waterfall
+ *   CSS-discovery → Next.js wstawi <link rel=preload> obok Binerki.
  * - Binerka (nagłówek hero „CONCEPT"): `swap` + `preload: true` — nad linią zgięcia.
  * - 2 wagi Gilroy (400, 500) — waga 700 syntezowana z fallbacku.
  */
@@ -24,6 +23,7 @@ const gilroy = localFont({
   ],
   variable: "--font-gilroy",
   display: "swap",
+  adjustFontFallback: "Arial",
   fallback: ['system-ui', '-apple-system', 'sans-serif'],
 });
 
@@ -33,8 +33,9 @@ const chronicle = localFont({
   ],
   variable: "--font-chronicle",
   display: "swap",
+  adjustFontFallback: "Times New Roman",
   fallback: ['Georgia', 'serif'],
-  preload: false,
+  preload: true,
 });
 
 const binerka = localFont({
@@ -42,6 +43,7 @@ const binerka = localFont({
   weight: "400",
   variable: "--font-binerka",
   display: "swap",
+  adjustFontFallback: "Times New Roman",
   fallback: ['Georgia', 'serif'],
   preload: true,
 });
