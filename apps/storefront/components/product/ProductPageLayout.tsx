@@ -177,11 +177,12 @@ export async function ProductPageLayout({
   ProductPageClient,
 }: ProductPageLayoutProps) {
   /**
-   * Nie łapiemy błędów runtime — propagują do `error.tsx` (cold start Railway).
-   * Przy `next build` Medusa może być niedostępna → `getProductByHandle` zwraca
-   * null i ISR (`revalidate`) odświeży stronę po starcie backendu.
+   * `.catch(() => null)` — błąd API (timeout, Medusa 5xx, cold start Railway)
+   * traktujemy jak brak produktu → notFound() → 404 zamiast 500.
+   * RSC prefetch na home page odpala jednocześnie kilka żądań; bez catch
+   * każde z nich zwraca 500 przy przeciążeniu Medusy.
    */
-  const product = await getProductData(slug);
+  const product = await getProductData(slug).catch(() => null);
   if (!product) notFound();
 
   const [siteSettings, productConfig, allCategories] = await Promise.all([
