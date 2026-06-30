@@ -139,10 +139,11 @@ export async function FooterCTA() {
                   src="/images/branding-cta-model.png"
                   alt=""
                   aria-hidden
-                  width={760}
-                  height={997}
+                  loading="lazy"
+                  width={520}
+                  height={682}
                   sizes="(max-width: 1280px) 420px, 520px"
-                  unoptimized
+                  quality={80}
                   className="pointer-events-none absolute -bottom-[50px] z-10 h-[129.8%] w-auto select-none object-contain object-bottom"
                 />
               </div>
