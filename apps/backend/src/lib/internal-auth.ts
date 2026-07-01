@@ -39,12 +39,14 @@ function safeEqual(a: string, b: string): boolean {
  * Fail-closed: gdy sekret nie jest ustawiony w środowisku, zwraca `false`
  * (endpoint nie powinien być publicznie dostępny bez konfiguracji).
  */
-export function hasValidInternalSecret(req: MedusaRequest): boolean {
+export function hasValidInternalSecret(
+  req: MedusaRequest,
+  debugLogger?: { info: (m: string) => void },
+): boolean {
   const expected = internalSecret();
   const provided = readHeader(req, "x-order-email-secret");
-  // eslint-disable-next-line no-console
-  console.info(
-    `[internal-auth] debug expectedLen=${expected?.length ?? "none"} providedLen=${provided?.length ?? "none"} headerKeys=${Object.keys(req.headers).join(",")}`,
+  debugLogger?.info(
+    `[internal-auth] debug expectedLen=${expected?.length ?? "none"} providedLen=${provided?.length ?? "none"} match=${expected && provided ? safeEqual(provided, expected) : false}`,
   );
   if (!expected) return false;
   if (!provided) return false;

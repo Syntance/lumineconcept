@@ -17,10 +17,6 @@ import { dispatchOrderPlacedEmails } from "../../../../lib/order-email-dispatch"
  * `server` subscriber `order.placed` też nie odpala.
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
-  if (!hasValidInternalSecret(req)) {
-    return res.status(401).json({ ok: false, error: "unauthorized" });
-  }
-
   const logger = (() => {
     try {
       return req.scope.resolve("logger") as ReconcileLogger;
@@ -32,6 +28,10 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       } satisfies ReconcileLogger;
     }
   })();
+
+  if (!hasValidInternalSecret(req, logger)) {
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+  }
 
   try {
     const result = await runP24Reconcile(req.scope, logger);
