@@ -30,6 +30,8 @@ export type P24SessionRow = {
   status?: string | null;
   created_at?: string | Date | null;
   payment_collection_id?: string | null;
+  /** Surowe dane sesji providera (m.in. `p24_session_id`). */
+  data?: Record<string, unknown> | null;
 };
 
 function ageMs(createdAt: string | Date | null | undefined, now: number): number | null {

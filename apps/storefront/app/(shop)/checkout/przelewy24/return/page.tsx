@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, XCircle } from "lucide-react";
 import { handoffP24PopupToOpener } from "@/lib/checkout/p24-popup";
+import { reportCheckoutIncident } from "@/lib/checkout/telemetry";
 import {
   completeCart,
   fetchP24ReturnStatus,
@@ -208,29 +209,46 @@ function Przelewy24ReturnInner() {
 
         const allowFailedOnZero = Date.now() - startedAt >= FAILED_GRACE_MS;
 
-        const [p24Status, completeResult] = await Promise.all([
-          fetchP24ReturnStatus(cartId, { allowFailedOnZero }).catch(() => null),
-          completeCart(cartId, { retries: 0 }).catch((e) => {
+        const p24Status = await fetchP24ReturnStatus(cartId, {
+          allowFailedOnZero,
+        }).catch(() => null);
+
+        // completeCart WYŁĄCZNIE po potwierdzeniu wpłaty w P24 (status "paid"
+        // = środki są / koszyk już domknięty przez webhook). Wcześniejsze
+        // strzelanie completeCart w każdej iteracji otwierało okno na
+        // zamówienie bez płatności (incydent #10165) — backend i tak by je
+        // teraz odrzucił (hook validate), ale nie generujemy zbędnych prób.
+        if (p24Status?.status === "paid") {
+          const completeResult = await completeCart(cartId, {
+            retries: 0,
+          }).catch((e) => {
             if (isCartAlreadyCompletedError(e)) return "completed" as const;
             return null;
-          }),
-        ]);
+          });
 
-        if (completeResult === "completed") {
-          clearLocalCart();
-          if (typeof window !== "undefined") {
-            window.location.replace("/checkout/potwierdzenie");
+          if (completeResult === "completed") {
+            clearLocalCart();
+            if (typeof window !== "undefined") {
+              window.location.replace("/checkout/potwierdzenie");
+            }
+            return;
           }
-          return;
-        }
 
-        if (
-          completeResult &&
-          typeof completeResult === "object" &&
-          completeResult.type === "order"
-        ) {
-          await completeP24OrderSuccess(completeResult.order, cartId);
-          return;
+          if (
+            completeResult &&
+            typeof completeResult === "object" &&
+            completeResult.type === "order"
+          ) {
+            await completeP24OrderSuccess(completeResult.order, cartId);
+            return;
+          }
+          // Wpłata jest, ale complete się nie powiódł (np. chwilowy błąd) —
+          // polling trwa dalej; ostatecznie pokażemy "pending" (cron domknie).
+          reportCheckoutIncident("p24-paid-but-complete-failed", {
+            cart_id: cartId,
+            p24_status: p24Status.p24_status ?? "paid",
+            attempt: i,
+          });
         }
 
         if (p24Status?.retry_url) {
@@ -242,12 +260,16 @@ function Przelewy24ReturnInner() {
           return;
         }
 
-        // Obie odpowiedzi null = backend niedostępny (deploy/restart).
-        // Nie pokazujemy "failed" — klient mógł zapłacić. Po kilku próbach
-        // przechodzimy do "pending" i zostawiamy cron reconcile robotę.
-        if (p24Status === null && completeResult === null) {
+        // Null = backend niedostępny (deploy/restart). Nie pokazujemy
+        // "failed" — klient mógł zapłacić. Po kilku próbach przechodzimy do
+        // "pending" i zostawiamy cron reconcile robotę.
+        if (p24Status === null) {
           consecutiveNullResponses += 1;
           if (consecutiveNullResponses >= MAX_CONSECUTIVE_NULL_RESPONSES) {
+            reportCheckoutIncident("p24-return-backend-unreachable", {
+              cart_id: cartId,
+              attempt: i,
+            });
             setState({ kind: "pending" });
             return;
           }
@@ -268,6 +290,10 @@ function Przelewy24ReturnInner() {
         else lastRetryUrl = buildP24RetryUrl(cartId);
 
         if (isPaymentInProgress(finalStatus)) {
+          reportCheckoutIncident("p24-return-pending-fallback", {
+            cart_id: cartId,
+            p24_status: finalStatus?.p24_status ?? null,
+          });
           setState({ kind: "pending" });
         } else if (finalStatus?.status === "paid") {
           try {
@@ -279,13 +305,26 @@ function Przelewy24ReturnInner() {
           } catch {
             /* fallback pending poniżej */
           }
+          reportCheckoutIncident("p24-paid-but-complete-failed", {
+            cart_id: cartId,
+            p24_status: finalStatus.p24_status ?? "paid",
+            detail: "final-attempt",
+          });
           setState({ kind: "pending" });
         } else if (finalStatus === null) {
           // Backend niedostępny (null = fetch się nie powiódł) — nie wiemy czy
           // płatność przeszła. Pokazujemy "pending" zamiast "failed", żeby klient
           // nie myślał, że musi płacić ponownie. Cron reconcile domknie zamówienie.
+          reportCheckoutIncident("p24-return-backend-unreachable", {
+            cart_id: cartId,
+            detail: "final-attempt",
+          });
           setState({ kind: "pending" });
         } else {
+          reportCheckoutIncident("p24-return-failed", {
+            cart_id: cartId,
+            p24_status: finalStatus.p24_status ?? null,
+          });
           setState(showFailedState(lastRetryUrl, cartId, emailSentRef));
         }
       }

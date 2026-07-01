@@ -26,6 +26,23 @@ export function paymentProviderLabel(providerId: string | null | undefined): str
 	return providerId.replace(/^pp_/, "").replace(/_/g, " ");
 }
 
+/**
+ * Nazwy metod P24 bez rozpoznawalnego BLIK/karty/portfela to pay-by-link
+ * banków — oznaczamy jawnie „przelew”, żeby obsługa magazynu od razu
+ * wiedziała, że klient płacił przelewem (przez bramkę P24).
+ * Lustrzana logika: backend `formatP24PaymentLabel` (p24-payment-methods.ts).
+ */
+function formatP24MethodLabel(methodName: string): string {
+	const name = methodName.toLowerCase();
+	const isTransfer =
+		!name.includes("blik") &&
+		!/karta|card|visa|mastercard/.test(name) &&
+		!/google\s*pay|apple\s*pay|paypal/.test(name);
+	return isTransfer
+		? `Przelewy24 (przelew — ${methodName})`
+		: `Przelewy24 (${methodName})`;
+}
+
 /** Metoda płatności zamówienia — metadata sklepu lub provider z Medusy. */
 export function orderPaymentMethodLabel(order: AdminOrderDetail): string {
 	const metaLabel = order.metadata.payment?.trim();
@@ -39,7 +56,7 @@ export function orderPaymentMethodLabel(order: AdminOrderDetail): string {
 		const providerId =
 			order.metadata.payment_provider_id?.trim() ?? primaryPaymentProviderId(order);
 		if (providerId === PRZELEWY24_PROVIDER_ID) {
-			return `Przelewy24 (${methodName})`;
+			return formatP24MethodLabel(methodName);
 		}
 		return methodName;
 	}

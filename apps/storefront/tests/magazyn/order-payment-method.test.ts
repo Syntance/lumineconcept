@@ -65,14 +65,23 @@ describe("orderPaymentMethodLabel", () => {
     ).toBe("Przelewy24 (BLIK)");
   });
 
-  it("czyta metodę z sesji P24 gdy brak w metadata", () => {
+  it("czyta metodę z sesji P24 gdy brak w metadata — bank oznaczony jako przelew", () => {
     expect(
       orderPaymentMethodLabel(
         baseOrder({
           p24MethodName: "mTransfer",
         }),
       ),
-    ).toBe("Przelewy24 (mTransfer)");
+    ).toBe("Przelewy24 (przelew — mTransfer)");
+  });
+
+  it("BLIK/karta z sesji P24 bez dopisku „przelew”", () => {
+    expect(
+      orderPaymentMethodLabel(baseOrder({ p24MethodName: "BLIK" })),
+    ).toBe("Przelewy24 (BLIK)");
+    expect(
+      orderPaymentMethodLabel(baseOrder({ p24MethodName: "Karta płatnicza" })),
+    ).toBe("Przelewy24 (Karta płatnicza)");
   });
 
   it("pokazuje id metody gdy brak nazwy", () => {

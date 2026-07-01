@@ -1,8 +1,9 @@
 /**
  * Testy wyboru metody płatności w checkoutcie — krytyczna ścieżka konwersji.
- * Kontrakt: Przelewy24 (płatność od razu) + Przelew tradycyjny (na konto
- * sklepu, zamówienie powstaje natychmiast). Providery niezarejestrowane
- * w regionie są ukrywane; brak wszystkich → komunikat awaryjny z mailem.
+ * Kontrakt (po incydencie #10165 — zamówienie bez płatności): jedyną metodą
+ * produkcyjną jest Przelewy24. Przelew tradycyjny (`pp_system_default`)
+ * pokazujemy WYŁĄCZNIE gdy P24 nie jest zarejestrowane w regionie (dev/test
+ * bez kluczy P24). Brak wszystkich providerów → komunikat awaryjny z mailem.
  */
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -14,7 +15,7 @@ import {
 } from "@/lib/medusa/checkout";
 
 describe("PaymentSelector", () => {
-  it("pokazuje Przelewy24 i Przelew tradycyjny, gdy oba aktywne w regionie", () => {
+  it("ukrywa przelew tradycyjny, gdy P24 jest dostępne (jedyna płatność: P24)", () => {
     render(
       <PaymentSelector
         selectedProviderId=""
@@ -24,27 +25,27 @@ describe("PaymentSelector", () => {
     );
 
     expect(screen.getByText("Przelewy24")).toBeInTheDocument();
-    expect(screen.getByText("Przelew tradycyjny")).toBeInTheDocument();
+    expect(screen.queryByText("Przelew tradycyjny")).not.toBeInTheDocument();
   });
 
-  it("ukrywa przelew tradycyjny, gdy provider nie jest zarejestrowany w regionie", () => {
+  it("pokazuje przelew tradycyjny tylko gdy P24 nie jest zarejestrowane (dev/test)", () => {
     render(
       <PaymentSelector
         selectedProviderId=""
         onSelect={() => undefined}
-        availableProviderIds={[PRZELEWY24_PROVIDER_ID]}
+        availableProviderIds={[SYSTEM_PAYMENT_PROVIDER_ID]}
       />,
     );
 
-    expect(screen.getByText("Przelewy24")).toBeInTheDocument();
-    expect(screen.queryByText("Przelew tradycyjny")).not.toBeInTheDocument();
+    expect(screen.queryByText("Przelewy24")).not.toBeInTheDocument();
+    expect(screen.getByText("Przelew tradycyjny")).toBeInTheDocument();
   });
 
-  it("bez listy providerów (brak prefetchu) pokazuje wszystkie widoczne opcje", () => {
+  it("bez listy providerów (brak prefetchu) pokazuje tylko Przelewy24", () => {
     render(<PaymentSelector selectedProviderId="" onSelect={() => undefined} />);
 
     expect(screen.getByText("Przelewy24")).toBeInTheDocument();
-    expect(screen.getByText("Przelew tradycyjny")).toBeInTheDocument();
+    expect(screen.queryByText("Przelew tradycyjny")).not.toBeInTheDocument();
   });
 
   it("klik na metodę woła onSelect z id providera", async () => {
@@ -57,9 +58,6 @@ describe("PaymentSelector", () => {
         availableProviderIds={[PRZELEWY24_PROVIDER_ID, SYSTEM_PAYMENT_PROVIDER_ID]}
       />,
     );
-
-    await user.click(screen.getByText("Przelew tradycyjny"));
-    expect(onSelect).toHaveBeenCalledWith(SYSTEM_PAYMENT_PROVIDER_ID);
 
     await user.click(screen.getByText("Przelewy24"));
     expect(onSelect).toHaveBeenCalledWith(PRZELEWY24_PROVIDER_ID);
@@ -79,6 +77,22 @@ describe("PaymentSelector", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /kontakt@lumineconcept\.pl/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("przy otwartym circuit breakerze P24 zostaje dostępne + baner ostrzegawczy", () => {
+    render(
+      <PaymentSelector
+        selectedProviderId=""
+        onSelect={() => undefined}
+        availableProviderIds={[PRZELEWY24_PROVIDER_ID]}
+        p24CircuitOpen
+      />,
+    );
+
+    expect(screen.getByText("Przelewy24")).toBeInTheDocument();
+    expect(
+      screen.getByText(/miewa w tej chwili problemy/i),
     ).toBeInTheDocument();
   });
 
