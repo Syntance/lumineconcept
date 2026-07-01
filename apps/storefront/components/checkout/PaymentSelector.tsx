@@ -55,11 +55,17 @@ export function PaymentSelector({
   const isRegistered = (id: string) =>
     !availableProviderIds || availableProviderIds.includes(id);
 
+  // Jedyna płatność produkcyjna to Przelewy24 (decyzja po incydencie #10165 —
+  // zamówienie bez płatności). Przelew tradycyjny pokazujemy WYŁĄCZNIE gdy
+  // P24 nie jest zarejestrowane w regionie (dev/test bez kluczy P24).
+  const p24Available = isRegistered(PRZELEWY24_PROVIDER_ID);
+
   const options = PAYMENT_OPTIONS.filter(
     (option) =>
       visibleIds.has(option.id) &&
       isRegistered(option.id) &&
-      !disabledSet.has(option.id),
+      !disabledSet.has(option.id) &&
+      (option.id !== SYSTEM_PAYMENT_PROVIDER_ID || !p24Available),
   );
 
   if (options.length === 0) {
@@ -78,8 +84,12 @@ export function PaymentSelector({
     <div className="space-y-3">
       {p24CircuitOpen && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-brand-800">
-          Płatność online Przelewy24 jest chwilowo niedostępna. Wybierz{" "}
-          <strong>przelew tradycyjny</strong> — zamówienie przyjmujemy od razu.
+          Płatność Przelewy24 miewa w tej chwili problemy. Możesz spróbować
+          ponownie — jeśli błąd się powtórzy, odczekaj chwilę lub napisz na{" "}
+          <a href="mailto:kontakt@lumineconcept.pl" className="font-semibold underline">
+            kontakt@lumineconcept.pl
+          </a>
+          .
         </p>
       )}
       {options.map((option) => {

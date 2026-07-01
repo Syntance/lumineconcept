@@ -494,13 +494,10 @@ export function CheckoutForm() {
     setP24CircuitOpen(isP24CircuitOpen());
   }, [step]);
 
-  /** Circuit breaker P24 — przełącz na przelew tradycyjny gdy online pada. */
-  useEffect(() => {
-    if (!p24CircuitOpen) return;
-    if (formData.paymentProviderId === PRZELEWY24_PROVIDER_ID) {
-      updateField("paymentProviderId", SYSTEM_PAYMENT_PROVIDER_ID);
-    }
-  }, [p24CircuitOpen, formData.paymentProviderId, updateField]);
+  // Circuit breaker P24 pokazuje tylko ostrzeżenie (baner w PaymentSelector).
+  // NIE przełączamy na przelew tradycyjny — jedyną płatnością jest P24
+  // (przelew poza bramką wyłączony po incydencie #10165: zamówienie bez
+  // płatności). Klient może ponowić próbę — P24 zwykle wraca po chwili.
 
   const handleFieldBlur = useCallback(
     (field: ValidatedField, overrideValue?: string) => {
@@ -1280,9 +1277,6 @@ export function CheckoutForm() {
               selectedProviderId={formData.paymentProviderId}
               onSelect={(id: string) => updateField("paymentProviderId", id)}
               availableProviderIds={availableProviderIds}
-              disabledProviderIds={
-                p24CircuitOpen ? [PRZELEWY24_PROVIDER_ID] : []
-              }
               p24CircuitOpen={p24CircuitOpen}
             />
 

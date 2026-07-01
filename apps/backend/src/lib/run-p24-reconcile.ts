@@ -1,6 +1,11 @@
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows";
+import { alertOrderWithoutPayment } from "./checkout-audit";
+import {
+  fetchP24TransactionBySessionId,
+  loadP24ApiConfig,
+} from "./p24-transaction-api";
 import { captureError, captureMessage } from "./sentry";
 import {
   classifyAuthorizeSessionError,
@@ -137,6 +142,11 @@ async function recoverOrphanedP24Orders(
   const paymentModule = container.resolve(Modules.PAYMENT);
   const settledOrderIds: string[] = [];
 
+  const sessionRowById = new Map<string, P24SessionRow>();
+  for (const s of reconcilableSessions) {
+    if (s.id?.trim()) sessionRowById.set(s.id.trim(), s);
+  }
+
   for (const sessionId of sessionIds) {
     try {
       await paymentModule.authorizePaymentSession(sessionId, {});
@@ -147,8 +157,19 @@ async function recoverOrphanedP24Orders(
       );
     } catch (e) {
       const kind = classifyAuthorizeSessionError(e);
-      if (kind === "not_paid_yet" || kind === "already_settled") {
-        continue; // brak wpłaty / wyścig — normalny stan
+      if (kind === "not_paid_yet") {
+        // TRIPWIRE (klasa #10165): zamówienie istnieje, a P24 nie zna tej
+        // transakcji — to nie jest „spóźniona wpłata”, tylko zamówienie,
+        // które nigdy nie powinno było powstać. Alarmujemy raz na dobę.
+        await flagOrderWithoutP24Transaction(
+          logger,
+          sessionRowById.get(sessionId),
+          sessionToOrder.get(sessionId),
+        );
+        continue;
+      }
+      if (kind === "already_settled") {
+        continue; // wyścig z webhookiem/klientem — normalny stan
       }
       logger.warn(
         `[p24-reconcile] sesja ${sessionId}: ${(e as Error)?.message ?? e}`,
@@ -158,6 +179,46 @@ async function recoverOrphanedP24Orders(
   }
 
   return settledOrderIds;
+}
+
+/** Dedup alertów tripwire — max 1 alert / zamówienie / 24h per proces. */
+const orderWithoutPaymentAlertedAt = new Map<string, number>();
+const TRIPWIRE_ALERT_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Sprawdza w P24, czy dla wiszącej sesji osieroconego zamówienia w ogóle
+ * istnieje transakcja. Brak transakcji (404) = zamówienie powstało bez
+ * płatności (przerwana kompensacja completeCart) → alert Sentry + audit log.
+ */
+async function flagOrderWithoutP24Transaction(
+  logger: ReconcileLogger,
+  sessionRow: P24SessionRow | undefined,
+  orderId: string | undefined,
+): Promise<void> {
+  if (!orderId) return;
+
+  const lastAlert = orderWithoutPaymentAlertedAt.get(orderId);
+  if (lastAlert && Date.now() - lastAlert < TRIPWIRE_ALERT_TTL_MS) return;
+
+  const p24Config = loadP24ApiConfig();
+  const p24SessionId =
+    typeof sessionRow?.data?.p24_session_id === "string"
+      ? sessionRow.data.p24_session_id
+      : null;
+  if (!p24Config || !p24SessionId) return;
+
+  const tx = await fetchP24TransactionBySessionId(p24SessionId, p24Config);
+  // Transakcja istnieje (status 0 = zarejestrowana, nieopłacona) — klient
+  // po prostu jeszcze nie zapłacił. Alarmujemy tylko gdy P24 jej NIE ZNA.
+  if (tx) return;
+
+  orderWithoutPaymentAlertedAt.set(orderId, Date.now());
+  alertOrderWithoutPayment(logger, {
+    order_id: orderId,
+    payment_status: "not_paid",
+    provider_ids: [sessionRow?.provider_id ?? "?"],
+    session_statuses: [sessionRow?.status ?? "?"],
+  });
 }
 
 /**
@@ -190,7 +251,14 @@ export async function runP24Reconcile(
   // 1. Wiszące sesje P24 (pending = klient był na bramce, brak potwierdzenia).
   const { data: sessionRows } = await query.graph({
     entity: "payment_session",
-    fields: ["id", "status", "provider_id", "created_at", "payment_collection_id"],
+    fields: [
+      "id",
+      "status",
+      "provider_id",
+      "created_at",
+      "payment_collection_id",
+      "data",
+    ],
     filters: { provider_id: PRZELEWY24_PROVIDER_ID, status: "pending" },
     pagination: { take: 500, order: { created_at: "DESC" } },
   });

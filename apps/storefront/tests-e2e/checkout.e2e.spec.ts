@@ -212,9 +212,10 @@ test.describe("Checkout ? happy path", () => {
     await expect(
       page.getByRole("button", { name: /^Przelewy24/i }),
     ).toBeVisible();
+    // Jedyna płatność to P24 — przelew tradycyjny wyłączony (incydent #10165).
     await expect(
       page.getByRole("button", { name: /przelew tradycyjny/i }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(page.getByRole("button", { name: /paypo/i })).toHaveCount(0);
 
     await acceptConsents(page);
@@ -228,37 +229,10 @@ test.describe("Checkout ? happy path", () => {
     });
   });
 
-  test("przelew tradycyjny ? zamowienie powstaje od razu, klient widzi dane do przelewu", async ({
-    page,
-  }) => {
-    test.setTimeout(180_000);
-
-    await addFirstProductToCart(page);
-    await page.goto("/checkout");
-    await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
-
-    await fillContactStep(page);
-    await goThroughShippingStep(page);
-
-    // Wybor przelewu tradycyjnego zamiast domyslnego P24.
-    await page.getByRole("button", { name: /przelew tradycyjny/i }).click();
-
-    await acceptConsents(page);
-
-    const submit = page.getByRole("button", { name: /zamawiam/i });
-    await expect(submit).toBeEnabled();
-    await submit.click();
-
-    // Bez zewnetrznej bramki: od razu potwierdzenie z danymi do przelewu.
-    await page.waitForURL(/checkout\/potwierdzenie\?.*payment=bank_transfer/i, {
-      timeout: 60_000,
-    });
-    await expect(
-      page.getByRole("heading", { name: /zam.wienie przyj.te/i }),
-    ).toBeVisible();
-    await expect(page.getByText(/dane do przelewu/i)).toBeVisible();
-    await expect(page.getByText(/numer zam.wienia/i)).toBeVisible();
-  });
+  // Przelew tradycyjny poza P24 zostal wylaczony (incydent #10165 —
+  // zamowienie bez platnosci). Backendowy hook validate blokuje completeCart
+  // z sesja pp_system_default, a selector nie pokazuje tej opcji gdy P24
+  // jest zarejestrowane. Scenariusz e2e usuniety swiadomie.
 
   // Domykajacy wariant P24 ? wymaga w pelni skonfigurowanego sandboxa
   // (P24_SANDBOX=1 + metoda testowa). Domyslnie SKIP, bo sandbox UI bywa

@@ -530,6 +530,9 @@ export function orderToEmailSource(order: AdminOrderDetail) {
 
 /* ── Mutacje ─────────────────────────────────────────── */
 
+/** Statusy płatności zamówienia uznawane za rozliczone (można realizować). */
+const SETTLED_PAYMENT_STATUSES = new Set(["captured", "partially_captured"]);
+
 /** Zaksięgowanie płatności (jeśli trzeba) + rozpoczęcie realizacji (fulfillment). */
 export async function startOrderRealization(orderId: string): Promise<void> {
 	const order = await getAdminOrder(orderId);
@@ -538,6 +541,13 @@ export async function startOrderRealization(orderId: string): Promise<void> {
 	const pending = order.payments.find((p) => !p.capturedAt && !p.canceledAt && p.amount > 0);
 	if (pending) {
 		await adminFetch(`/admin/payments/${pending.id}/capture`, { method: "POST", body: JSON.stringify({}) });
+	} else if (!SETTLED_PAYMENT_STATUSES.has(order.paymentStatus)) {
+		// Brak płatności do przechwycenia I zamówienie nieopłacone — wcześniej
+		// ta ścieżka po cichu robiła fulfillment (wysyłkę bez pieniędzy).
+		throw new Error(
+			"To zamówienie nie ma potwierdzonej płatności — nie można rozpocząć realizacji. " +
+				"Jeśli wpłata dotarła (np. przelewem), zaksięguj ją najpierw w P24 lub skontaktuj się z obsługą techniczną.",
+		);
 	}
 
 	if (["not_fulfilled", "partially_fulfilled"].includes(order.fulfillmentStatus)) {

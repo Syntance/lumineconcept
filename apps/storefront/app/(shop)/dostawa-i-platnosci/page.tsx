@@ -16,7 +16,7 @@ import { SITE_URL } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Dostawa i płatności",
   description:
-    "Sprawdź dostępne sposoby dostawy oraz formy płatności w sklepie Lumine Concept — kurier, paczkomat, Przelewy24, BLIK, przelew tradycyjny i zamówienie express (3 dni).",
+    "Sprawdź dostępne sposoby dostawy oraz formy płatności w sklepie Lumine Concept — kurier, paczkomat, Przelewy24 (BLIK, przelew online, karta) i zamówienie express (3 dni).",
   robots: { index: true, follow: true },
   alternates: {
     canonical: `${SITE_URL}/dostawa-i-platnosci`,
@@ -57,10 +57,10 @@ const PAYMENT_METHODS = [
   },
   {
     icon: Banknote,
-    title: "Przelew tradycyjny",
-    lead: "5 dni roboczych na opłacenie",
+    title: "Przelew bankowy przez Przelewy24",
+    lead: "Wybierz swój bank w bramce płatności",
     description:
-      "Dane do przelewu otrzymasz w mailu potwierdzającym Zamówienie. Po zaksięgowaniu wpłaty rozpoczynamy realizację.",
+      "Przelew z konta bankowego realizujesz bezpiecznie przez bramkę Przelewy24 — zamówienie potwierdza się automatycznie po zaksięgowaniu.",
   },
   {
     icon: ShieldCheck,
@@ -189,9 +189,9 @@ export default function DostawaIPlatnosciPage() {
                 wszystkie dostępne opcje zobaczysz w koszyku.
               </p>
               <p className="mt-2">
-                Jeśli wybierzesz <span className="font-semibold">przelew tradycyjny</span>, prosimy o
-                opłacenie zamówienia w ciągu <span className="font-semibold">5 dni roboczych</span> od jego
-                złożenia.
+                Wszystkie płatności — w tym{" "}
+                <span className="font-semibold">przelew bankowy</span> — realizujemy przez bramkę
+                Przelewy24. Zamówienie potwierdzamy automatycznie po zaksięgowaniu wpłaty.
               </p>
             </div>
           </section>
