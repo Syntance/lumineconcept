@@ -41,8 +41,12 @@ function safeEqual(a: string, b: string): boolean {
  */
 export function hasValidInternalSecret(req: MedusaRequest): boolean {
   const expected = internalSecret();
-  if (!expected) return false;
   const provided = readHeader(req, "x-order-email-secret");
+  // eslint-disable-next-line no-console
+  console.info(
+    `[internal-auth] debug expectedLen=${expected?.length ?? "none"} providedLen=${provided?.length ?? "none"} headerKeys=${Object.keys(req.headers).join(",")}`,
+  );
+  if (!expected) return false;
   if (!provided) return false;
   return safeEqual(provided, expected);
 }
