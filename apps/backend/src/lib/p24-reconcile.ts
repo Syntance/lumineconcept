@@ -100,3 +100,96 @@ export function uniqueCartIds(
   }
   return [...out];
 }
+
+/**
+ * Statusy płatności zamówienia, które kwalifikują je do odzyskania (osierocona
+ * płatność P24). Zamówienie POWSTAŁO (koszyk domknięty), ale środki nie zostały
+ * potwierdzone — bo webhook P24 zgubił się / `transaction/verify` padł.
+ * `captured`/`partially_captured`/`refunded` = już rozliczone, nie ruszamy.
+ */
+const RECOVERABLE_ORDER_PAYMENT_STATUSES = new Set([
+  "not_paid",
+  "awaiting",
+  "requires_action",
+  "authorized",
+]);
+
+export function isRecoverableOrderPaymentStatus(
+  status: string | null | undefined,
+): boolean {
+  return RECOVERABLE_ORDER_PAYMENT_STATUSES.has((status ?? "").trim());
+}
+
+export type OrderPaymentCollectionLink = {
+  order_id?: string | null;
+  payment_collection_id?: string | null;
+};
+
+/**
+ * Mapuje payment_collection → order_id z linku order↔payment_collection.
+ * Obecność linku = koszyk został domknięty i POWSTAŁO zamówienie (w odróżnieniu
+ * od osieroconego koszyka, który dopiero trzeba domknąć `completeCartWorkflow`).
+ */
+export function mapCollectionsToOrders(
+  rows: OrderPaymentCollectionLink[],
+): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const row of rows) {
+    const collectionId = row.payment_collection_id?.trim();
+    const orderId = row.order_id?.trim();
+    if (collectionId && orderId) out.set(collectionId, orderId);
+  }
+  return out;
+}
+
+/**
+ * Id wiszących sesji P24 należących do wskazanych payment_collection.
+ * Używane do odzyskania osieroconych ZAMÓWIEŃ: mając kolekcje powiązane z
+ * zamówieniem, wybieramy ich sesje do `authorizePaymentSession`.
+ */
+export function pendingSessionIdsForCollections(
+  sessions: P24SessionRow[],
+  collectionIds: Iterable<string>,
+): string[] {
+  const wanted = new Set(collectionIds);
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const s of sessions) {
+    const sessionId = s.id?.trim();
+    const collectionId = s.payment_collection_id?.trim();
+    if (!sessionId || !collectionId) continue;
+    if (!wanted.has(collectionId)) continue;
+    if (seen.has(sessionId)) continue;
+    seen.add(sessionId);
+    out.push(sessionId);
+  }
+  return out;
+}
+
+export type AuthorizeSessionErrorKind = "not_paid_yet" | "already_settled" | "error";
+
+/**
+ * Klasyfikuje błąd `paymentModule.authorizePaymentSession` przy odzyskiwaniu:
+ *  - `not_paid_yet` — provider (P24) nie potwierdził środków; sesja wraca do
+ *    `pending`, Medusa rzuca NOT_ALLOWED „was not authorized”. Normalny stan
+ *    (klient nie zapłacił albo P24 jeszcze nie ma wpłaty) — pomijamy po cichu.
+ *  - `already_settled` — sesja już zautoryzowana/wyścig — też OK.
+ *  - `error` — realny problem do zalogowania.
+ */
+export function classifyAuthorizeSessionError(e: unknown): AuthorizeSessionErrorKind {
+  const raw = (e ?? {}) as { message?: string; type?: string };
+  const msg = typeof raw.message === "string" ? raw.message : String(e ?? "");
+  const type = raw.type ?? "";
+
+  if (
+    type === "not_allowed" ||
+    /was not authorized/i.test(msg) ||
+    /payment authorization/i.test(msg)
+  ) {
+    return "not_paid_yet";
+  }
+  if (/already/i.test(msg) && /authoriz/i.test(msg)) {
+    return "already_settled";
+  }
+  return "error";
+}

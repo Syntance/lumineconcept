@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  classifyAuthorizeSessionError,
   classifyCompleteCartError,
   isReconcilableSession,
+  isRecoverableOrderPaymentStatus,
+  mapCollectionsToOrders,
+  pendingSessionIdsForCollections,
   PRZELEWY24_PROVIDER_ID,
   RECONCILE_MIN_AGE_MS,
   RECONCILE_WINDOW_MS,
   uniqueCartIds,
+  type P24SessionRow,
 } from "../src/lib/p24-reconcile";
 
 const NOW = Date.parse("2026-06-10T12:00:00Z");
@@ -132,5 +137,89 @@ describe("uniqueCartIds", () => {
         { cart_id: "cart_2" },
       ]),
     ).toEqual(["cart_1", "cart_2"]);
+  });
+});
+
+describe("isRecoverableOrderPaymentStatus", () => {
+  it("kwalifikuje nieopłacone zamówienie do odzyskania", () => {
+    expect(isRecoverableOrderPaymentStatus("not_paid")).toBe(true);
+    expect(isRecoverableOrderPaymentStatus("awaiting")).toBe(true);
+    expect(isRecoverableOrderPaymentStatus("requires_action")).toBe(true);
+    expect(isRecoverableOrderPaymentStatus("authorized")).toBe(true);
+  });
+
+  it("pomija zamówienia już rozliczone", () => {
+    expect(isRecoverableOrderPaymentStatus("captured")).toBe(false);
+    expect(isRecoverableOrderPaymentStatus("partially_captured")).toBe(false);
+    expect(isRecoverableOrderPaymentStatus("refunded")).toBe(false);
+    expect(isRecoverableOrderPaymentStatus(null)).toBe(false);
+    expect(isRecoverableOrderPaymentStatus(undefined)).toBe(false);
+  });
+});
+
+describe("mapCollectionsToOrders", () => {
+  it("mapuje payment_collection → order_id i odsiewa niepełne wiersze", () => {
+    const map = mapCollectionsToOrders([
+      { payment_collection_id: "paycol_1", order_id: "order_1" },
+      { payment_collection_id: "  ", order_id: "order_x" },
+      { payment_collection_id: "paycol_2", order_id: null },
+      { payment_collection_id: "paycol_3", order_id: "order_3" },
+    ]);
+    expect([...map.entries()]).toEqual([
+      ["paycol_1", "order_1"],
+      ["paycol_3", "order_3"],
+    ]);
+  });
+});
+
+describe("pendingSessionIdsForCollections", () => {
+  const sessions: P24SessionRow[] = [
+    { id: "payses_1", payment_collection_id: "paycol_1" },
+    { id: "payses_2", payment_collection_id: "paycol_2" },
+    { id: "payses_3", payment_collection_id: "paycol_1" },
+    { id: "", payment_collection_id: "paycol_1" },
+    { id: "payses_4", payment_collection_id: null },
+  ];
+
+  it("zwraca id sesji należących do wskazanych kolekcji", () => {
+    expect(pendingSessionIdsForCollections(sessions, ["paycol_1"])).toEqual([
+      "payses_1",
+      "payses_3",
+    ]);
+  });
+
+  it("obsługuje wiele kolekcji i pomija puste id / brak kolekcji", () => {
+    expect(
+      pendingSessionIdsForCollections(sessions, ["paycol_1", "paycol_2"]),
+    ).toEqual(["payses_1", "payses_2", "payses_3"]);
+  });
+
+  it("zwraca pustą listę gdy brak dopasowania", () => {
+    expect(pendingSessionIdsForCollections(sessions, ["paycol_9"])).toEqual([]);
+  });
+});
+
+describe("classifyAuthorizeSessionError", () => {
+  it("rozpoznaje brak wpłaty (NOT_ALLOWED / was not authorized)", () => {
+    expect(
+      classifyAuthorizeSessionError({
+        type: "not_allowed",
+        message: "Session: payses_1 was not authorized with the provider.",
+      }),
+    ).toBe("not_paid_yet");
+    expect(
+      classifyAuthorizeSessionError(new Error("Payment authorization failed")),
+    ).toBe("not_paid_yet");
+  });
+
+  it("rozpoznaje wyścig — sesja już zautoryzowana", () => {
+    expect(
+      classifyAuthorizeSessionError(new Error("Session already authorized")),
+    ).toBe("already_settled");
+  });
+
+  it("każdy inny błąd traktuje jako realny problem", () => {
+    expect(classifyAuthorizeSessionError(new Error("ECONNREFUSED"))).toBe("error");
+    expect(classifyAuthorizeSessionError(undefined)).toBe("error");
   });
 });
