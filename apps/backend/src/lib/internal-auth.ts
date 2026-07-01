@@ -17,10 +17,6 @@ export function internalSecret(): string | undefined {
   );
 }
 
-export function readHeaderDebug(req: MedusaRequest, name: string): string | undefined {
-  return readHeader(req, name);
-}
-
 function readHeader(req: MedusaRequest, name: string): string | undefined {
   const raw = req.headers[name];
   const value = Array.isArray(raw) ? raw[0] : raw;
@@ -43,16 +39,10 @@ function safeEqual(a: string, b: string): boolean {
  * Fail-closed: gdy sekret nie jest ustawiony w środowisku, zwraca `false`
  * (endpoint nie powinien być publicznie dostępny bez konfiguracji).
  */
-export function hasValidInternalSecret(
-  req: MedusaRequest,
-  debugLogger?: { info: (m: string) => void },
-): boolean {
+export function hasValidInternalSecret(req: MedusaRequest): boolean {
   const expected = internalSecret();
-  const provided = readHeader(req, "x-order-email-secret");
-  debugLogger?.info(
-    `[internal-auth] debug expectedLen=${expected?.length ?? "none"} providedLen=${provided?.length ?? "none"} match=${expected && provided ? safeEqual(provided, expected) : false}`,
-  );
   if (!expected) return false;
+  const provided = readHeader(req, "x-order-email-secret");
   if (!provided) return false;
   return safeEqual(provided, expected);
 }

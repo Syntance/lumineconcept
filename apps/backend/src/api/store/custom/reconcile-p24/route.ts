@@ -1,9 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
-import {
-  hasValidInternalSecret,
-  internalSecret,
-  readHeaderDebug,
-} from "../../../../lib/internal-auth";
+import { hasValidInternalSecret } from "../../../../lib/internal-auth";
 import { runP24Reconcile, type ReconcileLogger } from "../../../../lib/run-p24-reconcile";
 import { dispatchOrderPlacedEmails } from "../../../../lib/order-email-dispatch";
 
@@ -21,6 +17,10 @@ import { dispatchOrderPlacedEmails } from "../../../../lib/order-email-dispatch"
  * `server` subscriber `order.placed` też nie odpala.
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
+  if (!hasValidInternalSecret(req)) {
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+  }
+
   const logger = (() => {
     try {
       return req.scope.resolve("logger") as ReconcileLogger;
@@ -32,21 +32,6 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       } satisfies ReconcileLogger;
     }
   })();
-
-  if (!hasValidInternalSecret(req, logger)) {
-    const expected = internalSecret();
-    const provided = readHeaderDebug(req, "x-order-email-secret");
-    return res.status(401).json({
-      ok: false,
-      error: "unauthorized",
-      debug: {
-        expectedLen: expected?.length ?? null,
-        providedLen: provided?.length ?? null,
-        expectedPreview: expected ? expected.slice(0, 4) + "..." + expected.slice(-4) : null,
-        providedPreview: provided ? provided.slice(0, 4) + "..." + provided.slice(-4) : null,
-      },
-    });
-  }
 
   try {
     const result = await runP24Reconcile(req.scope, logger);
