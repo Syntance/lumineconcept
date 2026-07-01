@@ -199,6 +199,9 @@ export async function runP24Reconcile(
   const reconcilable = (sessionRows as P24SessionRow[]).filter((row) =>
     isReconcilableSession(row, now),
   );
+  logger.info(
+    `[p24-reconcile] debug sessionRows=${sessionRows.length} reconcilable=${reconcilable.length} raw=${JSON.stringify(sessionRows).slice(0, 2000)}`,
+  );
   if (reconcilable.length === 0) return empty;
 
   // 2. Odzyskaj OSIEROCONE zamówienia (zamówienie istnieje, ale płatność P24
