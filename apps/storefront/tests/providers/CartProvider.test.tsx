@@ -176,6 +176,30 @@ describe("CartProvider", () => {
     expect(window.localStorage.getItem("lumine_cart_id")).toBe("cart_new");
   });
 
+  it("zachowuje cart_id i ponawia przy błędzie sieciowym (503) — nie kasuje koszyka", async () => {
+    window.localStorage.setItem("lumine_cart_id", "cart_existing");
+    // Pierwszy call: Railway cold start / chwilowa niedostępność
+    getCart
+      .mockRejectedValueOnce(
+        Object.assign(new Error("503 Service Unavailable"), { status: 503 }),
+      )
+      .mockResolvedValueOnce(SEEDED_CART());
+
+    renderProvider();
+
+    // Retry odpala po ~600ms — waitFor musi poczekać wystarczająco długo.
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("cart-id")).toHaveTextContent("cart_existing");
+      },
+      { timeout: 3000 },
+    );
+
+    expect(createCart).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem("lumine_cart_id")).toBe("cart_existing");
+    expect(screen.getByTestId("item-count")).toHaveTextContent("1");
+  });
+
   it("addItem: propaguje błąd w górę (toasty w UI mogą go złapać)", async () => {
     getCart.mockResolvedValueOnce(SEEDED_CART());
     window.localStorage.setItem("lumine_cart_id", "cart_existing");
