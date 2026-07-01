@@ -12,18 +12,33 @@ async function tryBootstrapOnce(): Promise<Record<string, unknown> | null> {
     typeof window !== "undefined" ? localStorage.getItem(CART_ID_KEY) : null;
 
   if (savedId) {
+    let existing: Record<string, unknown> | null = null;
     try {
-      const existing = (await cartApi.getCart(savedId)) as unknown as Record<
+      existing = (await cartApi.getCart(savedId)) as unknown as Record<
         string,
         unknown
       >;
+    } catch (e) {
+      const status = (e as { status?: number })?.status ?? 0;
+      if (status === 404) {
+        // Koszyk nie istnieje w Medusie — usuń stary ID i utwórz nowy.
+        localStorage.removeItem(CART_ID_KEY);
+      } else {
+        // Błąd sieciowy / 503 (Railway cold start) / timeout — NIE czyść ID.
+        // bootstrapCartSession ponowi próbę; przy kolejnym ładowaniu strony
+        // koszyk będzie ponownie dostępny. Bez tego każdy chwilowy restart
+        // backendu opróżniał koszyk klientowi.
+        throw e;
+      }
+    }
+
+    if (existing !== null) {
       if (existing.completed_at) {
+        // Koszyk został już opłacony — usuń ID i zaczynaj od nowa.
         localStorage.removeItem(CART_ID_KEY);
       } else {
         return existing;
       }
-    } catch {
-      localStorage.removeItem(CART_ID_KEY);
     }
   }
 
