@@ -3,7 +3,6 @@ import {
   ProductPageLayout,
   getProductData,
 } from "@/components/product/ProductPageLayout";
-import { getProducts } from "@/lib/medusa/products";
 import { buildMetadata } from "@/lib/content/metadata";
 import { parseProductSeoFromMetadata } from "@/lib/content/parsers";
 import { getSiteSettings } from "@/lib/content";
@@ -16,8 +15,13 @@ import { ProductPageClient } from "@/app/(shop)/sklep/gotowe-wzory/[slug]/client
  * Każda strona `/sklep/<kategoria>/[slug]` różni się jedynie `basePath`,
  * `categoryLabel`/`Href` oraz ewentualnym `requiredTag`. Zamiast kopiować
  * 60 linii dla każdej kategorii, generujemy komplet (default export,
- * `generateMetadata`, `generateStaticParams`, `revalidate`) z jednego
- * wywołania fabryki.
+ * `generateMetadata`, `revalidate`) z jednego wywołania fabryki.
+ *
+ * UWAGA: celowo NIE eksportujemy `generateStaticParams`. Root layout woła
+ * `headers()` (CSP nonce) — pre-render wszystkich slugów przy buildzie
+ * kończy się na Vercel błędem DYNAMIC_SERVER_USAGE → 500 na PDP.
+ * ISR (`revalidate`) cache'uje stronę po pierwszym żądaniu; webhook Medusy
+ * invaliduje tag `medusa-products`.
  */
 interface CreateProductPageOptions {
   /** Ścieżka kategorii bez końcowego slasha, np. `/sklep/gotowe-wzory`. */
@@ -32,29 +36,6 @@ type SlugParams = Promise<{ slug: string }>;
 
 export function createProductPage(options: CreateProductPageOptions) {
   const { basePath, categoryLabel, categoryHref, requiredTag } = options;
-
-  async function generateStaticParams() {
-    const response = await getProducts({ limit: 200, offset: 0 }).catch(
-      () => null,
-    );
-    if (!response?.products) return [];
-    /**
-     * Prefiltrujemy po tagu, żeby nie generować tej samej statycznej strony
-     * dla produktu z innej kategorii (wcześniej wszystkie `[slug]` generowały
-     * params ze wszystkich produktów → cross-render + kolizje).
-     */
-    return response.products
-      .filter((p) => {
-        if (!p.handle) return false;
-        if (!requiredTag) return true;
-        return (
-          p.tags?.some(
-            (t) => t.value?.toLowerCase() === requiredTag.toLowerCase(),
-          ) ?? false
-        );
-      })
-      .map((p) => ({ slug: p.handle! }));
-  }
 
   async function generateMetadata({
     params,
@@ -98,5 +79,5 @@ export function createProductPage(options: CreateProductPageOptions) {
     );
   }
 
-  return { Page, generateMetadata, generateStaticParams };
+  return { Page, generateMetadata };
 }
