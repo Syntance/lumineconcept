@@ -17,6 +17,10 @@ export function internalSecret(): string | undefined {
   );
 }
 
+export function readHeaderDebug(req: MedusaRequest, name: string): string | undefined {
+  return readHeader(req, name);
+}
+
 function readHeader(req: MedusaRequest, name: string): string | undefined {
   const raw = req.headers[name];
   const value = Array.isArray(raw) ? raw[0] : raw;
