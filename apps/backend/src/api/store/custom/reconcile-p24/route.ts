@@ -53,6 +53,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       ok: true,
       candidates: result.candidates,
       completed: result.completed,
+      settled: result.settled,
       recovered_order_ids: result.recoveredOrderIds,
       emails,
     });
