@@ -134,11 +134,16 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
       return Math.round((total + expressSurcharge) * 100) / 100;
     }
 
+    /**
+     * `productsSubtotal` to suma `item.total` — czyli ceny JUŻ PO rabacie.
+     * `discountTotal` musi być tu pominięte, żeby nie odjąć go podwójnie.
+     * Wiersz „Produkty" pokazuje cenę przed rabatem (productsSubtotal + discountTotal),
+     * a osobny wiersz „Zniżka" odejmuje discountTotal — sumarycznie wychodzi prawidłowo.
+     */
     const sum =
       productsSubtotal +
       expressSurcharge +
-      previewShipping -
-      discountTotal +
+      previewShipping +
       tax_total;
     return Math.round(Math.max(0, sum) * 100) / 100;
   }, [
@@ -148,7 +153,6 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
     total,
     expressSurcharge,
     productsSubtotal,
-    discountTotal,
     tax_total,
   ]);
 
@@ -200,7 +204,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
         <div className="flex justify-between">
           <span className="text-brand-600">Produkty</span>
           <span className="font-medium tabular-nums text-brand-800">
-            {formatPrice(productsSubtotal)}
+            {formatPrice(productsSubtotal + discountTotal)}
           </span>
         </div>
         <div className="flex justify-between">
