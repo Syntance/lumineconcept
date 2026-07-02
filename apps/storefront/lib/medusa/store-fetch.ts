@@ -1,5 +1,25 @@
 import { resolveMedusaFetchBase } from "./resolve-fetch-base";
 
+/**
+ * Tworzy sygnał z limitem czasu.
+ * `AbortSignal.timeout` jest dostępne od Safari 16 / iOS 16 (wrzesień 2022).
+ * Na starszych urządzeniach fallback przez AbortController + setTimeout.
+ */
+function createTimeoutSignal(ms: number): AbortSignal {
+  if (typeof AbortSignal.timeout === "function") {
+    return AbortSignal.timeout(ms);
+  }
+  const ac = new AbortController();
+  const id = setTimeout(
+    () => ac.abort(new DOMException(`Timeout after ${ms}ms`, "TimeoutError")),
+    ms,
+  );
+  // Nie możemy wyczyścić timeoutu przy abort (brak nasłuchiwania tutaj),
+  // ale 30s timer i tak wygaśnie — akceptowalne dla fallbacku.
+  void id;
+  return ac.signal;
+}
+
 /** Pola koszyka wymagane przez UI (sumy pozycji, dostawa). */
 export const CART_FIELDS_QUERY =
   "+items.total,+items.subtotal,+items.unit_price,+items.quantity,+items.thumbnail,+items.product.thumbnail,+items.product.images.url,+subtotal,+total,+tax_total,+shipping_total,+shipping_methods,+shipping_methods.shipping_option_id,+discount_total,+promotions.id,+promotions.code";
@@ -35,7 +55,7 @@ export async function storeApiFetch(
   // caller może nadpisać własnym `signal` (np. krótszym dla prefetchy).
   return fetch(`${base}${normalizedPath}`, {
     ...init,
-    signal: init.signal ?? AbortSignal.timeout(30_000),
+    signal: init.signal ?? createTimeoutSignal(30_000),
     headers,
   });
 }

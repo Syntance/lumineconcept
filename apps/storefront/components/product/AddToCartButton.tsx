@@ -35,7 +35,7 @@ export function AddToCartButton({
   onBeforeAdd,
   metadata,
 }: AddToCartButtonProps) {
-  const { addItemWithTracking } = useCart();
+  const { addItemWithTracking, isInitialized } = useCart();
   const [isAdding, setIsAdding] = useState(false);
   const [quantity, setQuantity] = useState(minQuantity);
   const [pendingFromCallout, setPendingFromCallout] = useState(false);
@@ -116,12 +116,20 @@ export function AddToCartButton({
     };
   }, [pendingFromCallout, doAdd]);
 
+  /**
+   * Blokujemy przyciski do momentu zakończenia bootstrapu koszyka.
+   * Bez tego użytkownik może kliknąć „Kup teraz" zanim cart.id jest gotowe
+   * → addItem robi cichy early-return (cart.id = null) → redirect do pustego
+   * checkoutu. Dotyczy szczególnie wolnych sieci i starszych urządzeń.
+   */
+  const ctaDisabled = disabled || !variantId || isAdding || !isInitialized;
+
   if (compact) {
     return (
       <button
         type="button"
         onClick={() => handleAddToCart(false)}
-        disabled={disabled || !variantId || isAdding}
+        disabled={ctaDisabled}
         className="flex shrink-0 items-center justify-center gap-2 rounded-none border border-brand-300 bg-brand-800 px-4 py-2.5 font-display text-xs font-semibold italic text-white transition-colors hover:border-brand-400 hover:bg-brand-900 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isAdding ? (
@@ -136,8 +144,6 @@ export function AddToCartButton({
 
   const stepperBtn =
     "flex size-11 shrink-0 items-center justify-center rounded-none border border-brand-300 bg-white font-display text-base leading-none text-neutral-900 transition-colors hover:border-brand-400 hover:bg-brand-50 focus-visible:border-brand-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40";
-
-  const ctaDisabled = disabled || !variantId || isAdding;
 
   const ctaBtn =
     "flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-none border border-brand-300 px-3 font-display text-[13px] italic tracking-wide transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-[18px]";

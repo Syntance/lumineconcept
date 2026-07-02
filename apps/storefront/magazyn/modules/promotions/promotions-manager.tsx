@@ -118,11 +118,11 @@ export function PromotionsManager({ promos, products }: Props) {
 									{" · "}
 									{formatPromoScopeLabel(promo, productTitleById)}
 								</p>
-								{promo.freeShippingEnabled ? (
+									{promo.freeShippingEnabled ? (
 									<p className="mt-1 text-xs text-muted-foreground">
 										Darmowa dostawa
 										{promo.freeShippingMinAmount
-											? ` od ${(promo.freeShippingMinAmount / 100).toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}`
+											? ` od ${promo.freeShippingMinAmount.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}`
 											: " bez progu"}
 									</p>
 								) : null}
