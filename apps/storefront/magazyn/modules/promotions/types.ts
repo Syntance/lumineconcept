@@ -5,11 +5,11 @@ export type AdminPromoCode = {
 	code: string;
 	status: "active" | "draft" | "inactive";
 	discountType: PromoDiscountType;
-	/** Procent (1–100) lub kwota w groszach dla fixed. */
+	/** Procent (1–100) lub kwota w PLN (major units) dla fixed. */
 	discountValue: number;
 	productIds: string[];
 	freeShippingEnabled: boolean;
-	/** Minimalna wartość koszyka dla darmowej dostawy (grosze). null = bez progu. */
+	/** Minimalna wartość koszyka dla darmowej dostawy (PLN). null = bez progu. */
 	freeShippingMinAmount: number | null;
 	/** ID powiązanej promocji darmowej dostawy (gdy rabat + dostawa). */
 	freeShippingPromotionId: string | null;

@@ -85,14 +85,14 @@ function parseProductIds(promotion: MedusaPromotion): string[] {
 	return [];
 }
 
-function parseFreeShippingMinGrosze(promotion: MedusaPromotion): number | null {
+function parseFreeShippingMinPln(promotion: MedusaPromotion): number | null {
 	const rules = promotion.rules ?? [];
 	for (const rule of rules) {
 		if (rule.attribute === LUMINE_SUBTOTAL_RULE_ATTR && rule.operator === "gte") {
 			const raw = ruleValues(rule)[0];
 			if (!raw) return null;
 			const parsed = Number(raw);
-			return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : null;
+			return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 		}
 	}
 	return null;
@@ -131,9 +131,9 @@ function toAdminPromoCode(
 	let discountValue = parseDiscountValue(promotion);
 	let freeShippingEnabled = freeShippingOnly || shadow !== null;
 	let freeShippingMinAmount = freeShippingOnly
-		? parseFreeShippingMinGrosze(promotion)
+		? parseFreeShippingMinPln(promotion)
 		: shadow
-			? parseFreeShippingMinGrosze(shadow)
+			? parseFreeShippingMinPln(shadow)
 			: null;
 
 	if (freeShippingOnly) {
@@ -214,13 +214,13 @@ function buildTargetRules(productIds: string[]): MedusaRulePayload[] | undefined
 	];
 }
 
-function buildSubtotalRules(minGrosze: number | null): MedusaRulePayload[] | undefined {
-	if (!minGrosze || minGrosze <= 0) return undefined;
+function buildSubtotalRules(minPln: number | null): MedusaRulePayload[] | undefined {
+	if (!minPln || minPln <= 0) return undefined;
 	return [
 		{
 			attribute: LUMINE_SUBTOTAL_RULE_ATTR,
 			operator: "gte",
-			values: [String(minGrosze)],
+			values: [String(minPln)],
 		},
 	];
 }
@@ -271,7 +271,7 @@ function buildDiscountPromotionBody(
 function buildFreeShippingPromotionBody(
 	code: string,
 	status: "active" | "draft",
-	minGrosze: number | null,
+	minPln: number | null,
 ): CreatePromotionBody {
 	return {
 		code,
@@ -284,7 +284,7 @@ function buildFreeShippingPromotionBody(
 			value: 100,
 			allocation: "across",
 		},
-		rules: buildSubtotalRules(minGrosze),
+		rules: buildSubtotalRules(minPln),
 	};
 }
 
@@ -365,7 +365,7 @@ async function replacePromotionRules(promotionId: string, minGrosze: number | nu
 async function syncShadowFreeShipping(
 	mainId: string,
 	input: PromoCodeInput,
-	minGrosze: number | null,
+	minPln: number | null,
 ): Promise<void> {
 	const fsCode = freeShippingPromotionCode(mainId);
 	const all = await fetchAllPromotions();
@@ -386,11 +386,11 @@ async function syncShadowFreeShipping(
 				allocation: "across",
 			},
 		});
-		await replacePromotionRules(existing.id, minGrosze);
+		await replacePromotionRules(existing.id, minPln);
 		return;
 	}
 
-	await createPromotion(buildFreeShippingPromotionBody(fsCode, input.status, minGrosze));
+	await createPromotion(buildFreeShippingPromotionBody(fsCode, input.status, minPln));
 }
 
 function resolveDiscountValue(input: PromoCodeInput): number {
@@ -398,7 +398,11 @@ function resolveDiscountValue(input: PromoCodeInput): number {
 		return Math.min(100, Math.max(1, Math.round(input.discountValueMajor)));
 	}
 	if (input.discountType === "fixed") {
-		return majorPlnToGrosze(input.discountValueMajor);
+		// Medusa v2 traktuje value promocji jako PLN (major units) — identycznie
+		// jak ceny produktów w koszyku. Wysyłamy PLN bezpośrednio.
+		// (Wcześniej wysyłano grosze ×100, co powodowało zniżkę 990 PLN zamiast
+		// 9,90 PLN — produkt stawał się darmowy przez obcięcie do ceny produktu.)
+		return input.discountValueMajor;
 	}
 	return 0;
 }
@@ -408,9 +412,9 @@ export async function createPromoCode(input: PromoCodeInput): Promise<void> {
 	if (!code) throw new Error("Kod promocyjny jest wymagany.");
 
 	const hasDiscount = input.discountType !== "none";
-	const minGrosze =
-		input.freeShippingEnabled && input.freeShippingMinAmountMajor
-			? majorPlnToGrosze(input.freeShippingMinAmountMajor)
+	const minPln =
+		input.freeShippingEnabled && input.freeShippingMinAmountMajor && input.freeShippingMinAmountMajor > 0
+			? input.freeShippingMinAmountMajor
 			: null;
 
 	if (!hasDiscount && !input.freeShippingEnabled) {
@@ -427,14 +431,14 @@ export async function createPromoCode(input: PromoCodeInput): Promise<void> {
 
 	if (input.freeShippingEnabled && !hasDiscount) {
 		await createPromotion(
-			buildFreeShippingPromotionBody(code, input.status, minGrosze),
+			buildFreeShippingPromotionBody(code, input.status, minPln),
 		);
 		return;
 	}
 
 	const discountValue = resolveDiscountValue(input);
 	const main = await createPromotion(buildDiscountPromotionBody({ ...input, code }, discountValue));
-	await syncShadowFreeShipping(main.id, { ...input, code }, minGrosze);
+	await syncShadowFreeShipping(main.id, { ...input, code }, minPln);
 }
 
 export async function updatePromoCode(id: string, input: PromoCodeInput): Promise<void> {
@@ -446,9 +450,9 @@ export async function updatePromoCode(id: string, input: PromoCodeInput): Promis
 
 	const code = input.code.trim().toUpperCase();
 	const hasDiscount = input.discountType !== "none";
-	const minGrosze =
-		input.freeShippingEnabled && input.freeShippingMinAmountMajor
-			? majorPlnToGrosze(input.freeShippingMinAmountMajor)
+	const minPln =
+		input.freeShippingEnabled && input.freeShippingMinAmountMajor && input.freeShippingMinAmountMajor > 0
+			? input.freeShippingMinAmountMajor
 			: null;
 
 	if (!hasDiscount && !input.freeShippingEnabled) {
@@ -469,14 +473,14 @@ export async function updatePromoCode(id: string, input: PromoCodeInput): Promis
 					allocation: "across",
 				},
 			});
-			await replacePromotionRules(id, minGrosze);
+			await replacePromotionRules(id, minPln);
 			return;
 		}
 
 		const shadow = all.find((p) => p.code === freeShippingPromotionCode(id));
 		if (shadow) await deletePromotion(shadow.id);
 		await deletePromotion(id);
-		await createPromotion(buildFreeShippingPromotionBody(code, input.status, minGrosze));
+		await createPromotion(buildFreeShippingPromotionBody(code, input.status, minPln));
 		return;
 	}
 
@@ -486,7 +490,7 @@ export async function updatePromoCode(id: string, input: PromoCodeInput): Promis
 		const main = await createPromotion(
 			buildDiscountPromotionBody({ ...input, code }, discountValue),
 		);
-		await syncShadowFreeShipping(main.id, { ...input, code }, minGrosze);
+		await syncShadowFreeShipping(main.id, { ...input, code }, minPln);
 		return;
 	}
 
@@ -503,7 +507,7 @@ export async function updatePromoCode(id: string, input: PromoCodeInput): Promis
 		},
 	});
 	await replaceTargetRules(id, input.productIds);
-	await syncShadowFreeShipping(id, { ...input, code }, minGrosze);
+	await syncShadowFreeShipping(id, { ...input, code }, minPln);
 }
 
 export async function deletePromoCode(id: string): Promise<void> {
