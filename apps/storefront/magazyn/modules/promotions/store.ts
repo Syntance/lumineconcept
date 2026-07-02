@@ -421,11 +421,11 @@ export async function createPromoCode(input: PromoCodeInput): Promise<void> {
 		throw new Error("Wybierz rabat lub darmową dostawę.");
 	}
 
-	if (hasDiscount && input.discountType === "fixed" && input.discountValueMajor <= 0) {
+	if (hasDiscount && input.discountType === "fixed" && (!Number.isFinite(input.discountValueMajor) || input.discountValueMajor <= 0)) {
 		throw new Error("Kwota rabatu musi być większa od zera.");
 	}
 
-	if (hasDiscount && input.discountType === "percentage" && input.discountValueMajor <= 0) {
+	if (hasDiscount && input.discountType === "percentage" && (!Number.isFinite(input.discountValueMajor) || input.discountValueMajor <= 0)) {
 		throw new Error("Procent rabatu musi być większy od zera.");
 	}
 

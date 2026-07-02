@@ -10,6 +10,13 @@ import { savePromoCodeAction, type PromoPayload } from "./actions";
 import type { AdminPromoCode, ProductOption, PromoCodeInput } from "./types";
 import { promoCodeToFormValues } from "./promo-form-utils";
 
+/** Parsuje wartość z <input type="number"> akceptując zarówno "9.90" jak i "9,90". */
+function parseDecimalInput(raw: string): number {
+	const normalized = raw.trim().replace(",", ".");
+	const n = Number(normalized);
+	return Number.isFinite(n) ? n : NaN;
+}
+
 type Props = {
 	promo?: AdminPromoCode;
 	products: ProductOption[];
@@ -190,7 +197,7 @@ export function PromotionForm({
 							onChange={(e) =>
 								setForm((prev) => ({
 									...prev,
-									discountValueMajor: Number(e.target.value),
+									discountValueMajor: parseDecimalInput(e.target.value),
 								}))
 							}
 							className="h-10"
@@ -289,9 +296,10 @@ export function PromotionForm({
 							value={form.freeShippingMinAmountMajor ?? ""}
 							onChange={(e) => {
 								const raw = e.target.value.trim();
+								const parsed = parseDecimalInput(raw);
 								setForm((prev) => ({
 									...prev,
-									freeShippingMinAmountMajor: raw === "" ? null : Number(raw),
+									freeShippingMinAmountMajor: raw === "" || !Number.isFinite(parsed) ? null : parsed,
 								}));
 							}}
 							className="h-10"
