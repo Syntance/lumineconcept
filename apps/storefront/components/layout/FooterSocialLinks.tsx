@@ -54,7 +54,7 @@ export function FooterSocialLinks({ social, className }: Props) {
 export function FooterCreditLink() {
   return (
     <TrackedOutboundLink
-      href="https://syntance.dev"
+      href="https://syntance.com"
       cta_label="Syntance"
       className="text-on-brand-800 underline underline-offset-2 hover:text-white"
     >
