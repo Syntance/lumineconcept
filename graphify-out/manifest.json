@@ -1530,8 +1530,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/components/layout/FooterSocialLinks.tsx": {
-    "mtime": 1782978435.330875,
-    "ast_hash": "9395c8426c6b248c39211b73279ae798",
+    "mtime": 1782981957.4566264,
+    "ast_hash": "00d860249e9ce69fe20b6e530066ed30",
     "semantic_hash": ""
   },
   "apps/storefront/components/layout/Header.tsx": {
