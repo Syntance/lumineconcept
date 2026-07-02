@@ -1,12 +1,11 @@
 import type { AdminPromoCode, PromoCodeInput } from "./types";
 
 export function promoCodeToFormValues(promo: AdminPromoCode): PromoCodeInput {
-	let discountValueMajor = 0;
-	if (promo.discountType === "percentage") {
-		discountValueMajor = promo.discountValue;
-	} else if (promo.discountType === "fixed") {
-		discountValueMajor = promo.discountValue / 100;
-	}
+	// discountValue i freeShippingMinAmount są w PLN (major units) — bez konwersji.
+	const discountValueMajor =
+		promo.discountType === "percentage" || promo.discountType === "fixed"
+			? promo.discountValue
+			: 0;
 
 	return {
 		code: promo.code,
@@ -17,7 +16,7 @@ export function promoCodeToFormValues(promo: AdminPromoCode): PromoCodeInput {
 		freeShippingEnabled: promo.freeShippingEnabled,
 		freeShippingMinAmountMajor:
 			promo.freeShippingMinAmount && promo.freeShippingMinAmount > 0
-				? promo.freeShippingMinAmount / 100
+				? promo.freeShippingMinAmount
 				: null,
 	};
 }
@@ -25,7 +24,8 @@ export function promoCodeToFormValues(promo: AdminPromoCode): PromoCodeInput {
 export function formatPromoDiscountLabel(promo: AdminPromoCode): string {
 	if (promo.discountType === "percentage") return `−${promo.discountValue}%`;
 	if (promo.discountType === "fixed") {
-		return `−${(promo.discountValue / 100).toLocaleString("pl-PL", {
+		// discountValue jest w PLN (major units)
+		return `−${promo.discountValue.toLocaleString("pl-PL", {
 			style: "currency",
 			currency: "PLN",
 		})}`;
