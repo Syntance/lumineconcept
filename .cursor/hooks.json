@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "node .cursor/hooks/graphify-guard.js",
+        "matcher": "Read|Grep|Glob|Shell",
+        "failClosed": false
+      }
+    ]
+  }
+}
