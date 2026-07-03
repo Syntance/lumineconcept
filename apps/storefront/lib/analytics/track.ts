@@ -173,6 +173,20 @@ export function track<E extends AnalyticsEventName>(
 
   if (consent?.analytics && !POSTHOG_SERVER_ONLY_EVENTS.has(name)) {
     posthog.capture(name, enriched);
+    // PostHog Web Analytics liczy tylko natywny $pageview — sklep wysyła własny page_view
+    // (panel Magazyn, funnele). Bez $pageview widok Web Analytics pokazuje 0 mimo że Activity ma dane.
+    if (name === "page_view") {
+      const fullUrl =
+        typeof enriched.full_url === "string"
+          ? enriched.full_url
+          : `${window.location.origin}${window.location.pathname}${window.location.search}`;
+      posthog.capture("$pageview", {
+        $current_url: fullUrl.startsWith("http") ? fullUrl : `${window.location.origin}${fullUrl}`,
+        $pathname:
+          typeof enriched.page_path === "string" ? enriched.page_path : window.location.pathname,
+        title: enriched.title,
+      });
+    }
   }
 
   if (consent?.marketing) {
