@@ -1,39 +1,38 @@
 import "server-only";
 
 import { adminFetch } from "@magazyn/core/medusa/client";
+import { fillDailyRange, toIsoDate } from "./raw-hits-utils";
+import type { SalesPeriod } from "./sales-period";
 import type { RawHitsData } from "./types";
 
 type RawHitsApiResponse = {
 	totalHits: number;
-	rangeDays: number;
+	rangeFrom: string;
+	rangeTo: string;
+	trackingSince: string | null;
 	days: Array<{ date: string; hits: number }>;
 	topPaths: Array<{ path: string; hits: number }>;
 };
 
-function formatDayLabel(iso: string): string {
-	const date = new Date(`${iso}T12:00:00`);
-	if (Number.isNaN(date.getTime())) return iso;
-	return date.toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
-}
-
 /** Surowe, niezależne od cookies wejścia na stronę (patrz backend track-hit). */
-export async function fetchRawHits(rangeDays: number): Promise<RawHitsData> {
+export async function fetchRawHits(period: SalesPeriod): Promise<RawHitsData> {
+	const from = toIsoDate(period.rangeStart);
+	const to = toIsoDate(period.rangeEnd);
+
 	try {
 		const data = await adminFetch<RawHitsApiResponse>(
-			`/admin/custom/raw-hits?days=${rangeDays}`,
+			`/admin/custom/raw-hits?from=${from}&to=${to}`,
 			{ fresh: true },
 		);
 
 		return {
 			status: "connected",
 			fetchedAt: new Date().toISOString(),
-			rangeDays: data.rangeDays,
+			rangeFrom: data.rangeFrom,
+			rangeTo: data.rangeTo,
+			trackingSince: data.trackingSince,
 			totalHits: data.totalHits,
-			daily: data.days.map((point) => ({
-				date: point.date,
-				label: formatDayLabel(point.date),
-				hits: point.hits,
-			})),
+			daily: fillDailyRange(data.rangeFrom, data.rangeTo, data.days),
 			topPaths: data.topPaths,
 		};
 	} catch (error) {

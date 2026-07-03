@@ -197,6 +197,17 @@ export function salesPeriodToRangeDays(period: SalesPeriod): number {
 	return Math.min(365, Math.max(1, days));
 }
 
+/** Zakres kalendarzowy okresu statystyk (YYYY-MM-DD) — do zapytań GA4/PostHog/raw-hits. */
+export function salesPeriodToIsoRange(period: SalesPeriod): { from: string; to: string } {
+	const toIso = (date: Date) => {
+		const y = date.getFullYear();
+		const m = String(date.getMonth() + 1).padStart(2, "0");
+		const d = String(date.getDate()).padStart(2, "0");
+		return `${y}-${m}-${d}`;
+	};
+	return { from: toIso(period.rangeStart), to: toIso(period.rangeEnd) };
+}
+
 export function buildYearPickerOptions(now = new Date()): Array<{ value: string; label: string }> {
 	const options: Array<{ value: string; label: string }> = [];
 	for (let year = now.getFullYear(); year >= 2020; year -= 1) {

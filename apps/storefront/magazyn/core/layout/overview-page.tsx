@@ -1,6 +1,7 @@
 import { loadAdmin } from "@magazyn/core/auth/load";
 import { magazynConfig } from "../../magazyn.config";
 import { fetchAnalyticsDashboard } from "@magazyn/modules/analytics/fetch-analytics";
+import { getOverviewSalesPeriod } from "@magazyn/modules/analytics/sales-period";
 import { getSalesStatistics } from "@magazyn/modules/analytics/sales-store";
 import { listAdminOrders } from "@magazyn/modules/orders/store";
 import { OverviewDashboardCharts } from "./overview-dashboard-charts";
@@ -17,10 +18,11 @@ export default async function OverviewPage() {
 
 	const dashboardData = ordersEnabled
 		? await loadAdmin(async () => {
+				const overviewPeriod = getOverviewSalesPeriod();
 				const [sales, orders, analytics] = await Promise.all([
-					getSalesStatistics(),
+					getSalesStatistics(overviewPeriod),
 					listAdminOrders(),
-					fetchAnalyticsDashboard({ rangeDays: 30 }).catch(() => null),
+					fetchAnalyticsDashboard({ period: overviewPeriod }).catch(() => null),
 				]);
 				return { sales, recentOrders: orders.slice(0, 6), analytics };
 			})

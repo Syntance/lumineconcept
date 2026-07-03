@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { loadAdmin } from "@magazyn/core/auth/load";
 import { fetchAnalyticsDashboard } from "./fetch-analytics";
 import { fetchRawHits } from "./raw-hits-store";
-import { parseSalesPeriod, salesPeriodToRangeDays } from "./sales-period";
+import { parseSalesPeriod } from "./sales-period";
 import { getSalesStatistics } from "./sales-store";
 import { StatisticsPeriodSelector } from "./statistics-period-selector";
 import { StatisticsTabs } from "./statistics-tabs";
@@ -22,13 +22,12 @@ type PageProps = {
 export default async function AnalyticsStatisticsPage({ searchParams }: PageProps) {
 	const params = await searchParams;
 	const period = parseSalesPeriod(params);
-	const rangeDays = salesPeriodToRangeDays(period);
 
 	const [sales, analytics, rawHits] = await loadAdmin(async () =>
 		Promise.all([
 			getSalesStatistics(period),
-			fetchAnalyticsDashboard({ rangeDays }),
-			fetchRawHits(rangeDays),
+			fetchAnalyticsDashboard({ period }),
+			fetchRawHits(period),
 		]),
 	);
 

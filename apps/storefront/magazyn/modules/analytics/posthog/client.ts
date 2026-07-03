@@ -1,5 +1,6 @@
 import "server-only";
 
+import { fillDailyRange } from "../raw-hits-utils";
 import { analyticsEnv } from "../env";
 import { resolvePosthogProjectId } from "./resolve-project";
 import type {
@@ -12,9 +13,14 @@ import type {
 } from "../types";
 
 const FETCH_TIMEOUT_MS = 30_000;
+const MAX_PAGE_PATHS = 500;
+
+type DateRange = { from: string; to: string };
 
 /** Ruch panelu admina nie wchodzi w metryki sklepu. */
-const STOREFRONT_WHERE = `timestamp >= now() - INTERVAL {days} DAY AND (properties.$pathname IS NULL OR properties.$pathname NOT LIKE '/magazyn%')`;
+function storefrontWhere(range: DateRange): string {
+	return `timestamp >= toDateTime('${range.from}') AND timestamp < toDateTime('${range.to}') + INTERVAL 1 DAY AND (properties.$pathname IS NULL OR properties.$pathname NOT LIKE '/magazyn%')`;
+}
 
 /** Zgodne z rejestrem eventów Syntance / Lumine (`lib/analytics/events/registry.ts`). */
 const ECOMMERCE_FUNNEL: Array<{ event: string; label: string }> = [
@@ -38,10 +44,6 @@ type PosthogQueryResponse = {
 	results?: unknown;
 	columns?: string[];
 };
-
-function storefrontWhere(days: number): string {
-	return STOREFRONT_WHERE.replace("{days}", String(days));
-}
 
 function translateChannel(raw: string): string {
 	if (raw === "$direct" || raw === "") return "Bezpośredni";
@@ -172,7 +174,7 @@ function buildKpi(metrics: {
 const POSTHOG_DISCONNECTED_REASON =
 	"Brak klucza PostHog. Panel próbuje: POSTHOG_PERSONAL_API_KEY → POSTHOG_API_KEY → NEXT_PUBLIC_POSTHOG_KEY.";
 
-export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogAnalyticsSlice> {
+export async function fetchPosthogAnalytics(range: DateRange): Promise<PosthogAnalyticsSlice> {
 	if (!analyticsEnv.posthogConfigured) {
 		return {
 			status: "disconnected",
@@ -190,7 +192,7 @@ export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogA
 	}
 
 	try {
-		const where = storefrontWhere(rangeDays);
+		const where = storefrontWhere(range);
 
 		const [
 			sessionsResponse,
@@ -235,19 +237,19 @@ export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogA
 			posthogQuery(projectId, {
 				query: {
 					kind: "HogQLQuery",
-					query: `SELECT toDate(timestamp) AS day, uniq(properties.$session_id) AS sessions FROM events WHERE ${where} GROUP BY day ORDER BY day`,
+					query: `SELECT toDate(timestamp) AS day, uniq(person_id) AS users FROM events WHERE ${where} GROUP BY day ORDER BY day`,
 				},
 			}),
 			posthogQuery(projectId, {
 				query: {
 					kind: "HogQLQuery",
-					query: `SELECT ifNull(nullIf(properties.$channel_type, ''), 'Direct') AS channel, uniq(properties.$session_id) AS sessions FROM events WHERE ${where} GROUP BY channel ORDER BY sessions DESC LIMIT 8`,
+					query: `SELECT ifNull(nullIf(properties.$channel_type, ''), 'Direct') AS channel, uniq(properties.$session_id) AS sessions FROM events WHERE ${where} GROUP BY channel ORDER BY sessions DESC LIMIT 12`,
 				},
 			}),
 			posthogQuery(projectId, {
 				query: {
 					kind: "HogQLQuery",
-					query: `SELECT properties.$pathname AS path, count() AS views FROM events WHERE event = '$pageview' AND properties.$pathname IS NOT NULL AND properties.$pathname NOT LIKE '/magazyn%' AND timestamp >= now() - INTERVAL ${rangeDays} DAY GROUP BY path ORDER BY views DESC LIMIT 10`,
+					query: `SELECT properties.$pathname AS path, count() AS views FROM events WHERE event = '$pageview' AND properties.$pathname IS NOT NULL AND properties.$pathname NOT LIKE '/magazyn%' AND ${where} GROUP BY path ORDER BY views DESC LIMIT ${MAX_PAGE_PATHS}`,
 				},
 			}),
 		]);
@@ -269,7 +271,7 @@ export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogA
 		const pageviews = parseHogqlCount(pageviewsResponse);
 		const purchases = parseHogqlCount(purchasesResponse);
 		const revenueRaw = parseHogqlCount(revenueResponse);
-		const traffic = parseHogqlDailySeries(trafficResponse);
+		const trafficRaw = parseHogqlDailySeries(trafficResponse);
 		let channels = parseChannelRows(channelsResponse);
 		const topPages = parseTopPageRows(pagesResponse);
 
@@ -277,11 +279,17 @@ export async function fetchPosthogAnalytics(rangeDays: number): Promise<PosthogA
 			const fallbackChannels = await posthogQuery(projectId, {
 				query: {
 					kind: "HogQLQuery",
-					query: `SELECT multiIf(properties.$referring_domain = '' OR properties.$referring_domain IS NULL, 'Direct', properties.$referring_domain = '$direct', 'Direct', properties.$referring_domain) AS channel, uniq(properties.$session_id) AS sessions FROM events WHERE ${where} GROUP BY channel ORDER BY sessions DESC LIMIT 8`,
+					query: `SELECT multiIf(properties.$referring_domain = '' OR properties.$referring_domain IS NULL, 'Direct', properties.$referring_domain = '$direct', 'Direct', properties.$referring_domain) AS channel, uniq(properties.$session_id) AS sessions FROM events WHERE ${where} GROUP BY channel ORDER BY sessions DESC LIMIT 12`,
 				},
 			});
 			channels = parseChannelRows(fallbackChannels);
 		}
+
+		const traffic = fillDailyRange(
+			range.from,
+			range.to,
+			trafficRaw.map((p) => ({ date: p.date, hits: p.value })),
+		).map((p) => ({ date: p.date, label: p.label, value: p.hits }));
 
 		const topFunnel = funnelCounts[0] ?? 0;
 		const funnel: FunnelStep[] = ECOMMERCE_FUNNEL.map(({ event, label }, index) => {

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import { fillDailyRange } from "../raw-hits-utils";
 import { analyticsEnv } from "../env";
 import type {
 	AnalyticsKpi,
@@ -11,12 +12,32 @@ import type {
 } from "../types";
 
 const FETCH_TIMEOUT_MS = 30_000;
+const MAX_PAGE_PATHS = 500;
 
-function dateRange(days: number): { startDate: string; endDate: string } {
-	return {
-		startDate: `${days}daysAgo`,
-		endDate: "today",
-	};
+const GA4_CHANNEL_LABELS: Record<string, string> = {
+	Direct: "Bezpośredni",
+	"Organic Search": "Wyszukiwarka (organic)",
+	"Paid Search": "Wyszukiwarka (płatne)",
+	"Organic Social": "Social (organic)",
+	"Paid Social": "Social (płatne)",
+	Referral: "Polecenia",
+	Email: "E-mail",
+	Unassigned: "Nieprzypisane",
+	Display: "Display",
+	"Cross-network": "Cross-network",
+	"Organic Video": "Wideo (organic)",
+	"Paid Video": "Wideo (płatne)",
+	"Organic Shopping": "Shopping (organic)",
+	"Paid Shopping": "Shopping (płatne)",
+	SMS: "SMS",
+	Affiliates: "Afiliacja",
+	Audio: "Audio",
+};
+
+type DateRange = { from: string; to: string };
+
+function ga4DateRange(range: DateRange): { startDate: string; endDate: string } {
+	return { startDate: range.from, endDate: range.to };
 }
 
 function formatGa4Date(raw: string): { date: string; label: string } {
@@ -32,6 +53,10 @@ function formatGa4Date(raw: string): { date: string; label: string } {
 function toPercent(part: number, total: number): number {
 	if (total <= 0) return 0;
 	return Math.round((part / total) * 1000) / 10;
+}
+
+function translateGa4Channel(raw: string): string {
+	return GA4_CHANNEL_LABELS[raw] ?? raw;
 }
 
 function buildKpi(metrics: {
@@ -69,7 +94,31 @@ function formatGa4Error(error: unknown): string {
 	return message;
 }
 
-export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4AnalyticsSlice> {
+function parseChannelReport(
+	rows: Array<{
+		dimensionValues?: Array<{ value?: string | null } | null> | null;
+		metricValues?: Array<{ value?: string | null } | null> | null;
+	}> | null | undefined,
+	translate: (raw: string) => string,
+): ChannelRow[] {
+	const parsed =
+		rows?.map((row) => {
+			const sessionsCount = Number(row.metricValues?.[0]?.value ?? 0);
+			return {
+				channel: translate(row.dimensionValues?.[0]?.value ?? "—"),
+				sessions: sessionsCount,
+			};
+		}) ?? [];
+
+	const filtered = parsed.filter((row) => row.sessions > 0);
+	const total = filtered.reduce((sum, row) => sum + row.sessions, 0);
+	return filtered.map((row) => ({
+		...row,
+		share: toPercent(row.sessions, total),
+	}));
+}
+
+export async function fetchGa4Analytics(range: DateRange): Promise<Ga4AnalyticsSlice> {
 	if (!analyticsEnv.ga4Configured) {
 		const measurementHint = analyticsEnv.ga4MeasurementId
 			? ` (storefront ma ${analyticsEnv.ga4MeasurementId} — to nie wystarczy do Data API)`
@@ -89,14 +138,14 @@ export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4Analytics
 	try {
 		const client = new BetaAnalyticsDataClient({ credentials });
 		const property = `properties/${propertyId}`;
-		const range = dateRange(rangeDays);
+		const dateRanges = [ga4DateRange(range)];
 
-		const [baseOverviewReport, purchaseReport, trafficReport, channelsReport, pagesReport] =
+		const [baseOverviewReport, purchaseReport, trafficReport, channelsReport, campaignsReport, pagesReport] =
 			await Promise.all([
 				client.runReport(
 					{
 						property,
-						dateRanges: [range],
+						dateRanges,
 						metrics: [
 							{ name: "sessions" },
 							{ name: "activeUsers" },
@@ -109,7 +158,7 @@ export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4Analytics
 				client.runReport(
 					{
 						property,
-						dateRanges: [range],
+						dateRanges,
 						metrics: [{ name: "eventCount" }],
 						dimensionFilter: {
 							filter: {
@@ -123,9 +172,9 @@ export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4Analytics
 				client.runReport(
 					{
 						property,
-						dateRanges: [range],
+						dateRanges,
 						dimensions: [{ name: "date" }],
-						metrics: [{ name: "sessions" }],
+						metrics: [{ name: "activeUsers" }],
 						orderBys: [{ dimension: { dimensionName: "date" } }],
 					},
 					{ timeout: FETCH_TIMEOUT_MS },
@@ -133,22 +182,33 @@ export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4Analytics
 				client.runReport(
 					{
 						property,
-						dateRanges: [range],
+						dateRanges,
 						dimensions: [{ name: "sessionDefaultChannelGroup" }],
 						metrics: [{ name: "sessions" }],
 						orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
-						limit: 8,
+						limit: 12,
 					},
 					{ timeout: FETCH_TIMEOUT_MS },
 				),
 				client.runReport(
 					{
 						property,
-						dateRanges: [range],
+						dateRanges,
+						dimensions: [{ name: "sessionCampaignName" }],
+						metrics: [{ name: "sessions" }],
+						orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+						limit: 15,
+					},
+					{ timeout: FETCH_TIMEOUT_MS },
+				),
+				client.runReport(
+					{
+						property,
+						dateRanges,
 						dimensions: [{ name: "pagePath" }],
 						metrics: [{ name: "screenPageViews" }],
 						orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
-						limit: 10,
+						limit: MAX_PAGE_PATHS,
 					},
 					{ timeout: FETCH_TIMEOUT_MS },
 				),
@@ -163,7 +223,7 @@ export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4Analytics
 		const revenuePln = Number(baseRow?.metricValues?.[3]?.value ?? 0);
 		const purchases = Number(purchaseRow?.metricValues?.[0]?.value ?? 0);
 
-		const traffic: DailyPoint[] =
+		const trafficRaw: DailyPoint[] =
 			trafficReport[0]?.rows?.map((row) => {
 				const rawDate = row.dimensionValues?.[0]?.value ?? "";
 				const { date, label } = formatGa4Date(rawDate);
@@ -174,21 +234,21 @@ export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4Analytics
 				};
 			}) ?? [];
 
-		const channelTotal =
-			channelsReport[0]?.rows?.reduce(
-				(sum, row) => sum + Number(row.metricValues?.[0]?.value ?? 0),
-				0,
-			) ?? 0;
+		const traffic = fillDailyRange(
+			range.from,
+			range.to,
+			trafficRaw.map((p) => ({ date: p.date, hits: p.value })),
+		).map((p) => ({ date: p.date, label: p.label, value: p.hits }));
 
-		const channels: ChannelRow[] =
-			channelsReport[0]?.rows?.map((row) => {
-				const sessionsCount = Number(row.metricValues?.[0]?.value ?? 0);
-				return {
-					channel: row.dimensionValues?.[0]?.value ?? "—",
-					sessions: sessionsCount,
-					share: toPercent(sessionsCount, channelTotal),
-				};
-			}) ?? [];
+		const channels = parseChannelReport(channelsReport[0]?.rows, translateGa4Channel);
+
+		const campaigns = parseChannelReport(
+			campaignsReport[0]?.rows,
+			(raw) => raw,
+		).filter((row) => {
+			const lower = row.channel.toLowerCase();
+			return lower !== "(not set)" && lower !== "(none)" && lower !== "not set" && row.channel.trim() !== "";
+		});
 
 		const pageTotal =
 			pagesReport[0]?.rows?.reduce(
@@ -218,6 +278,7 @@ export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4Analytics
 			}),
 			traffic,
 			channels,
+			campaigns,
 			topPages,
 		};
 	} catch (error) {

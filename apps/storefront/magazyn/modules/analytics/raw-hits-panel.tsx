@@ -2,6 +2,7 @@
 
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Info } from "lucide-react";
+import { calendarDaysInRange, formatTrackingSince } from "./raw-hits-utils";
 import type { RawHitsData } from "./types";
 
 const CHART_STROKE = "oklch(0.58 0.08 55)";
@@ -30,6 +31,19 @@ export type RawHitsPanelProps = {
 };
 
 export function RawHitsPanel({ data, periodLabel }: RawHitsPanelProps) {
+	const periodDays =
+		data.status === "connected"
+			? calendarDaysInRange(data.rangeFrom, data.rangeTo)
+			: 0;
+	const trackingNote =
+		data.status === "connected" && data.trackingSince
+			? data.rangeTo < data.trackingSince
+				? `Licznik surowych wejść działa od ${formatTrackingSince(data.trackingSince)} — w tym okresie nie było jeszcze zbierania danych.`
+				: data.rangeFrom < data.trackingSince
+					? `Licznik surowych wejść działa od ${formatTrackingSince(data.trackingSince)} — wcześniejsze dni w tym okresie mają 0.`
+					: null
+			: null;
+
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex items-start gap-3 rounded-xl border border-sky-500/30 bg-sky-500/5 p-4 text-sm text-foreground">
@@ -55,6 +69,12 @@ export function RawHitsPanel({ data, periodLabel }: RawHitsPanelProps) {
 				</div>
 			) : (
 				<>
+					{trackingNote ? (
+						<div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-foreground">
+							<p className="text-muted-foreground">{trackingNote}</p>
+						</div>
+					) : null}
+
 					<section className="flex flex-col gap-4">
 						<h2 className="font-serif text-lg text-foreground">
 							Surowe wejścia na stronę ({periodLabel})
@@ -68,10 +88,11 @@ export function RawHitsPanel({ data, periodLabel }: RawHitsPanelProps) {
 							<StatCard
 								label="Śr. dziennie"
 								value={
-									data.daily.length > 0
-										? Math.round(data.totalHits / data.daily.length).toLocaleString("pl-PL")
+									periodDays > 0
+										? Math.round(data.totalHits / periodDays).toLocaleString("pl-PL")
 										: "0"
 								}
+								sub={periodDays > 0 ? `W okresie ${periodDays} dni kalendarzowych` : undefined}
 							/>
 						</div>
 					</section>

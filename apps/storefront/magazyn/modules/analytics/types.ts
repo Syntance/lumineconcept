@@ -47,6 +47,8 @@ export type Ga4AnalyticsSlice = AnalyticsSourceState & {
 	kpi?: AnalyticsKpi;
 	traffic?: DailyPoint[];
 	channels?: ChannelRow[];
+	/** Kampanie UTM / nazwy kampanii sesji (GA4 sessionCampaignName). */
+	campaigns?: ChannelRow[];
 	topPages?: TopPageRow[];
 };
 
@@ -60,7 +62,8 @@ export type PosthogAnalyticsSlice = AnalyticsSourceState & {
 
 export type AnalyticsDashboardData = {
 	fetchedAt: string;
-	rangeDays: number;
+	rangeFrom: string;
+	rangeTo: string;
 	ga4: Ga4AnalyticsSlice;
 	posthog: PosthogAnalyticsSlice;
 };
@@ -85,7 +88,10 @@ export type RawHitsData =
 	| {
 			status: "connected";
 			fetchedAt: string;
-			rangeDays: number;
+			rangeFrom: string;
+			rangeTo: string;
+			/** Pierwszy dzień z danymi w bazie (wdrożenie licznika). */
+			trackingSince: string | null;
 			totalHits: number;
 			daily: RawHitsDailyPoint[];
 			topPaths: RawHitsTopPath[];
