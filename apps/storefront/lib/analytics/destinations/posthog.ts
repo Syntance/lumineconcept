@@ -1,8 +1,9 @@
 import type { PostHog } from "posthog-js";
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
+/** Reverse proxy przez Next.js (`/ingest` → eu.i.posthog.com) — mniej blokad adblockerów. */
 const POSTHOG_HOST =
-  process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "https://eu.i.posthog.com";
+  process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "/ingest";
 
 let posthogInstance: PostHog | null = null;
 let initPromise: Promise<PostHog | null> | null = null;

@@ -34,6 +34,8 @@ const r2RemotePatterns = mediaCdnOrigins.map((origin) => {
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  /** PostHog reverse proxy — ingest nie może być przekierowywany na trailing slash. */
+  skipTrailingSlashRedirect: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },
@@ -151,6 +153,19 @@ const nextConfig: NextConfig = {
         has: [{ type: "query", key: "kat", value: "(?<handle>[^&]+)" }],
         destination: "/sklep/gotowe-wzory/:handle",
         permanent: true,
+      },
+    ];
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://eu-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://eu.i.posthog.com/:path*",
       },
     ];
   },

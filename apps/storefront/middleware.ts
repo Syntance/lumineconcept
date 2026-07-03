@@ -29,6 +29,7 @@ function isTrackablePageRequest(request: NextRequest): boolean {
 	const { pathname } = request.nextUrl;
 	if (pathname.startsWith(magazynConfig.basePath)) return false;
 	if (pathname.startsWith("/api/")) return false;
+	if (pathname.startsWith("/ingest")) return false;
 	if (STATIC_FILE_EXTENSION.test(pathname)) return false;
 	return true;
 }
