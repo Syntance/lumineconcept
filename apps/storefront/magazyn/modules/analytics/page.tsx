@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { loadAdmin } from "@magazyn/core/auth/load";
 import { fetchAnalyticsDashboard } from "./fetch-analytics";
+import { fetchRawHits } from "./raw-hits-store";
 import { parseSalesPeriod, salesPeriodToRangeDays } from "./sales-period";
 import { getSalesStatistics } from "./sales-store";
 import { StatisticsPeriodSelector } from "./statistics-period-selector";
@@ -23,10 +24,11 @@ export default async function AnalyticsStatisticsPage({ searchParams }: PageProp
 	const period = parseSalesPeriod(params);
 	const rangeDays = salesPeriodToRangeDays(period);
 
-	const [sales, analytics] = await loadAdmin(async () =>
+	const [sales, analytics, rawHits] = await loadAdmin(async () =>
 		Promise.all([
 			getSalesStatistics(period),
 			fetchAnalyticsDashboard({ rangeDays }),
+			fetchRawHits(rangeDays),
 		]),
 	);
 
@@ -43,7 +45,7 @@ export default async function AnalyticsStatisticsPage({ searchParams }: PageProp
 				<StatisticsPeriodSelector />
 			</Suspense>
 
-			<StatisticsTabs sales={sales} analytics={analytics} />
+			<StatisticsTabs sales={sales} analytics={analytics} rawHits={rawHits} />
 		</div>
 	);
 }

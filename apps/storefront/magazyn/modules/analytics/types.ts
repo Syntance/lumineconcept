@@ -64,3 +64,30 @@ export type AnalyticsDashboardData = {
 	ga4: Ga4AnalyticsSlice;
 	posthog: PosthogAnalyticsSlice;
 };
+
+export type RawHitsDailyPoint = {
+	date: string;
+	label: string;
+	hits: number;
+};
+
+export type RawHitsTopPath = {
+	path: string;
+	hits: number;
+};
+
+/**
+ * Surowe, anonimowe wejścia na stronę — niezależne od zgody na cookies.
+ * Nie rozróżnia osób (jedna osoba może liczyć się kilka razy) i nie zawiera
+ * żadnych identyfikatorów (IP, distinct_id) — patrz backend store/custom/track-hit.
+ */
+export type RawHitsData =
+	| {
+			status: "connected";
+			fetchedAt: string;
+			rangeDays: number;
+			totalHits: number;
+			daily: RawHitsDailyPoint[];
+			topPaths: RawHitsTopPath[];
+	  }
+	| { status: "error"; reason: string };

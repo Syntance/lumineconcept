@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { cn } from "@magazyn/core/lib/cn";
 import { AnalyticsPanel } from "./analytics-panel";
+import { RawHitsPanel } from "./raw-hits-panel";
 import { SalesStatisticsView } from "./sales-statistics-view";
-import type { AnalyticsDashboardData } from "./types";
+import type { AnalyticsDashboardData, RawHitsData } from "./types";
 import type { SalesStatistics } from "./sales-types";
 
-type StatisticsTab = "sales" | "analytics";
+type StatisticsTab = "sales" | "analytics" | "raw-hits";
 
 const TABS: Array<{ id: StatisticsTab; label: string; description: string }> = [
 	{
@@ -20,14 +21,20 @@ const TABS: Array<{ id: StatisticsTab; label: string; description: string }> = [
 		label: "Analityka",
 		description: "Ruch na stronie, źródła ruchu i konwersja",
 	},
+	{
+		id: "raw-hits",
+		label: "Wejścia na stronę",
+		description: "Surowe wejścia niezależne od zgody na cookies — bez rozróżniania osób",
+	},
 ];
 
 type Props = {
 	sales: SalesStatistics;
 	analytics: AnalyticsDashboardData;
+	rawHits: RawHitsData;
 };
 
-export function StatisticsTabs({ sales, analytics }: Props) {
+export function StatisticsTabs({ sales, analytics, rawHits }: Props) {
 	const [tab, setTab] = useState<StatisticsTab>("sales");
 	const activeMeta = TABS.find((item) => item.id === tab) ?? TABS[0]!;
 
@@ -63,12 +70,14 @@ export function StatisticsTabs({ sales, analytics }: Props) {
 
 			{tab === "sales" ? (
 				<SalesStatisticsView data={sales} />
-			) : (
+			) : tab === "analytics" ? (
 				<AnalyticsPanel
 					data={analytics}
 					periodLabel={sales.rangeLabel}
 					storeOrders={sales.totals.orderCount}
 				/>
+			) : (
+				<RawHitsPanel data={rawHits} periodLabel={sales.rangeLabel} />
 			)}
 		</div>
 	);

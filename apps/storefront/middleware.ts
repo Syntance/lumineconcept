@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextRequest, type NextFetchEvent } from "next/server";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { buildContentSecurityPolicy } from "@/lib/security/csp";
 
@@ -10,13 +10,53 @@ import { buildContentSecurityPolicy } from "@/lib/security/csp";
  */
 const SESSION_COOKIE = magazynConfig.auth.cookieName;
 const PANEL_PREFIX = `${magazynConfig.basePath}/panel`;
+const RAW_HIT_TIMEOUT_MS = 3_000;
+const STATIC_FILE_EXTENSION = /\.[a-z0-9]+$/i;
 
 function applySecurityHeaders(response: NextResponse, nonce: string): void {
 	response.headers.set("Content-Security-Policy", buildContentSecurityPolicy(nonce));
 	response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
 }
 
-export function middleware(request: NextRequest): NextResponse {
+/**
+ * Surowy, anonimowy licznik wejść — niezależny od zgody na cookies. Wywoływany
+ * dla realnych stron (nie API, nie panelu, nie assetów) na każdy GET, ZANIM
+ * baner cookies w ogóle się załaduje po stronie klienta. Fire-and-forget przez
+ * `event.waitUntil` — nigdy nie opóźnia ani nie blokuje odpowiedzi strony.
+ */
+function isTrackablePageRequest(request: NextRequest): boolean {
+	if (request.method !== "GET") return false;
+	const { pathname } = request.nextUrl;
+	if (pathname.startsWith(magazynConfig.basePath)) return false;
+	if (pathname.startsWith("/api/")) return false;
+	if (STATIC_FILE_EXTENSION.test(pathname)) return false;
+	return true;
+}
+
+async function recordRawHit(request: NextRequest): Promise<void> {
+	// Admin/właściciel zalogowany w panelu w tej samej przeglądarce — nie licz jego wejść.
+	if (request.cookies.get(SESSION_COOKIE)?.value) return;
+
+	const backendUrl =
+		process.env.MEDUSA_BACKEND_URL?.trim() || process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim();
+	if (!backendUrl) return;
+
+	try {
+		await fetch(`${backendUrl}/store/custom/track-hit`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"x-forwarded-for": request.headers.get("x-forwarded-for") ?? "",
+			},
+			body: JSON.stringify({ path: request.nextUrl.pathname }),
+			signal: AbortSignal.timeout(RAW_HIT_TIMEOUT_MS),
+		});
+	} catch {
+		// Best-effort — licznik nigdy nie może wpłynąć na ładowanie strony.
+	}
+}
+
+export function middleware(request: NextRequest, event: NextFetchEvent): NextResponse {
 	const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
 	const requestHeaders = new Headers(request.headers);
 	requestHeaders.set("x-nonce", nonce);
@@ -33,6 +73,10 @@ export function middleware(request: NextRequest): NextResponse {
 			applySecurityHeaders(redirect, nonce);
 			return redirect;
 		}
+	}
+
+	if (isTrackablePageRequest(request)) {
+		event.waitUntil(recordRawHit(request));
 	}
 
 	const response = NextResponse.next({ request: { headers: requestHeaders } });
