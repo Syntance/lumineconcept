@@ -83,6 +83,11 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 	);
 }
 
+function computeConversionRate(orders: number, sessions: number | null | undefined): number | null {
+	if (sessions == null || sessions <= 0) return null;
+	return Math.round((orders / sessions) * 10000) / 100;
+}
+
 function KpiGrid({
 	kpi,
 	periodLabel,
@@ -92,23 +97,37 @@ function KpiGrid({
 	periodLabel: string;
 	storeOrders?: number;
 }) {
+	const sessions = kpi.sessions ?? 0;
+	const trackingPurchases = kpi.purchases ?? 0;
+	// Konwersja sklepu = zamówienia Medusa ÷ sesje (PostHog/GA4). Śledzenie purchase
+	// bywa niepełne (cookies, brak klucza backendu) — sklep to źródło prawdy.
+	const conversionRate =
+		storeOrders != null
+			? computeConversionRate(storeOrders, kpi.sessions)
+			: kpi.conversionRate;
+
+	const conversionSub =
+		storeOrders != null
+			? `${storeOrders.toLocaleString("pl-PL")} zamówień · ${sessions.toLocaleString("pl-PL")} sesji${
+					trackingPurchases !== storeOrders
+						? ` · ${trackingPurchases.toLocaleString("pl-PL")} w śledzeniu`
+						: ""
+				}`
+			: trackingPurchases > 0
+				? `${trackingPurchases.toLocaleString("pl-PL")} zakupów`
+				: undefined;
+
 	return (
 		<section className="flex flex-col gap-4">
 			<h2 className="font-serif text-lg text-foreground">Ruch na stronie ({periodLabel})</h2>
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<StatCard label="Użytkownicy" value={(kpi.users ?? 0).toLocaleString("pl-PL")} />
-				<StatCard label="Sesje" value={(kpi.sessions ?? 0).toLocaleString("pl-PL")} />
+				<StatCard label="Sesje" value={sessions.toLocaleString("pl-PL")} />
 				<StatCard label="Odsłony" value={(kpi.pageviews ?? 0).toLocaleString("pl-PL")} />
 				<StatCard
 					label="Konwersja"
-					value={kpi.conversionRate != null ? `${kpi.conversionRate}%` : "—"}
-					sub={
-						storeOrders != null
-							? `${(kpi.purchases ?? 0).toLocaleString("pl-PL")} zakupów (śledzenie) · ${storeOrders.toLocaleString("pl-PL")} zamówień (sklep)`
-							: kpi.purchases != null
-								? `${kpi.purchases.toLocaleString("pl-PL")} zakupów`
-								: undefined
-					}
+					value={conversionRate != null ? `${conversionRate}%` : "—"}
+					sub={conversionSub}
 				/>
 			</div>
 		</section>
