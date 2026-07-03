@@ -1,21 +1,21 @@
 import type { HeroContent } from "@/lib/content/types";
-import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
-import { DESKTOP_HERO_WIDTH, DESKTOP_HERO_HEIGHT, toHeroAvifSrc } from "@/lib/content/cms-hero-image";
+import {
+	MOBILE_HERO_BAND_WIDTH,
+	MOBILE_HERO_BAND_HEIGHT,
+	toHeroAvifSrc,
+} from "@/lib/content/cms-hero-image";
 import { resolveHomeHeroWithFallback } from "@/lib/content/hero";
 import { HeroPortalContent } from "./HeroPortalContent";
-import { HeroPortalMobile } from "./HeroPortalMobile";
-import { MobileHeroImageBand } from "./MobileHeroImageBand";
-import { MobileHeroViewport } from "./MobileHeroViewport";
 
 /**
- * Hero — desktop: ultrawide + portal; mobile: zdjęcie + CTA w 80svh.
+ * Hero — art-directed single <picture> z media queries.
  *
- * Obrazy hero serwowane jako statyczne pliki z prebuild (sync-cms-to-static):
- *  – WebP q92 (fallback dla starszych przeglądarek)
- *  – AVIF q70 (ok. 50% mniej bajtów, nowoczesne przeglądarki)
+ * Desktop (≥1024px) i mobile (<1024px) pobierają TYLKO swoje zdjęcie (separate AVIF):
+ * – Desktop: ultrawide (2560×966, obiekt top) z desktopImageUrl
+ * – Mobile: portrait (1080×1350, obiekt center 58%) z mobileImageUrl
  *
- * Preload AVIF hoistowany do <head> przez React RSC (media query ogranicza do
- * właściwego viewport, żeby mobile nie pobierał desktop AVIF i odwrotnie).
+ * <picture><source media="..."> + <img fallback> ensures browser fetches one file per viewport.
+ * Preload AVIF z media query w <head> redukuje TTFB delay.
  */
 export async function HeroSection({
 	hero,
@@ -38,7 +38,8 @@ export async function HeroSection({
 	const mobileAvifSrc = mobileDisplayUrl ? toHeroAvifSrc(mobileDisplayUrl) : null;
 	const desktopAvifSrc = desktopImageUrl ? toHeroAvifSrc(desktopImageUrl) : null;
 
-	const desktopBlur = desktopBlurDataURL ?? BRAND_BLUR_DATA_URL;
+	// Determine which image to display
+	const displayImageUrl = desktopImageUrl || mobileDisplayUrl;
 
 	return (
 		<section className="relative flex w-full flex-col overflow-x-hidden">
@@ -63,43 +64,41 @@ export async function HeroSection({
 				/>
 			)}
 
-			<div className="lg:hidden">
-				<MobileHeroViewport
-					image={
-						mobileDisplayUrl ? (
-							<MobileHeroImageBand
-								src={mobileDisplayUrl}
-								blurDataURL={mobileBlur}
-								objectPositionClass="object-[center_58%]"
-							/>
-						) : (
-							<div className="absolute inset-0 bg-brand-800" aria-hidden />
-						)
-					}
-					portal={<HeroPortalMobile content={portal} />}
-				/>
-			</div>
-
 			<div
-				className="relative hidden w-full overflow-hidden lg:block lg:aspect-[2560/966] lg:max-h-[966px]"
+				className="relative w-full overflow-hidden lg:aspect-[2560/966] lg:max-h-[966px]"
 				style={{
-					backgroundImage: `url(${desktopBlur})`,
+					backgroundImage: `url(${mobileBlur})`,
 					backgroundSize: "cover",
+					backgroundPosition: "center 58%",
 				}}
 			>
-				{desktopImageUrl ? (
+				{displayImageUrl ? (
 					<picture>
-						{desktopAvifSrc && <source type="image/avif" srcSet={desktopAvifSrc} />}
-						{/* eslint-disable-next-line @next/next/no-img-element */}
+						{/* Desktop AVIF */}
+						{desktopAvifSrc && (
+							<source
+								media="(min-width: 1024px)"
+								type="image/avif"
+								srcSet={desktopAvifSrc}
+							/>
+						)}
+						{/* Desktop WebP fallback */}
+						{desktopImageUrl && (
+							<source media="(min-width: 1024px)" srcSet={desktopImageUrl} />
+						)}
+						{/* Mobile AVIF */}
+						{mobileAvifSrc && (
+							<source type="image/avif" srcSet={mobileAvifSrc} />
+						)}
 						<img
-							src={desktopImageUrl}
+							src={mobileDisplayUrl}
 							alt=""
-							width={DESKTOP_HERO_WIDTH}
-							height={DESKTOP_HERO_HEIGHT}
-					loading="eager"
-						fetchPriority="high"
-						decoding="auto"
-							className="absolute inset-0 h-full w-full select-none object-cover object-top"
+							width={MOBILE_HERO_BAND_WIDTH}
+							height={MOBILE_HERO_BAND_HEIGHT}
+							loading="eager"
+							fetchPriority="high"
+							decoding="auto"
+							className="absolute inset-0 h-full w-full select-none object-cover object-[center_58%] lg:object-top"
 							style={{ color: "transparent" }}
 						/>
 					</picture>
