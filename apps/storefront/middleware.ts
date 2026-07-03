@@ -39,13 +39,15 @@ async function recordRawHit(request: NextRequest): Promise<void> {
 
 	const backendUrl =
 		process.env.MEDUSA_BACKEND_URL?.trim() || process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL?.trim();
-	if (!backendUrl) return;
+	const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.trim();
+	if (!backendUrl || !publishableKey) return;
 
 	try {
 		await fetch(`${backendUrl}/store/custom/track-hit`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				"x-publishable-api-key": publishableKey,
 				"x-forwarded-for": request.headers.get("x-forwarded-for") ?? "",
 			},
 			body: JSON.stringify({ path: request.nextUrl.pathname }),
