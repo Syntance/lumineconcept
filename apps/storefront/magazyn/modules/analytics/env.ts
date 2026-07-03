@@ -5,10 +5,41 @@ import { z } from "zod";
 const optionalTrimmed = z
 	.string()
 	.optional()
-	.transform((value) => {
-		const trimmed = value?.trim().replace(/\r?\n$/, "");
-		return trimmed || undefined;
-	});
+	.transform((value) => sanitizeEnvScalar(value));
+
+function sanitizeEnvScalar(value: string | undefined): string | undefined {
+	if (!value) return undefined;
+	let trimmed = value.trim().replace(/\r?\n/g, "");
+	if (
+		(trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+		(trimmed.startsWith("'") && trimmed.endsWith("'"))
+	) {
+		trimmed = trimmed.slice(1, -1).trim();
+	}
+	return trimmed || undefined;
+}
+
+function normalizeGa4PropertyId(value: string | undefined): string | undefined {
+	const cleaned = sanitizeEnvScalar(value);
+	if (!cleaned) return undefined;
+	const digitsOnly = cleaned.replace(/\D/g, "");
+	return digitsOnly || undefined;
+}
+
+function parseServiceAccountJson(raw: string | undefined): Record<string, unknown> | null {
+	const cleaned = sanitizeEnvScalar(raw);
+	if (!cleaned) return null;
+	try {
+		let parsed: unknown = JSON.parse(cleaned);
+		if (typeof parsed === "string") {
+			parsed = JSON.parse(parsed);
+		}
+		if (typeof parsed !== "object" || parsed === null) return null;
+		return parsed as Record<string, unknown>;
+	} catch {
+		return null;
+	}
+}
 
 const analyticsEnvSchema = z.object({
 	FEATURE_ANALYTICS_PANEL: optionalTrimmed,
@@ -37,17 +68,6 @@ function getParsed(): ParsedAnalyticsEnv {
 		cached = result.data;
 	}
 	return cached;
-}
-
-function parseServiceAccountJson(raw: string | undefined): Record<string, unknown> | null {
-	if (!raw) return null;
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		if (typeof parsed !== "object" || parsed === null) return null;
-		return parsed as Record<string, unknown>;
-	} catch {
-		return null;
-	}
 }
 
 /** Ingest host (eu.i.posthog.com) → panel API (eu.posthog.com). */
@@ -82,7 +102,7 @@ export const analyticsEnv = {
 		return getParsed().NEXT_PUBLIC_GA4_ID;
 	},
 	get ga4PropertyId(): string | undefined {
-		return getParsed().GA4_PROPERTY_ID;
+		return normalizeGa4PropertyId(getParsed().GA4_PROPERTY_ID);
 	},
 	get ga4Credentials(): Record<string, unknown> | null {
 		const raw = firstDefined(

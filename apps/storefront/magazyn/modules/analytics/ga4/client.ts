@@ -55,6 +55,20 @@ function buildKpi(metrics: {
 	};
 }
 
+function formatGa4Error(error: unknown): string {
+	const message = error instanceof Error ? error.message : "Nieznany błąd GA4";
+	if (message.includes("analyticsdata.googleapis.com") && message.includes("disabled")) {
+		return "Włącz Google Analytics Data API w Google Cloud (projekt lumineconcept), poczekaj 2–5 min i odśwież panel.";
+	}
+	if (
+		message.includes("PERMISSION_DENIED") ||
+		message.includes("User does not have sufficient permissions")
+	) {
+		return "Dodaj service account ga4-analytics-panel@lumineconcept.iam.gserviceaccount.com jako Viewer w GA4 (Admin → Dostęp do konta/usługi).";
+	}
+	return message;
+}
+
 export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4AnalyticsSlice> {
 	if (!analyticsEnv.ga4Configured) {
 		const measurementHint = analyticsEnv.ga4MeasurementId
@@ -207,7 +221,6 @@ export async function fetchGa4Analytics(rangeDays: number): Promise<Ga4Analytics
 			topPages,
 		};
 	} catch (error) {
-		const message = error instanceof Error ? error.message : "Nieznany błąd GA4";
-		return { status: "error", reason: message };
+		return { status: "error", reason: formatGa4Error(error) };
 	}
 }
