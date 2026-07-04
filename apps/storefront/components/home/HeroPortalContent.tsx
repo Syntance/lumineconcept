@@ -21,7 +21,7 @@ export function HeroPortalContent({
 }: HeroPortalContentProps) {
   return (
     <>
-      <div className="lg:hidden">
+      <div className="shrink-0 lg:hidden">
         <HeroPortalMobile content={content} />
       </div>
       <div className="hidden lg:block">

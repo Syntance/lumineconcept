@@ -65,7 +65,7 @@ export async function HeroSection({
 			)}
 
 			<div
-				className="relative w-full overflow-hidden lg:aspect-[2560/966] lg:max-h-[966px]"
+				className="relative flex w-full flex-col overflow-hidden h-[80svh] max-h-[80svh] lg:h-auto lg:max-h-[966px] lg:aspect-[2560/966]"
 				style={{
 					backgroundImage: `url(${mobileBlur})`,
 					backgroundSize: "cover",
@@ -73,37 +73,39 @@ export async function HeroSection({
 				}}
 			>
 				{displayImageUrl ? (
-					<picture>
-						{/* Desktop AVIF */}
-						{desktopAvifSrc && (
-							<source
-								media="(min-width: 1024px)"
-								type="image/avif"
-								srcSet={desktopAvifSrc}
+					<div className="relative min-h-0 flex-1 lg:absolute lg:inset-0 lg:flex-none">
+						<picture>
+							{/* Desktop AVIF */}
+							{desktopAvifSrc && (
+								<source
+									media="(min-width: 1024px)"
+									type="image/avif"
+									srcSet={desktopAvifSrc}
+								/>
+							)}
+							{/* Desktop WebP fallback */}
+							{desktopImageUrl && (
+								<source media="(min-width: 1024px)" srcSet={desktopImageUrl} />
+							)}
+							{/* Mobile AVIF */}
+							{mobileAvifSrc && (
+								<source type="image/avif" srcSet={mobileAvifSrc} />
+							)}
+							<img
+								src={mobileDisplayUrl}
+								alt=""
+								width={MOBILE_HERO_BAND_WIDTH}
+								height={MOBILE_HERO_BAND_HEIGHT}
+								loading="eager"
+								fetchPriority="high"
+								decoding="auto"
+								className="absolute inset-0 h-full w-full select-none object-cover object-[center_58%] lg:object-top"
+								style={{ color: "transparent" }}
 							/>
-						)}
-						{/* Desktop WebP fallback */}
-						{desktopImageUrl && (
-							<source media="(min-width: 1024px)" srcSet={desktopImageUrl} />
-						)}
-						{/* Mobile AVIF */}
-						{mobileAvifSrc && (
-							<source type="image/avif" srcSet={mobileAvifSrc} />
-						)}
-						<img
-							src={mobileDisplayUrl}
-							alt=""
-							width={MOBILE_HERO_BAND_WIDTH}
-							height={MOBILE_HERO_BAND_HEIGHT}
-							loading="eager"
-							fetchPriority="high"
-							decoding="auto"
-							className="absolute inset-0 h-full w-full select-none object-cover object-[center_58%] lg:object-top"
-							style={{ color: "transparent" }}
-						/>
-					</picture>
+						</picture>
+					</div>
 				) : (
-					<div className="absolute inset-0 bg-brand-800" aria-hidden />
+					<div className="relative min-h-0 flex-1 bg-brand-800 lg:absolute lg:inset-0 lg:flex-none" aria-hidden />
 				)}
 
 				<HeroPortalContent content={portal} />
