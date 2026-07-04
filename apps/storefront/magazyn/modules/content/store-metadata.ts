@@ -33,6 +33,6 @@ export async function mergeStoreMetadata(
 	});
 }
 
-export function readMetadataJson<T>(store: MedusaStore, key: string): unknown {
+export function readMetadataJson(store: MedusaStore, key: string): unknown {
 	return store.metadata?.[key];
 }

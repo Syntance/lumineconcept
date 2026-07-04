@@ -135,6 +135,19 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
       .digest("hex");
   }
 
+  /**
+   * Porównanie podpisów w czasie stałym (constant-time) — chroni przed atakiem
+   * czasowym na weryfikację podpisu webhooka. `!==` zwracał wynik tym szybciej,
+   * im wcześniej trafiał na różnicę, co teoretycznie pozwala odgadywać podpis
+   * bajt po bajcie.
+   */
+  private signaturesEqual(a: string, b: string): boolean {
+    const bufA = Buffer.from(a, "utf8");
+    const bufB = Buffer.from(b, "utf8");
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
+  }
+
   private async api<T>(
     endpoint: string,
     method: "GET" | "POST" | "PUT",
@@ -519,7 +532,7 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
       crc: this.options_.crc,
     });
 
-    if (expectedSign !== receivedSign) {
+    if (!this.signaturesEqual(expectedSign, receivedSign)) {
       this.logger_.error(
         `[przelewy24] webhook: niezgodny podpis dla sessionId=${sessionId}`,
       );

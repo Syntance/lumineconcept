@@ -11,6 +11,7 @@ import {
 import { resolveSocialSameAs } from "@/lib/social-links";
 import { SITE_CONTACT } from "@/lib/site-contact";
 import { SITE_URL } from "@/lib/utils";
+import { serializeJsonLd } from "@/lib/seo/json-ld";
 import { HeroSection } from "@/components/home/HeroSection";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { FooterCTA } from "@/components/home/FooterCTA";
@@ -91,11 +92,11 @@ export default async function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(orgJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}
       />
 
       <Suspense fallback={null}>

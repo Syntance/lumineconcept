@@ -1,6 +1,5 @@
 import {
 	emptyProductColorsByCategory,
-	flattenProductColorsForSlot,
 	getEnabledColorNamesForSlot,
 	buildColorNameCategoryMap,
 	type ProductCustomColor,

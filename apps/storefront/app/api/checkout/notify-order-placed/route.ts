@@ -4,6 +4,7 @@ import {
 	dispatchMagazynOrderEmail,
 	type CheckoutOrderSnapshot,
 } from "@/lib/email/dispatch-magazyn-order-email";
+import { rateLimitApiRequest } from "@/lib/security/api-rate-limit";
 
 export const maxDuration = 30;
 
@@ -35,6 +36,18 @@ const bodySchema = z.object({
 
 /** Wysyła mail „złożone zamówienie” — szablon `placed` z magazynu. */
 export async function POST(request: Request) {
+	const limit = await rateLimitApiRequest(request, {
+		prefix: "checkout:order-placed",
+		limit: 10,
+		windowSeconds: 60,
+	});
+	if (!limit.ok) {
+		return NextResponse.json(
+			{ ok: false, error: "rate_limited" },
+			{ status: 429, headers: { "Retry-After": String(limit.retryAfter ?? 60) } },
+		);
+	}
+
 	let body: unknown;
 	try {
 		body = await request.json();

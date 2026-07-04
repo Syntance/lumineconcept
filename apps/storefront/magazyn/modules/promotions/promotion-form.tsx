@@ -5,7 +5,6 @@ import { useEffect, useId, useMemo, useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
 import { Input } from "@magazyn/core/ui/input";
 import { CheckboxInput } from "@magazyn/core/ui/checkbox";
-import { cn } from "@magazyn/core/lib/cn";
 import { savePromoCodeAction, type PromoPayload } from "./actions";
 import type { AdminPromoCode, ProductOption, PromoCodeInput } from "./types";
 import { promoCodeToFormValues } from "./promo-form-utils";
@@ -25,9 +24,6 @@ type Props = {
 	onCancel: () => void;
 	onSaved: () => void;
 };
-
-const inputClass =
-	"w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 const EMPTY: PromoCodeInput = {
 	code: "",

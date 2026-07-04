@@ -3,7 +3,7 @@ import { normalizeAboutParagraphsForSave } from "./about-text";
 import { resolveCmsAssetUrl, resolveCmsHeroImageUrl } from "./asset-url";
 import { isCmsMediaAssetUrl, isLocalCmsDirectMediaEnabled } from "./cms-media-gate";
 import { normalizeHeroCtaHref } from "./cta-href";
-import { POPUP_BANNER_TAB_ICON_IDS, resolvePopupTabIcon, resolvePopupTabLabel } from "./popup-banner-tab-icons";
+import { POPUP_BANNER_TAB_ICON_IDS, resolvePopupTabIcon } from "./popup-banner-tab-icons";
 import {
 	ABOUT_HERO_DEFAULT,
 	ABOUT_PAGE_DEFAULT,

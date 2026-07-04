@@ -8,7 +8,7 @@ const CMS_WEBP_QUALITY = 0.92;
 
 const HEIC_TYPES = new Set(["image/heic", "image/heif", "image/heic-sequence"]);
 
-const SKIP_WEBP_CONVERSION = new Set(["image/gif", "image/svg+xml", "image/webp"]);
+const SKIP_WEBP_CONVERSION = new Set(["image/gif", "image/webp"]);
 
 export function canCompressCmsImage(file: File): boolean {
 	const type = file.type.toLowerCase();
@@ -131,12 +131,12 @@ async function encodeUnderLimit(
 
 /**
  * PNG/JPG/AVIF → WebP w pełnej rozdzielczości (jakość 92).
- * GIF/SVG/WebP bez zmian.
+ * GIF/WebP bez zmian.
  */
 export async function convertCmsImageToWebp(file: File): Promise<File> {
 	const type = file.type.toLowerCase();
 	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-	if (SKIP_WEBP_CONVERSION.has(type) || ext === "webp" || ext === "gif" || ext === "svg") {
+	if (SKIP_WEBP_CONVERSION.has(type) || ext === "webp" || ext === "gif") {
 		return file;
 	}
 	if (!canCompressCmsImage(file)) return file;

@@ -28,7 +28,6 @@ import {
 	ColorField,
 	NumberField,
 	SelectField,
-	TextAreaField,
 	TextField,
 	ToggleField,
 } from "./fields";

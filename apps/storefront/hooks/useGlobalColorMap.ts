@@ -30,13 +30,17 @@ async function loadColorMap(): Promise<Record<string, string>> {
     try {
       const res = await fetch("/api/medusa/store/product-config", {
         credentials: "same-origin",
+        signal: AbortSignal.timeout(8000),
       });
       if (!res.ok) return {};
       const data = await res.json();
       const map = buildMapFromResponse(data);
       cachedMap = map;
       return map;
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        console.warn("[useGlobalColorMap] Przekroczono czas — spróbuj ponownie.");
+      }
       return {};
     } finally {
       inflight = null;

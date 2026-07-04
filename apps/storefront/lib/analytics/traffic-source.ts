@@ -3,7 +3,6 @@
  * Przechowywane w order.metadata przy checkout.
  */
 
-const UTM_STORAGE_KEY = "lumine.utm.v1";
 const UTM_LAST_STORAGE_KEY = "lumine.utm_last.v1";
 const REFERRER_STORAGE_KEY = "lumine.referrer.v1";
 

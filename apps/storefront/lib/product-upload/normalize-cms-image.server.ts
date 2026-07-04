@@ -4,7 +4,7 @@ import { inferCmsMimeType, isCmsHeicFile } from "./cms-mime";
 
 const CMS_WEBP_QUALITY = 92;
 
-const SKIP_WEBP_CONVERSION = new Set(["image/gif", "image/svg+xml", "image/webp"]);
+const SKIP_WEBP_CONVERSION = new Set(["image/gif", "image/webp"]);
 
 function webpFilename(originalName: string): string {
 	const baseName = originalName.replace(/\.[^.]+$/, "") || "cms";
@@ -29,7 +29,7 @@ export async function normalizeCmsImageFileToWebp(file: File): Promise<File> {
 		return new File([new Uint8Array(webp)], webpFilename(file.name), { type: "image/webp" });
 	} catch (error) {
 		if (fromHeic) {
-			throw new Error("CMS_HEIC_CONVERSION_FAILED");
+			throw new Error("CMS_HEIC_CONVERSION_FAILED", { cause: error });
 		}
 		throw error instanceof Error ? error : new Error("CMS_IMAGE_CONVERSION_FAILED");
 	}

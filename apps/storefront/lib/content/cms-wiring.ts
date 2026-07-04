@@ -2,7 +2,6 @@ import type {
 	CategoryTile,
 	FaqItem,
 	GlobalContent,
-	HeroContent,
 	SalonLogo,
 	SiteSettings,
 	SocialLinks,

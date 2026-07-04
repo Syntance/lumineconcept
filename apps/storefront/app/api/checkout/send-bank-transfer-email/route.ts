@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { dispatchMagazynOrderEmail } from "@/lib/email/dispatch-magazyn-order-email";
 import { SYSTEM_PAYMENT_PROVIDER_ID } from "@/lib/medusa/checkout";
+import { rateLimitApiRequest } from "@/lib/security/api-rate-limit";
 
 export const maxDuration = 30;
 
@@ -33,6 +34,18 @@ const bodySchema = z.object({
  * Wołane z checkoutu po completeCart.
  */
 export async function POST(request: Request) {
+	const limit = await rateLimitApiRequest(request, {
+		prefix: "checkout:bank-transfer",
+		limit: 10,
+		windowSeconds: 60,
+	});
+	if (!limit.ok) {
+		return NextResponse.json(
+			{ ok: false, error: "rate_limited" },
+			{ status: 429, headers: { "Retry-After": String(limit.retryAfter ?? 60) } },
+		);
+	}
+
 	let body: unknown;
 	try {
 		body = await request.json();

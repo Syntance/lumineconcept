@@ -23,6 +23,9 @@ let mediaUrlMapCache: Record<string, string> | null = null;
 function getStaticMediaUrlMap(): Record<string, string> {
 	if (mediaUrlMapCache) return mediaUrlMapCache;
 	try {
+		// Moduł generowany w prebuildzie (może nie istnieć) — sync require w try/catch
+		// jest zamierzony, ESM dynamic import zmusiłby funkcję do async.
+		// eslint-disable-next-line @typescript-eslint/no-require-imports
 		const { STATIC_CMS_MEDIA_URL_MAP } = require("./static-cms-media-map") as {
 			STATIC_CMS_MEDIA_URL_MAP?: Record<string, string>;
 		};

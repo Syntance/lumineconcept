@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { serializeJsonLd } from "@/lib/seo/json-ld";
 
 interface BreadcrumbItem {
   label: string;
@@ -41,7 +42,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <nav aria-label="Breadcrumb" className={cn("mb-6", className)}>
         <ol className="flex flex-wrap items-center gap-1.5 text-[13px] uppercase tracking-wider text-brand-500">

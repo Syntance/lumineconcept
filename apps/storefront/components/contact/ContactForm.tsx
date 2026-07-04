@@ -49,6 +49,7 @@ export function ContactForm({ className = "", onSuccess }: ContactFormProps) {
           form_preset: "contact",
           website: honeypot,
         }),
+        signal: AbortSignal.timeout(8000),
       });
 
       const data = (await response.json()) as { success: boolean; message: string };
@@ -67,9 +68,13 @@ export function ContactForm({ className = "", onSuccess }: ContactFormProps) {
         setFeedback(data.message);
         tracker.reportError("form", "server");
       }
-    } catch {
+    } catch (error) {
       setStatus("error");
-      setFeedback("Wystąpił błąd sieci. Spróbuj ponownie.");
+      setFeedback(
+        error instanceof DOMException && error.name === "AbortError"
+          ? "Przekroczono czas — spróbuj ponownie."
+          : "Wystąpił błąd sieci. Spróbuj ponownie.",
+      );
       tracker.reportError("form", "server");
     }
   };

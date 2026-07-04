@@ -1,5 +1,6 @@
 import type { FaqItem } from "@/lib/content/types";
 import { pickPageFaq } from "@/lib/content/cms-wiring";
+import { serializeJsonLd } from "@/lib/seo/json-ld";
 
 type Props = {
 	faq: FaqItem[] | undefined;
@@ -14,7 +15,7 @@ export function PageFaqSection({ faq }: Props) {
 			<script
 				type="application/ld+json"
 				dangerouslySetInnerHTML={{
-					__html: JSON.stringify({
+					__html: serializeJsonLd({
 						"@context": "https://schema.org",
 						"@type": "FAQPage",
 						mainEntity: items.map((f) => ({

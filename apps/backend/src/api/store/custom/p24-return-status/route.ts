@@ -123,7 +123,6 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   if (sendFailedEmail && status === "failed") {
     const mail = await dispatchPaymentFailedEmailViaStorefront({
       cartId,
-      retryUrl,
       p24SessionId: p24SessionId || undefined,
     });
     emailSent = mail.ok && !mail.skipped;

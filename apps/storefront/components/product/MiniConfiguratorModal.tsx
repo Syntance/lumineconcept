@@ -4,7 +4,6 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
-import { cn } from "@/lib/utils";
 import { PriceDisplay } from "./PriceDisplay";
 import { CustomHexColorPicker } from "./CustomHexColorPicker";
 import { formatColorOptionLabel } from "./ColorStepPanel";

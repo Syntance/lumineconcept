@@ -102,7 +102,6 @@ export function SortBarMobile({
   );
 
   const chips = buildActiveChips(activeFilters, update);
-  const pillOn = false;
   const subcatOn = Boolean(
     defaultListingCategoryId &&
       activeFilters.category &&

@@ -40,15 +40,28 @@ export function FileUploadSection({
       const form = new FormData();
       form.append("file", file);
 
-      const res = await fetch("/api/upload", { method: "POST", body: form });
-      const data = await res.json();
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: form,
+          signal: AbortSignal.timeout(8000),
+        });
+        const data = await res.json();
 
-      if (!res.ok) {
-        setError(data.error ?? "Błąd uploadu");
+        if (!res.ok) {
+          setError(data.error ?? "Błąd uploadu");
+          return null;
+        }
+
+        return { url: data.url, filename: data.filename, size: data.size };
+      } catch (error) {
+        setError(
+          error instanceof DOMException && error.name === "AbortError"
+            ? "Przekroczono czas — spróbuj ponownie."
+            : "Błąd uploadu",
+        );
         return null;
       }
-
-      return { url: data.url, filename: data.filename, size: data.size };
     },
     [],
   );

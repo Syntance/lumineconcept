@@ -13,6 +13,7 @@ import {
   STORE_ID,
 } from "@/lib/geo/organization";
 import { SITE_CONTACT } from "@/lib/site-contact";
+import { serializeJsonLd } from "@/lib/seo/json-ld";
 import { formatFacebookDisplayLabel, formatInstagramDisplayLabel } from "@/lib/social-links";
 import { SITE_URL } from "@/lib/utils";
 
@@ -86,7 +87,7 @@ export default async function KontaktPage() {
     <div className="border-b border-brand-100 bg-brand-50/30">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(localBusinessJsonLd) }}
       />
       <div className="container mx-auto px-4 py-8 pb-16 sm:py-12">
         <Breadcrumbs items={[{ label: "Strona główna", href: "/" }, { label: "Kontakt" }]} />

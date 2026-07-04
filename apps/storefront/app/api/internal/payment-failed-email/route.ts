@@ -6,7 +6,6 @@ export const maxDuration = 30;
 
 const bodySchema = z.object({
 	cart_id: z.string().min(1),
-	retry_url: z.string().url(),
 	p24_session_id: z.string().min(1).optional(),
 });
 
@@ -43,7 +42,6 @@ export async function POST(request: Request) {
 
 	const result = await dispatchPaymentFailedEmail({
 		cartId: parsed.data.cart_id,
-		retryUrl: parsed.data.retry_url,
 		p24SessionId: parsed.data.p24_session_id,
 	});
 

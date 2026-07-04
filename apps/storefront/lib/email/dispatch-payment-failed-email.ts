@@ -19,6 +19,22 @@ function cartReference(cartId: string): string {
 	return tail || cartId.slice(-6).toUpperCase();
 }
 
+/**
+ * SECURITY: link do ponownej płatności budujemy WYŁĄCZNIE po stronie serwera
+ * z `cartId`. Wcześniej `retry_url` przychodził z body publicznego endpointu i
+ * trafiał żywcem do treści maila — pozwalało to wysłać wiarygodny mail
+ * „płatność nieudana" z linkiem na dowolną (phishingową) domenę.
+ */
+function buildRetryUrl(cartId: string): string {
+	const path = `/checkout/p24/retry?cart_id=${encodeURIComponent(cartId)}`;
+	const site =
+		process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+		(process.env.NEXT_PUBLIC_VERCEL_URL
+			? `https://${process.env.NEXT_PUBLIC_VERCEL_URL.replace(/\/$/, "")}`
+			: undefined);
+	return site ? `${site}${path}` : path;
+}
+
 function cartToEmailSource(cart: Record<string, unknown>): OrderRenderSource | null {
 	const email = typeof cart.email === "string" ? cart.email.trim() : "";
 	if (!email) return null;
@@ -120,7 +136,6 @@ export type PaymentFailedEmailResult =
 /** Wysyła mail payment_failed z deduplikacją per sesja P24 (nowa próba = nowy mail). */
 export async function dispatchPaymentFailedEmail(params: {
 	cartId: string;
-	retryUrl: string;
 	p24SessionId?: string;
 }): Promise<PaymentFailedEmailResult> {
 	const cart = await getCart(params.cartId).catch(() => null);
@@ -142,7 +157,7 @@ export async function dispatchPaymentFailedEmail(params: {
 
 	const result = await sendPaymentFailedEmail(
 		source,
-		params.retryUrl,
+		buildRetryUrl(params.cartId),
 		cartReference(params.cartId),
 	);
 

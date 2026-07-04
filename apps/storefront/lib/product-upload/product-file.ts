@@ -13,7 +13,6 @@ const ALLOWED_TYPES = new Set([
   "image/png",
   "image/jpeg",
   "image/webp",
-  "image/svg+xml",
   "application/pdf",
   "application/postscript",
 ]);
@@ -23,7 +22,6 @@ const EXT_TO_MIME: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
   webp: "image/webp",
-  svg: "image/svg+xml",
   pdf: "application/pdf",
   ai: "application/postscript",
   eps: "application/postscript",
@@ -213,7 +211,7 @@ export function validateProductUploadFile(file: File): string | null {
     return `Plik jest za duży (maks. ${Math.floor(MAX_UPLOAD_BYTES / (1024 * 1024))} MB)`;
   }
   if (!inferMimeType(file)) {
-    return "Niedozwolony typ pliku (PNG, JPG, WEBP, SVG, PDF, AI, EPS)";
+    return "Niedozwolony typ pliku (PNG, JPG, WEBP, PDF, AI, EPS)";
   }
   return null;
 }
@@ -288,6 +286,7 @@ export async function uploadCmsAssetFile(file: File): Promise<ProductUploadResul
     if (error instanceof Error && error.message === "R2_UPLOAD_TIMEOUT") {
       throw new Error(
         "Upload do R2 trwa zbyt długo. Sprawdź połączenie lub spróbuj mniejszego pliku (WebP/JPG).",
+        { cause: error },
       );
     }
     throw error instanceof Error ? error : new Error("R2_UPLOAD_FAILED");

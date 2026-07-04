@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import type { EmailFontKey, EmailThemeConfig } from "@magazyn/core/config/types";
-import { FONT_KEYS, type FontKey } from "./email-fonts";
+import { FONT_KEYS } from "./email-fonts";
 
 export { FONT_KEYS, FONT_STACKS, type FontKey } from "./email-fonts";
 export { FONT_OPTIONS } from "./email-fonts";

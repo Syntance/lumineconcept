@@ -870,29 +870,55 @@ type P24SessionLike = {
 
 type CartWithP24Sessions = {
   payment_collection?: {
-    payment_sessions?: P24SessionLike[] | null;
+    amount?: number | null;
+    payment_sessions?: (P24SessionLike & { amount?: number | null })[] | null;
   } | null;
 };
+
+/**
+ * Tolerancja porównania kwot. Store API zwraca kwoty w jednostkach głównych
+ * (float), więc unikamy pułapki floatów przy równości (0.01 = 1 grosz).
+ */
+const P24_AMOUNT_EPSILON = 0.005;
 
 /**
  * Aktywna sesja P24 z gotowym URL bramki, którą można reużyć. „Pending” =
  * transakcja zarejestrowana w P24, klient jeszcze nie zapłacił. Reużycie
  * chroni przed duplikatami transakcji w P24 przy reloadzie / wielokrotnym
  * kliknięciu „Zamawiam i płacę”.
+ *
+ * SECURITY/FINANSE: reużywamy sesji TYLKO gdy jej kwota zgadza się z aktualną
+ * kwotą payment_collection (= total koszyka). Bez tego klient, który zmienił
+ * koszyk po zarejestrowaniu transakcji (inna ilość / dostawa), płacił starą
+ * kwotę z bramki P24, a zamówienie powstawało na nową — rozjazd finansowy.
  */
 function findReusableP24RedirectUrl(cart: CartWithP24Sessions): string | null {
-  const sessions = cart.payment_collection?.payment_sessions ?? [];
+  const collection = cart.payment_collection;
+  const sessions = collection?.payment_sessions ?? [];
+  const expectedAmount =
+    typeof collection?.amount === "number" ? collection.amount : null;
+
   for (const session of sessions) {
     if (session.provider_id !== PRZELEWY24_PROVIDER_ID) continue;
     if (session.status && session.status !== "pending") continue;
     const url = session.data?.redirect_url;
-    if (typeof url === "string" && url.trim()) return url;
+    if (typeof url !== "string" || !url.trim()) continue;
+
+    // Nie reużywaj sesji zarejestrowanej na inną kwotę niż aktualny total.
+    if (
+      expectedAmount !== null &&
+      typeof session.amount === "number" &&
+      Math.abs(session.amount - expectedAmount) > P24_AMOUNT_EPSILON
+    ) {
+      continue;
+    }
+    return url;
   }
   return null;
 }
 
 const P24_SESSION_FIELDS =
-  "id,email,payment_collection.id,payment_collection.payment_sessions.provider_id,payment_collection.payment_sessions.status,payment_collection.payment_sessions.data";
+  "id,email,payment_collection.id,payment_collection.amount,payment_collection.payment_sessions.provider_id,payment_collection.payment_sessions.status,payment_collection.payment_sessions.amount,payment_collection.payment_sessions.data";
 
 export async function initPrzelewy24Redirect(
   cartId: string,

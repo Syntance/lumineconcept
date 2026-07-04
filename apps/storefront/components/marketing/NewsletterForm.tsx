@@ -26,6 +26,7 @@ export function NewsletterForm({ variant = "default" }: NewsletterFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
+        signal: AbortSignal.timeout(8000),
       });
 
       const data = (await response.json()) as { success: boolean; message: string };
@@ -45,9 +46,13 @@ export function NewsletterForm({ variant = "default" }: NewsletterFormProps) {
         setMessage(data.message);
         tracker.reportError("email", "server");
       }
-    } catch {
+    } catch (error) {
       setStatus("error");
-      setMessage("Wystąpił błąd. Spróbuj ponownie.");
+      setMessage(
+        error instanceof DOMException && error.name === "AbortError"
+          ? "Przekroczono czas — spróbuj ponownie."
+          : "Wystąpił błąd. Spróbuj ponownie.",
+      );
       tracker.reportError("email", "server");
     }
   };

@@ -35,7 +35,6 @@ export function buildContentSecurityPolicy(nonce: string): string {
 		"'strict-dynamic'",
 		// Fallback dla starszych UA (Lighthouse): ignorowane gdy nonce + strict-dynamic działają.
 		"'unsafe-inline'",
-		"https:",
 		isDev ? "'unsafe-eval'" : null,
 	]
 		.filter(Boolean)

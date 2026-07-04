@@ -11,8 +11,6 @@ import {
 	getEnabledColorNamesForSlot,
 	resolveAllowCustomColorForSlot,
 } from "@/lib/products/color-slot-config";
-import type { TextFieldDef } from "@/lib/products/text-fields";
-import type { ProductUploadSettings } from "@/lib/products/upload-settings";
 import {
 	getStandEnabledColorNames,
 	parseStandProductColors,

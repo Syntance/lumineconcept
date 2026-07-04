@@ -12,6 +12,7 @@ import {
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
 import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { SITE_URL, cn } from "@/lib/utils";
+import { serializeJsonLd } from "@/lib/seo/json-ld";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
@@ -88,7 +89,7 @@ export default async function ShopHubPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: serializeJsonLd({
             "@context": "https://schema.org",
             "@type": "ItemList",
             name: "Sklep Lumine Concept",

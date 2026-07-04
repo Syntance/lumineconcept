@@ -1,6 +1,5 @@
 import "server-only";
 
-import { formatPrice } from "@magazyn/core/lib/format";
 import { serviceAdminFetch } from "@magazyn/core/medusa/client";
 import {
 	getAdminOrderForEmail,
@@ -11,7 +10,7 @@ import { sendOrderStageEmail } from "@magazyn/modules/emails/send-order-email";
 import { sendShopOrderNotificationEmail } from "@magazyn/modules/emails/send-shop-order-notification";
 import type { OrderRenderSource } from "@magazyn/modules/emails/render-template";
 import type { OrderEmailTemplateType } from "@magazyn/modules/emails/template-types";
-import { sendTransactionalEmail, type SendEmailResult } from "@magazyn/modules/emails/send-transactional";
+import type { SendEmailResult } from "@magazyn/modules/emails/send-transactional";
 
 const RETRY_DELAYS_MS = [0, 400, 800, 1200, 2000];
 const EMAIL_SENT_PREFIX = "email_sent_";
@@ -88,29 +87,17 @@ async function loadOrderSource(
 		}
 	}
 
-	if (!snapshot?.email) return null;
-
-	const currency = (snapshot.currencyCode ?? "PLN").toUpperCase();
-	const displayId = snapshot.displayId ?? 0;
-	return {
-		displayId,
-		email: snapshot.email.trim(),
-		phone: snapshot.phone ?? "",
-		currencyCode: currency,
-		total: snapshot.total,
-		itemTotal: snapshot.itemTotal ?? snapshot.total,
-		shippingTotal: snapshot.shippingTotal ?? 0,
-		shippingMethodName: snapshot.shippingMethodName ?? null,
-		customerName:
-			snapshot.customerName?.trim() || snapshot.email.split("@")[0] || "Kliencie",
-		address: snapshot.address ?? "",
-		items: (snapshot.items ?? []).map((item) => ({
-			title: item.title,
-			quantity: item.quantity,
-			total: formatPrice(item.total, currency),
-			thumbnail: item.thumbnail ?? null,
-		})),
-	};
+	/**
+	 * SECURITY: gdy zamówienie NIE istnieje w Medusie (po pełnym oknie retry),
+	 * NIE budujemy maila z samego snapshotu z body. Snapshot jest wyłącznie
+	 * wzbogaceniem realnego zamówienia — traktowanie go jako samodzielnego
+	 * źródła pozwalało wysłać firmowy mail (dane do przelewu, potwierdzenie)
+	 * na dowolny adres z dowolną kwotą, podając zmyślone `order_id`
+	 * (publiczny endpoint bez sesji). Realne, świeże zamówienie i tak zwraca
+	 * `getAdminOrderForEmail` w oknie retry; opóźnione domknie subscriber
+	 * `order.placed` (in-process) oraz cron reconcile.
+	 */
+	return null;
 }
 
 async function sendShopCopy(

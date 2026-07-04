@@ -7,7 +7,6 @@ import { requireAdminSession } from "@magazyn/core/auth/require-session";
 import type { GlobalContent, PageContent, SiteSettings } from "@/lib/content/types";
 import { revalidateContentCache, triggerCmsRedeploy } from "./revalidate-content";
 import {
-	getPageContentForAdmin,
 	saveGlobalContent,
 	savePageContent,
 	saveSiteSettingsPartial,

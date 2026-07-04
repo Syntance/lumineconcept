@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { getGlobalContent, getSiteSettings } from "@/lib/content";
 import {
 	mapSalonLogosForMarquee,

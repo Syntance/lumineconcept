@@ -6,7 +6,6 @@ function trimEnv(value: string | undefined): string | undefined {
 /** Woła storefront — szablon payment_failed z magazynu. */
 export async function dispatchPaymentFailedEmailViaStorefront(params: {
   cartId: string;
-  retryUrl: string;
   p24SessionId?: string;
 }): Promise<{ ok: boolean; skipped?: boolean }> {
   const storefrontUrl = trimEnv(process.env.STOREFRONT_URL);
@@ -29,7 +28,6 @@ export async function dispatchPaymentFailedEmailViaStorefront(params: {
         },
         body: JSON.stringify({
           cart_id: params.cartId,
-          retry_url: params.retryUrl,
           ...(params.p24SessionId
             ? { p24_session_id: params.p24SessionId }
             : {}),

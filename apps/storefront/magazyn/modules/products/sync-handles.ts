@@ -38,7 +38,6 @@ async function fetchAllProducts(token: string): Promise<MedusaProductRow[]> {
 		);
 
 		if (!res.ok) {
-			const text = await res.text();
 			throw new AdminApiError(`Nie udało się pobrać produktów (${res.status}).`, res.status);
 		}
 
@@ -79,7 +78,6 @@ async function updateProductHandle(
 	});
 
 	if (!res.ok) {
-		const text = await res.text();
 		throw new AdminApiError(`Nie udało się zaktualizować handle (${res.status}).`, res.status);
 	}
 }

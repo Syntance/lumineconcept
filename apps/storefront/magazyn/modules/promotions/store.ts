@@ -129,8 +129,8 @@ function toAdminPromoCode(
 
 	let discountType = parseDiscountType(promotion);
 	let discountValue = parseDiscountValue(promotion);
-	let freeShippingEnabled = freeShippingOnly || shadow !== null;
-	let freeShippingMinAmount = freeShippingOnly
+	const freeShippingEnabled = freeShippingOnly || shadow !== null;
+	const freeShippingMinAmount = freeShippingOnly
 		? parseFreeShippingMinPln(promotion)
 		: shadow
 			? parseFreeShippingMinPln(shadow)

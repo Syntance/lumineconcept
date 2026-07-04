@@ -24,6 +24,7 @@ export async function subscribeToNewsletter(
           groups: MAILERLITE_GROUP_ID ? [MAILERLITE_GROUP_ID] : [],
           status: "active",
         }),
+        signal: AbortSignal.timeout(8000),
       },
     );
 
@@ -36,7 +37,10 @@ export async function subscribeToNewsletter(
     }
 
     return { success: true, message: "Zapisano do newslettera!" };
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return { success: false, message: "Przekroczono czas — spróbuj ponownie." };
+    }
     return { success: false, message: "Wystąpił błąd. Spróbuj ponownie." };
   }
 }

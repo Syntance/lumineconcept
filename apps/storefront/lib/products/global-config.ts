@@ -79,6 +79,7 @@ async function fetchStoreProductConfig(search: string): Promise<Response> {
     const direct = await fetch(directUrl, {
       headers,
       next: { revalidate: 60 },
+      signal: AbortSignal.timeout(8000),
     })
     if (direct.ok) return direct
   } catch {
@@ -89,7 +90,10 @@ async function fetchStoreProductConfig(search: string): Promise<Response> {
   const internalUrl = `${origin}/api/medusa/store/product-config${search}`
 
   try {
-    const viaProxy = await fetch(internalUrl, { next: { revalidate: 60 } })
+    const viaProxy = await fetch(internalUrl, {
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(8000),
+    })
     if (viaProxy.ok) return viaProxy
   } catch {
     /* np. zły port w dev — zwrócimy ostatni direct poniżej */
@@ -98,6 +102,7 @@ async function fetchStoreProductConfig(search: string): Promise<Response> {
   return fetch(directUrl, {
     headers,
     next: { revalidate: 60 },
+    signal: AbortSignal.timeout(8000),
   })
 }
 

@@ -7,7 +7,7 @@ import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/erro
 import { siteSettingsSchema } from "@/lib/content/parsers";
 import type { SeoMeta } from "@/lib/content/types";
 import { revalidateContentCache } from "../revalidate-content";
-import { getSeoSettingsBundle, saveGlobalSeoSettings, savePageSeo } from "./seo-store";
+import { saveGlobalSeoSettings, savePageSeo } from "./seo-store";
 import type { SaveContentState } from "../content-actions";
 
 export type SaveSeoState = SaveContentState;

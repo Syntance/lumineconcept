@@ -91,18 +91,12 @@ export function createInitialColorSlotState(
 	const { nonColors, colors } = splitLegacyDisabledIds(legacyDisabled, configOptions);
 	const defaultAllow = product?.allowCustomColor ?? true;
 
-	const disabledRecord =
-		product?.disabledConfigIdsBySlot ??
-		parseDisabledConfigIdsBySlot(metadata, slotTitles, colors);
 	const allowRecord =
 		product?.allowCustomColorBySlot ??
 		parseAllowCustomColorBySlot(metadata, slotTitles, defaultAllow);
 	const productColors =
 		product?.productColorsBySlot ??
 		parseProductColorsBySlot(metadata, slotTitles, categoryIdList);
-	const disabledCategoriesRecord =
-		product?.disabledColorCategoriesBySlot ??
-		parseDisabledColorCategoriesBySlot(metadata, slotTitles);
 	const matOverridesRecord =
 		product?.matOverridesBySlot ?? parseMatOverridesBySlot(metadata, slotTitles);
 	const matOverridesWithStandRecord =

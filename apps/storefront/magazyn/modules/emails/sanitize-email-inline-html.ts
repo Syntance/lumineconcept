@@ -26,7 +26,7 @@ export function containsEmailInlineHtml(raw: string): boolean {
 export function sanitizeEmailInlineHtml(html: string): string {
 	if (!html.trim()) return "";
 
-	let normalized = html
+	const normalized = html
 		.replace(/<b\b([^>]*)>/gi, "<strong$1>")
 		.replace(/<\/b>/gi, "</strong>")
 		.replace(/<i\b([^>]*)>/gi, "<em$1>")

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Save, X } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useId, useMemo, useState, useTransition } from "react";
 import { Button } from "@magazyn/core/ui/button";
