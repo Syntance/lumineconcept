@@ -11,8 +11,10 @@ import "@/styles/globals.css";
  * Fonty brandowe — `display: "swap"` + `adjustFontFallback` minimalizuje CLS
  * (metryki fallbacku dopasowane do fontu właściwego → reflow praktycznie zerowy).
  * - Gilroy (body + podtytuł hero): `swap`, preload na krytycznej ścieżce.
- * - Chronicle (display, nagłówki h1-h3): `preload: true` — usuwa font z waterfall
- *   CSS-discovery → Next.js wstawi <link rel=preload> obok Binerki.
+ * - Chronicle (nagłówki h1-h3 poniżej fold): `preload: false` — lazy load.
+ *   Zaoszczędzane 32 KiB w oknie LCP konkurencji (fonty High + hero AVIF).
+ *   Swap display zapobiega FOIT (unstyled text) — nagłówki sekcji poniżej fold
+ *   mogą chwilę czekać bez wpływu na percepcję FCP/LCP.
  * - Binerka (nagłówek hero „CONCEPT"): `swap` + `preload: true` — nad linią zgięcia.
  * - 2 wagi Gilroy (400, 500) — waga 700 syntezowana z fallbacku.
  */
@@ -35,7 +37,7 @@ const chronicle = localFont({
   display: "swap",
   adjustFontFallback: "Times New Roman",
   fallback: ['Georgia', 'serif'],
-  preload: true,
+  preload: false,
 });
 
 const binerka = localFont({
