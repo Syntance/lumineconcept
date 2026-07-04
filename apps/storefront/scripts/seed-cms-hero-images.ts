@@ -12,7 +12,7 @@ import { resolve, basename } from "node:path";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { MAGAZYN_PAGE_CONTENT_KEY } from "../lib/content/metadata-keys";
 import { parsePageContentMap, preparePageContentForSave } from "../lib/content/parsers";
-import type { PageContent, PageContentMap } from "../lib/content/types";
+import type { PageContentMap } from "../lib/content/types";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const ROOT = resolve(import.meta.dirname ?? __dirname, "..");

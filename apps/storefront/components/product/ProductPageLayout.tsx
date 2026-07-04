@@ -12,6 +12,7 @@ import { ProductTabs } from "@/components/product/ProductTabs";
 import { extractSchemaImage } from "@/lib/products/product-images";
 import { sanitizeProductCardDescriptionHtml } from "@/lib/products/sanitize-product-card-html";
 import { cn, SITE_URL } from "@/lib/utils";
+import { serializeJsonLd } from "@/lib/seo/json-ld";
 import {
   formatDimensionsWxH,
   getProductDimensionParts,
@@ -382,7 +383,7 @@ export async function ProductPageLayout({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify([productJsonLd]),
+          __html: serializeJsonLd([productJsonLd]),
         }}
       />
 
@@ -606,7 +607,7 @@ function FaqSection({ faqs }: { faqs: ProductFaqItem[] }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: serializeJsonLd({
             "@context": "https://schema.org",
             "@type": "FAQPage",
             mainEntity: faqs.map((f) => ({

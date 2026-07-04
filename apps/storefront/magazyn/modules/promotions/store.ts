@@ -199,10 +199,6 @@ export async function listProductOptionsForPromo(): Promise<ProductOption[]> {
 	}));
 }
 
-function majorPlnToGrosze(major: number): number {
-	return Math.round(major * 100);
-}
-
 function buildTargetRules(productIds: string[]): MedusaRulePayload[] | undefined {
 	if (productIds.length === 0) return undefined;
 	return [

@@ -13,7 +13,7 @@ import {
 	resolveSocialLinks,
 	resolveTrustBarDisplay,
 } from "@/lib/content/cms-wiring";
-import { DEFAULT_PAGE_CONTENT, DEFAULT_SITE_SETTINGS } from "@/lib/content/defaults";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/content/defaults";
 import { mergeHeroWithDefaults } from "@/lib/content/parsers";
 import { resolveHomeHero, resolveLogoHero } from "@/lib/content/hero";
 
