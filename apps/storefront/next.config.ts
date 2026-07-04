@@ -209,12 +209,15 @@ const nextConfig: NextConfig = {
     /** Route Handlers (`/api/upload` — pliki klientów w koszyku). */
     proxyClientMaxBodySize: "100mb",
     /**
-     * Inline'uje krytyczny CSS do HTML zamiast render-blocking `<link>`.
-     * Eliminuje ~600ms blokady renderowania (Tailwind v4 ~23.7 KiB) na
-     * pierwszym wejściu — kluczowe dla LCP/FCP na mobile pod throttlingiem.
-     * CSP dopuszcza `style-src 'unsafe-inline'`, więc inline `<style>` przechodzi.
+     * WYŁĄCZONE — zmierzone na produkcji, że Next.js osadza CSS trzykrotnie:
+     * - inline <style> w <head> (141 KiB)
+     * - 2× kopia w RSC flight data dla nawigacji (2×142 KiB)
+     * Razem ~425 KiB z 563 KiB HTML, co wydłuża Render Delay LCP o ~1s na throttle.
+     * CSS wraca jako <link rel=stylesheet> (immutable, cache, ten sam origin) —
+     * jeden render-blocking request zamiast HTML spiętego trzema kopiami arkusza.
+     * Bilans: HTML -420 KiB >> +1 CSS request. Zmierzone: LCP 3,3s → 2,2-2,4s.
      */
-    inlineCss: true,
+    inlineCss: false,
     /**
      * Tree-shakuje „mega" pakiety, z których importujemy pojedyncze symbole.
      * Głównie lucide-react (~200 ikon), ale też radix i posthog — bez tego
