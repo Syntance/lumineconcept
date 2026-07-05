@@ -86,21 +86,34 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       /**
-       * Stary URL `/logo-3d` — przekierowanie do strony „Tablice z logo” (`/sklep/logo-3d`).
+       * Stary URL `/logo-3d` — przekierowanie do strony „Tablice z logo”.
        */
       {
         source: "/logo-3d",
-        destination: "/sklep/bablize-z-logo",
+        destination: "/sklep/tablice-z-logo",
         permanent: true,
       },
       {
         source: "/sklep/logo-3d",
-        destination: "/sklep/bablize-z-logo",
+        destination: "/sklep/tablice-z-logo",
         permanent: true,
       },
       {
         source: "/sklep/logo-3d/:path*",
-        destination: "/sklep/bablize-z-logo/:path*",
+        destination: "/sklep/tablice-z-logo/:path*",
+        permanent: true,
+      },
+      /**
+       * Literówka w slugu — `/sklep/bablize-z-logo` → `/sklep/tablice-z-logo`.
+       */
+      {
+        source: "/sklep/bablize-z-logo",
+        destination: "/sklep/tablice-z-logo",
+        permanent: true,
+      },
+      {
+        source: "/sklep/bablize-z-logo/:path*",
+        destination: "/sklep/tablice-z-logo/:path*",
         permanent: true,
       },
       {

@@ -128,7 +128,7 @@ export const STATIC_CMS_CONTENT = {
         {
           "title": "Tablice z logo",
           "cta": "Uzyskaj wycenę",
-          "href": "/sklep/bablize-z-logo",
+          "href": "/sklep/tablice-z-logo",
           "imageUrl": "/images/categories/logo-kategoria-nail-boss.webp"
         },
         {

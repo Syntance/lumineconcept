@@ -7,7 +7,7 @@ import { HeaderIcons } from "./HeaderIcons";
 import { HeaderLogoLink } from "./HeaderLogoLink";
 import { SHOP_HUB_HREF, SHOP_NAV_DROPDOWN } from "./shop-nav";
 
-const NAV_LEFT = [{ href: "/sklep/bablize-z-logo", label: "Tablice z logo" }] as const;
+const NAV_LEFT = [{ href: "/sklep/tablice-z-logo", label: "Tablice z logo" }] as const;
 
 const NAV_RIGHT_LINKS = [{ href: "/o-nas", label: "O nas" }] as const;
 

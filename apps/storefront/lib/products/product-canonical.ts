@@ -2,7 +2,7 @@
  * Jedna kanoniczna ścieżka URL na produkt.
  *
  * Produkt może być fizycznie dostępny pod kilkoma ścieżkami kategorii
- * (`/sklep/gotowe-wzory/<h>`, `/sklep/certyfikaty/<h>`, `/sklep/bablize-z-logo/<h>`),
+ * (`/sklep/gotowe-wzory/<h>`, `/sklep/certyfikaty/<h>`, `/sklep/tablice-z-logo/<h>`),
  * ale dla SEO wskazujemy DOKŁADNIE JEDNĄ — żeby uniknąć duplicate content.
  * Używane spójnie w `sitemap.ts` (jeden wpis) oraz w `generateMetadata`
  * produktu (`alternates.canonical`).
@@ -25,7 +25,7 @@ export function productTagValues(product: TaggedProduct): string[] {
 /** Kanoniczna ścieżka kategorii produktu (bez końcowego slasha). */
 export function canonicalProductBasePath(tags: string[]): string {
 	if (tags.includes(CERT_TAG)) return "/sklep/certyfikaty";
-	if (tags.includes(LOGO_TAG)) return "/sklep/bablize-z-logo";
+	if (tags.includes(LOGO_TAG)) return "/sklep/tablice-z-logo";
 	return "/sklep/gotowe-wzory";
 }
 
