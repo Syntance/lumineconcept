@@ -4,6 +4,11 @@ import {
   MedusaError,
   Modules,
 } from "@medusajs/framework/utils";
+import { refreshPaymentCollectionForCartWorkflow } from "@medusajs/medusa/core-flows";
+import {
+  EXPRESS_FEE_SHIPPING_METHOD_NAME,
+  planExpressFeeReconcile,
+} from "../../../../lib/express-fee";
 import { STORE_CART_REMOTE_QUERY_FIELDS } from "../../../../lib/store-cart-fields";
 import { captureMessage } from "../../../../lib/sentry";
 
@@ -51,7 +56,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const readCartSnapshot = async () => {
     const { data } = await query.graph({
       entity: "cart",
-      fields: STORE_CART_REMOTE_QUERY_FIELDS,
+      // + payment_collection.id: po rekoncyliacji metody-dopłaty musimy
+      // wiedzieć, czy odświeżyć kwotę kolekcji (koszyk w trakcie checkoutu).
+      fields: [...STORE_CART_REMOTE_QUERY_FIELDS, "payment_collection.id"],
       filters: { id: cartId },
     });
     const snapshot = (data as Array<{ id?: string }>)[0];
@@ -99,12 +106,27 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   // (productsSubtotal) i prepare-checkout (itemSubtotal). `cart.subtotal`
   // jest PRZED rabatem, więc przy aktywnym kodzie promocyjnym metadata
   // pokazywałaby inną kwotę niż faktycznie pobierana.
-  const snapshotItems =
-    ((cartSnapshot as { items?: Array<{ total?: unknown }> | null }).items ?? []);
-  const itemsTotalNum = snapshotItems.reduce(
-    (sum, item) => sum + amountToNumber(item?.total),
-    0,
-  );
+  const snapshotItems = ((
+    cartSnapshot as {
+      items?: Array<{
+        total?: unknown;
+        subtotal?: unknown;
+        unit_price?: unknown;
+        quantity?: unknown;
+      }> | null;
+    }
+  ).items ?? []);
+  // Fallback total → subtotal → unit_price×qty: dekoracja kwot pozycji
+  // potrafi zniknąć (jak w prepare-checkout, bug 06.07.2026 wieczór).
+  const itemsTotalNum = snapshotItems.reduce((sum, item) => {
+    const total = amountToNumber(item?.total);
+    if (total > 0) return sum + total;
+    const subtotal = amountToNumber(item?.subtotal);
+    if (subtotal > 0) return sum + subtotal;
+    const unit = amountToNumber(item?.unit_price);
+    const qty = amountToNumber(item?.quantity);
+    return unit > 0 && qty > 0 ? sum + unit * qty : sum;
+  }, 0);
   // Medusa v2 — kwoty dziesiętne w PLN. 50% sumy pozycji zaokrąglamy do groszy
   // (nie do pełnych złotych, jak było w konwencji grosze/integer).
   const expressFee = body.express_delivery
@@ -124,6 +146,58 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   };
 
   await cartModule.updateCarts([{ id: cartId, metadata }]);
+
+  /**
+   * Rekoncyliacja metody-dopłaty OD RAZU (bug 06.07.2026 wieczór): dopłata
+   * express jest realną metodą wysyłki, a ten endpoint zmieniał tylko
+   * metadata — po ODZNACZENIU expressu metoda 2,50 zł zostawała na koszyku
+   * aż do następnego prepare-checkout i „Do zapłaty" dalej ją zawierało
+   * (fee doliczane niezależnie od checkboxa). Plan jest idempotentny:
+   * włączenie dodaje/koryguje metodę, wyłączenie ją usuwa.
+   */
+  const snapshotMethods = (
+    (cartSnapshot as {
+      shipping_methods?: Array<{
+        id?: string | null;
+        name?: string | null;
+        amount?: unknown;
+      }> | null;
+    }).shipping_methods ?? []
+  ).map((m) => ({
+    id: m.id,
+    name: m.name,
+    // BigNumber z query.graph → liczba (planExpressFeeReconcile porównuje kwoty).
+    amount: amountToNumber(m.amount),
+  }));
+  const feePlan = planExpressFeeReconcile({
+    expressDelivery: body.express_delivery,
+    itemSubtotal: itemsTotalNum,
+    methods: snapshotMethods,
+  });
+  if (feePlan.changed) {
+    if (feePlan.deleteIds.length > 0) {
+      await cartModule.deleteShippingMethods(feePlan.deleteIds);
+    }
+    if (feePlan.addAmount !== null) {
+      await cartModule.addShippingMethods([
+        {
+          cart_id: cartId,
+          name: EXPRESS_FEE_SHIPPING_METHOD_NAME,
+          amount: feePlan.addAmount,
+        },
+      ]);
+    }
+    // Koszyk w trakcie checkoutu (kolekcja płatności istnieje) — odśwież jej
+    // kwotę, żeby sesja P24 przy submit dostała aktualny total.
+    const collectionId = (
+      cartSnapshot as { payment_collection?: { id?: string } | null }
+    ).payment_collection?.id;
+    if (collectionId) {
+      await refreshPaymentCollectionForCartWorkflow(req.scope).run({
+        input: { cart_id: cartId },
+      });
+    }
+  }
 
   const cart = await readCartSnapshot();
 
