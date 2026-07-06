@@ -200,6 +200,45 @@ test.describe("Checkout ? chaos / awarie", () => {
     expect(prepareCheckoutCalls).toBe(1);
   });
 
+  test("ponowne podejscie po anulowaniu -> /start wymusza retry=1 (swiezy link P24)", async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    test.setTimeout(120_000);
+
+    await seedCookieConsent(page);
+    const cartId = await seedCartViaApi(request, baseURL ?? "");
+    // Pre-seed znacznika P24_CART_CONTEXT (klucz z lib/medusa/checkout.ts):
+    // symuluje, ze klient BYL JUZ kierowany do bramki dla tego koszyka
+    // (znacznik czyscimy WYLACZNIE po sukcesie platnosci, wiec przezywa
+    // powrot/anulowanie). Stary redirect_url jest wtedy zuzyty — ponowny
+    // submit MUSI wymusic przerejestrowanie (retry=1), nie reuzycie martwego
+    // linku (regresja: „przetwarzana" -> „nieudana" zamiast bramki P24).
+    await page.addInitScript((id: string) => {
+      window.localStorage.setItem("lumine_cart_id", id);
+      window.sessionStorage.setItem(
+        "lumine_p24_cart_context_v1",
+        JSON.stringify({ cartId: id, at: Date.now() }),
+      );
+    }, cartId);
+
+    await page.goto("/checkout");
+    await fillContactStep(page);
+    await goThroughShippingStep(page);
+    await acceptConsents(page);
+
+    const submit = page.getByRole("button", { name: /zamawiam i p.ac./i });
+    await expect(submit).toBeEnabled();
+    await submit.click();
+
+    // Kluczowa asercja: nawigacja na /start MUSI niesc retry=1 → swieza
+    // rejestracja transakcji P24 zamiast martwego linku.
+    await page.waitForURL(/checkout\/przelewy24\/start\?.*retry=1/i, {
+      timeout: 60_000,
+    });
+  });
+
   test("powrot z bramki z nieistniejacym cart_id -> pending, nie crash", async ({
     page,
   }) => {

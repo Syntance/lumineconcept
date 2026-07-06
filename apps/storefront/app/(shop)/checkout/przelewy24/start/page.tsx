@@ -3,10 +3,14 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, ExternalLink, Loader2, XCircle } from "lucide-react";
 import {
-  openP24PaymentPopup,
-} from "@/lib/checkout/p24-popup";
+  AlertCircle,
+  ArrowLeft,
+  ExternalLink,
+  Loader2,
+  XCircle,
+} from "lucide-react";
+import { openP24PaymentPopup } from "@/lib/checkout/p24-popup";
 import {
   initPrzelewy24Redirect,
   markP24PaymentStarted,
@@ -51,42 +55,51 @@ function P24StartInner() {
     router.push("/checkout");
   }, [closePopup, router]);
 
-  const goToP24 = useCallback(async () => {
-    if (!cartId) {
-      setState({
-        kind: "error",
-        message: "Brak identyfikatora koszyka. Wróć do checkoutu i spróbuj ponownie.",
-      });
-      return;
-    }
-
-    setState({ kind: "redirecting" });
-    markP24PaymentStarted(cartId);
-
-    try {
-      const url = isRetry
-        ? await retryPrzelewy24Payment(cartId)
-        : await initPrzelewy24Redirect(cartId);
-
-      closePopup();
-      const paymentWindow = openP24PaymentPopup(url);
-      if (paymentWindow) {
-        popupRef.current = paymentWindow;
-        setState({ kind: "popup_open", paymentUrl: url });
+  const goToP24 = useCallback(
+    async (opts?: { forceRetry?: boolean }) => {
+      if (!cartId) {
+        setState({
+          kind: "error",
+          message:
+            "Brak identyfikatora koszyka. Wróć do checkoutu i spróbuj ponownie.",
+        });
         return;
       }
 
-      window.location.assign(url);
-    } catch (e) {
-      setState({
-        kind: "error",
-        message:
-          e instanceof Error
-            ? e.message
-            : "Nie udało się przygotować płatności. Spróbuj ponownie.",
-      });
-    }
-  }, [cartId, closePopup, isRetry]);
+      setState({ kind: "redirecting" });
+      markP24PaymentStarted(cartId);
+
+      try {
+        // forceRetry: klient kliknął „Spróbuj ponownie" po nieudanym/przerwanym
+        // podejściu — stary redirect_url bywa ZUŻYTY (był już na bramce), więc
+        // przerejestrowujemy transakcję zamiast reużywać martwy link. Guard
+        // wpłaty w p24-retry-payment chroni przed osieroceniem środków (409).
+        const url =
+          isRetry || opts?.forceRetry
+            ? await retryPrzelewy24Payment(cartId)
+            : await initPrzelewy24Redirect(cartId);
+
+        closePopup();
+        const paymentWindow = openP24PaymentPopup(url);
+        if (paymentWindow) {
+          popupRef.current = paymentWindow;
+          setState({ kind: "popup_open", paymentUrl: url });
+          return;
+        }
+
+        window.location.assign(url);
+      } catch (e) {
+        setState({
+          kind: "error",
+          message:
+            e instanceof Error
+              ? e.message
+              : "Nie udało się przygotować płatności. Spróbuj ponownie.",
+        });
+      }
+    },
+    [cartId, closePopup, isRetry],
+  );
 
   useEffect(() => {
     const onPageShow = (event: PageTransitionEvent) => {
@@ -124,7 +137,9 @@ function P24StartInner() {
 
   const handleRetry = async () => {
     setRetrying(true);
-    await goToP24();
+    // Klient jest tu po nieudanym/przerwanym podejściu — wymuszamy świeżą
+    // rejestrację transakcji (stary link bywa zużyty), nie reużycie.
+    await goToP24({ forceRetry: true });
     setRetrying(false);
   };
 
@@ -153,10 +168,10 @@ function P24StartInner() {
             Dokończ płatność w oknie Przelewy24
           </h1>
           <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-brand-600">
-            Płatność działa w osobnym oknie / karcie Przelewy24. Jeśli pojawi się
-            błąd (np. „Wewnętrzny błąd”), użyj przycisku powyżej albo wróć na tę
-            kartę — checkout zostaje otwarty. Po anulowaniu P24 też przekieruje
-            Cię z powrotem do sklepu.
+            Płatność działa w osobnym oknie / karcie Przelewy24. Jeśli pojawi
+            się błąd (np. „Wewnętrzny błąd”), użyj przycisku powyżej albo wróć
+            na tę kartę — checkout zostaje otwarty. Po anulowaniu P24 też
+            przekieruje Cię z powrotem do sklepu.
           </p>
           <div className="mx-auto mt-8 flex max-w-md flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
             <button
@@ -242,7 +257,9 @@ function P24StartInner() {
       <h1 className="mt-6 font-display text-2xl font-semibold text-brand-800">
         Nie udało się rozpocząć płatności
       </h1>
-      <p className="mx-auto mt-3 max-w-md text-sm text-brand-600">{state.message}</p>
+      <p className="mx-auto mt-3 max-w-md text-sm text-brand-600">
+        {state.message}
+      </p>
       <div className="mx-auto mt-8 flex max-w-md flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
         <button
           type="button"

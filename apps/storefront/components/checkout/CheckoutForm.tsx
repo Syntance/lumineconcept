@@ -7,7 +7,10 @@ import { PaymentSelector } from "./PaymentSelector";
 import { OrderSummary } from "./OrderSummary";
 import { PromoCodeField } from "./PromoCodeField";
 import { CheckoutTrustBadges } from "./CheckoutTrustBadges";
-import { isP24CircuitOpen, recordP24Failure } from "@/lib/checkout/p24-circuit-breaker";
+import {
+  isP24CircuitOpen,
+  recordP24Failure,
+} from "@/lib/checkout/p24-circuit-breaker";
 import { cartToEcommercePayload } from "@/lib/analytics/medusa-items";
 import {
   paymentMethodAnalyticsLabel,
@@ -28,6 +31,7 @@ import {
   isCartAlreadyCompletedError,
   markCheckoutCompleted,
   markP24PaymentStarted,
+  readP24CartContext,
   notifyBankTransferPending,
   notifyOrderPlacedAwait,
   attachOrderNotes,
@@ -45,7 +49,10 @@ import {
 } from "@/lib/medusa/checkout";
 import { getPolishRegionId } from "@/lib/medusa/region";
 import { sanitizeOrderNotes } from "@/lib/checkout/sanitize-order-notes";
-import { isTurnstileEnabled, verifyTurnstileToken } from "@/lib/checkout/turnstile";
+import {
+  isTurnstileEnabled,
+  verifyTurnstileToken,
+} from "@/lib/checkout/turnstile";
 import { TurnstileWidget } from "@/components/checkout/TurnstileWidget";
 
 const POSTAL_CODE_REGEX = /^\d{2}-\d{3}$/;
@@ -58,7 +65,9 @@ function formatPolishPhone(input: string): string {
     return input.includes("+") ? "+48" : "";
   }
 
-  const national = digits.startsWith("48") ? digits.slice(2, 11) : digits.slice(0, 9);
+  const national = digits.startsWith("48")
+    ? digits.slice(2, 11)
+    : digits.slice(0, 9);
   if (national.length === 0) return "+48";
 
   let formatted = "+48";
@@ -88,7 +97,10 @@ function getNipValidationError(nip: string): string | null {
   const sum = cleaned
     .slice(0, 9)
     .split("")
-    .reduce((acc, digit, i) => acc + parseInt(digit, 10) * (weights[i] || 0), 0);
+    .reduce(
+      (acc, digit, i) => acc + parseInt(digit, 10) * (weights[i] || 0),
+      0,
+    );
   const checksum = sum % 11;
   if (checksum === 10 || checksum !== parseInt(cleaned[9] || "0", 10)) {
     return "NIP jest nieprawidłowy — sprawdź numer";
@@ -111,7 +123,10 @@ type ValidatedField =
   | "address"
   | "city";
 
-function getFieldValidationError(field: ValidatedField, value: string): string | null {
+function getFieldValidationError(
+  field: ValidatedField,
+  value: string,
+): string | null {
   switch (field) {
     case "email":
       if (!value.trim()) return "Email jest wymagany";
@@ -121,7 +136,8 @@ function getFieldValidationError(field: ValidatedField, value: string): string |
       return null;
     case "phone":
       if (!value.trim()) return "Telefon jest wymagany";
-      if (!validatePhone(value)) return "Podaj numer w formacie +48 XXX XXX XXX";
+      if (!validatePhone(value))
+        return "Podaj numer w formacie +48 XXX XXX XXX";
       return null;
     case "postalCode":
       if (!value.trim()) return "Kod pocztowy jest wymagany";
@@ -335,17 +351,20 @@ export function CheckoutForm() {
     beginCheckoutFiredRef.current = true;
     checkoutStartTimeRef.current = Date.now();
     writeCheckoutAnalyticsContext({ startedAt: checkoutStartTimeRef.current });
-    track("begin_checkout", cartToEcommercePayload({
-      items: items.map((i) => ({
-        id: i.id,
-        variant_id: i.variant_id,
-        title: i.title,
-        quantity: i.quantity,
-        unit_price: i.unit_price,
-      })),
-      total,
-      currency: "PLN",
-    }));
+    track(
+      "begin_checkout",
+      cartToEcommercePayload({
+        items: items.map((i) => ({
+          id: i.id,
+          variant_id: i.variant_id,
+          title: i.title,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+        })),
+        total,
+        currency: "PLN",
+      }),
+    );
   }, [cartId, items, total]);
 
   // Notion: `checkout_abandon` — refy zadeklarujemy tu (potrzebne wyżej w kodzie),
@@ -368,8 +387,12 @@ export function CheckoutForm() {
   const [preparingDelivery, setPreparingDelivery] = useState(false);
   const [contactSaveError, setContactSaveError] = useState<string | null>(null);
   const [preparingPayment, setPreparingPayment] = useState(false);
-  const [shippingSaveError, setShippingSaveError] = useState<string | null>(null);
-  const [availableProviderIds, setAvailableProviderIds] = useState<string[]>([]);
+  const [shippingSaveError, setShippingSaveError] = useState<string | null>(
+    null,
+  );
+  const [availableProviderIds, setAvailableProviderIds] = useState<string[]>(
+    [],
+  );
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<ValidatedField, string>>
   >({});
@@ -433,7 +456,11 @@ export function CheckoutForm() {
         return;
       }
       const parsed = JSON.parse(raw) as Partial<CheckoutDraftPayload>;
-      if (parsed.v !== 1 || !parsed.formData || typeof parsed.formData !== "object") {
+      if (
+        parsed.v !== 1 ||
+        !parsed.formData ||
+        typeof parsed.formData !== "object"
+      ) {
         queueMicrotask(() => {
           skipPersistDraftRef.current = false;
         });
@@ -486,7 +513,10 @@ export function CheckoutForm() {
   }, [cartId, step, formData]);
 
   const updateField = useCallback(
-    <K extends keyof CheckoutFormData>(field: K, value: CheckoutFormData[K]) => {
+    <K extends keyof CheckoutFormData>(
+      field: K,
+      value: CheckoutFormData[K],
+    ) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
     [],
@@ -565,8 +595,7 @@ export function CheckoutForm() {
   const nipValidationError = getNipValidationError(formData.nip);
   const isNipValid = validateNip(formData.nip);
   const vatValid =
-    !formData.wantInvoice ||
-    (formData.companyName.trim() !== "" && isNipValid);
+    !formData.wantInvoice || (formData.companyName.trim() !== "" && isNipValid);
 
   const canGoToStep2 =
     formData.email.includes("@") &&
@@ -607,7 +636,7 @@ export function CheckoutForm() {
     setSubmitting(true);
     setSubmitSlow(false);
     submitSlowTimerRef.current = setTimeout(() => setSubmitSlow(true), 3000);
-      track("form_step", { form_name: "checkout_payment", step_number: 3 });
+    track("form_step", { form_name: "checkout_payment", step_number: 3 });
 
     const payment = formDataRef.current;
 
@@ -670,12 +699,24 @@ export function CheckoutForm() {
             total,
             currency: "PLN",
           }),
-          payment_method: paymentMethodAnalyticsLabel(payment.paymentProviderId),
+          payment_method: paymentMethodAnalyticsLabel(
+            payment.paymentProviderId,
+          ),
         });
         writeCheckoutAnalyticsContext({
           paymentMethod: paymentMethodAnalyticsLabel(payment.paymentProviderId),
         });
         if (typeof window !== "undefined") {
+          // Czy klient BYŁ JUŻ kierowany do bramki dla tego koszyka? Znacznik
+          // P24_CART_CONTEXT czyścimy wyłącznie po sukcesie płatności, więc
+          // jego obecność = wcześniejsze podejście (klient wszedł na bramkę
+          // i wrócił/anulował). Stary `redirect_url` jest wtedy ZUŻYTY —
+          // reużycie go zrzuca klienta od razu na /return ze statusem 0
+          // („przetwarzana" → „nieudana"), a bramka odpala się dopiero po
+          // ręcznym „Ponów". Wymuszamy retry=1: /start przerejestruje
+          // transakcję (świeży link), a p24-retry-payment ma guard wpłaty
+          // w drodze (409 „nie płać ponownie"), więc nie osieroci środków.
+          const alreadyStarted = readP24CartContext()?.cartId === cartId;
           markP24PaymentStarted(cartId);
           // Guard zostaje ZABLOKOWANY na czas twardej nawigacji — `finally`
           // odblokowywał go natychmiast, więc szybki drugi klik w oknie przed
@@ -689,9 +730,10 @@ export function CheckoutForm() {
             submittingRef.current = false;
             setSubmitting(false);
           }, 8_000);
-          window.location.assign(
-            `/checkout/przelewy24/start?cart_id=${encodeURIComponent(cartId)}`,
-          );
+          const startUrl = `/checkout/przelewy24/start?cart_id=${encodeURIComponent(cartId)}${
+            alreadyStarted ? "&retry=1" : ""
+          }`;
+          window.location.assign(startUrl);
           return;
         }
       }
@@ -716,7 +758,9 @@ export function CheckoutForm() {
         await initPaymentSession(cartId, payment.paymentProviderId);
       }
 
-      const paymentLabel = paymentMethodAnalyticsLabel(payment.paymentProviderId);
+      const paymentLabel = paymentMethodAnalyticsLabel(
+        payment.paymentProviderId,
+      );
       writeCheckoutAnalyticsContext({ paymentMethod: paymentLabel });
       track("add_payment_info", {
         ...cartToEcommercePayload({
@@ -736,9 +780,16 @@ export function CheckoutForm() {
       const result = await completeCart(cartId);
 
       if (result.type !== "order") {
-        const err = (result as { error?: { message?: string; code?: string; type?: string } })
-          .error;
-        console.error("[checkout] complete zwrócił cart zamiast order", err, result);
+        const err = (
+          result as {
+            error?: { message?: string; code?: string; type?: string };
+          }
+        ).error;
+        console.error(
+          "[checkout] complete zwrócił cart zamiast order",
+          err,
+          result,
+        );
         const msg = describeMedusaError(
           err,
           "Nie udało się utworzyć zamówienia (koszyk nie przeszedł w zamówienie).",
@@ -753,7 +804,8 @@ export function CheckoutForm() {
         });
       }
 
-      const isBankTransfer = payment.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID;
+      const isBankTransfer =
+        payment.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID;
 
       if (sanitizedNotes) {
         attachOrderNotes(result.order.id, sanitizedNotes);
@@ -923,10 +975,16 @@ export function CheckoutForm() {
                 className={`${INPUT_CLASS} ${showFieldError("email") ? "border-red-300" : ""}`}
                 placeholder="twoj@email.pl"
                 aria-invalid={showFieldError("email") ? true : undefined}
-                aria-describedby={showFieldError("email") ? "email-error" : undefined}
+                aria-describedby={
+                  showFieldError("email") ? "email-error" : undefined
+                }
               />
               {showFieldError("email") && (
-                <p id="email-error" className="mt-1 text-xs text-red-500" role="alert">
+                <p
+                  id="email-error"
+                  className="mt-1 text-xs text-red-500"
+                  role="alert"
+                >
                   {fieldErrors.email}
                 </p>
               )}
@@ -993,14 +1051,22 @@ export function CheckoutForm() {
                     }
                     handleFieldBlur("phone", formatted);
                   }}
-                  onChange={(e) => updateField("phone", formatPolishPhone(e.target.value))}
+                  onChange={(e) =>
+                    updateField("phone", formatPolishPhone(e.target.value))
+                  }
                   className={`${INPUT_CLASS} ${showFieldError("phone") ? "border-red-300" : ""}`}
                   placeholder="+48 000 000 000"
                   aria-invalid={showFieldError("phone") ? true : undefined}
-                  aria-describedby={showFieldError("phone") ? "phone-error" : undefined}
+                  aria-describedby={
+                    showFieldError("phone") ? "phone-error" : undefined
+                  }
                 />
                 {showFieldError("phone") && (
-                  <p id="phone-error" className="mt-1 text-xs text-red-500" role="alert">
+                  <p
+                    id="phone-error"
+                    className="mt-1 text-xs text-red-500"
+                    role="alert"
+                  >
                     {fieldErrors.phone}
                   </p>
                 )}
@@ -1023,11 +1089,17 @@ export function CheckoutForm() {
                   placeholder="00-000"
                   aria-invalid={showFieldError("postalCode") ? true : undefined}
                   aria-describedby={
-                    showFieldError("postalCode") ? "postalCode-error" : undefined
+                    showFieldError("postalCode")
+                      ? "postalCode-error"
+                      : undefined
                   }
                 />
                 {showFieldError("postalCode") && (
-                  <p id="postalCode-error" className="mt-1 text-xs text-red-500" role="alert">
+                  <p
+                    id="postalCode-error"
+                    className="mt-1 text-xs text-red-500"
+                    role="alert"
+                  >
                     {fieldErrors.postalCode}
                   </p>
                 )}
@@ -1100,7 +1172,9 @@ export function CheckoutForm() {
                       type="text"
                       required
                       value={formData.companyName}
-                      onChange={(e) => updateField("companyName", e.target.value)}
+                      onChange={(e) =>
+                        updateField("companyName", e.target.value)
+                      }
                       className={`${INPUT_CLASS} ${formData.companyName.trim() === "" && formData.wantInvoice ? "border-red-300" : ""}`}
                     />
                     {formData.companyName.trim() === "" && (
@@ -1122,7 +1196,9 @@ export function CheckoutForm() {
                       maxLength={13}
                     />
                     {nipValidationError ? (
-                      <p className="mt-1 text-xs text-red-500">{nipValidationError}</p>
+                      <p className="mt-1 text-xs text-red-500">
+                        {nipValidationError}
+                      </p>
                     ) : null}
                   </div>
                 </div>
@@ -1138,8 +1214,9 @@ export function CheckoutForm() {
                 className="mt-0.5 h-4 w-4 rounded border-brand-300 text-accent focus:ring-accent"
               />
               <span className="text-sm text-brand-600">
-                Wyrażam zgodę na otrzymywanie informacji handlowych drogą elektroniczną
-                (newsletter) zgodnie z ustawą o świadczeniu usług drogą elektroniczną
+                Wyrażam zgodę na otrzymywanie informacji handlowych drogą
+                elektroniczną (newsletter) zgodnie z ustawą o świadczeniu usług
+                drogą elektroniczną
               </span>
             </label>
 
@@ -1153,7 +1230,9 @@ export function CheckoutForm() {
               type="button"
               onClick={async () => {
                 if (!cartId) {
-                  setContactSaveError("Brak koszyka — odśwież stronę i spróbuj ponownie.");
+                  setContactSaveError(
+                    "Brak koszyka — odśwież stronę i spróbuj ponownie.",
+                  );
                   return;
                 }
                 setContactSaveError(null);
@@ -1171,7 +1250,10 @@ export function CheckoutForm() {
                       ? { company: formData.companyName }
                       : {}),
                   };
-                  track("form_step", { form_name: "checkout_contact", step_number: 1 });
+                  track("form_step", {
+                    form_name: "checkout_contact",
+                    step_number: 1,
+                  });
                   if (formData.email.includes("@")) {
                     identifyLead({
                       email: formData.email,
@@ -1240,7 +1322,10 @@ export function CheckoutForm() {
                   setShippingSaveError(null);
                   setPreparingPayment(true);
                   try {
-                    track("form_step", { form_name: "checkout_shipping", step_number: 2 });
+                    track("form_step", {
+                      form_name: "checkout_shipping",
+                      step_number: 2,
+                    });
                     const shippingMethod =
                       formData.shippingOptionName || formData.shippingOptionId;
                     writeCheckoutAnalyticsContext({ shippingMethod });
@@ -1262,9 +1347,8 @@ export function CheckoutForm() {
                     // żeby w 1 request dolecieć shipping + payment-session.
                     // Wcześniej były to 2 sekwencyjne round-tripy (600 + 200 ms)
                     // — teraz jeden ~600-800 ms w jednym HTTP do `/store/custom/prepare-checkout`.
-                    const { providerId } = await prefetchPaymentReadiness(
-                      getPolishRegionId,
-                    );
+                    const { providerId } =
+                      await prefetchPaymentReadiness(getPolishRegionId);
                     await prepareCheckout(
                       cartId,
                       formData.shippingOptionId,
@@ -1300,7 +1384,9 @@ export function CheckoutForm() {
                 disabled={!canGoToStep3 || !cartId || preparingPayment}
                 className="flex-1 rounded-lg bg-brand-800 py-3 text-sm font-semibold text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:bg-brand-200 disabled:text-brand-500 transition-colors"
               >
-                {preparingPayment ? "Przygotowuję płatność…" : "Przejdź do płatności →"}
+                {preparingPayment
+                  ? "Przygotowuję płatność…"
+                  : "Przejdź do płatności →"}
               </button>
             </div>
           </section>
@@ -1323,8 +1409,12 @@ export function CheckoutForm() {
 
             {/* Order Notes */}
             <div>
-              <label htmlFor="orderNotes" className="block text-sm font-medium text-brand-700 mb-2">
-                Uwagi do zamówienia <span className="text-brand-400">(opcjonalne)</span>
+              <label
+                htmlFor="orderNotes"
+                className="block text-sm font-medium text-brand-700 mb-2"
+              >
+                Uwagi do zamówienia{" "}
+                <span className="text-brand-400">(opcjonalne)</span>
               </label>
               <textarea
                 id="orderNotes"
@@ -1350,11 +1440,17 @@ export function CheckoutForm() {
                 />
                 <span className="text-xs text-brand-600">
                   Akceptuję{" "}
-                  <a href="/regulamin" className="underline hover:text-brand-900">
+                  <a
+                    href="/regulamin"
+                    className="underline hover:text-brand-900"
+                  >
                     regulamin sklepu
                   </a>{" "}
                   i{" "}
-                  <a href="/polityka-prywatnosci" className="underline hover:text-brand-900">
+                  <a
+                    href="/polityka-prywatnosci"
+                    className="underline hover:text-brand-900"
+                  >
                     politykę prywatności
                   </a>{" "}
                   <span className="text-red-500">*</span>
@@ -1369,7 +1465,8 @@ export function CheckoutForm() {
                   className="mt-0.5 h-4 w-4 rounded border-brand-300 text-accent focus:ring-accent"
                 />
                 <span className="text-xs text-brand-600">
-                  Wyrażam zgodę na przetwarzanie danych osobowych w celu realizacji zamówienia (RODO)
+                  Wyrażam zgodę na przetwarzanie danych osobowych w celu
+                  realizacji zamówienia (RODO)
                   <span className="text-red-500"> *</span>
                 </span>
               </label>
@@ -1432,8 +1529,8 @@ export function CheckoutForm() {
             {formData.paymentProviderId === SYSTEM_PAYMENT_PROVIDER_ID ? (
               <p className="text-center text-[11px] text-brand-500">
                 Po kliknięciu „Zamawiam” zobaczysz dane do przelewu na stronie
-                potwierdzenia i w e-mailu. Realizacja zacznie się po zaksięgowaniu
-                wpłaty (zwykle 1–2 dni robocze).
+                potwierdzenia i w e-mailu. Realizacja zacznie się po
+                zaksięgowaniu wpłaty (zwykle 1–2 dni robocze).
               </p>
             ) : null}
           </section>
@@ -1442,9 +1539,7 @@ export function CheckoutForm() {
 
       <div className="lg:col-span-1">
         <div className="sticky top-24">
-          <OrderSummary
-            selectedShippingOptionId={formData.shippingOptionId}
-          />
+          <OrderSummary selectedShippingOptionId={formData.shippingOptionId} />
         </div>
       </div>
     </div>
