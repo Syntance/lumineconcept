@@ -4,8 +4,18 @@ import { isAbortedFetchError, isTransientMedusaError, sleep } from "./transient-
 const CART_ID_KEY = "lumine_cart_id";
 const BOOTSTRAP_RETRY_DELAYS_MS = [0, 600, 1500];
 
+/**
+ * Cache chroni WYŁĄCZNIE przed podwójnym mountem (React Strict Mode) —
+ * dlatego krótki TTL. Bez TTL `refreshCart()` (checkout: zmiana dostawy z
+ * promo, finalizacja zamówienia) dostawał snapshot z momentu załadowania
+ * strony i nadpisywał nim świeży stan — pozycje koszyka „migotały" między
+ * starą a nową zawartością.
+ */
+const SESSION_CACHE_TTL_MS = 2_000;
+
 let inflightBootstrap: Promise<Record<string, unknown> | null> | null = null;
 let cachedSessionCart: Record<string, unknown> | null = null;
+let cachedSessionCartAt = 0;
 
 async function tryBootstrapOnce(): Promise<Record<string, unknown> | null> {
   const savedId =
@@ -58,7 +68,10 @@ export async function bootstrapCartSession(): Promise<Record<
   string,
   unknown
 > | null> {
-  if (cachedSessionCart) {
+  if (
+    cachedSessionCart &&
+    Date.now() - cachedSessionCartAt < SESSION_CACHE_TTL_MS
+  ) {
     return cachedSessionCart;
   }
 
@@ -77,6 +90,7 @@ export async function bootstrapCartSession(): Promise<Record<
         const cart = await tryBootstrapOnce();
         if (cart) {
           cachedSessionCart = cart;
+          cachedSessionCartAt = Date.now();
         }
         return cart;
       } catch (e) {
@@ -104,5 +118,6 @@ export async function bootstrapCartSession(): Promise<Record<
 /** Czyści cache sesji — wyłącznie w testach Vitest. */
 export function resetCartBootstrapCacheForTests(): void {
   cachedSessionCart = null;
+  cachedSessionCartAt = 0;
   inflightBootstrap = null;
 }
