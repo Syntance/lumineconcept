@@ -10,10 +10,7 @@ import {
   normalizeShippingOptionsForDisplay,
   prefetchShippingOptions,
 } from "@/lib/medusa/checkout";
-import {
-  hasFreeShippingPromotion,
-  resolveEffectiveShippingCost,
-} from "@/lib/promotions/free-shipping";
+import { resolveEffectiveShippingCost } from "@/lib/promotions/free-shipping";
 
 type OrderSummaryProps = {
   /**
@@ -43,8 +40,8 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
   const {
     id: cartId,
     items,
-    productsSubtotal,
-    shipping_total,
+    productsPreDiscount,
+    courierShippingGross,
     shippingEstimate,
     hasShippingMethodSelection,
     tax_total,
@@ -53,7 +50,6 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
     expressSurcharge,
     expressFeeInTotal,
     discountTotal,
-    appliedPromoCodes,
   } = useCart();
 
   /**
@@ -62,11 +58,6 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
    * Nigdy obie naraz (provider zeruje surcharge, gdy fee jest w totalu).
    */
   const expressFeeDisplay = expressSurcharge > 0 ? expressSurcharge : expressFeeInTotal;
-  /** Dostawa bez metody-dopłaty express — do wiersza „Dostawa". */
-  const courierShippingTotal = Math.max(
-    0,
-    Math.round((shipping_total - expressFeeInTotal) * 100) / 100,
-  );
 
   /** id → cena z prefetchu; lookup synchroniczny przy zmianie wyboru w Step 2. */
   const [shippingOptionPrices, setShippingOptionPrices] = useState<
@@ -103,14 +94,20 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
       ? shippingOptionPrices[selectedShippingOptionId]
       : undefined;
 
-  const hasFreeShippingPromo = hasFreeShippingPromotion(appliedPromoCodes);
-
+  /**
+   * KONWENCJA WIERSZY (bug 06.07.2026 wieczór): wszystkie wiersze pokazują
+   * kwoty PRZED rabatami (Produkty = items.subtotal, Dostawa = surowa cena
+   * kuriera), a rabaty odejmuje JEDEN wiersz „Zniżka" (−discountTotal).
+   * Wcześniej „Produkty" doliczały rabat DOSTAWOWY do produktów (5 zł
+   * produktu pokazywane jako 30 zł), a suma liczona ręcznie przy promocji
+   * fs gubiła zniżkę całkowicie.
+   */
   const shippingGross = resolveShippingGross(
     selectedShippingPrice,
     hasShippingMethodSelection,
-    courierShippingTotal,
+    courierShippingGross,
     shippingEstimate,
-    hasFreeShippingPromo,
+    false,
   );
 
   const shippingDisplay = shippingGross;
@@ -122,40 +119,45 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
         ? "gratis"
         : formatPrice(shippingDisplay);
 
+  /** Klient wskazał w kroku 2 inną opcję niż ta przypięta w koszyku. */
+  const optimisticShippingPick =
+    selectedShippingPrice !== undefined &&
+    (!hasShippingMethodSelection ||
+      Math.abs(selectedShippingPrice - courierShippingGross) > 0.005);
+
   const displayGrandTotal = useMemo(() => {
-    const effectiveShipping = resolveEffectiveShippingCost({
-      hasFreeShippingPromo,
-      hasShippingMethodSelection,
-      courierShippingTotal,
-      selectedShippingPrice,
-      shippingEstimate,
-    });
-
-    const useComputedTotal =
-      hasFreeShippingPromo ||
-      selectedShippingPrice !== undefined ||
-      !hasShippingMethodSelection;
-
-    if (!useComputedTotal) {
+    /**
+     * AUTORYTET KWOTY: gdy metoda dostawy JEST w koszyku i klient nie
+     * wskazał optymistycznie innej, `cart.total` zawiera już wszystko
+     * (pozycje po rabatach, kuriera, dopłatę express, adjustmenty promocji).
+     */
+    if (hasShippingMethodSelection && !optimisticShippingPick) {
       return Math.round((total + expressSurcharge) * 100) / 100;
     }
 
+    // Szacunek przed przypięciem metody / przy optymistycznym wyborze:
+    // wiersze przed rabatem minus jedna Zniżka.
+    const shipping =
+      selectedShippingPrice ??
+      (hasShippingMethodSelection ? courierShippingGross : (shippingEstimate ?? 0));
     const sum =
-      productsSubtotal +
+      productsPreDiscount +
       expressFeeDisplay +
-      (effectiveShipping ?? 0) +
-      tax_total;
+      shipping +
+      tax_total -
+      discountTotal;
     return Math.round(Math.max(0, sum) * 100) / 100;
   }, [
-    hasFreeShippingPromo,
+    optimisticShippingPick,
     selectedShippingPrice,
     hasShippingMethodSelection,
     shippingEstimate,
-    courierShippingTotal,
+    courierShippingGross,
     total,
     expressSurcharge,
     expressFeeDisplay,
-    productsSubtotal,
+    productsPreDiscount,
+    discountTotal,
     tax_total,
   ]);
 
@@ -207,7 +209,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
         <div className="flex justify-between">
           <span className="text-brand-600">Produkty</span>
           <span className="font-medium tabular-nums text-brand-800">
-            {formatPrice(productsSubtotal + discountTotal)}
+            {formatPrice(productsPreDiscount)}
           </span>
         </div>
         <div className="flex justify-between">

@@ -2,15 +2,11 @@
 
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/utils";
-import {
-  hasFreeShippingPromotion,
-  resolveEffectiveShippingCost,
-} from "@/lib/promotions/free-shipping";
 
 export function CartSummary() {
   const {
-    productsSubtotal,
-    shipping_total,
+    productsPreDiscount,
+    courierShippingGross,
     shippingEstimate,
     hasShippingMethodSelection,
     expressDelivery,
@@ -18,25 +14,21 @@ export function CartSummary() {
     expressFeeInTotal,
     discountTotal,
     grandTotal,
-    appliedPromoCodes,
   } = useCart();
 
-  const hasFreeShippingPromo = hasFreeShippingPromotion(appliedPromoCodes);
   // Dopłata express do wyświetlenia: client-side surcharge albo metoda-dopłata
   // już wliczona w total przez backend (prepare-checkout) — nigdy obie.
   const expressFeeDisplay = expressSurcharge > 0 ? expressSurcharge : expressFeeInTotal;
-  // Wiersz „Dostawa" bez metody-dopłaty express.
-  const courierShippingTotal = Math.max(
-    0,
-    Math.round((shipping_total - expressFeeInTotal) * 100) / 100,
-  );
 
-  const shippingDisplay = resolveEffectiveShippingCost({
-    hasFreeShippingPromo,
-    hasShippingMethodSelection,
-    courierShippingTotal,
-    shippingEstimate,
-  });
+  /**
+   * KONWENCJA (bug 06.07.2026): wiersze pokazują kwoty PRZED rabatami
+   * (Produkty = items.subtotal, Dostawa = surowa cena kuriera), a rabaty
+   * odejmuje jeden wiersz „Zniżka". „Razem" = grandTotal z providera
+   * (autorytatywny cart.total, gdy metoda dostawy jest w koszyku).
+   */
+  const shippingDisplay = hasShippingMethodSelection
+    ? courierShippingGross
+    : shippingEstimate;
 
   const shippingLabel =
     shippingDisplay === null || shippingDisplay === undefined
@@ -50,7 +42,7 @@ export function CartSummary() {
       <div className="flex justify-between">
         <span className="text-brand-500">Produkty</span>
         <span className="tabular-nums text-brand-700">
-          {formatPrice(productsSubtotal)}
+          {formatPrice(productsPreDiscount)}
         </span>
       </div>
       {expressDelivery && expressFeeDisplay > 0 && (

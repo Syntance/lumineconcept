@@ -39,6 +39,8 @@ interface CartItem {
   quantity: number;
   unit_price: number;
   total: number;
+  /** Kwota pozycji PRZED rabatami (items.subtotal z Medusy). */
+  subtotal: number;
   metadata?: Record<string, string>;
   /**
    * Oznaczenie optymistycznie dodanej pozycji — widoczne w UI natychmiast po
@@ -75,6 +77,13 @@ interface CartState {
    * client-side surcharge — inaczej pokazalibyśmy ją podwójnie.
    */
   expressFeeInTotal: number;
+  /**
+   * Suma SUROWYCH kwot metod dostawy (bez metody-dopłaty express) — cena
+   * kuriera PRZED rabatami. `shipping_total` jest PO adjustmentach promocji,
+   * więc przy darmowej dostawie wynosi 0 i nie nadaje się do wiersza
+   * „Dostawa" w konwencji „wiersze przed rabatem + jedna Zniżka".
+   */
+  courierShippingGross: number;
 }
 
 interface CartContextType extends CartState {
@@ -117,6 +126,12 @@ interface CartContextType extends CartState {
    * `cart.subtotal` z API (czasem zawiera dostawę po wyborze metody).
    */
   productsSubtotal: number;
+  /**
+   * Suma `item.subtotal` (PRZED rabatami pozycji) — wiersz „Produkty" w
+   * konwencji „ceny przed rabatem + jedna Zniżka na dole". Bez tego rabat
+   * produktowy byłby widocznie odjęty dwa razy (w wierszu i w Zniżce).
+   */
+  productsPreDiscount: number;
   /** total z Medusy + expressSurcharge (gdy express włączony) + szacunek dostawy, jeśli brak shipping_total */
   grandTotal: number;
   /**
@@ -165,6 +180,18 @@ function lineItemTotal(item: Record<string, unknown>): number {
   return 0;
 }
 
+/** Kwota pozycji PRZED rabatami: subtotal → unit×qty → total (fallbacki). */
+function lineItemSubtotal(item: Record<string, unknown>): number {
+  const sub = numberFromUnknown(item.subtotal);
+  if (sub !== undefined && sub >= 0) return sub;
+  const unit = numberFromUnknown(item.unit_price);
+  const qty = numberFromUnknown(item.quantity) ?? 1;
+  if (unit !== undefined && unit >= 0 && qty > 0) {
+    return Math.round(unit * qty * 100) / 100;
+  }
+  return lineItemTotal(item);
+}
+
 function mapCartItems(items: Array<Record<string, unknown>>): CartItem[] {
   return items.map((item) => ({
     id: item.id as string,
@@ -180,6 +207,7 @@ function mapCartItems(items: Array<Record<string, unknown>>): CartItem[] {
     quantity: Math.max(1, Math.round(numberFromUnknown(item.quantity) ?? 1)),
     unit_price: numberFromUnknown(item.unit_price) ?? 0,
     total: lineItemTotal(item),
+    subtotal: lineItemSubtotal(item),
     metadata: item.metadata as Record<string, string> | undefined,
   }));
 }
@@ -203,6 +231,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     metadata: {},
     appliedPromoCodes: [],
     expressFeeInTotal: 0,
+    courierShippingGross: 0,
   });
 
   /** Aktualny cart.id do synchronicznych guardów (state bywa o tick za stary). */
@@ -265,6 +294,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const firstShippingMethod = courierMethods[0];
       const hasShippingMethodSelection =
         courierMethods.length > 0 || shippingT - expressFeeInTotal > 0;
+      // Cena kuriera PRZED rabatami (surowe amount metod, bez metody-dopłaty).
+      // `shipping_total` jest PO adjustmentach — przy darmowej dostawie = 0.
+      const courierShippingGross =
+        Math.round(
+          courierMethods.reduce(
+            (sum, m) => sum + (numberFromUnknown(m.amount) ?? 0),
+            0,
+          ) * 100,
+        ) / 100;
       const promotions = (rawCart.promotions as Array<{ code?: string }> | undefined) ?? [];
       const appliedPromoCodes = promotions
         .map((promotion) => promotion.code?.trim())
@@ -283,6 +321,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         metadata: normalizeCartMetadata(rawCart.metadata),
         appliedPromoCodes,
         expressFeeInTotal,
+        courierShippingGross,
       });
     },
     [],
@@ -502,6 +541,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 quantity,
                 unit_price: preview.unit_price,
                 total:
+                  Math.round(preview.unit_price * quantity * 100) / 100,
+                subtotal:
                   Math.round(preview.unit_price * quantity * 100) / 100,
                 metadata,
                 optimistic: true,
@@ -775,33 +816,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
       expressDelivery && cart.expressFeeInTotal <= 0
         ? Math.round(productsSubtotal * 0.5 * 100) / 100
         : 0;
+    const productsPreDiscount =
+      Math.round(
+        cart.items.reduce((s, i) => s + (i.subtotal > 0 ? i.subtotal : i.total), 0) *
+          100,
+      ) / 100;
     const hasFreeShippingPromo = hasFreeShippingPromotion(cart.appliedPromoCodes);
-    const courierShippingTotal = Math.max(
-      0,
-      Math.round((cart.shipping_total - cart.expressFeeInTotal) * 100) / 100,
-    );
     const shippingAddon = cart.hasShippingMethodSelection
       ? 0
       : resolveEffectiveShippingCost({
           hasFreeShippingPromo,
           hasShippingMethodSelection: cart.hasShippingMethodSelection,
-          courierShippingTotal,
+          courierShippingTotal: cart.courierShippingGross,
           shippingEstimate,
         }) ?? 0;
     // Dopłata express do sumy: client-side surcharge ALBO metoda-dopłata już
     // wliczona przez backend (prepare-checkout) — nigdy obie (patrz fix #5:
-    // „kwota pokazana = pobrana”). W gałęzi przeliczanej ręcznie (darmowa
-    // dostawa) `cart.total` nie jest bazą, więc expressFeeInTotal trzeba
-    // dodać jawnie.
+    // „kwota pokazana = pobrana”).
     const expressFeeEffective =
       expressSurcharge > 0 ? expressSurcharge : cart.expressFeeInTotal;
-    const grandTotal =
-      hasFreeShippingPromo || !cart.hasShippingMethodSelection
-        ? Math.round(
-            (productsSubtotal + expressFeeEffective + shippingAddon + cart.tax_total) *
-              100,
-          ) / 100
-        : Math.round((cart.total + expressSurcharge) * 100) / 100;
+    /**
+     * AUTORYTET KWOTY (bug 06.07.2026 wieczór): gdy metoda dostawy JEST w
+     * koszyku, `cart.total` z Medusy zawiera już WSZYSTKO — pozycje po
+     * rabatach, kuriera, dopłatę express i adjustmenty promocji (darmowa
+     * dostawa). Poprzednie ręczne przeliczanie przy promocji fs gubiło
+     * rabat („Do zapłaty" bez −25) i zależało od detekcji hasFreeShipping,
+     * która nie rozpoznawała kodów fs-only (LUMINETEST). Backend gwarantuje
+     * (ensureCartShippingForPromo), że promocja dostawy ma metodę w koszyku,
+     * więc gałąź ręczna zostaje tylko dla koszyka BEZ wybranej dostawy.
+     */
+    const grandTotal = cart.hasShippingMethodSelection
+      ? Math.round((cart.total + expressSurcharge) * 100) / 100
+      : Math.round(
+          (productsSubtotal + expressFeeEffective + shippingAddon + cart.tax_total) *
+            100,
+        ) / 100;
     return {
       ...cart,
       isLoading,
@@ -821,6 +870,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setExpressDelivery,
       expressSurcharge,
       productsSubtotal,
+      productsPreDiscount,
       grandTotal,
       shippingEstimate,
     };
