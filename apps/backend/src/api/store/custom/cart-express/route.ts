@@ -3,9 +3,9 @@ import {
   ContainerRegistrationKeys,
   MedusaError,
   Modules,
-  remoteQueryObjectFromString,
 } from "@medusajs/framework/utils";
 import { STORE_CART_REMOTE_QUERY_FIELDS } from "../../../../lib/store-cart-fields";
+import { captureMessage } from "../../../../lib/sentry";
 
 /**
  * POST /store/custom/cart-express
@@ -36,23 +36,43 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.status(400).json({ message: "Koszyk jest już zakończony" });
   }
 
-  const remoteQuery = req.scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY);
   /**
-   * KRYTYCZNE: pola muszą zawierać `items.total` — storefront po tej
-   * odpowiedzi przelicza „Produkty" z sum pozycji. `defaultStoreCartFields`
-   * nie ma `items.total`, więc UI liczyło pozycje z unit_price × qty
-   * (BEZ rabatu) i po przełączeniu express kwoty się rozjeżdżały przy
-   * aktywnym kodzie promocyjnym.
+   * KRYTYCZNE ×2:
+   * 1. Pola muszą zawierać `items.total` — storefront po tej odpowiedzi
+   *    przelicza „Produkty" z sum pozycji (rabaty!).
+   * 2. Snapshot MUSI iść przez `query.graph` z filtrem, NIE przez
+   *    `remoteQueryObjectFromString(variables.filters)`: przy polach z
+   *    linkiem cross-module (`promotions.*`) tamten wariant GUBIŁ filtr
+   *    i zwracał PIERWSZY koszyk z bazy — cudzy koszyk trafiał do UI
+   *    klienta (incydent 06.07.2026: „pusty koszyk po kliknięciu express"
+   *    + wyciek cudzych danych). Dodatkowo twardy assert id poniżej.
    */
-  const queryObject = remoteQueryObjectFromString({
-    entryPoint: "cart",
-    variables: { filters: { id: cartId } },
-    fields: STORE_CART_REMOTE_QUERY_FIELDS,
-  });
-  const [cartSnapshot] = await remoteQuery(queryObject);
-  if (!cartSnapshot) {
-    throw new MedusaError(MedusaError.Types.NOT_FOUND, `Cart ${cartId} not found`);
-  }
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
+  const readCartSnapshot = async () => {
+    const { data } = await query.graph({
+      entity: "cart",
+      fields: STORE_CART_REMOTE_QUERY_FIELDS,
+      filters: { id: cartId },
+    });
+    const snapshot = (data as Array<{ id?: string }>)[0];
+    if (!snapshot) {
+      throw new MedusaError(MedusaError.Types.NOT_FOUND, `Cart ${cartId} not found`);
+    }
+    // Defense-in-depth: NIGDY nie zwracamy koszyka innego niż żądany.
+    if (snapshot.id !== cartId) {
+      captureMessage("[cart-express] snapshot zwrócił inny koszyk niż żądany", "error", {
+        requested_cart_id: cartId,
+        returned_cart_id: snapshot.id ?? "?",
+      });
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        "Nie udało się odczytać koszyka — spróbuj ponownie.",
+      );
+    }
+    return snapshot;
+  };
+
+  const cartSnapshot = await readCartSnapshot();
 
   function amountToNumber(v: unknown): number {
     if (typeof v === "number" && Number.isFinite(v)) return v;
@@ -95,10 +115,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
   await cartModule.updateCarts([{ id: cartId, metadata }]);
 
-  const [cart] = await remoteQuery(queryObject);
-  if (!cart) {
-    throw new MedusaError(MedusaError.Types.NOT_FOUND, `Cart ${cartId} not found after update`);
-  }
+  const cart = await readCartSnapshot();
 
   return res.status(200).json({ cart });
 }

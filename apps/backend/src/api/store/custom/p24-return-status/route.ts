@@ -62,6 +62,12 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
   if (!cartRow) {
     return res.status(404).json({ message: "Koszyk nie istnieje" });
   }
+  // Defense-in-depth (incydent cart-express 06.07.2026): remoteQuery potrafi
+  // przy niektórych polach zgubić filtr — nie wolno raportować stanu płatności
+  // cudzego koszyka.
+  if ((cartRow as { id?: string }).id !== cartId) {
+    return res.status(500).json({ message: "Błąd odczytu koszyka" });
+  }
 
   const cart = cartRow as {
     completed_at?: string | null;

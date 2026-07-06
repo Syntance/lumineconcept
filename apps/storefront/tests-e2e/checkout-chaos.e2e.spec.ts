@@ -166,8 +166,8 @@ test.describe("Checkout ? chaos / awarie", () => {
     await seedCookieConsent(page);
     const cartId = await seedCartViaApi(request, baseURL ?? "");
     await page.addInitScript(
-      ([id]) => window.localStorage.setItem("lumine_cart_id", id),
-      [cartId],
+      (id: string) => window.localStorage.setItem("lumine_cart_id", id),
+      cartId,
     );
 
     await page.goto("/checkout");

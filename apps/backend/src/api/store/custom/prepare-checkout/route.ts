@@ -151,6 +151,14 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     if (!cartSnapshot) {
       return res.status(404).json({ message: `Cart ${cartId} not found` });
     }
+    // Defense-in-depth (incydent cart-express 06.07.2026): remoteQuery z
+    // pewnymi kombinacjami pól potrafi zgubić filtr i zwrócić PIERWSZY koszyk
+    // z bazy. Nigdy nie operujemy na koszyku innym niż żądany.
+    if ((cartSnapshot as { id?: string }).id !== cartId) {
+      return res.status(500).json({
+        message: "Nie udało się odczytać koszyka — spróbuj ponownie.",
+      });
+    }
 
     const snapshot = cartSnapshot as {
       completed_at?: string | null;

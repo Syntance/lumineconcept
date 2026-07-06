@@ -205,6 +205,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     expressFeeInTotal: 0,
   });
 
+  /** Aktualny cart.id do synchronicznych guardów (state bywa o tick za stary). */
+  const cartIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    cartIdRef.current = cart.id;
+  }, [cart.id]);
+
   const normalizeCartMetadata = (raw: unknown): Record<string, string> => {
     if (!raw || typeof raw !== "object") return {};
     const out: Record<string, string> = {};
@@ -217,6 +223,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateCartState = useCallback(
     (rawCart: Record<string, unknown>) => {
+      // GUARD (incydent 06.07.2026): backend potrafił zwrócić CUDZY koszyk
+      // (remoteQuery gubił filtr przy polach z linkiem promotions) — UI
+      // nadpisywało stan pustym/cudzym koszykiem („Koszyk (0)" po kliknięciu
+      // express). Przyjmujemy wyłącznie payload aktualnego koszyka albo tego
+      // wskazanego w localStorage (adopcja między kartami — autorytet).
+      const incomingId = typeof rawCart.id === "string" ? rawCart.id : null;
+      const currentId = cartIdRef.current;
+      if (incomingId && currentId && incomingId !== currentId) {
+        let authoritativeId: string | null = null;
+        try {
+          authoritativeId = localStorage.getItem(CART_ID_KEY);
+        } catch {
+          /* prywatny tryb */
+        }
+        if (incomingId !== authoritativeId) {
+          console.warn(
+            `[cart] odrzucono aktualizację stanu z obcego koszyka (${incomingId} ≠ ${currentId})`,
+          );
+          return;
+        }
+      }
       const items = mapCartItems(
         (rawCart.items as Array<Record<string, unknown>>) ?? [],
       );
