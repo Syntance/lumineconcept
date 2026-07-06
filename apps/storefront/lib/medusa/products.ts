@@ -186,6 +186,12 @@ export async function getProductsByIds(ids: string[]) {
   }
 }
 
+/**
+ * MUSI rzucać przy błędzie — wcześniej zwracała [] z catcha, a unstable_cache
+ * zapamiętywał tę pustą listę na 300 s. Jedna czkawka backendu = sklep bez
+ * kategorii (sidebar, nav, breadcrumby) przez 5 minut dla wszystkich.
+ * Rzucony błąd NIE trafia do cache'a; fallback robią callerzy (`.catch(() => [])`).
+ */
 async function _getProductCategories() {
   try {
     const response = await medusa.store.category.list({
@@ -196,7 +202,7 @@ async function _getProductCategories() {
     return response.product_categories;
   } catch (e) {
     logMedusaFailure("getProductCategories", e);
-    return [];
+    throw e;
   }
 }
 

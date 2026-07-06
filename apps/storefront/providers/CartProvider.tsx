@@ -355,6 +355,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [getOrCreateCart]);
 
   /**
+   * Synchronizacja koszyka między kartami przeglądarki. Po awarii backendu
+   * mogły powstać dwa koszyki: stara karta trzymała w pamięci koszyk A,
+   * a nowa zapisała do localStorage koszyk B. Każda karta pokazywała „swój"
+   * i pozycje przeskakiwały przy przełączaniu. Autorytet: `lumine_cart_id`
+   * w localStorage — przy focusie/zmianie w innej karcie adoptujemy go.
+   */
+  useEffect(() => {
+    const adoptCartFromStorage = () => {
+      let savedId: string | null;
+      try {
+        savedId = localStorage.getItem(CART_ID_KEY);
+      } catch {
+        return;
+      }
+      if (!savedId || savedId === cart.id) return;
+      void cartApi
+        .getCart(savedId)
+        .then((raw) =>
+          updateCartState(raw as unknown as Record<string, unknown>),
+        )
+        .catch(() => undefined);
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === CART_ID_KEY) adoptCartFromStorage();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", adoptCartFromStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", adoptCartFromStorage);
+    };
+  }, [cart.id, updateCartState]);
+
+  /**
    * Trwające operacje add-to-cart, kluczowane `variantId + fingerprint opcji`.
    * Pozwala scalić równoległe/double-click dodania tej samej konfiguracji w
    * jeden request (Medusa nie scala równoległych `createLineItem` po metadata,
