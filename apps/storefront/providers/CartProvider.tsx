@@ -132,6 +132,12 @@ interface CartContextType extends CartState {
    * produktowy byłby widocznie odjęty dwa razy (w wierszu i w Zniżce).
    */
   productsPreDiscount: number;
+  /**
+   * Część zniżki przypadająca na DOSTAWĘ (adjustmenty promocji na metodach
+   * kuriera) — UI pokazuje ją jako „Dostawa: gratis" z przekreśloną ceną,
+   * a wiersz „Zniżka" tylko dla pozostałej (produktowej) części rabatu.
+   */
+  shippingDiscount: number;
   /** total z Medusy + expressSurcharge (gdy express włączony) + szacunek dostawy, jeśli brak shipping_total */
   grandTotal: number;
   /**
@@ -821,6 +827,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cart.items.reduce((s, i) => s + (i.subtotal > 0 ? i.subtotal : i.total), 0) *
           100,
       ) / 100;
+    // Zniżka na dostawę = surowa cena kuriera − kurier PO adjustmentach
+    // (shipping_total zawiera metodę-dopłatę express, więc ją zdejmujemy).
+    const courierShippingNet = Math.max(
+      0,
+      Math.round((cart.shipping_total - cart.expressFeeInTotal) * 100) / 100,
+    );
+    const shippingDiscount = Math.max(
+      0,
+      Math.round((cart.courierShippingGross - courierShippingNet) * 100) / 100,
+    );
     const hasFreeShippingPromo = hasFreeShippingPromotion(cart.appliedPromoCodes);
     const shippingAddon = cart.hasShippingMethodSelection
       ? 0
@@ -871,6 +887,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       expressSurcharge,
       productsSubtotal,
       productsPreDiscount,
+      shippingDiscount,
       grandTotal,
       shippingEstimate,
     };

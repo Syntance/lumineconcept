@@ -50,6 +50,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
     expressSurcharge,
     expressFeeInTotal,
     discountTotal,
+    shippingDiscount,
   } = useCart();
 
   /**
@@ -111,6 +112,22 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
   );
 
   const shippingDisplay = shippingGross;
+
+  /**
+   * Darmowa dostawa z kodu: zamiast „Dostawa 25,00 + Zniżka −25,00"
+   * pokazujemy „Dostawa: ~~25,00~~ gratis", a wiersz „Zniżka" zostaje
+   * wyłącznie dla produktowej części rabatu (kody łączone rabat+dostawa).
+   */
+  const shippingIsFree =
+    hasShippingMethodSelection &&
+    shippingDiscount > 0 &&
+    shippingDisplay !== null &&
+    shippingDisplay !== undefined &&
+    shippingDiscount >= shippingDisplay - 0.005;
+  const productDiscount = Math.max(
+    0,
+    Math.round((discountTotal - shippingDiscount) * 100) / 100,
+  );
 
   const shippingLabel =
     shippingDisplay === null || shippingDisplay === undefined
@@ -222,9 +239,16 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
         </div>
         <div className="flex justify-between">
           <span className="text-brand-600">Dostawa</span>
-          <span className="font-medium tabular-nums text-brand-800">
-            {shippingLabel}
-          </span>
+          {shippingIsFree ? (
+            <span className="font-medium tabular-nums text-brand-800">
+              <s className="mr-1.5 text-brand-400">{shippingLabel}</s>
+              <span className="text-emerald-700">gratis</span>
+            </span>
+          ) : (
+            <span className="font-medium tabular-nums text-brand-800">
+              {shippingLabel}
+            </span>
+          )}
         </div>
         {expressDelivery && expressFeeDisplay > 0 && (
           <div className="flex justify-between">
@@ -234,11 +258,11 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
             </span>
           </div>
         )}
-        {discountTotal > 0 && (
+        {(shippingIsFree ? productDiscount : discountTotal) > 0 && (
           <div className="flex justify-between">
             <span className="text-brand-600">Zniżka</span>
             <span className="font-medium tabular-nums text-emerald-700">
-              −{formatPrice(discountTotal)}
+              −{formatPrice(shippingIsFree ? productDiscount : discountTotal)}
             </span>
           </div>
         )}

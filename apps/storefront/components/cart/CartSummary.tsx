@@ -13,6 +13,7 @@ export function CartSummary() {
     expressSurcharge,
     expressFeeInTotal,
     discountTotal,
+    shippingDiscount,
     grandTotal,
   } = useCart();
 
@@ -29,6 +30,22 @@ export function CartSummary() {
   const shippingDisplay = hasShippingMethodSelection
     ? courierShippingGross
     : shippingEstimate;
+
+  /**
+   * Darmowa dostawa z kodu: „Dostawa: ~~25,00~~ gratis" zamiast osobnego
+   * wiersza zniżki; „Zniżka" zostaje dla produktowej części rabatu.
+   */
+  const shippingIsFree =
+    hasShippingMethodSelection &&
+    shippingDiscount > 0 &&
+    shippingDisplay !== null &&
+    shippingDisplay !== undefined &&
+    shippingDiscount >= shippingDisplay - 0.005;
+  const productDiscount = Math.max(
+    0,
+    Math.round((discountTotal - shippingDiscount) * 100) / 100,
+  );
+  const discountRowAmount = shippingIsFree ? productDiscount : discountTotal;
 
   const shippingLabel =
     shippingDisplay === null || shippingDisplay === undefined
@@ -55,12 +72,19 @@ export function CartSummary() {
       )}
       <div className="flex justify-between">
         <span className="text-brand-500">Dostawa</span>
-        <span className="tabular-nums text-brand-700">{shippingLabel}</span>
+        {shippingIsFree ? (
+          <span className="tabular-nums text-brand-700">
+            <s className="mr-1.5 text-brand-400">{shippingLabel}</s>
+            <span className="text-emerald-700">gratis</span>
+          </span>
+        ) : (
+          <span className="tabular-nums text-brand-700">{shippingLabel}</span>
+        )}
       </div>
-      {discountTotal > 0 && (
+      {discountRowAmount > 0 && (
         <div className="flex justify-between">
           <span className="text-brand-500">Zniżka</span>
-          <span className="tabular-nums text-emerald-700">−{formatPrice(discountTotal)}</span>
+          <span className="tabular-nums text-emerald-700">−{formatPrice(discountRowAmount)}</span>
         </div>
       )}
       <div className="h-px bg-brand-100" />
