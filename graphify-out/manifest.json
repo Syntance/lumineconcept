@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "apps/backend/src/api/store/custom/prepare-checkout/route.ts": {
-    "mtime": 1782379191.6898932,
-    "ast_hash": "12facc237c5c437a2c0da4a9c331dc4d",
+    "mtime": 1783331889.8397727,
+    "ast_hash": "d9a9059fe6b5154758cecd7954d178f1",
     "semantic_hash": ""
   },
   "apps/backend/src/api/store/custom/reconcile-p24/route.ts": {
@@ -405,8 +405,8 @@
     "semantic_hash": ""
   },
   "apps/backend/src/lib/run-p24-reconcile.ts": {
-    "mtime": 1783329374.2356944,
-    "ast_hash": "5d2ec831ef855e7a259f5ffb01bd2d54",
+    "mtime": 1783331889.8407693,
+    "ast_hash": "cd5ba8cdadc9c1c3631d8c4688ecaefa",
     "semantic_hash": ""
   },
   "apps/backend/src/lib/send-email.ts": {
@@ -530,8 +530,8 @@
     "semantic_hash": ""
   },
   "apps/backend/src/modules/przelewy24/service.ts": {
-    "mtime": 1783329327.3322785,
-    "ast_hash": "1d1564090f219a7d5518a2430e69b774",
+    "mtime": 1783331889.8407693,
+    "ast_hash": "bee7c0056a5d09cccb2b3b5c811d3dc1",
     "semantic_hash": ""
   },
   "apps/backend/src/scripts/backfill-order-invoice-metadata.ts": {
@@ -1185,8 +1185,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/components/cart/CartSummary.tsx": {
-    "mtime": 1782219840.0313206,
-    "ast_hash": "6d9aaae31be742d49777b1f3f96d9437",
+    "mtime": 1783331889.8407693,
+    "ast_hash": "954fa4c29c64de3efb5fa52cdbf91c3b",
     "semantic_hash": ""
   },
   "apps/storefront/components/cart/CartUpsell.tsx": {
@@ -1225,8 +1225,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/components/checkout/OrderSummary.tsx": {
-    "mtime": 1783066627.8314486,
-    "ast_hash": "4bf198572ed3cd26932e12f73a2c2ea7",
+    "mtime": 1783331889.8407693,
+    "ast_hash": "ed5a95d050811ef0d792e74940516a0f",
     "semantic_hash": ""
   },
   "apps/storefront/components/checkout/PaymentSelector.tsx": {
@@ -2085,8 +2085,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/lib/medusa/ensure-cart-shipping.ts": {
-    "mtime": 1783326593.5556927,
-    "ast_hash": "b717059e7a24507df259d3486874c3e4",
+    "mtime": 1783331889.8422742,
+    "ast_hash": "47dc98cf5906063cf748df62adeff304",
     "semantic_hash": ""
   },
   "apps/storefront/lib/medusa/order.ts": {
@@ -2130,8 +2130,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/lib/medusa/store-fetch.ts": {
-    "mtime": 1783066628.092709,
-    "ast_hash": "50e964a1b568feb04f4dedc61c4adf73",
+    "mtime": 1783331889.8422742,
+    "ast_hash": "7ebc8a373db235fedaf3e680050c9c94",
     "semantic_hash": ""
   },
   "apps/storefront/lib/medusa/transient-error.ts": {
@@ -3370,8 +3370,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/providers/CartProvider.tsx": {
-    "mtime": 1783326593.1191885,
-    "ast_hash": "04008079468dbea9680fe7d44cc7f357",
+    "mtime": 1783331889.8432713,
+    "ast_hash": "cd9be90e1070dce250dc4f126027a5bb",
     "semantic_hash": ""
   },
   "apps/storefront/providers/Providers.tsx": {
@@ -4182,6 +4182,41 @@
   "apps/storefront/app/(shop)/sklep/tablice-z-logo/page.tsx": {
     "mtime": 1783326629.2745242,
     "ast_hash": "4b447643dd6488468631873f1afc5923",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/lib/express-fee.ts": {
+    "mtime": 1783331237.5651438,
+    "ast_hash": "996a30921ca4890cea474fd8f1c895a0",
+    "semantic_hash": ""
+  },
+  "apps/backend/src/lib/p24-session-reuse.ts": {
+    "mtime": 1783331258.8246846,
+    "ast_hash": "7d80a90e844c7e62b7e82b704b1619f3",
+    "semantic_hash": ""
+  },
+  "apps/backend/tests/express-fee.test.ts": {
+    "mtime": 1783331679.231994,
+    "ast_hash": "41d5f577a7d9934d224586f30f4dfa9a",
+    "semantic_hash": ""
+  },
+  "apps/backend/tests/p24-session-reuse.test.ts": {
+    "mtime": 1783331695.4988818,
+    "ast_hash": "18cbb3169e3bb87479486b826237126f",
+    "semantic_hash": ""
+  },
+  "apps/storefront/lib/checkout/express-fee.ts": {
+    "mtime": 1783331367.6880445,
+    "ast_hash": "7d041da9a84ea7d9c7a5e707571b9bbd",
+    "semantic_hash": ""
+  },
+  "apps/storefront/tests/lib/express-fee.test.ts": {
+    "mtime": 1783331723.4988716,
+    "ast_hash": "230dd3725aed0b8fedb26f0e7d4474f3",
+    "semantic_hash": ""
+  },
+  "docs/adr/004-checkout-reliability-audit.md": {
+    "mtime": 1783332067.093065,
+    "ast_hash": "b6cb8e82a9302d402d07caa5976ed58a",
     "semantic_hash": ""
   }
 }

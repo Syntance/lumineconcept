@@ -231,7 +231,35 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
       email?: string;
     };
 
-    const sessionId = `p24_${crypto.randomUUID()}`;
+    /**
+     * KRYTYCZNE (audyt 06.07.2026, druga warstwa błędu webhooka): jako
+     * `sessionId` wysyłany do P24 używamy WYŁĄCZNIE id sesji Medusy
+     * (`payses_...`), które silnik wstrzykuje do `input.data.session_id`
+     * PRZED wywołaniem `initiatePayment` (`PaymentModuleService.createPaymentSession`
+     * → `data: { ...input.data, session_id: paymentSession.id }`).
+     *
+     * Wcześniej generowaliśmy tu WŁASNY UUID (`p24_${randomUUID()}`). P24
+     * echo'uje `sessionId` w notyfikacji `urlStatus` bez zmian, więc
+     * `getWebhookActionAndData` zwracał `data.session_id` = nasz UUID.
+     * `processPaymentWorkflow` (wbudowany w Medusę) filtruje jednak
+     * `payment_session` PO PRIMARY KEY `id = data.session_id` — z naszym
+     * UUID zapytanie zawsze zwracało 0 wierszy. Webhook nigdy nie kończył
+     * żadnego zamówienia (nawet po naprawie URL-a `pp_pp_`); całą pracę
+     * wykonywały wyłącznie polling strony powrotu i cron reconcile.
+     * Używając payses_xxx jako P24 sessionId, webhook koreluje się
+     * poprawnie z payment_session od razu — bez dodatkowego mapowania.
+     */
+    const medusaSessionId =
+      typeof ctx.session_id === "string" && ctx.session_id.trim()
+        ? ctx.session_id.trim()
+        : undefined;
+    if (!medusaSessionId) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        "Przelewy24: brak session_id z Medusy — nie można zarejestrować transakcji.",
+      );
+    }
+    const sessionId = medusaSessionId;
     const email =
       (ctx.email as string | undefined) ||
       customerCtx.email ||

@@ -59,7 +59,11 @@ describe("initiatePayment — rejestracja transakcji", () => {
     await service.initiatePayment({
       amount: 179.9,
       currency_code: "pln",
-      data: { cart_id: "cart_1", email: "client@example.com" },
+      data: {
+        cart_id: "cart_1",
+        email: "client@example.com",
+        session_id: "payses_01ABCDEF",
+      },
       context: {},
     } as never);
 
@@ -79,6 +83,24 @@ describe("initiatePayment — rejestracja transakcji", () => {
       "https://api.example.com/hooks/payment/przelewy24_przelewy24",
     );
     expect(body.waitForResult).toBe(false);
+    // KRYTYCZNE (audyt 06.07.2026, druga warstwa błędu webhooka): sessionId
+    // wysyłany do P24 MUSI być id sesji Medusy (payses_...), nie własnym UUID —
+    // inaczej processPaymentWorkflow nigdy nie znajdzie payment_session po
+    // webhooku (filtruje po primary key `id`).
+    expect(body.sessionId).toBe("payses_01ABCDEF");
+  });
+
+  it("rzuca gdy Medusa nie wstrzyknie session_id (webhook nie miałby czego dopasować)", async () => {
+    const service = makeService();
+    await expect(
+      service.initiatePayment({
+        amount: 100,
+        currency_code: "pln",
+        data: { cart_id: "cart_no_session" },
+        context: {},
+      } as never),
+    ).rejects.toThrow(/brak session_id/i);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("NIE dolicza opłaty z metadata koszyka — kwota = zweryfikowane input.amount (bezpieczeństwo)", async () => {
@@ -88,7 +110,7 @@ describe("initiatePayment — rejestracja transakcji", () => {
     await service.initiatePayment({
       amount: 100, // produkty + dostawa = 100 PLN (zweryfikowane przez Medusę)
       currency_code: "pln",
-      data: { cart_id: "cart_express" },
+      data: { cart_id: "cart_express", session_id: "payses_express" },
       context: {
         cart: {
           metadata: {
@@ -112,7 +134,7 @@ describe("initiatePayment — rejestracja transakcji", () => {
     await service.initiatePayment({
       amount: 100,
       currency_code: "pln",
-      data: { cart_id: "cart_no_express" },
+      data: { cart_id: "cart_no_express", session_id: "payses_no_express" },
       context: {
         cart: {
           metadata: {
@@ -135,7 +157,7 @@ describe("initiatePayment — rejestracja transakcji", () => {
     await service.initiatePayment({
       amount: 10,
       currency_code: "pln",
-      data: { cart_id: "cart_2" },
+      data: { cart_id: "cart_2", session_id: "payses_2" },
       context: {},
     } as never);
 
@@ -150,7 +172,7 @@ describe("initiatePayment — rejestracja transakcji", () => {
     const result = await service.initiatePayment({
       amount: 25.5,
       currency_code: "pln",
-      data: { cart_id: "cart_3" },
+      data: { cart_id: "cart_3", session_id: "payses_3" },
       context: {},
     } as never);
 
@@ -169,7 +191,7 @@ describe("initiatePayment — rejestracja transakcji", () => {
       service.initiatePayment({
         amount: 10,
         currency_code: "pln",
-        data: {},
+        data: { session_id: "payses_no_token" },
         context: {},
       } as never),
     ).rejects.toThrow(/brak tokenu/i);
