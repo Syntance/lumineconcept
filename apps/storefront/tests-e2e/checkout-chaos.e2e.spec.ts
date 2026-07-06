@@ -35,12 +35,22 @@ async function selectRequiredVariantOptions(page: Page) {
   }
 }
 
+/**
+ * Banner cookies pojawia sie asynchronicznie i potrafi zaslonic UI takze na
+ * /checkout — odrzucamy go z jawnym timeoutem zamiast pojedynczego
+ * isVisible() (zrodlo flake'ow przy wolniejszym renderze).
+ */
+async function dismissCookieBanner(page: Page) {
+  const cookieReject = page.getByRole("button", { name: /tylko niezb.dne/i });
+  if (await cookieReject.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    await cookieReject.click();
+    await cookieReject.waitFor({ state: "hidden", timeout: 5_000 }).catch(() => undefined);
+  }
+}
+
 async function addFirstProductToCart(page: Page) {
   await page.goto("/sklep/gotowe-wzory");
-  const cookieReject = page.getByRole("button", { name: /tylko niezb.dne/i });
-  if (await cookieReject.isVisible().catch(() => false)) {
-    await cookieReject.click();
-  }
+  await dismissCookieBanner(page);
   await expect(
     page.locator("a[href^='/sklep/gotowe-wzory/']").first(),
   ).toBeVisible();
@@ -157,6 +167,7 @@ test.describe("Checkout ? chaos / awarie", () => {
 
     await addFirstProductToCart(page);
     await page.goto("/checkout");
+    await dismissCookieBanner(page);
     await fillContactStep(page);
     await goThroughShippingStep(page);
     await acceptConsents(page);

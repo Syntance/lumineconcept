@@ -244,6 +244,8 @@ export function CheckoutForm() {
   const [formStarted, setFormStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  /** true od startu twardej nawigacji do bramki — finally nie zdejmuje guardu. */
+  const redirectingRef = useRef(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   /**
    * Po ~3s od kliknięcia „Zamawiam i płacę" pokazujemy dodatkowy komunikat
@@ -674,6 +676,18 @@ export function CheckoutForm() {
         });
         if (typeof window !== "undefined") {
           markP24PaymentStarted(cartId);
+          // Guard zostaje ZABLOKOWANY na czas twardej nawigacji — `finally`
+          // odblokowywał go natychmiast, więc szybki drugi klik w oknie przed
+          // unloadem strony odpalał DRUGI submit (chaos-e2e: double-click →
+          // 2× prepare-checkout). Serwer jest idempotentny, ale okna nie
+          // zostawiamy. Fallback: gdy nawigacja się nie uda (rzadkie),
+          // timer odblokowuje przycisk po 8 s.
+          redirectingRef.current = true;
+          window.setTimeout(() => {
+            redirectingRef.current = false;
+            submittingRef.current = false;
+            setSubmitting(false);
+          }, 8_000);
           window.location.assign(
             `/checkout/przelewy24/start?cart_id=${encodeURIComponent(cartId)}`,
           );
@@ -822,15 +836,18 @@ export function CheckoutForm() {
       );
       setSubmitError(message);
     } finally {
-      // Bez tego, gdy nawigacja hard się nie udała (rzadko), przycisk
-      // zostaje zablokowany na zawsze.
-      setSubmitting(false);
       setSubmitSlow(false);
       if (submitSlowTimerRef.current) {
         clearTimeout(submitSlowTimerRef.current);
         submitSlowTimerRef.current = null;
       }
-      submittingRef.current = false;
+      // Po starcie twardej nawigacji do bramki guard trzyma blokadę (patrz
+      // wyżej — fallback timer 8 s). W pozostałych ścieżkach odblokowujemy
+      // od razu, żeby przycisk nie został zablokowany na zawsze.
+      if (!redirectingRef.current) {
+        setSubmitting(false);
+        submittingRef.current = false;
+      }
     }
   }, [cartId, items, total, refreshCart]);
 
