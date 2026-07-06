@@ -80,8 +80,18 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       const n = Number(v);
       return Number.isFinite(n) ? n : 0;
     }
-    if (v && typeof v === "object" && "value" in v) {
-      return amountToNumber((v as { value: unknown }).value);
+    if (v && typeof v === "object") {
+      // query.graph zwraca kwoty jako BigNumber (getter `numeric`); do JSON
+      // serializują się jako liczby, ale w pamięci to obiekty — bez tej
+      // gałęzi suma pozycji wychodziła 0 i fee zapisywało się jako "0".
+      if ("numeric" in v) {
+        return amountToNumber((v as { numeric: unknown }).numeric);
+      }
+      if ("value" in v) {
+        return amountToNumber((v as { value: unknown }).value);
+      }
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
     }
     return 0;
   }
