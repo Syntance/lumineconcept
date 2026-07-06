@@ -7,6 +7,7 @@ import { isValidHex } from "@/lib/color/hex";
 import {
   CUSTOM_COLOR_VALUE,
   isMatAllowed,
+  isMatAllowedForSelection,
   isMirrorColor,
 } from "./ProductVariantSelector";
 import {
@@ -115,7 +116,10 @@ export function ColorStepPanel({
   const customNamedColors = option.values.filter((v) => customSet.has(v.toLowerCase()));
   const showIndividualGroup =
     customCategoryEnabled && (customNamedColors.length > 0 || allowCustomColor);
-  const matAllowed = isCustomSelected || isMatAllowed(selectedColor, matDisabledSet);
+  const matAllowed = isMatAllowedForSelection(selectedColor, matDisabledSet, {
+    customHex: customColor,
+    colorMap,
+  });
 
   const selectId = `color-select-${option.id}-${uniqueId.replace(/:/g, "")}`;
 
@@ -169,6 +173,14 @@ export function ColorStepPanel({
       if (/^#[0-9a-fA-F]{6}$/.test(base)) {
         onCustomColorChange(base);
       }
+      if (
+        !isMatAllowedForSelection(CUSTOM_COLOR_VALUE, matDisabledSet, {
+          customHex: base,
+          colorMap,
+        })
+      ) {
+        onMatFinishChange(false);
+      }
     }
     if (raw !== CUSTOM_COLOR_VALUE && !isMatAllowed(raw, matDisabledSet)) {
       onMatFinishChange(false);
@@ -200,6 +212,14 @@ export function ColorStepPanel({
           onChange={(hex) => {
             setHexInput(hex);
             onCustomColorChange(hex);
+            if (
+              !isMatAllowedForSelection(CUSTOM_COLOR_VALUE, matDisabledSet, {
+                customHex: hex,
+                colorMap,
+              })
+            ) {
+              onMatFinishChange(false);
+            }
           }}
           size="md"
         />

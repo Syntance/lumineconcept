@@ -234,6 +234,7 @@ export function CheckoutForm() {
     id: cartId,
     items,
     total,
+    grandTotal,
     refreshCart,
     isInitialized,
     appliedPromoCodes,
@@ -640,7 +641,7 @@ export function CheckoutForm() {
       // Koszyk darmowy (100% rabat + darmowa dostawa) — brak płatności do
       // pobrania: nie wysyłamy klienta do bramki na 0 zł (P24 odrzuca
       // rejestrację zerowej kwoty), tylko od razu domykamy koszyk niżej.
-      const isFreeCart = total <= 0;
+      const isFreeCart = grandTotal <= 0;
 
       // Przelewy24 = płatność z przekierowaniem. Inicjujemy sesję P24,
       // a finalizację koszyka (utworzenie zamówienia) robi strona powrotu
@@ -849,7 +850,7 @@ export function CheckoutForm() {
         submittingRef.current = false;
       }
     }
-  }, [cartId, items, total, refreshCart]);
+  }, [cartId, items, total, grandTotal, refreshCart]);
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">

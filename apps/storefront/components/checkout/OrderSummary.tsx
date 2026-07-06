@@ -10,6 +10,10 @@ import {
   normalizeShippingOptionsForDisplay,
   prefetchShippingOptions,
 } from "@/lib/medusa/checkout";
+import {
+  hasFreeShippingPromotion,
+  resolveEffectiveShippingCost,
+} from "@/lib/promotions/free-shipping";
 
 type OrderSummaryProps = {
   /**
@@ -24,10 +28,15 @@ function resolveShippingGross(
   hasShippingMethodSelection: boolean,
   shipping_total: number,
   shippingEstimate: number | null,
+  hasFreeShippingPromo: boolean,
 ): number | null {
-  if (selectedShippingPrice !== undefined) return selectedShippingPrice;
-  if (hasShippingMethodSelection) return shipping_total;
-  return shippingEstimate;
+  return resolveEffectiveShippingCost({
+    hasFreeShippingPromo,
+    hasShippingMethodSelection,
+    courierShippingTotal: shipping_total,
+    selectedShippingPrice,
+    shippingEstimate,
+  });
 }
 
 export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
@@ -94,39 +103,17 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
       ? shippingOptionPrices[selectedShippingOptionId]
       : undefined;
 
+  const hasFreeShippingPromo = hasFreeShippingPromotion(appliedPromoCodes);
+
   const shippingGross = resolveShippingGross(
     selectedShippingPrice,
     hasShippingMethodSelection,
     courierShippingTotal,
     shippingEstimate,
+    hasFreeShippingPromo,
   );
 
-  const hasAppliedPromo = appliedPromoCodes.some(
-    (code) => !code.startsWith("__lumine_fs_"),
-  );
-
-  /**
-   * Gdy promocja obniża dostawę w koszyku Medusy (`shipping_total === 0`),
-   * nie pokazuj ceny z prefetchu UI — inaczej „Dostawa 25 zł” + „Zniżka −25 zł”
-   * daje błędne „Do zapłaty” (26 zamiast 1).
-   */
-  const shippingDisplay = useMemo(() => {
-    if (
-      hasAppliedPromo &&
-      hasShippingMethodSelection &&
-      shipping_total === 0 &&
-      discountTotal > 0
-    ) {
-      return 0;
-    }
-    return shippingGross;
-  }, [
-    hasAppliedPromo,
-    hasShippingMethodSelection,
-    shipping_total,
-    discountTotal,
-    shippingGross,
-  ]);
+  const shippingDisplay = shippingGross;
 
   const shippingLabel =
     shippingDisplay === null || shippingDisplay === undefined
@@ -136,35 +123,35 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
         : formatPrice(shippingDisplay);
 
   const displayGrandTotal = useMemo(() => {
-    const previewShipping =
-      selectedShippingPrice !== undefined
-        ? selectedShippingPrice
-        : !hasShippingMethodSelection
-          ? (shippingEstimate ?? 0)
-          : null;
+    const effectiveShipping = resolveEffectiveShippingCost({
+      hasFreeShippingPromo,
+      hasShippingMethodSelection,
+      courierShippingTotal,
+      selectedShippingPrice,
+      shippingEstimate,
+    });
 
-    if (previewShipping === null) {
-      // `total` zawiera już metodę-dopłatę express (jeśli backend ją dodał);
-      // surcharge jest wtedy 0 — nie ma podwójnego liczenia.
+    const useComputedTotal =
+      hasFreeShippingPromo ||
+      selectedShippingPrice !== undefined ||
+      !hasShippingMethodSelection;
+
+    if (!useComputedTotal) {
       return Math.round((total + expressSurcharge) * 100) / 100;
     }
 
-    /**
-     * `productsSubtotal` to suma `item.total` — czyli ceny JUŻ PO rabacie.
-     * `discountTotal` musi być tu pominięte, żeby nie odjąć go podwójnie.
-     * Wiersz „Produkty" pokazuje cenę przed rabatem (productsSubtotal + discountTotal),
-     * a osobny wiersz „Zniżka" odejmuje discountTotal — sumarycznie wychodzi prawidłowo.
-     */
     const sum =
       productsSubtotal +
       expressFeeDisplay +
-      previewShipping +
+      (effectiveShipping ?? 0) +
       tax_total;
     return Math.round(Math.max(0, sum) * 100) / 100;
   }, [
+    hasFreeShippingPromo,
     selectedShippingPrice,
     hasShippingMethodSelection,
     shippingEstimate,
+    courierShippingTotal,
     total,
     expressSurcharge,
     expressFeeDisplay,

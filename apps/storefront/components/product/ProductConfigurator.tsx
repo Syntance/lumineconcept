@@ -8,6 +8,7 @@ import {
   CUSTOM_COLOR_VALUE,
   isColorOption,
   isMatAllowed,
+  isMatAllowedForSelection,
   isSizeOption,
   isLedOption,
   type ProductOption,
@@ -203,9 +204,21 @@ export function ProductConfigurator({
                 customColor={
                   colorCustomizations[option.title]?.customColor ?? null
                 }
-                onCustomColorChange={(hex) =>
-                  onColorCustomizationChange(option.title, "customColor", hex)
-                }
+                onCustomColorChange={(hex) => {
+                  onColorCustomizationChange(option.title, "customColor", hex);
+                  if (
+                    !isMatAllowedForSelection(CUSTOM_COLOR_VALUE, slotMatDisabledSet, {
+                      customHex: hex,
+                      colorMap,
+                    })
+                  ) {
+                    onColorCustomizationChange(
+                      option.title,
+                      "matFinish",
+                      false,
+                    );
+                  }
+                }}
                 matFinish={
                   colorCustomizations[option.title]?.matFinish ?? false
                 }

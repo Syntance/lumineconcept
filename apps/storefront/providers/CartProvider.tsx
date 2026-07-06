@@ -26,6 +26,10 @@ import {
   EXPRESS_FEE_SHIPPING_METHOD_NAME,
   expressFeeIncludedInCart,
 } from "@/lib/checkout/express-fee";
+import {
+  hasFreeShippingPromotion,
+  resolveEffectiveShippingCost,
+} from "@/lib/promotions/free-shipping";
 
 interface CartItem {
   id: string;
@@ -710,12 +714,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
       expressDelivery && cart.expressFeeInTotal <= 0
         ? Math.round(productsSubtotal * 0.5 * 100) / 100
         : 0;
+    const hasFreeShippingPromo = hasFreeShippingPromotion(cart.appliedPromoCodes);
+    const courierShippingTotal = Math.max(
+      0,
+      Math.round((cart.shipping_total - cart.expressFeeInTotal) * 100) / 100,
+    );
     const shippingAddon = cart.hasShippingMethodSelection
       ? 0
-      : (shippingEstimate ?? 0);
-    const grandTotal = Math.round(
-      (cart.total + expressSurcharge + shippingAddon) * 100,
-    ) / 100;
+      : resolveEffectiveShippingCost({
+          hasFreeShippingPromo,
+          hasShippingMethodSelection: cart.hasShippingMethodSelection,
+          courierShippingTotal,
+          shippingEstimate,
+        }) ?? 0;
+    // Dopłata express do sumy: client-side surcharge ALBO metoda-dopłata już
+    // wliczona przez backend (prepare-checkout) — nigdy obie (patrz fix #5:
+    // „kwota pokazana = pobrana”). W gałęzi przeliczanej ręcznie (darmowa
+    // dostawa) `cart.total` nie jest bazą, więc expressFeeInTotal trzeba
+    // dodać jawnie.
+    const expressFeeEffective =
+      expressSurcharge > 0 ? expressSurcharge : cart.expressFeeInTotal;
+    const grandTotal =
+      hasFreeShippingPromo || !cart.hasShippingMethodSelection
+        ? Math.round(
+            (productsSubtotal + expressFeeEffective + shippingAddon + cart.tax_total) *
+              100,
+          ) / 100
+        : Math.round((cart.total + expressSurcharge) * 100) / 100;
     return {
       ...cart,
       isLoading,

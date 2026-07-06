@@ -86,6 +86,11 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
 	const promotionIds = allForResolve
 		.filter((promotion) => promoCodes.includes(promotion.code))
 		.map((promotion) => promotion.id);
+
+	// KRYTYCZNE: promocje na `shipping_methods` wymagają metody dostawy W KOSZYKU
+	// PRZED dodaniem kodu — inaczej Medusa nie ma czego dyskontować (0% efektu
+	// mimo poprawnie zastosowanego kodu). Musi się wykonać zanim JAKIKOLWIEK
+	// promo_code (główny lub cień) trafi do `updateCartPromotionsWorkflow`.
 	if (await promotionTargetsShipping(scope, promotionIds)) {
 		await ensureCartShippingForPromo(scope, cartId);
 	}

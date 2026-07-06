@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeHex } from "@/lib/color/hex";
 import { isColorSlotTitle } from "@/lib/products/color-slot-config";
 
 export interface ProductOption {
@@ -64,4 +65,52 @@ export function isMatAllowed(
   const t = colorValue.trim();
   if (!t || t === CUSTOM_COLOR_VALUE) return false;
   return !matDisabledSet.has(t.toLowerCase());
+}
+
+/** Nazwy kolorów z katalogu o tym samym HEX (np. #ffffff → „biały”). */
+export function findColorNamesForHex(
+  hex: string,
+  colorMap: Record<string, string>,
+): string[] {
+  const normalized = normalizeHex(hex);
+  if (!normalized) return [];
+
+  const matches: string[] = [];
+  for (const [name, mapHex] of Object.entries(colorMap)) {
+    const mapNormalized = normalizeHex(mapHex);
+    if (mapNormalized === normalized) {
+      matches.push(name.toLowerCase());
+    }
+  }
+  return matches;
+}
+
+export interface MatAllowedForSelectionOptions {
+  customHex?: string | null;
+  colorMap?: Record<string, string>;
+}
+
+/** Mat dla wybranego koloru — także gdy użytkownik podaje własny HEX zgodny z kolorem katalogowym. */
+export function isMatAllowedForSelection(
+  colorValue: string,
+  matDisabledSet: Set<string>,
+  options?: MatAllowedForSelectionOptions,
+): boolean {
+  const t = colorValue.trim();
+  if (!t) return false;
+
+  if (t === CUSTOM_COLOR_VALUE) {
+    const hex = options?.customHex?.trim();
+    if (!hex || !normalizeHex(hex)) return false;
+
+    const colorMap = options?.colorMap;
+    if (!colorMap || Object.keys(colorMap).length === 0) return true;
+
+    const matchingNames = findColorNamesForHex(hex, colorMap);
+    if (matchingNames.length === 0) return true;
+
+    return matchingNames.every((name) => !matDisabledSet.has(name));
+  }
+
+  return isMatAllowed(t, matDisabledSet);
 }

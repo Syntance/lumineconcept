@@ -2,6 +2,10 @@
 
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/utils";
+import {
+  hasFreeShippingPromotion,
+  resolveEffectiveShippingCost,
+} from "@/lib/promotions/free-shipping";
 
 export function CartSummary() {
   const {
@@ -14,8 +18,10 @@ export function CartSummary() {
     expressFeeInTotal,
     discountTotal,
     grandTotal,
+    appliedPromoCodes,
   } = useCart();
 
+  const hasFreeShippingPromo = hasFreeShippingPromotion(appliedPromoCodes);
   // Dopłata express do wyświetlenia: client-side surcharge albo metoda-dopłata
   // już wliczona w total przez backend (prepare-checkout) — nigdy obie.
   const expressFeeDisplay = expressSurcharge > 0 ? expressSurcharge : expressFeeInTotal;
@@ -25,17 +31,17 @@ export function CartSummary() {
     Math.round((shipping_total - expressFeeInTotal) * 100) / 100,
   );
 
-  const shippingDisplay =
-    courierShippingTotal > 0
-      ? courierShippingTotal
-      : hasShippingMethodSelection
-        ? 0
-        : shippingEstimate;
+  const shippingDisplay = resolveEffectiveShippingCost({
+    hasFreeShippingPromo,
+    hasShippingMethodSelection,
+    courierShippingTotal,
+    shippingEstimate,
+  });
 
   const shippingLabel =
     shippingDisplay === null || shippingDisplay === undefined
       ? "Do ustalenia"
-      : hasShippingMethodSelection && courierShippingTotal === 0
+      : shippingDisplay === 0
         ? "gratis"
         : formatPrice(shippingDisplay);
 

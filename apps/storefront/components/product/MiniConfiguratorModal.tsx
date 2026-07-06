@@ -16,6 +16,7 @@ import {
   CUSTOM_COLOR_VALUE,
   isEveryColorOptionChosen,
   isMatAllowed,
+  isMatAllowedForSelection,
   isMirrorColor,
 } from "./ProductVariantSelector";
 import { parseTextFieldsFromMetadata } from "@/lib/products/text-fields";
@@ -111,7 +112,10 @@ function ColorPicker({
   const showIndividualGroup =
     customCategoryEnabled && (customNamed.length > 0 || allowCustomColor);
   const isCustom = state.selected === CUSTOM_COLOR_VALUE;
-  const matAllowed = isCustom || isMatAllowed(state.selected, matDisabledSet);
+  const matAllowed = isMatAllowedForSelection(state.selected, matDisabledSet, {
+    customHex: state.customHex,
+    colorMap,
+  });
 
   const selectId = `mini-color-${label}-${uniqueId.replace(/:/g, "")}`;
 
@@ -153,6 +157,18 @@ function ColorPicker({
           ? state.customHex ?? (/^#[0-9a-fA-F]{6}$/.test(hexInput) ? hexInput : null)
           : null,
     };
+    if (raw === CUSTOM_COLOR_VALUE) {
+      const hex = next.customHex;
+      if (
+        hex &&
+        !isMatAllowedForSelection(CUSTOM_COLOR_VALUE, matDisabledSet, {
+          customHex: hex,
+          colorMap,
+        })
+      ) {
+        next.matFinish = false;
+      }
+    }
     if (raw !== CUSTOM_COLOR_VALUE && !isMatAllowed(raw, matDisabledSet)) {
       next.matFinish = false;
     }
@@ -186,7 +202,16 @@ function ColorPicker({
           }
           onChange={(hex) => {
             setHexInput(hex);
-            onChange({ ...state, customHex: hex });
+            const next: ColorState = { ...state, customHex: hex };
+            if (
+              !isMatAllowedForSelection(CUSTOM_COLOR_VALUE, matDisabledSet, {
+                customHex: hex,
+                colorMap,
+              })
+            ) {
+              next.matFinish = false;
+            }
+            onChange(next);
           }}
           size="sm"
         />
