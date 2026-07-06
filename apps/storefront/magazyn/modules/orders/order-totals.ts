@@ -1,4 +1,5 @@
 import { toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
+import { EXPRESS_FEE_SHIPPING_METHOD_NAME } from "@magazyn/modules/promotions/constants";
 
 export type OrderTotalsInput = {
 	total?: number | null;
@@ -7,6 +8,7 @@ export type OrderTotalsInput = {
 	tax_total?: number | null;
 	discount_total?: number | null;
 	shipping_methods?: Array<{
+		name?: string | null;
 		amount?: number | null;
 		subtotal?: number | null;
 		total?: number | null;
@@ -58,6 +60,32 @@ export function resolveShippingTotalMinor(order: OrderTotalsInput): number {
 	}
 
 	return 0;
+}
+
+/**
+ * Wiersz „Dostawa" w szczegółach zamówienia: SUROWA cena kuriera, bez
+ * metody-dopłaty express i PRZED rabatami promocji.
+ *
+ * Bug 06.07.2026: `shipping_total` zamówienia jest PO adjustmentach i
+ * ZAWIERA metodę-dopłatę — przy kodzie darmowej dostawy pokazywało 2,50
+ * (0 za kuriera + dopłata express), sugerując że dopłata objęła dostawę.
+ * Konwencja spójna z checkoutem: wiersze przed rabatem + osobny „Rabat".
+ */
+export function resolveCourierShippingGrossMinor(order: OrderTotalsInput): number {
+	const methods = order.shipping_methods ?? [];
+	const courierMethods = methods.filter(
+		(method) =>
+			((method.name ?? "").trim() || "") !== EXPRESS_FEE_SHIPPING_METHOD_NAME,
+	);
+	if (courierMethods.length > 0) {
+		const gross = courierMethods.reduce((sum, method) => {
+			const raw = method.amount ?? method.subtotal ?? method.raw_amount ?? method.total;
+			return sum + amountFromUnknown(raw);
+		}, 0);
+		return toMinor(gross);
+	}
+	// Brak metod w odpowiedzi — stary fallback (nagłówek / wyliczenie).
+	return resolveShippingTotalMinor(order);
 }
 
 function resolveCapturedPaymentMinor(order: OrderTotalsInput): number {

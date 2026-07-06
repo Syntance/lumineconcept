@@ -7,7 +7,10 @@ import { formatPrice, toMinorUnitsFromDecimal } from "@magazyn/core/lib/format";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { formatLineItemDetailsLines } from "@/lib/cart/format-line-item-for-email";
 import { expressFeeMinor, isExpressDelivery } from "./order-express";
-import { resolveOrderTotalMinor, resolveShippingTotalMinor } from "./order-totals";
+import {
+	resolveCourierShippingGrossMinor,
+	resolveOrderTotalMinor,
+} from "./order-totals";
 import type {
 	AdminOrderDetail,
 	AdminOrderRow,
@@ -409,7 +412,9 @@ function mapMedusaOrderToDetail(
 			metadata: normalizeMetadata(item.metadata),
 		})),
 		itemTotal: toMinorUnits(order.item_total),
-		shippingTotal: resolveShippingTotalMinor(order),
+		// Wiersz „Dostawa": surowa cena kuriera bez metody-dopłaty express i
+		// przed rabatami (bug 06.07.2026: pokazywało 2,50 = dopłatę zamiast 25).
+		shippingTotal: resolveCourierShippingGrossMinor(order),
 		taxTotal: toMinorUnits(order.tax_total),
 		discountTotal: toMinorUnits(order.discount_total),
 		total: resolveOrderTotalMinor(order),
