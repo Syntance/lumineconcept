@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
 import { CartConfiguratorDetails } from "@/components/cart/CartConfiguratorDetails";
 import { FileTypeIcon } from "@/components/files/FileTypeIcon";
 import {
@@ -71,76 +70,62 @@ export function OrderLineItemRow({ item, currencyCode }: Props) {
 						</div>
 					) : null}
 					{showDetails ? (
-						<details className="group mt-2">
-							<summary
-								className={cn(
-									"inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-muted-foreground",
-									"hover:text-foreground [&::-webkit-details-marker]:hidden",
-								)}
-							>
-								<ChevronRight
-									className="size-3.5 shrink-0 transition-transform group-open:rotate-90"
-									aria-hidden
-								/>
-								Szczegóły
-							</summary>
-							<div className="mt-2 w-full space-y-3 border-l border-border pl-3">
-								{textFields.length > 0 ? (
-									<div>
-										<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-											Pola tekstowe
-										</p>
-										<div className="flex w-full flex-col gap-2">
-											{textFields.map((field) => (
-												<OrderTextFieldTile
-													key={`${field.label}-${field.value}`}
-													label={field.label}
-													value={field.value}
-												/>
-											))}
-										</div>
+						<div className="mt-2 w-full space-y-3 border-l border-border pl-3">
+							{textFields.length > 0 ? (
+								<div>
+									<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+										Pola tekstowe
+									</p>
+									<div className="flex w-full flex-col gap-2">
+										{textFields.map((field) => (
+											<OrderTextFieldTile
+												key={`${field.label}-${field.value}`}
+												label={field.label}
+												value={field.value}
+											/>
+										))}
 									</div>
-								) : null}
+								</div>
+							) : null}
 
-								{files.length > 0 ? (
-									<div>
-										<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-											Pliki
-										</p>
-										<ul className="flex flex-wrap gap-1.5">
-											{files.map((file) => (
-												<li key={file.url}>
-													<FileTile file={file} />
-												</li>
-											))}
-										</ul>
-									</div>
-								) : null}
+							{files.length > 0 ? (
+								<div>
+									<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+										Pliki
+									</p>
+									<ul className="flex flex-wrap gap-1.5">
+										{files.map((file) => (
+											<li key={file.url}>
+												<FileTile file={file} />
+											</li>
+										))}
+									</ul>
+								</div>
+							) : null}
 
-								{links.length > 0 ? (
-									<div>
-										<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-											Linki QR
-										</p>
-										<ul className="space-y-1.5">
-											{links.map((link) => (
-												<li key={link.url} className="flex items-center gap-2">
-													<a
-														href={link.url}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="min-w-0 flex-1 truncate text-sm text-foreground underline-offset-2 hover:underline"
-													>
-														{link.url}
-													</a>
-													<CopyLinkButton value={link.url} />
-												</li>
-											))}
-										</ul>
-									</div>
-								) : null}
-							</div>
-						</details>
+							{links.length > 0 ? (
+								<div>
+									<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+										Linki QR
+									</p>
+									<ul className="space-y-1.5">
+										{links.map((link) => (
+											<li key={link.url} className="flex items-center gap-2">
+												<a
+													href={link.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="min-w-0 flex-1 truncate text-sm text-foreground underline-offset-2 hover:underline"
+												>
+													{link.url}
+												</a>
+												<CopyLinkButton value={link.url} />
+											</li>
+										))}
+									</ul>
+								</div>
+							) : null}
+						</div>
 					) : null}
 				</div>
 				<div className="shrink-0 text-right text-sm">
