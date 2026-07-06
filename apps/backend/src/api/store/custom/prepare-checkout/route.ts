@@ -345,7 +345,15 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
       }
     }
 
-    if (sessionPlan === "create" || sessionPlan === "recreate") {
+    // Koszyk darmowy (100% rabat) — Medusa pomija płatność przy completeCart
+    // (validateCartPaymentsStep: canSkipPayment), a rejestracja transakcji
+    // na 0 groszy w P24 i tak zostałaby odrzucona. Nie tworzymy sesji.
+    const collectionAmount = Number(freshCollection?.amount ?? 0);
+    const paymentRequired = Number.isFinite(collectionAmount)
+      ? collectionAmount > 0
+      : true;
+
+    if (paymentRequired && (sessionPlan === "create" || sessionPlan === "recreate")) {
       // createPaymentSessionsWorkflow kasuje istniejące sesje kolekcji i
       // tworzy nową na AKTUALNĄ kwotę payment_collection (rejestracja P24
       // ze świeżym totalem).

@@ -642,7 +642,16 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
       action: PaymentActions.SUCCESSFUL,
       data: {
         session_id: sessionId,
-        amount,
+        // KRYTYCZNE (chaos-audyt 06.07.2026): P24 w notyfikacji podaje kwotę
+        // w GROSZACH, a Medusa wszędzie operuje na jednostkach głównych (PLN).
+        // `processPaymentWorkflow` przekazuje tę kwotę PROSTO do
+        // `capturePaymentWorkflow`, który (a) waliduje ją względem kwoty
+        // płatności ("cannot capture more...") i (b) zapisuje ją jako
+        // transakcję zamówienia (paid_total). Grosze bez konwersji = capture
+        // odrzucony albo transakcja zawyżona 100× (12 490 zł zamiast 124,90).
+        // Błąd był niewidoczny, dopóki webhook nie korelował sesji (naprawy
+        // pp_pp_ + session_id) — teraz ta ścieżka realnie działa.
+        amount: amount / 100,
         ...(Number.isFinite(methodId) && methodId > 0
           ? { p24_method_id: methodId }
           : {}),

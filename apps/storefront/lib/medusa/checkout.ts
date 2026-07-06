@@ -790,6 +790,9 @@ export async function prepareCheckout(
   const res = await fetch(`${base}/store/custom/prepare-checkout`, {
     method: "POST",
     headers,
+    // Bez timeoutu wiszący fetch (słaba sieć / captive portal) blokował
+    // przycisk „Zamawiam i płacę" na czas browserowego timeoutu (minuty).
+    signal: AbortSignal.timeout(30_000),
     body: JSON.stringify({
       cart_id: cartId,
       option_id: optionId,

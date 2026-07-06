@@ -635,10 +635,15 @@ export function CheckoutForm() {
       // Sanityzuj orderNotes przed wysłaniem (XSS protection) — text-only.
       const sanitizedNotes = sanitizeOrderNotes(payment.orderNotes);
 
+      // Koszyk darmowy (100% rabat + darmowa dostawa) — brak płatności do
+      // pobrania: nie wysyłamy klienta do bramki na 0 zł (P24 odrzuca
+      // rejestrację zerowej kwoty), tylko od razu domykamy koszyk niżej.
+      const isFreeCart = total <= 0;
+
       // Przelewy24 = płatność z przekierowaniem. Inicjujemy sesję P24,
       // a finalizację koszyka (utworzenie zamówienia) robi strona powrotu
       // /checkout/przelewy24/return po potwierdzeniu płatności przez webhook.
-      if (payment.paymentProviderId === PRZELEWY24_PROVIDER_ID) {
+      if (payment.paymentProviderId === PRZELEWY24_PROVIDER_ID && !isFreeCart) {
         await prepareCheckout(
           cartId,
           payment.shippingOptionId,
@@ -689,7 +694,12 @@ export function CheckoutForm() {
           nip: payment.nip,
         },
       );
-      await initPaymentSession(cartId, payment.paymentProviderId);
+      // Darmowy koszyk nie potrzebuje sesji płatności — Medusa pomija
+      // płatność przy completeCart (canSkipPayment), a rejestracja 0 zł
+      // u providera i tak by padła.
+      if (!isFreeCart) {
+        await initPaymentSession(cartId, payment.paymentProviderId);
+      }
 
       const paymentLabel = paymentMethodAnalyticsLabel(payment.paymentProviderId);
       writeCheckoutAnalyticsContext({ paymentMethod: paymentLabel });
@@ -784,7 +794,18 @@ export function CheckoutForm() {
       }
     } catch (e) {
       console.error("[checkout] błąd składania zamówienia", e);
-      if (payment.paymentProviderId === PRZELEWY24_PROVIDER_ID) {
+      // Circuit breaker liczy tylko REALNE awarie bramki/backendu. Nasze
+      // celowe 4xx (wpłata w drodze / koszyk domknięty / pusty) to stany
+      // klienta, nie awarie P24 — nie mogą otwierać bezpiecznika.
+      const guardType = (e as { type?: string }).type;
+      const isClientStateGuard =
+        guardType === "payment_in_progress" ||
+        guardType === "cart_completed" ||
+        guardType === "cart_empty";
+      if (
+        payment.paymentProviderId === PRZELEWY24_PROVIDER_ID &&
+        !isClientStateGuard
+      ) {
         recordP24Failure();
         setP24CircuitOpen(isP24CircuitOpen());
       }

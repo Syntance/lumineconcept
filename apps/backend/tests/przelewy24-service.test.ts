@@ -330,7 +330,15 @@ describe("getWebhookActionAndData — webhook P24 (urlStatus)", () => {
     expect(result.action).toBe("captured");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect((fetchMock.mock.calls[0] as [string])[0]).toContain("/transaction/verify");
-    expect((result as { data?: Record<string, unknown> }).data?.p24_method_id).toBe(154);
+    const data = (result as { data?: Record<string, unknown> }).data;
+    expect(data?.p24_method_id).toBe(154);
+    // KRYTYCZNE: P24 podaje grosze, Medusa oczekuje jednostek głównych.
+    // Bez konwersji capturePaymentWorkflow zapisywał transakcję zamówienia
+    // zawyżoną 100× (17 990 zł zamiast 179,90) albo odrzucał capture.
+    expect(data?.amount).toBe(179.9);
+    // session_id z notyfikacji — Medusa filtruje payment_session po primary
+    // key, więc musi to być payses_... echo'owane przez P24 bez zmian.
+    expect(data?.session_id).toBe("p24_hook_1");
   });
 
   it("zły podpis → FAILED, bez wywołania verify", async () => {
