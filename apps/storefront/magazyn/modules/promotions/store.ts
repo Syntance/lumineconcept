@@ -2,10 +2,12 @@ import "server-only";
 import { adminFetch } from "@magazyn/core/medusa/client";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import {
+	EXPRESS_FEE_SHIPPING_METHOD_NAME,
 	freeShippingPromotionCode,
 	isShadowFreeShippingCode,
 	LUMINE_FS_PREFIX,
 	LUMINE_PRODUCT_RULE_ATTR,
+	LUMINE_SHIPPING_NAME_RULE_ATTR,
 	LUMINE_SUBTOTAL_RULE_ATTR,
 } from "./constants";
 import type { AdminPromoCode, ProductOption, PromoCodeInput, PromoDiscountType } from "./types";
@@ -264,6 +266,19 @@ function buildDiscountPromotionBody(
 	};
 }
 
+/**
+ * Target-reguła wykluczająca metodę-dopłatę express z promocji "darmowa
+ * dostawa" — bez niej 100% na shipping_methods zerowało też dopłatę +50%
+ * (klient dostawał express gratis; bug 06.07.2026).
+ */
+function buildExpressExclusionRule(): MedusaRulePayload {
+	return {
+		attribute: LUMINE_SHIPPING_NAME_RULE_ATTR,
+		operator: "ne",
+		values: [EXPRESS_FEE_SHIPPING_METHOD_NAME],
+	};
+}
+
 function buildFreeShippingPromotionBody(
 	code: string,
 	status: "active" | "draft",
@@ -279,9 +294,38 @@ function buildFreeShippingPromotionBody(
 			target_type: "shipping_methods",
 			value: 100,
 			allocation: "across",
+			target_rules: [buildExpressExclusionRule()],
 		},
 		rules: buildSubtotalRules(minPln),
 	};
+}
+
+/**
+ * Dopina regułę wykluczenia dopłaty express do ISTNIEJĄCEJ promocji dostawy
+ * (ścieżki update nie przebudowują application_method.target_rules).
+ * Idempotentne: nic nie robi, gdy reguła już wisi.
+ */
+async function ensureExpressExclusionTargetRule(promotionId: string): Promise<void> {
+	const detail = await adminFetch<{ promotion: MedusaPromotion }>(
+		`/admin/promotions/${promotionId}?fields=${PROMOTION_LIST_FIELDS}`,
+	);
+	const targetRules = detail.promotion.application_method?.target_rules ?? [];
+	const already = targetRules.some(
+		(rule) =>
+			rule.attribute === LUMINE_SHIPPING_NAME_RULE_ATTR &&
+			rule.operator === "ne" &&
+			(rule.values ?? []).some((v) => v.value === EXPRESS_FEE_SHIPPING_METHOD_NAME),
+	);
+	if (already) return;
+
+	await adminFetch(`/admin/promotions/${promotionId}/target-rules/batch`, {
+		method: "POST",
+		body: JSON.stringify({
+			create: [buildExpressExclusionRule()],
+			update: [],
+			delete: [],
+		}),
+	});
 }
 
 async function createPromotion(body: CreatePromotionBody): Promise<MedusaPromotion> {
@@ -383,6 +427,7 @@ async function syncShadowFreeShipping(
 			},
 		});
 		await replacePromotionRules(existing.id, minPln);
+		await ensureExpressExclusionTargetRule(existing.id);
 		return;
 	}
 
@@ -470,6 +515,7 @@ export async function updatePromoCode(id: string, input: PromoCodeInput): Promis
 				},
 			});
 			await replacePromotionRules(id, minPln);
+			await ensureExpressExclusionTargetRule(id);
 			return;
 		}
 

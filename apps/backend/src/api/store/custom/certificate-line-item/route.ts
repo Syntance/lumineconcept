@@ -303,6 +303,14 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
       `Cart ${cartId} not found after add`,
     );
   }
+  // Defense-in-depth (incydent cart-express 06.07.2026): remoteQuery potrafi
+  // przy niektórych polach zgubić filtr — nie zwracamy cudzego koszyka.
+  if ((cart as { id?: string }).id !== cartId) {
+    throw new MedusaError(
+      MedusaError.Types.UNEXPECTED_STATE,
+      "Nie udało się odczytać koszyka — spróbuj ponownie.",
+    );
+  }
 
   return res.status(200).json({ cart });
 }

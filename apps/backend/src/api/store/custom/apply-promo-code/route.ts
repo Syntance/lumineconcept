@@ -12,7 +12,7 @@ import {
 	promotionTargetsShipping,
 } from "../../../../lib/ensure-cart-shipping-for-promo";
 import { resolvePromotionCodesToApply, freeShippingPromotionCode } from "../../../../lib/lumine-promotions";
-import { STORE_CART_REMOTE_QUERY_FIELDS } from "../../../../lib/store-cart-fields";
+import { readStoreCartSnapshot } from "../../../../lib/store-cart-snapshot";
 
 type Body = {
 	cart_id?: string;
@@ -104,12 +104,11 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
 		},
 	});
 
-	const cartQuery = remoteQueryObjectFromString({
-		entryPoint: "cart",
-		variables: { filters: { id: cartId } },
-		fields: STORE_CART_REMOTE_QUERY_FIELDS,
+	// query.graph + assert id — remoteQuery z polami promotions.* gubił filtr
+	// i zwracał CUDZY koszyk (incydent 06.07.2026).
+	const cart = await readStoreCartSnapshot(scope, cartId, {
+		source: "apply-promo-code",
 	});
-	const [cart] = await remoteQuery(cartQuery);
 
 	return res.status(200).json({ cart });
 }
