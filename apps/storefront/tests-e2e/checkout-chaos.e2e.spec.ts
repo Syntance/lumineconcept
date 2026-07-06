@@ -8,10 +8,19 @@
  *     (przedwczesne "failed" + mail "ponow platnosc" = podwojna wplata,
  *     incydent 06.07.2026).
  *
+ * Koszyk siejemy przez Store API (proxy /api/medusa dokleja publishable key)
+ * zamiast klikac PDP: wybor wariantow na PDP to ruletka (czesc kombinacji nie
+ * ma wykonczenia -> CTA disabled), a przedmiotem testu jest CHECKOUT, nie PDP.
+ *
  * UWAGA: regexy celowo uzywaja kropki zamiast polskich znakow ? odpornosc
  * na problemy z kodowaniem pliku na Windows (jak w checkout.e2e.spec.ts).
  */
-import { test, expect, type Page } from "@playwright/test";
+import {
+  test,
+  expect,
+  type APIRequestContext,
+  type Page,
+} from "@playwright/test";
 
 const CONTACT = {
   email: "playwright+chaos@lumineconcept.test",
@@ -23,86 +32,69 @@ const CONTACT = {
   city: "Warszawa",
 };
 
-async function selectRequiredVariantOptions(page: Page) {
-  for (let i = 0; i < 5; i++) {
-    const trigger = page
-      .getByRole("button")
-      .filter({ hasText: /wybierz opcj/i })
-      .first();
-    if (!(await trigger.isVisible().catch(() => false))) break;
-    await trigger.click();
-    await page.getByRole("option").nth(1).click();
-  }
+/**
+ * Zasiewamy decyzje cookies PRZED zaladowaniem strony (klucz i format z
+ * lib/consent/consent.ts) — banner potrafi zamontowac sie z opoznieniem i
+ * zaslonic formularz w polowie kroku.
+ */
+async function seedCookieConsent(page: Page) {
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem(
+        "lumine.consent.v1",
+        JSON.stringify({
+          necessary: true,
+          analytics: false,
+          marketing: false,
+          updatedAt: Date.now(),
+          version: 1,
+        }),
+      );
+    } catch {
+      /* prywatny tryb */
+    }
+  });
 }
 
 /**
- * Banner cookies pojawia sie asynchronicznie i potrafi zaslonic UI takze na
- * /checkout — odrzucamy go z jawnym timeoutem zamiast pojedynczego
- * isVisible() (zrodlo flake'ow przy wolniejszym renderze).
+ * Tworzy koszyk z 1 pozycja przez Store API i zwraca cart_id. Pierwszy
+ * dostepny wariant pierwszego opublikowanego produktu — line-items API nie
+ * wymaga kompletu opcji PDP.
  */
-async function dismissCookieBanner(page: Page) {
-  const cookieReject = page.getByRole("button", { name: /tylko niezb.dne/i });
-  if (await cookieReject.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await cookieReject.click();
-    await cookieReject.waitFor({ state: "hidden", timeout: 5_000 }).catch(() => undefined);
-  }
-}
+async function seedCartViaApi(
+  request: APIRequestContext,
+  baseURL: string,
+): Promise<string> {
+  const api = `${baseURL.replace(/\/$/, "")}/api/medusa/store`;
 
-async function addFirstProductToCart(page: Page) {
-  await page.goto("/sklep/gotowe-wzory");
-  await dismissCookieBanner(page);
-  await expect(
-    page.locator("a[href^='/sklep/gotowe-wzory/']").first(),
-  ).toBeVisible();
-  const hrefs = (await page
-    .locator("a[href^='/sklep/gotowe-wzory/']")
-    .evaluateAll((els) =>
-      [...new Set(els.map((e) => e.getAttribute("href")))].filter(Boolean),
-    )) as string[];
+  const regionsRes = await request.get(`${api}/regions`);
+  expect(regionsRes.ok(), "GET /store/regions").toBeTruthy();
+  const regionId = (await regionsRes.json()).regions?.[0]?.id as string;
+  expect(regionId, "brak regionu").toBeTruthy();
 
-  for (const href of hrefs.slice(0, 8)) {
-    await page.goto(href);
-    await page.waitForLoadState("networkidle");
-    await selectRequiredVariantOptions(page);
-
-    const addToCart = page
-      .getByRole("button", { name: /dodaj do koszyka/i })
-      .first();
-    const enabled = await addToCart
-      .isEnabled({ timeout: 5_000 })
-      .catch(() => false);
-    if (!enabled) continue;
-
-    const lineItemSaved = page
-      .waitForResponse(
-        (r) => /line-items|certificate-line-item/.test(r.url()) && r.ok(),
-        { timeout: 30_000 },
-      )
-      .catch(() => null);
-    await addToCart.click();
-
-    const calloutConfirm = page.getByRole("button", {
-      name: /rozumiem, kontynuuj/i,
-    });
-    if (await calloutConfirm.isVisible().catch(() => false)) {
-      await calloutConfirm.click();
-    }
-
-    const incompleteModal = page.getByText(/doko.cz konfiguracj/i).first();
-    if (await incompleteModal.isVisible().catch(() => false)) {
-      continue;
-    }
-
-    const saved = await lineItemSaved;
-    const cartNotEmpty = await page
-      .getByRole("button", { name: /koszyk \((?!0\b)\d+/i })
-      .isVisible({ timeout: 15_000 })
-      .catch(() => false);
-    if (saved && cartNotEmpty) return;
-  }
-  throw new Error(
-    "Zaden z pierwszych produktow nie dal sie dodac do koszyka bez konfiguracji.",
+  const productsRes = await request.get(
+    `${api}/products?region_id=${encodeURIComponent(regionId)}&limit=5&fields=id,title,*variants`,
   );
+  expect(productsRes.ok(), "GET /store/products").toBeTruthy();
+  const products = (await productsRes.json()).products as Array<{
+    variants?: Array<{ id: string }>;
+  }>;
+  const variantId = products?.flatMap((p) => p.variants ?? [])[0]?.id;
+  expect(variantId, "brak wariantu do dodania").toBeTruthy();
+
+  const cartRes = await request.post(`${api}/carts`, {
+    data: { region_id: regionId },
+  });
+  expect(cartRes.ok(), "POST /store/carts").toBeTruthy();
+  const cartId = (await cartRes.json()).cart?.id as string;
+  expect(cartId, "brak cart_id").toBeTruthy();
+
+  const lineRes = await request.post(`${api}/carts/${cartId}/line-items`, {
+    data: { variant_id: variantId, quantity: 1 },
+  });
+  expect(lineRes.ok(), "POST line-items").toBeTruthy();
+
+  return cartId;
 }
 
 async function fillContactStep(page: Page) {
@@ -121,7 +113,7 @@ async function fillContactStep(page: Page) {
 async function goThroughShippingStep(page: Page) {
   await expect(
     page.getByRole("heading", { name: /spos.b dostawy/i }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 20_000 });
   await page
     .getByRole("button", { name: /kurier|paczkomat|odbi.r/i })
     .first()
@@ -150,10 +142,16 @@ async function acceptConsents(page: Page) {
 }
 
 test.describe("Checkout ? chaos / awarie", () => {
+  // Testy chodza tez przeciwko produkcji — pojedynczy retry amortyzuje
+  // wariancje sieci (CDN, cold start funkcji), nie maskujac realnych bugow.
+  test.describe.configure({ retries: 1 });
+
   test("double-click platnosci -> dokladnie jedna rejestracja (idempotencja)", async ({
     page,
+    request,
+    baseURL,
   }) => {
-    test.setTimeout(180_000);
+    test.setTimeout(120_000);
 
     let prepareCheckoutCalls = 0;
     page.on("request", (req) => {
@@ -165,23 +163,40 @@ test.describe("Checkout ? chaos / awarie", () => {
       }
     });
 
-    await addFirstProductToCart(page);
+    await seedCookieConsent(page);
+    const cartId = await seedCartViaApi(request, baseURL ?? "");
+    await page.addInitScript(
+      ([id]) => window.localStorage.setItem("lumine_cart_id", id),
+      [cartId],
+    );
+
     await page.goto("/checkout");
-    await dismissCookieBanner(page);
     await fillContactStep(page);
     await goThroughShippingStep(page);
     await acceptConsents(page);
 
     const submit = page.getByRole("button", { name: /zamawiam i p.ac./i });
     await expect(submit).toBeEnabled();
-    // Dwa kliki tak szybko, jak zdola Playwright — guard submittingRef musi
-    // przepuscic tylko pierwszy.
-    await submit.click();
-    await submit.click({ force: true }).catch(() => undefined);
 
-    await page.waitForURL(/przelewy24|secure\.przelewy24|sandbox\.przelewy24/i, {
-      timeout: 60_000,
-    });
+    // prepare-checkout jest legalnie wolany takze WCZESNIEJ (krok dostawy) —
+    // liczymy WYLACZNIE wywolania wywolane klikami submitu.
+    prepareCheckoutCalls = 0;
+
+    // Dwa kliki tak szybko, jak zdola Playwright — guard submittingRef musi
+    // przepuscic tylko pierwszy. Drugi klik MUSI miec timeout: guard blokuje
+    // przycisk (disabled) na czas redirectu, wiec klik bez timeoutu wisi w
+    // nieskonczonosc na actionability (timeout:0 = default Playwrighta).
+    await submit.click();
+    await submit
+      .click({ force: true, timeout: 3_000, noWaitAfter: true })
+      .catch(() => undefined);
+
+    // Submit konczy sie twarda nawigacja na /checkout/przelewy24/start
+    // (desktop otwiera bramke w POPUPIE, wiec glowna karta zostaje na /start).
+    await page.waitForURL(/checkout\/przelewy24\/start/i, { timeout: 60_000 });
+    // Okno obserwacji na ewentualny drugi submit (asercja negatywna —
+    // drugi POST musialby wyjsc w milisekundach po drugim kliku).
+    await page.waitForTimeout(3_000);
     expect(prepareCheckoutCalls).toBe(1);
   });
 
@@ -189,6 +204,7 @@ test.describe("Checkout ? chaos / awarie", () => {
     page,
   }) => {
     test.setTimeout(120_000);
+    await seedCookieConsent(page);
     await page.goto(
       "/checkout/przelewy24/return?cart_id=cart_CHAOS_NIE_ISTNIEJE",
     );
@@ -205,6 +221,7 @@ test.describe("Checkout ? chaos / awarie", () => {
     page,
   }) => {
     test.setTimeout(120_000);
+    await seedCookieConsent(page);
     // Symulacja zerwanej sieci: wszystkie strzaly statusowe padaja na poziomie
     // transportu, strona (SSR) laduje sie normalnie.
     await page.route("**/p24-return-status**", (route) => route.abort());
@@ -215,7 +232,7 @@ test.describe("Checkout ? chaos / awarie", () => {
       page.getByText(/p.atno.. jest przetwarzana/i).first(),
     ).toBeVisible({ timeout: 60_000 });
     // Kontrprzyklad incydentu 06.07.2026: przy braku odpowiedzi backendu NIE
-    // wolno ogłosic porazki ani sugerowac ponownej platnosci.
+    // wolno oglosic porazki ani sugerowac ponownej platnosci.
     await expect(page.getByText(/p.atno.. nie powiod.a si./i)).toHaveCount(0);
   });
 });
