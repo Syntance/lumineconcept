@@ -11,13 +11,23 @@ export function CartSummary() {
     hasShippingMethodSelection,
     expressDelivery,
     expressSurcharge,
+    expressFeeInTotal,
     discountTotal,
     grandTotal,
   } = useCart();
 
+  // Dopłata express do wyświetlenia: client-side surcharge albo metoda-dopłata
+  // już wliczona w total przez backend (prepare-checkout) — nigdy obie.
+  const expressFeeDisplay = expressSurcharge > 0 ? expressSurcharge : expressFeeInTotal;
+  // Wiersz „Dostawa" bez metody-dopłaty express.
+  const courierShippingTotal = Math.max(
+    0,
+    Math.round((shipping_total - expressFeeInTotal) * 100) / 100,
+  );
+
   const shippingDisplay =
-    shipping_total > 0
-      ? shipping_total
+    courierShippingTotal > 0
+      ? courierShippingTotal
       : hasShippingMethodSelection
         ? 0
         : shippingEstimate;
@@ -25,7 +35,7 @@ export function CartSummary() {
   const shippingLabel =
     shippingDisplay === null || shippingDisplay === undefined
       ? "Do ustalenia"
-      : hasShippingMethodSelection && shipping_total === 0
+      : hasShippingMethodSelection && courierShippingTotal === 0
         ? "gratis"
         : formatPrice(shippingDisplay);
 
@@ -37,11 +47,11 @@ export function CartSummary() {
           {formatPrice(productsSubtotal)}
         </span>
       </div>
-      {expressDelivery && expressSurcharge > 0 && (
+      {expressDelivery && expressFeeDisplay > 0 && (
         <div className="flex justify-between">
           <span className="text-brand-500">Express (+50% produktów)</span>
           <span className="tabular-nums text-brand-700">
-            {formatPrice(expressSurcharge)}
+            {formatPrice(expressFeeDisplay)}
           </span>
         </div>
       )}

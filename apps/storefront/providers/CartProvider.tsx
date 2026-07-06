@@ -22,6 +22,10 @@ import {
   prefetchShippingOptions,
 } from "@/lib/medusa/checkout";
 import { resolveCartLineItemThumbnail } from "@/lib/medusa/product-thumbnail";
+import {
+  EXPRESS_FEE_SHIPPING_METHOD_NAME,
+  expressFeeIncludedInCart,
+} from "@/lib/checkout/express-fee";
 
 interface CartItem {
   id: string;
@@ -61,6 +65,12 @@ interface CartState {
   metadata: Record<string, string>;
   /** Kody promocyjne zastosowane w koszyku (bez kodów cienia dostawy w UI). */
   appliedPromoCodes: string[];
+  /**
+   * Dopłata express już WLICZONA w `total` przez backend (metoda wysyłki
+   * „Dopłata ekspresowa" dodawana w prepare-checkout). Gdy > 0, nie doliczamy
+   * client-side surcharge — inaczej pokazalibyśmy ją podwójnie.
+   */
+  expressFeeInTotal: number;
 }
 
 interface CartContextType extends CartState {
@@ -188,6 +198,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     itemCount: 0,
     metadata: {},
     appliedPromoCodes: [],
+    expressFeeInTotal: 0,
   });
 
   const normalizeCartMetadata = (raw: unknown): Record<string, string> => {
@@ -207,12 +218,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
       const shippingMethods = rawCart.shipping_methods;
       const shippingT = numberFromUnknown(rawCart.shipping_total) ?? 0;
-      const firstShippingMethod = Array.isArray(shippingMethods)
-        ? (shippingMethods[0] as { shipping_option_id?: string } | undefined)
-        : undefined;
+      const methodsArray = Array.isArray(shippingMethods)
+        ? (shippingMethods as Array<{
+            shipping_option_id?: string;
+            name?: string | null;
+            amount?: number | string | null;
+          }>)
+        : [];
+      const expressFeeInTotal = expressFeeIncludedInCart(methodsArray);
+      // Metoda-dopłata express nie jest wyborem kuriera — pomijamy ją przy
+      // wykrywaniu wybranej dostawy.
+      const courierMethods = methodsArray.filter(
+        (m) => (m.name ?? "").trim() !== EXPRESS_FEE_SHIPPING_METHOD_NAME,
+      );
+      const firstShippingMethod = courierMethods[0];
       const hasShippingMethodSelection =
-        (Array.isArray(shippingMethods) && shippingMethods.length > 0) ||
-        shippingT > 0;
+        courierMethods.length > 0 || shippingT - expressFeeInTotal > 0;
       const promotions = (rawCart.promotions as Array<{ code?: string }> | undefined) ?? [];
       const appliedPromoCodes = promotions
         .map((promotion) => promotion.code?.trim())
@@ -230,6 +251,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
         metadata: normalizeCartMetadata(rawCart.metadata),
         appliedPromoCodes,
+        expressFeeInTotal,
       });
     },
     [],
@@ -681,10 +703,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cart.items.reduce((s, i) => s + i.total, 0) * 100,
       ) / 100;
     // Dopłata express to 50% sumy pozycji — zaokrąglamy do groszy (2 miejsc po
-    // przecinku), nie do pełnych złotych.
-    const expressSurcharge = expressDelivery
-      ? Math.round(productsSubtotal * 0.5 * 100) / 100
-      : 0;
+    // przecinku), nie do pełnych złotych. Gdy backend już wliczył dopłatę w
+    // total (metoda-dopłata z prepare-checkout), surcharge = 0, inaczej
+    // doliczylibyśmy ją drugi raz.
+    const expressSurcharge =
+      expressDelivery && cart.expressFeeInTotal <= 0
+        ? Math.round(productsSubtotal * 0.5 * 100) / 100
+        : 0;
     const shippingAddon = cart.hasShippingMethodSelection
       ? 0
       : (shippingEstimate ?? 0);

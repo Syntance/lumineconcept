@@ -312,6 +312,24 @@ export async function runP24Reconcile(
   });
   const cartIds = uniqueCartIds(linkRows as Array<{ cart_id?: string | null }>);
 
+  // cart_id → wiszące sesje P24 (do domknięcia płatności zaraz po completeCart).
+  const cartToSessionIds = new Map<string, string[]>();
+  for (const link of linkRows as Array<{
+    cart_id?: string | null;
+    payment_collection_id?: string | null;
+  }>) {
+    const cartId = link.cart_id?.trim();
+    const collectionId = link.payment_collection_id?.trim();
+    if (!cartId || !collectionId) continue;
+    const sessionIds = pendingSessionIdsForCollections(reconcilable, [collectionId]);
+    if (sessionIds.length > 0) {
+      cartToSessionIds.set(cartId, [
+        ...(cartToSessionIds.get(cartId) ?? []),
+        ...sessionIds,
+      ]);
+    }
+  }
+
   const recoveredOrderIds: string[] = [];
   let candidatesCount = 0;
 
@@ -333,19 +351,52 @@ export async function runP24Reconcile(
       );
 
       // Sekwencyjnie (nie równolegle) — oszczędza P24 API i workflow engine.
+      const paymentModule = container.resolve(Modules.PAYMENT);
       for (const cart of candidates) {
         try {
           const { result } = await completeCartWorkflow(container).run({
             input: { id: cart.id },
           });
-          // Uwaga: workflow (store:true) potrafi zwrócić zanim silnik domknie
-          // końcowe kroki (m.in. autoryzację płatności) — wtedy result.id jest
-          // puste, a płatność domknie ścieżka osieroconych zamówień w kolejnym
-          // przebiegu.
+          // Workflow (store:true) potrafi zwrócić ZANIM silnik wykona końcowe
+          // kroki (w tym autoryzację płatności) — incydent #10169: zamówienie
+          // powstało, result.id było puste, sesja została pending. Dlatego
+          // płatność domykamy tu JAWNIE (idempotentnie), nie licząc na ogon
+          // workflow ani na kolejny przebieg crona.
           const createdOrderId = (result as { id?: string } | undefined)?.id;
-          if (createdOrderId) recoveredOrderIds.push(createdOrderId);
+          for (const sessionId of cartToSessionIds.get(cart.id) ?? []) {
+            try {
+              await paymentModule.authorizePaymentSession(sessionId, {});
+            } catch (authorizeError) {
+              const kind = classifyAuthorizeSessionError(authorizeError);
+              if (kind === "error") {
+                logger.warn(
+                  `[p24-reconcile] sesja ${sessionId} po domknięciu koszyka ${cart.id}: ${(authorizeError as Error)?.message ?? authorizeError}`,
+                );
+                captureError(authorizeError, {
+                  job: "reconcile-p24-payments",
+                  cart_id: cart.id,
+                  session_id: sessionId,
+                });
+              }
+            }
+          }
+
+          // Gdy workflow nie zwrócił id (ogon async), zamówienie i tak już
+          // istnieje — bierzemy je z linku order_cart, żeby wysłać maile.
+          let orderId = createdOrderId;
+          if (!orderId) {
+            const { data: orderCartRows } = await query.graph({
+              entity: "order_cart",
+              fields: ["order_id", "cart_id"],
+              filters: { cart_id: cart.id },
+              pagination: { take: 1 },
+            });
+            orderId = (orderCartRows as Array<{ order_id?: string | null }>)[0]
+              ?.order_id?.trim() || undefined;
+          }
+          if (orderId) recoveredOrderIds.push(orderId);
           logger.info(
-            `[p24-reconcile] koszyk ${cart.id} domknięty → zamówienie ${createdOrderId ?? "(w toku — silnik workflow dokańcza asynchronicznie)"}`,
+            `[p24-reconcile] koszyk ${cart.id} domknięty → zamówienie ${orderId ?? "(id nieznane — silnik workflow dokańcza asynchronicznie)"}`,
           );
         } catch (e) {
           const kind = classifyCompleteCartError(e);

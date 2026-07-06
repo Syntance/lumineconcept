@@ -182,6 +182,32 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
     return Math.round(Number(amount) * 100);
   }
 
+  /**
+   * PIENIĄDZE WESZŁY NA ZŁĄ KWOTĘ — verify celowo odmówione, wpłata wisi w
+   * P24 „do wykorzystania" i NIC jej automatycznie nie domknie (koszyk zmienił
+   * się po rejestracji transakcji). Wymaga ręcznej decyzji (zwrot / zaksięgowanie
+   * w panelu P24), dlatego alarmujemy w Sentry, nie tylko w logu.
+   */
+  private alertAmountMismatch(
+    sessionId: string,
+    expectedGrosz: number,
+    receivedGrosz: number,
+    p24Status: number,
+  ): void {
+    this.logger_.error(
+      `[przelewy24] confirmFromP24: niezgodna kwota dla sessionId=${sessionId}. ` +
+      `Oczekiwano ${expectedGrosz} groszy, otrzymano ${receivedGrosz} groszy.`,
+    );
+    captureMessage("[przelewy24] wpłata na niezgodną kwotę — wymaga ręcznej obsługi", "error", {
+      module: "przelewy24",
+      event: "p24-amount-mismatch",
+      session_id: sessionId,
+      expected_grosz: expectedGrosz,
+      received_grosz: receivedGrosz,
+      p24_status: p24Status,
+    });
+  }
+
   async initiatePayment(
     input: InitiatePaymentInput,
   ): Promise<InitiatePaymentOutput> {
@@ -339,10 +365,7 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
     if (status === P24_STATUS_PAID) {
       const paidAmount = Number(info.amount);
       if (paidAmount !== data.amount_grosz) {
-        this.logger_.error(
-          `[przelewy24] confirmFromP24: niezgodna kwota dla sessionId=${sessionId}. ` +
-          `Oczekiwano ${data.amount_grosz} groszy, otrzymano ${paidAmount} groszy.`,
-        );
+        this.alertAmountMismatch(sessionId, data.amount_grosz, paidAmount, status);
         return { paid: false, data };
       }
       return {
@@ -356,10 +379,7 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
     if (status === 1 && orderId) {
       const amount = Number(info.amount);
       if (amount !== data.amount_grosz) {
-        this.logger_.error(
-          `[przelewy24] confirmFromP24: niezgodna kwota dla sessionId=${sessionId}. ` +
-          `Oczekiwano ${data.amount_grosz} groszy, otrzymano ${amount} groszy.`,
-        );
+        this.alertAmountMismatch(sessionId, data.amount_grosz, amount, status);
         return { paid: false, data };
       }
       const currency = String(info.currency ?? data.currency);

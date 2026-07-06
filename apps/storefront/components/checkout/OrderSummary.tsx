@@ -42,9 +42,22 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
     total,
     expressDelivery,
     expressSurcharge,
+    expressFeeInTotal,
     discountTotal,
     appliedPromoCodes,
   } = useCart();
+
+  /**
+   * Dopłata express do WYŚWIETLENIA: client-side surcharge (zanim backend
+   * wliczy ją w total) albo kwota metody-dopłaty już siedzącej w koszyku.
+   * Nigdy obie naraz (provider zeruje surcharge, gdy fee jest w totalu).
+   */
+  const expressFeeDisplay = expressSurcharge > 0 ? expressSurcharge : expressFeeInTotal;
+  /** Dostawa bez metody-dopłaty express — do wiersza „Dostawa". */
+  const courierShippingTotal = Math.max(
+    0,
+    Math.round((shipping_total - expressFeeInTotal) * 100) / 100,
+  );
 
   /** id → cena z prefetchu; lookup synchroniczny przy zmianie wyboru w Step 2. */
   const [shippingOptionPrices, setShippingOptionPrices] = useState<
@@ -84,7 +97,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
   const shippingGross = resolveShippingGross(
     selectedShippingPrice,
     hasShippingMethodSelection,
-    shipping_total,
+    courierShippingTotal,
     shippingEstimate,
   );
 
@@ -131,6 +144,8 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
           : null;
 
     if (previewShipping === null) {
+      // `total` zawiera już metodę-dopłatę express (jeśli backend ją dodał);
+      // surcharge jest wtedy 0 — nie ma podwójnego liczenia.
       return Math.round((total + expressSurcharge) * 100) / 100;
     }
 
@@ -142,7 +157,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
      */
     const sum =
       productsSubtotal +
-      expressSurcharge +
+      expressFeeDisplay +
       previewShipping +
       tax_total;
     return Math.round(Math.max(0, sum) * 100) / 100;
@@ -152,6 +167,7 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
     shippingEstimate,
     total,
     expressSurcharge,
+    expressFeeDisplay,
     productsSubtotal,
     tax_total,
   ]);
@@ -221,11 +237,11 @@ export function OrderSummary({ selectedShippingOptionId }: OrderSummaryProps) {
             {shippingLabel}
           </span>
         </div>
-        {expressDelivery && expressSurcharge > 0 && (
+        {expressDelivery && expressFeeDisplay > 0 && (
           <div className="flex justify-between">
             <span className="text-brand-600">Express (+50% produktów)</span>
             <span className="font-medium tabular-nums text-brand-800">
-              {formatPrice(expressSurcharge)}
+              {formatPrice(expressFeeDisplay)}
             </span>
           </div>
         )}
