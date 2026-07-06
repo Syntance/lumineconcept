@@ -73,8 +73,10 @@ describe("initiatePayment — rejestracja transakcji", () => {
     expect(body.urlReturn).toBe(
       "https://shop.example.com/checkout/przelewy24/return?cart_id=cart_1",
     );
+    // Bez prefiksu "pp_" — Medusa dokleja go przy resolucji providera; z nim
+    // każda notyfikacja padała na "pp_pp_przelewy24_przelewy24" (incydent 06.07.2026).
     expect(body.urlStatus).toBe(
-      "https://api.example.com/hooks/payment/pp_przelewy24_przelewy24",
+      "https://api.example.com/hooks/payment/przelewy24_przelewy24",
     );
     expect(body.waitForResult).toBe(false);
   });

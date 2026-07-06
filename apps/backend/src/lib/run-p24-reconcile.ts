@@ -11,7 +11,7 @@ import {
   classifyAuthorizeSessionError,
   classifyCompleteCartError,
   isReconcilableSession,
-  isRecoverableOrderPaymentStatus,
+  isRecoverablePaymentCollectionStatus,
   mapCollectionsToOrders,
   pendingSessionIdsForCollections,
   PRZELEWY24_PROVIDER_ID,
@@ -99,25 +99,43 @@ async function recoverOrphanedP24Orders(
   );
   if (collectionToOrder.size === 0) return [];
 
-  // Tylko zamówienia z odzyskiwalnym statusem płatności (pomija już captured).
+  // Pomijamy zamówienia anulowane (order.status to realna kolumna).
   const orderIds = [...new Set(collectionToOrder.values())];
   const { data: orderRows } = await query.graph({
     entity: "order",
-    fields: ["id", "payment_status", "status"],
+    fields: ["id", "status"],
     filters: { id: orderIds },
     pagination: { take: orderIds.length },
   });
   const recoverableOrderIds = new Set(
-    (orderRows as Array<{ id: string; payment_status?: string | null; status?: string | null }>)
-      .filter(
-        (o) => o.status !== "canceled" && isRecoverableOrderPaymentStatus(o.payment_status),
-      )
+    (orderRows as Array<{ id: string; status?: string | null }>)
+      .filter((o) => o.status !== "canceled")
       .map((o) => o.id),
   );
   if (recoverableOrderIds.size === 0) return [];
 
+  // Pomijamy kolekcje już rozliczone/anulowane — klasyfikacja po
+  // payment_collection.status, NIE po order.payment_status (patrz komentarz
+  // przy isRecoverablePaymentCollectionStatus).
+  const linkedCollectionIds = [...collectionToOrder.keys()];
+  const { data: collectionRows } = await query.graph({
+    entity: "payment_collection",
+    fields: ["id", "status"],
+    filters: { id: linkedCollectionIds },
+    pagination: { take: linkedCollectionIds.length },
+  });
+  const collectionStatusById = new Map(
+    (collectionRows as Array<{ id: string; status?: string | null }>).map(
+      (c) => [c.id, c.status] as const,
+    ),
+  );
+
   const recoverableCollectionIds = [...collectionToOrder.entries()]
-    .filter(([, orderId]) => recoverableOrderIds.has(orderId))
+    .filter(
+      ([collectionId, orderId]) =>
+        recoverableOrderIds.has(orderId) &&
+        isRecoverablePaymentCollectionStatus(collectionStatusById.get(collectionId)),
+    )
     .map(([collectionId]) => collectionId);
 
   const sessionIds = pendingSessionIdsForCollections(
@@ -320,9 +338,14 @@ export async function runP24Reconcile(
           const { result } = await completeCartWorkflow(container).run({
             input: { id: cart.id },
           });
-          recoveredOrderIds.push(result.id);
+          // Uwaga: workflow (store:true) potrafi zwrócić zanim silnik domknie
+          // końcowe kroki (m.in. autoryzację płatności) — wtedy result.id jest
+          // puste, a płatność domknie ścieżka osieroconych zamówień w kolejnym
+          // przebiegu.
+          const createdOrderId = (result as { id?: string } | undefined)?.id;
+          if (createdOrderId) recoveredOrderIds.push(createdOrderId);
           logger.info(
-            `[p24-reconcile] koszyk ${cart.id} domknięty → zamówienie ${result.id} (płatność potwierdzona w P24)`,
+            `[p24-reconcile] koszyk ${cart.id} domknięty → zamówienie ${createdOrderId ?? "(w toku — silnik workflow dokańcza asynchronicznie)"}`,
           );
         } catch (e) {
           const kind = classifyCompleteCartError(e);

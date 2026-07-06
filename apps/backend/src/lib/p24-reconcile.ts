@@ -104,22 +104,23 @@ export function uniqueCartIds(
 }
 
 /**
- * Statusy płatności zamówienia, które kwalifikują je do odzyskania (osierocona
- * płatność P24). Zamówienie POWSTAŁO (koszyk domknięty), ale środki nie zostały
- * potwierdzone — bo webhook P24 zgubił się / `transaction/verify` padł.
- * `captured`/`partially_captured`/`refunded` = już rozliczone, nie ruszamy.
+ * Statusy payment_collection, przy których NIE odzyskujemy płatności —
+ * kolekcja jest już rozliczona (completed) albo świadomie anulowana.
+ *
+ * Klasyfikujemy po payment_collection.status (realna kolumna), a NIE po
+ * order.payment_status: to pole jest wyliczane tylko w API admina — w
+ * `query.graph` wraca `undefined`, przez co filtr odrzucał WSZYSTKIE
+ * zamówienia i odzyskiwanie sierot nigdy się nie uruchamiało (incydent
+ * #10168/#10169: wpłaty w P24, zamówienia wisiały not_paid godzinami).
+ * Nieznany/pusty status traktujemy jako odzyskiwalny — `authorizePaymentSession`
+ * jest idempotentne, a provider i tak potwierdza środki w P24 przed capture.
  */
-const RECOVERABLE_ORDER_PAYMENT_STATUSES = new Set([
-  "not_paid",
-  "awaiting",
-  "requires_action",
-  "authorized",
-]);
+const SETTLED_PAYMENT_COLLECTION_STATUSES = new Set(["completed", "canceled"]);
 
-export function isRecoverableOrderPaymentStatus(
+export function isRecoverablePaymentCollectionStatus(
   status: string | null | undefined,
 ): boolean {
-  return RECOVERABLE_ORDER_PAYMENT_STATUSES.has((status ?? "").trim());
+  return !SETTLED_PAYMENT_COLLECTION_STATUSES.has((status ?? "").trim());
 }
 
 export type OrderPaymentCollectionLink = {

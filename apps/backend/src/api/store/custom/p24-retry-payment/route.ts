@@ -6,6 +6,12 @@ import {
 } from "@medusajs/framework/utils";
 import { createPaymentSessionsWorkflow } from "@medusajs/medusa/core-flows";
 import { PRZELEWY24_PROVIDER_ID } from "../../../../lib/p24-reconcile";
+import {
+  fetchP24TransactionBySessionId,
+  loadP24ApiConfig,
+  P24_STATUS_PAID,
+  P24_STATUS_VERIFY,
+} from "../../../../lib/p24-transaction-api";
 
 type Body = { cart_id?: string };
 
@@ -52,7 +58,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
       payment_sessions?: Array<{
         id: string;
         provider_id?: string;
-        data?: { redirect_url?: string };
+        data?: { redirect_url?: string; p24_session_id?: string };
       }>;
     };
   };
@@ -81,6 +87,27 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     cart.payment_collection?.payment_sessions?.filter(
       (s) => s.provider_id === PRZELEWY24_PROVIDER_ID,
     ) ?? [];
+
+  // GUARD (incydent podwójnej wpłaty 06.07.2026): zanim skasujemy starą sesję,
+  // sprawdzamy w P24, czy na jej transakcję nie weszły już środki (status 1/2).
+  // Skasowanie takiej sesji osieroca wpłatę — reconcile traci do niej dostęp,
+  // a klient płaci drugi raz. Wtedy NIE ponawiamy: zamówienie domknie
+  // webhook / cron reconcile.
+  const p24Config = loadP24ApiConfig();
+  if (p24Config) {
+    for (const session of p24Sessions) {
+      const p24SessionId = session.data?.p24_session_id;
+      if (!p24SessionId) continue;
+      const tx = await fetchP24TransactionBySessionId(p24SessionId, p24Config);
+      if (tx && (tx.status === P24_STATUS_VERIFY || tx.status === P24_STATUS_PAID)) {
+        return res.status(409).json({
+          message:
+            "Twoja wpłata już do nas dotarła i jest przetwarzana — zamówienie potwierdzimy automatycznie e-mailem. Nie płać ponownie.",
+          type: "payment_in_progress",
+        });
+      }
+    }
+  }
 
   for (const session of p24Sessions) {
     await paymentModule.deletePaymentSession(session.id);

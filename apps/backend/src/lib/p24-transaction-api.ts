@@ -168,16 +168,32 @@ export async function fetchP24PaymentMethods(
 }
 
 /**
+ * Minimalny wiek sesji P24, zanim status 0 wolno uznać za „failed”.
+ *
+ * Przelewy pay-by-link (Erste, banki spółdzielcze…) księgują się w P24 nawet
+ * kilka minut PO powrocie klienta do sklepu. Przedwczesne „failed” + mail
+ * „ponów płatność” prowadzi do PODWÓJNEJ wpłaty (incydent 06.07.2026:
+ * klientka zapłaciła 2× 224,80 zł, bo strona powrotu ogłosiła porażkę po
+ * ~20 s, a wpłata weszła po ~80 s). W oknie łaski zwracamy „pending” —
+ * webhook / cron reconcile domkną zamówienie, gdy środki dotrą.
+ */
+export const P24_ZERO_FAILED_MIN_AGE_MS = 15 * 60 * 1000;
+
+/**
  * Mapuje stan sesji P24 na wynik strony powrotu klienta.
  *
- * Zasada: klient wrócił z bramki — domyślnie „failed”, dopóki nie ma dowodu
- * opłacenia (2 / verified) albo trwającej autoryzacji (1).
+ * Zasada: klient wrócił z bramki — „failed” dopiero, gdy nie ma dowodu
+ * opłacenia (2 / verified), trwającej autoryzacji (1) ANI szansy, że przelew
+ * jest jeszcze w drodze (sesja młodsza niż P24_ZERO_FAILED_MIN_AGE_MS).
  * `allowFailedOnZero` = min. okno grace na frontendzie zanim pokażemy failed.
  */
 export function resolveP24ReturnOutcome(params: {
   sessionData: P24SessionData;
   tx: P24TransactionInfo | null;
   allowFailedOnZero: boolean;
+  /** created_at sesji płatności — brak = traktujemy jako starą (failed dozwolone). */
+  sessionCreatedAt?: string | Date | null;
+  now?: number;
 }): P24ReturnOutcome {
   if (params.sessionData.status === "verified") return "paid";
 
@@ -188,6 +204,15 @@ export function resolveP24ReturnOutcome(params: {
 
   if (!params.allowFailedOnZero) {
     return "pending";
+  }
+
+  if (params.sessionCreatedAt != null) {
+    const createdMs = new Date(params.sessionCreatedAt).getTime();
+    const now = params.now ?? Date.now();
+    if (Number.isFinite(createdMs) && now - createdMs < P24_ZERO_FAILED_MIN_AGE_MS) {
+      // Status 0, ale przelew może być jeszcze w drodze — nie ogłaszamy porażki.
+      return "pending";
+    }
   }
 
   // Status 0, brak transakcji w P24 lub nieznany — anulowana / nieudana płatność.

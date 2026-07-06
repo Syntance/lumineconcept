@@ -3,7 +3,7 @@ import {
   classifyAuthorizeSessionError,
   classifyCompleteCartError,
   isReconcilableSession,
-  isRecoverableOrderPaymentStatus,
+  isRecoverablePaymentCollectionStatus,
   mapCollectionsToOrders,
   pendingSessionIdsForCollections,
   PRZELEWY24_PROVIDER_ID,
@@ -140,20 +140,23 @@ describe("uniqueCartIds", () => {
   });
 });
 
-describe("isRecoverableOrderPaymentStatus", () => {
-  it("kwalifikuje nieopłacone zamówienie do odzyskania", () => {
-    expect(isRecoverableOrderPaymentStatus("not_paid")).toBe(true);
-    expect(isRecoverableOrderPaymentStatus("awaiting")).toBe(true);
-    expect(isRecoverableOrderPaymentStatus("requires_action")).toBe(true);
-    expect(isRecoverableOrderPaymentStatus("authorized")).toBe(true);
+describe("isRecoverablePaymentCollectionStatus", () => {
+  it("kwalifikuje nierozliczoną kolekcję do odzyskania", () => {
+    expect(isRecoverablePaymentCollectionStatus("not_paid")).toBe(true);
+    expect(isRecoverablePaymentCollectionStatus("awaiting")).toBe(true);
+    expect(isRecoverablePaymentCollectionStatus("authorized")).toBe(true);
+    expect(isRecoverablePaymentCollectionStatus("failed")).toBe(true);
   });
 
-  it("pomija zamówienia już rozliczone", () => {
-    expect(isRecoverableOrderPaymentStatus("captured")).toBe(false);
-    expect(isRecoverableOrderPaymentStatus("partially_captured")).toBe(false);
-    expect(isRecoverableOrderPaymentStatus("refunded")).toBe(false);
-    expect(isRecoverableOrderPaymentStatus(null)).toBe(false);
-    expect(isRecoverableOrderPaymentStatus(undefined)).toBe(false);
+  it("nieznany/pusty status traktuje jako odzyskiwalny (authorize jest idempotentne)", () => {
+    expect(isRecoverablePaymentCollectionStatus(null)).toBe(true);
+    expect(isRecoverablePaymentCollectionStatus(undefined)).toBe(true);
+    expect(isRecoverablePaymentCollectionStatus("")).toBe(true);
+  });
+
+  it("pomija kolekcje rozliczone i anulowane", () => {
+    expect(isRecoverablePaymentCollectionStatus("completed")).toBe(false);
+    expect(isRecoverablePaymentCollectionStatus("canceled")).toBe(false);
   });
 });
 

@@ -64,7 +64,8 @@ async function main() {
   const currency = "PLN";
   const cartId = "cart_smoke_test";
 
-  const urlStatus = `${backendUrl.replace(/\/$/, "")}/hooks/payment/pp_przelewy24_przelewy24`;
+  // Bez prefiksu "pp_" — Medusa dokleja go sama (patrz modules/przelewy24/service.ts).
+  const urlStatus = `${backendUrl.replace(/\/$/, "")}/hooks/payment/przelewy24_przelewy24`;
   const urlReturn = `${storefrontUrl.replace(/\/$/, "")}/checkout/przelewy24/return?cart_id=${encodeURIComponent(cartId)}`;
 
   const registerSign = sign({

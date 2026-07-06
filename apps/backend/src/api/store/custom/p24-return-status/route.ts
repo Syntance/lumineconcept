@@ -114,6 +114,7 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     sessionData,
     tx,
     allowFailedOnZero,
+    sessionCreatedAt: (p24Session as { created_at?: string | Date }).created_at ?? null,
   });
 
   const retryUrl = `${storefrontBase()}/checkout/p24/retry?cart_id=${encodeURIComponent(cartId)}`;

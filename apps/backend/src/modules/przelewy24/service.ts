@@ -212,7 +212,11 @@ export default class Przelewy24PaymentService extends AbstractPaymentProvider<Pr
       "";
     const cartId = (ctx.cart_id as string | undefined) ?? "";
 
-    const urlStatus = `${this.options_.backendUrl.replace(/\/$/, "")}/hooks/payment/pp_przelewy24_przelewy24`;
+    // Segment ścieżki BEZ prefiksu "pp_" — Medusa dokleja go sama
+    // (`getWebhookActionAndData` robi `pp_${provider}`); z prefiksem w URL
+    // resolver szukał "pp_pp_przelewy24_przelewy24" i KAŻDA notyfikacja P24
+    // padała AwilixResolutionError (transakcje wisiały "do wykorzystania").
+    const urlStatus = `${this.options_.backendUrl.replace(/\/$/, "")}/hooks/payment/przelewy24_przelewy24`;
     const urlReturn = `${this.options_.storefrontUrl.replace(/\/$/, "")}/checkout/przelewy24/return${
       cartId ? `?cart_id=${encodeURIComponent(cartId)}` : ""
     }`;
