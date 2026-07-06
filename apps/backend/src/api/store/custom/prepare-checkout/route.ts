@@ -29,6 +29,7 @@ import {
   P24_STATUS_PAID,
   P24_STATUS_VERIFY,
 } from "../../../../lib/p24-transaction-api";
+import { captureMessage } from "../../../../lib/sentry";
 
 let ratelimit: Ratelimit | null = null;
 
@@ -131,6 +132,9 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
       "metadata",
       "items.id",
       "items.total",
+      "items.subtotal",
+      "items.unit_price",
+      "items.quantity",
       "shipping_methods.id",
       "shipping_methods.name",
       "shipping_methods.amount",
@@ -163,7 +167,13 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
     const snapshot = cartSnapshot as {
       completed_at?: string | null;
       metadata?: Record<string, unknown> | null;
-      items?: Array<{ id?: string; total?: number | string | null }> | null;
+      items?: Array<{
+        id?: string;
+        total?: number | string | null;
+        subtotal?: number | string | null;
+        unit_price?: number | string | null;
+        quantity?: number | string | null;
+      }> | null;
       shipping_methods?: ShippingMethodRow[] | null;
     };
     if (snapshot.completed_at) {
@@ -190,10 +200,34 @@ export async function POST(req: MedusaRequest<Body>, res: MedusaResponse) {
      */
     const expressDelivery =
       String(snapshot.metadata?.express_delivery ?? "") === "true";
+    /**
+     * BUG 06.07.2026 (wieczór): remoteQuery na części koszyków NIE dekoruje
+     * `items.total`/`items.subtotal` (pole znika z odpowiedzi — np. koszyk
+     * bez adresu = brak kontekstu podatkowego). itemSubtotal wychodził 0,
+     * fee = 0 i dopłata express ZNIKAŁA z płatności (P24 rejestrował total
+     * bez +50%). Fallback: total → subtotal → unit_price × quantity.
+     */
     const itemSubtotal = (snapshot.items ?? []).reduce((sum, item) => {
-      const n = Number(item.total ?? 0);
-      return sum + (Number.isFinite(n) ? n : 0);
+      const total = Number(item.total);
+      if (Number.isFinite(total) && total > 0) return sum + total;
+      const subtotal = Number(item.subtotal);
+      if (Number.isFinite(subtotal) && subtotal > 0) return sum + subtotal;
+      const unit = Number(item.unit_price);
+      const qty = Number(item.quantity);
+      if (Number.isFinite(unit) && Number.isFinite(qty) && unit > 0 && qty > 0) {
+        return sum + unit * qty;
+      }
+      return sum;
     }, 0);
+    if (expressDelivery && itemSubtotal <= 0 && (snapshot.items?.length ?? 0) > 0) {
+      // Express zamówiony, pozycje istnieją, a baza dopłaty wyszła 0 —
+      // dekoracja kwot znowu nawala. Alarm zamiast cichej straty przychodu.
+      captureMessage(
+        "[prepare-checkout] express aktywny, ale itemSubtotal=0 — dopłata pominięta",
+        "error",
+        { cart_id: cartId, items_count: String(snapshot.items?.length ?? 0) },
+      );
+    }
     const feePlan = planExpressFeeReconcile({
       expressDelivery,
       itemSubtotal,
