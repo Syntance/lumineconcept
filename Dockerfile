@@ -26,7 +26,10 @@ RUN cd apps/backend && \
     fi
 
 ENV NODE_ENV=production
-ENV NODE_OPTIONS="--max-old-space-size=512"
+# 512 MB heapa ubijało proces w OOM przy normalnym ruchu (crash 06.07.2026:
+# "Ineffective mark-compacts near heap limit" przy ~507 MB). Railway daje
+# serwisowi znacznie więcej RAM — 2 GB heapa zostawia zapas na buffery/native.
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 WORKDIR /app/apps/backend
 EXPOSE 8080
 
