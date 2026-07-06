@@ -21,6 +21,7 @@ function baseOrder(overrides: Partial<AdminOrderDetail> = {}): AdminOrderDetail 
     items: [],
     itemTotal: 0,
     shippingTotal: 0,
+    shippingDiscount: 0,
     taxTotal: 0,
     discountTotal: 0,
     total: 0,

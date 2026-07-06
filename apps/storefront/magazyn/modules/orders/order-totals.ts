@@ -88,6 +88,30 @@ export function resolveCourierShippingGrossMinor(order: OrderTotalsInput): numbe
 	return resolveShippingTotalMinor(order);
 }
 
+/**
+ * Część rabatu przypadająca na DOSTAWĘ: surowa cena kuriera − kurier PO
+ * adjustmentach promocji (shipping_methods.total). Kod darmowej dostawy →
+ * pełna cena kuriera; UI pokazuje wtedy „Dostawa: gratis" zamiast wiersza
+ * rabatu (spójnie z checkoutem).
+ */
+export function resolveShippingDiscountMinor(order: OrderTotalsInput): number {
+	const methods = order.shipping_methods ?? [];
+	const courierMethods = methods.filter(
+		(method) =>
+			((method.name ?? "").trim() || "") !== EXPRESS_FEE_SHIPPING_METHOD_NAME,
+	);
+	if (courierMethods.length === 0) return 0;
+	const gross = courierMethods.reduce((sum, method) => {
+		const raw = method.amount ?? method.subtotal ?? method.raw_amount ?? method.total;
+		return sum + amountFromUnknown(raw);
+	}, 0);
+	const net = courierMethods.reduce(
+		(sum, method) => sum + amountFromUnknown(method.total),
+		0,
+	);
+	return Math.max(0, toMinor(gross) - toMinor(net));
+}
+
 function resolveCapturedPaymentMinor(order: OrderTotalsInput): number {
 	let max = 0;
 	for (const collection of order.payment_collections ?? []) {

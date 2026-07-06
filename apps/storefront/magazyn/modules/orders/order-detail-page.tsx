@@ -109,6 +109,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 	);
 	const express = isExpressDelivery(order.metadata);
 	const expressFee = expressFeeMinor(order.metadata, order.itemTotal);
+	// Kod darmowej dostawy: „Dostawa: gratis" (przekreślona cena) zamiast
+	// wiersza rabatu; „Rabat" zostaje dla produktowej części zniżki.
+	const shippingIsFree =
+		order.shippingDiscount > 0 &&
+		order.shippingTotal > 0 &&
+		order.shippingDiscount >= order.shippingTotal;
+	const productDiscount = shippingIsFree
+		? Math.max(0, order.discountTotal - order.shippingDiscount)
+		: order.discountTotal;
 	const ordersHref = `${magazynConfig.basePath}/panel/zamowienia`;
 
 	return (
@@ -151,7 +160,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 							</div>
 							<div className="flex justify-between">
 								<dt className="text-muted-foreground">Dostawa</dt>
-								<dd>{formatPrice(order.shippingTotal, order.currencyCode)}</dd>
+								{shippingIsFree ? (
+									<dd>
+										<s className="mr-1.5 text-muted-foreground">
+											{formatPrice(order.shippingTotal, order.currencyCode)}
+										</s>
+										<span className="font-medium text-emerald-600 dark:text-emerald-400">
+											gratis
+										</span>
+									</dd>
+								) : (
+									<dd>{formatPrice(order.shippingTotal, order.currencyCode)}</dd>
+								)}
 							</div>
 							{express && expressFee > 0 ? (
 								<div
@@ -161,10 +181,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 									<dd>{formatPrice(expressFee, order.currencyCode)}</dd>
 								</div>
 							) : null}
-							{order.discountTotal > 0 ? (
+							{productDiscount > 0 ? (
 								<div className="flex justify-between text-emerald-600 dark:text-emerald-400">
 									<dt>Rabat</dt>
-									<dd>−{formatPrice(order.discountTotal, order.currencyCode)}</dd>
+									<dd>−{formatPrice(productDiscount, order.currencyCode)}</dd>
 								</div>
 							) : null}
 							<div className="flex justify-between">

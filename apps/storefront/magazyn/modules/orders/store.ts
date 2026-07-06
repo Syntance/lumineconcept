@@ -10,6 +10,7 @@ import { expressFeeMinor, isExpressDelivery } from "./order-express";
 import {
 	resolveCourierShippingGrossMinor,
 	resolveOrderTotalMinor,
+	resolveShippingDiscountMinor,
 } from "./order-totals";
 import type {
 	AdminOrderDetail,
@@ -415,6 +416,7 @@ function mapMedusaOrderToDetail(
 		// Wiersz „Dostawa": surowa cena kuriera bez metody-dopłaty express i
 		// przed rabatami (bug 06.07.2026: pokazywało 2,50 = dopłatę zamiast 25).
 		shippingTotal: resolveCourierShippingGrossMinor(order),
+		shippingDiscount: resolveShippingDiscountMinor(order),
 		taxTotal: toMinorUnits(order.tax_total),
 		discountTotal: toMinorUnits(order.discount_total),
 		total: resolveOrderTotalMinor(order),
