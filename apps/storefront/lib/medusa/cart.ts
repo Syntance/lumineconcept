@@ -259,12 +259,17 @@ export async function updateCartMetadata(
       await new Promise((r) => setTimeout(r, DELAYS[attempt]));
     }
     try {
-      const res = await fetch(`${base}/store/carts/${cartId}`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ metadata: metadataPatch }),
-        signal: AbortSignal.timeout(30_000),
-      });
+      // `fields` jest obowiązkowe: bez niego Medusa nie zwraca `items.total`
+      // i CartProvider liczyłby pozycje z unit_price × qty (bez rabatów).
+      const res = await fetch(
+        `${base}/store/carts/${cartId}?${cartFieldsSearchParams()}`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ metadata: metadataPatch }),
+          signal: AbortSignal.timeout(30_000),
+        },
+      );
       if (res.ok) {
         const data = (await res.json()) as { cart?: unknown };
         return data.cart ?? null;

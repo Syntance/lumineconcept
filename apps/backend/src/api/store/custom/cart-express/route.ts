@@ -5,7 +5,7 @@ import {
   Modules,
   remoteQueryObjectFromString,
 } from "@medusajs/framework/utils";
-import { defaultStoreCartFields } from "@medusajs/medusa/api/store/carts/query-config";
+import { STORE_CART_REMOTE_QUERY_FIELDS } from "../../../../lib/store-cart-fields";
 
 /**
  * POST /store/custom/cart-express
@@ -37,33 +37,48 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   }
 
   const remoteQuery = req.scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY);
+  /**
+   * KRYTYCZNE: pola muszą zawierać `items.total` — storefront po tej
+   * odpowiedzi przelicza „Produkty" z sum pozycji. `defaultStoreCartFields`
+   * nie ma `items.total`, więc UI liczyło pozycje z unit_price × qty
+   * (BEZ rabatu) i po przełączeniu express kwoty się rozjeżdżały przy
+   * aktywnym kodzie promocyjnym.
+   */
   const queryObject = remoteQueryObjectFromString({
     entryPoint: "cart",
     variables: { filters: { id: cartId } },
-    fields: defaultStoreCartFields,
+    fields: STORE_CART_REMOTE_QUERY_FIELDS,
   });
   const [cartSnapshot] = await remoteQuery(queryObject);
   if (!cartSnapshot) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, `Cart ${cartId} not found`);
   }
 
-  const subRaw = (cartSnapshot as { subtotal?: unknown }).subtotal;
-  function subtotalToNumber(v: unknown): number {
+  function amountToNumber(v: unknown): number {
     if (typeof v === "number" && Number.isFinite(v)) return v;
     if (typeof v === "string" && v.trim() !== "") {
       const n = Number(v);
       return Number.isFinite(n) ? n : 0;
     }
     if (v && typeof v === "object" && "value" in v) {
-      return subtotalToNumber((v as { value: unknown }).value);
+      return amountToNumber((v as { value: unknown }).value);
     }
     return 0;
   }
-  const subtotalNum = subtotalToNumber(subRaw);
-  // Medusa v2 — kwoty dziesiętne w PLN. 50% subtotalu zaokrąglamy do groszy
+  // Baza dopłaty = suma `items.total` (PO rabatach) — parytet z CartProvider
+  // (productsSubtotal) i prepare-checkout (itemSubtotal). `cart.subtotal`
+  // jest PRZED rabatem, więc przy aktywnym kodzie promocyjnym metadata
+  // pokazywałaby inną kwotę niż faktycznie pobierana.
+  const snapshotItems =
+    ((cartSnapshot as { items?: Array<{ total?: unknown }> | null }).items ?? []);
+  const itemsTotalNum = snapshotItems.reduce(
+    (sum, item) => sum + amountToNumber(item?.total),
+    0,
+  );
+  // Medusa v2 — kwoty dziesiętne w PLN. 50% sumy pozycji zaokrąglamy do groszy
   // (nie do pełnych złotych, jak było w konwencji grosze/integer).
   const expressFee = body.express_delivery
-    ? Math.round(subtotalNum * 0.5 * 100) / 100
+    ? Math.round(itemsTotalNum * 0.5 * 100) / 100
     : 0;
 
   const prev =
