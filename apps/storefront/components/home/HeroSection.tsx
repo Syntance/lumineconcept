@@ -1,4 +1,5 @@
 import type { HeroContent } from "@/lib/content/types";
+import { cmsAttr } from "@/lib/cms-preview/attr";
 import {
 	MOBILE_HERO_BAND_WIDTH,
 	MOBILE_HERO_BAND_HEIGHT,
@@ -42,7 +43,10 @@ export async function HeroSection({
 	const displayImageUrl = desktopImageUrl || mobileDisplayUrl;
 
 	return (
-		<section className="relative flex w-full flex-col overflow-x-hidden">
+		<section
+			className="relative flex w-full flex-col overflow-x-hidden"
+			{...(await cmsAttr("page.home.hero"))}
+		>
 			{mobileAvifSrc && (
 				<link
 					rel="preload"

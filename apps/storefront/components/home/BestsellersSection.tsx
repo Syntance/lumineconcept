@@ -1,4 +1,5 @@
 import { getPageContent } from "@/lib/content";
+import { cmsAttr } from "@/lib/cms-preview/attr";
 import {
 	resolveBestsellerProducts,
 	resolveBestsellersTitle,

@@ -32,13 +32,20 @@ type BestsellersGridProps = {
 	products: BestsellerProduct[];
 	/** Priorytet LCP na stronie głównej / sklepie. */
 	priorityImages?: boolean;
+	/** Adnotacja trybu edycji na żywo CMS (cmsAttr z RSC-rodzica). */
+	cmsField?: Record<string, string>;
 };
 
-export function BestsellersGrid({ title, products, priorityImages = false }: BestsellersGridProps) {
+export function BestsellersGrid({
+	title,
+	products,
+	priorityImages = false,
+	cmsField,
+}: BestsellersGridProps) {
 	if (products.length === 0) return null;
 
 	return (
-		<section>
+		<section {...cmsField}>
 			<div className="bg-white pt-4 pb-0 md:pt-5">
 				<div className="container mx-auto flex justify-center px-4">
 					<div className="mx-auto flex w-full max-w-68 justify-center">

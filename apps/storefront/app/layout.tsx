@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { Providers } from "@/providers/Providers";
 import { CookieConsent } from "@/components/common/CookieConsent";
 import { ConsentModeScript } from "@/components/analytics/ConsentModeScript";
+import { PreviewOverlayGate } from "@/components/cms-preview/PreviewOverlayGate";
 import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
 
@@ -132,6 +133,7 @@ export default async function RootLayout({
       <body className="min-h-screen overflow-x-hidden bg-white antialiased">
         <CookieConsent />
         <Providers>{children}</Providers>
+        <PreviewOverlayGate />
       </body>
     </html>
   );

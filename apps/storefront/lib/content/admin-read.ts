@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { draftMode } from "next/headers";
 import { serverEnv } from "@magazyn/core/env";
 import { loginWithEmailPassword } from "@magazyn/core/medusa/client";
 import { isLocalCmsDirectMediaEnabled } from "./cms-media-gate";
@@ -53,14 +54,17 @@ async function getServiceTokenForRead(): Promise<string | null> {
 	return null;
 }
 
-async function fetchStoreMetadataWithRetry(token: string): Promise<Response | null> {
+async function fetchStoreMetadataWithRetry(
+	token: string,
+	freshRead: boolean,
+): Promise<Response | null> {
 	const url = `${serverEnv.medusaBackendUrl}/admin/stores?limit=1&fields=id,metadata`;
 
 	for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
 		try {
 			const res = await fetch(url, {
 				headers: { Authorization: `Bearer ${token}` },
-				...(isLocalCmsDirectMediaEnabled()
+				...(freshRead || isLocalCmsDirectMediaEnabled()
 					? { cache: "no-store" as const }
 					: {
 							next: {
@@ -115,7 +119,16 @@ export const fetchStoreMetadataBlob = cache(async (): Promise<RawStoreMetadataBl
 		return null;
 	}
 
-	const res = await fetchStoreMetadataWithRetry(token);
+	// Tryb „edycji na żywo" (draftMode, panel magazynu): zawsze świeży odczyt —
+	// klient po zapisie widzi zmianę od razu, bez czekania na ISR/revalidate.
+	let freshRead = false;
+	try {
+		freshRead = (await draftMode()).isEnabled;
+	} catch {
+		/* poza request scope (np. build) — normalna ścieżka z cache */
+	}
+
+	const res = await fetchStoreMetadataWithRetry(token, freshRead);
 	if (!res?.ok) {
 		console.error(`[CMS] Fetch Store.metadata failed: ${res?.status ?? "no response"}`);
 		return null;

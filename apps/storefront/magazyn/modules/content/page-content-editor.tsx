@@ -36,9 +36,23 @@ type Props = {
 	blocks: ContentBlockKey[];
 	initial: PageContent;
 	productOptions?: CmsProductOption[];
+	/** Podgląd „edycji na żywo": wywoływane po udanym zapisie (reload iframe). */
+	onSaved?: () => void;
 };
 
-export function PageContentEditor({ pageId, path, blocks, initial, productOptions = [] }: Props) {
+/** Kotwica bloku dla podglądu na żywo — cel scrolla po kliknięciu na stronie. */
+function blockAnchor(pageId: string, block: ContentBlockKey) {
+	return { "data-cms-input": `page.${pageId}.${block}` };
+}
+
+export function PageContentEditor({
+	pageId,
+	path,
+	blocks,
+	initial,
+	productOptions = [],
+	onSaved,
+}: Props) {
 	const router = useRouter();
 	const [content, setContent] = useState<PageContent>(initial);
 	const [error, setError] = useState<string | null>(null);
@@ -61,6 +75,7 @@ export function PageContentEditor({ pageId, path, blocks, initial, productOption
 			}
 			setSuccessMessage(options.message ?? cmsSaveSuccessMessage());
 			router.refresh();
+			onSaved?.();
 		});
 	}
 
@@ -85,58 +100,74 @@ export function PageContentEditor({ pageId, path, blocks, initial, productOption
 	return (
 		<form onSubmit={onSubmit} className="flex max-w-3xl flex-col gap-6">
 			{blocks.includes("hero") ? (
-				pageId === "o-nas" ? (
-					<AboutHeroEditor
-						value={content.hero}
-						onChange={(hero) => setContent((c) => ({ ...c, hero }))}
-					/>
-				) : (
-					<HeroEditor
-						value={content.hero}
-						onChange={(hero) => setContent((c) => ({ ...c, hero }))}
-					/>
-				)
+				<div {...blockAnchor(pageId, "hero")}>
+					{pageId === "o-nas" ? (
+						<AboutHeroEditor
+							value={content.hero}
+							onChange={(hero) => setContent((c) => ({ ...c, hero }))}
+						/>
+					) : (
+						<HeroEditor
+							value={content.hero}
+							onChange={(hero) => setContent((c) => ({ ...c, hero }))}
+						/>
+					)}
+				</div>
 			) : null}
 			{blocks.includes("about") ? (
+				<div {...blockAnchor(pageId, "about")}>
 				<AboutSectionsEditor
 					value={content.about}
 					onChange={(about) => setContent((c) => ({ ...c, about }))}
 				/>
+			</div>
 			) : null}
 			{blocks.includes("brandingCta") ? (
+				<div {...blockAnchor(pageId, "brandingCta")}>
 				<BrandingCtaEditor
 					value={content.brandingCta}
 					onChange={(brandingCta) => setContent((c) => ({ ...c, brandingCta }))}
 				/>
+			</div>
 			) : null}
 			{blocks.includes("testimonials") ? (
+				<div {...blockAnchor(pageId, "testimonials")}>
 				<TestimonialsEditor
 					value={content.testimonials ?? []}
 					onChange={(testimonials) => setContent((c) => ({ ...c, testimonials }))}
 				/>
+			</div>
 			) : null}
 			{blocks.includes("faq") ? (
+				<div {...blockAnchor(pageId, "faq")}>
 				<FaqEditor value={content.faq ?? []} onChange={(faq) => setContent((c) => ({ ...c, faq }))} />
+			</div>
 			) : null}
 			{blocks.includes("gallery") ? (
+				<div {...blockAnchor(pageId, "gallery")}>
 				<GalleryEditor
 					value={content.gallery ?? []}
 					onChange={onGalleryChange}
 					saving={gallerySaving}
 				/>
+			</div>
 			) : null}
 			{blocks.includes("categoryTiles") ? (
+				<div {...blockAnchor(pageId, "categoryTiles")}>
 				<CategoryTilesEditor
 					value={content.categoryTiles ?? []}
 					onChange={(categoryTiles) => setContent((c) => ({ ...c, categoryTiles }))}
 				/>
+			</div>
 			) : null}
 			{blocks.includes("bestsellers") ? (
+				<div {...blockAnchor(pageId, "bestsellers")}>
 				<BestsellersEditor
 					value={content.bestsellers}
 					onChange={(bestsellers) => setContent((c) => ({ ...c, bestsellers }))}
 					products={productOptions}
 				/>
+			</div>
 			) : null}
 			{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
 			{successMessage ? (

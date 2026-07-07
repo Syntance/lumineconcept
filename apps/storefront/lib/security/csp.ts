@@ -48,6 +48,10 @@ export function buildContentSecurityPolicy(nonce: string): string {
 		"font-src 'self' https://fonts.gstatic.com",
 		`connect-src 'self' https://eu.posthog.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://connect.facebook.net https://www.facebook.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://api.mailerlite.com https://challenges.cloudflare.com https://*.r2.dev ${MEDUSA_BACKEND_URL} ${MEILISEARCH_HOST}${SENTRY_CSP_HOSTS}`,
 		"frame-src 'self' https://www.facebook.com https://challenges.cloudflare.com",
+		// 'self' (nie 'none'): podgląd „edycji na żywo" CMS renderuje stronę
+		// w iframie panelu magazynu (ten sam origin). Obce originy nadal
+		// zablokowane — clickjacking bez zmian niemożliwy.
+		"frame-ancestors 'self'",
 		"object-src 'none'",
 		"base-uri 'self'",
 		"form-action 'self'",
