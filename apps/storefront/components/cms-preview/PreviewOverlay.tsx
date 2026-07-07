@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   CMS_PREVIEW_RELOAD,
   CMS_PREVIEW_SELECT,
+  CMS_PREVIEW_INLINE,
   cmsFieldLabel,
 } from "@/lib/cms-preview/messages";
 
@@ -62,6 +63,29 @@ export function PreviewOverlay() {
       }
     }
 
+    function onDblClick(e: MouseEvent) {
+      const el = findTarget(e.target);
+      if (!el?.dataset.cmsInline) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const field = el.dataset.cms ?? "";
+      el.setAttribute("contenteditable", "true");
+      el.focus();
+
+      function onBlur() {
+        el?.removeAttribute("contenteditable");
+        const value = el?.textContent?.trim() ?? "";
+        if (window.parent !== window && field) {
+          window.parent.postMessage(
+            { type: CMS_PREVIEW_INLINE, field, value },
+            window.location.origin,
+          );
+        }
+        el?.removeEventListener("blur", onBlur);
+      }
+      el.addEventListener("blur", onBlur, { once: true });
+    }
+
     function onMessage(e: MessageEvent) {
       if (e.origin !== window.location.origin) return;
       const data = e.data as { type?: string } | null;
@@ -78,12 +102,14 @@ export function PreviewOverlay() {
 
     document.addEventListener("mousemove", onMouseMove, { passive: true });
     document.addEventListener("click", onClick, { capture: true });
+    document.addEventListener("dblclick", onDblClick, { capture: true });
     window.addEventListener("message", onMessage);
     window.addEventListener("scroll", onViewportChange, { passive: true });
     window.addEventListener("resize", onViewportChange);
     return () => {
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("click", onClick, { capture: true });
+      document.removeEventListener("dblclick", onDblClick, { capture: true });
       window.removeEventListener("message", onMessage);
       window.removeEventListener("scroll", onViewportChange);
       window.removeEventListener("resize", onViewportChange);

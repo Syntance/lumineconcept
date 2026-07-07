@@ -6,6 +6,13 @@
 
 export const CMS_PREVIEW_SELECT = "lumine-cms:select" as const;
 export const CMS_PREVIEW_RELOAD = "lumine-cms:reload" as const;
+export const CMS_PREVIEW_INLINE = "lumine-cms:inline" as const;
+
+export type CmsPreviewInlineMessage = {
+	type: typeof CMS_PREVIEW_INLINE;
+	field: string;
+	value: string;
+};
 
 export type CmsPreviewSelectMessage = {
   type: typeof CMS_PREVIEW_SELECT;

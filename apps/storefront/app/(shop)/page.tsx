@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { getPageSeo, getSiteSettings } from "@/lib/content";
 import { resolveSocialLinks } from "@/lib/content/cms-wiring";
 import { buildMetadata } from "@/lib/content/metadata";
 import {
@@ -12,11 +12,9 @@ import { resolveSocialSameAs } from "@/lib/social-links";
 import { SITE_CONTACT } from "@/lib/site-contact";
 import { SITE_URL } from "@/lib/utils";
 import { serializeJsonLd } from "@/lib/seo/json-ld";
-import { HeroSection } from "@/components/home/HeroSection";
-import { SocialProofSection } from "@/components/home/SocialProofSection";
-import { FooterCTA } from "@/components/home/FooterCTA";
+import { getPageSections } from "@/lib/content/sections";
+import { SectionRenderer } from "@/components/composer/SectionRenderer";
 import { ReferralBanner } from "@/components/home/ReferralBanner";
-import { BestsellersSection } from "@/components/home/BestsellersSection";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,22 +34,8 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Dłuższy ISR — mniejszy TTFB na cold request (PageSpeed, pierwsze wejście). */
 export const revalidate = 60;
 
-/**
- * Placeholder rezerwujący przestrzeń BestsellersGrid podczas streaming SSR.
- * Dopasowane tła (bg-white + bg-brand-50) eliminują color flash;
- * min-height zapobiega CLS gdy treść wstrzykuje ~500px zawartości.
- */
-function BestsellersSkeleton() {
-  return (
-    <div aria-hidden="true">
-      <div className="bg-white pt-4 pb-0 md:pt-5" style={{ minHeight: 96 }} />
-      <div className="bg-brand-50" style={{ minHeight: 480 }} />
-    </div>
-  );
-}
-
 export default async function HomePage() {
-  const [pageContent, settings] = await Promise.all([getPageContent("home"), getSiteSettings()]);
+  const [sections, settings] = await Promise.all([getPageSections("home"), getSiteSettings()]);
   const socialSameAs = resolveSocialSameAs(resolveSocialLinks(settings));
   
   const orgJsonLd = {
@@ -103,17 +87,7 @@ export default async function HomePage() {
         <ReferralBanner />
       </Suspense>
 
-      <HeroSection hero={pageContent.hero} />
-
-      <Suspense fallback={<BestsellersSkeleton />}>
-        <BestsellersSection />
-      </Suspense>
-
-      <SocialProofSection />
-
-      <Suspense fallback={null}>
-        <FooterCTA />
-      </Suspense>
+      <SectionRenderer pageId="home" sections={sections} />
 
     </>
   );
