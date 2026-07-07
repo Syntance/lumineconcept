@@ -95,8 +95,15 @@ function applyMediaGate(
 export function applyMediaUrlOverlay(
 	blob: RawStoreMetadataBlob,
 	urlMap: Readonly<Record<string, string>>,
+	options?: { disableGate?: boolean },
 ): RawStoreMetadataBlob {
-	const gateEnabled = isRuntimeCmsMediaGateEnabled(urlMap);
+	// disableGate (tryb „edycji na żywo", draftMode): świeżo wgrane, jeszcze
+	// nieopublikowane zdjęcia renderują się w podglądzie OD RAZU, bezpośrednio
+	// z CDN — klient nie czeka na Redeploy, żeby ZOBACZYĆ zmianę. Publikacja
+	// na produkcję nadal wymaga Redeploy (mapa prebuild bez zmian).
+	const gateEnabled = options?.disableGate
+		? false
+		: isRuntimeCmsMediaGateEnabled(urlMap);
 
 	return {
 		siteSettings: applyMediaGate(blob.siteSettings, urlMap, gateEnabled),

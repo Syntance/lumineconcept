@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cmsAttr } from "@/lib/cms-preview/attr";
 import Link from "next/link";
 import Image from "next/image";
 import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
@@ -136,7 +137,7 @@ export default async function ShopHubPage() {
       </section>
 
       {/* Kategorie obok siebie */}
-      <section className="bg-brand-100 pb-16 pt-10 lg:pb-24 lg:pt-14">
+      <section {...(await cmsAttr("page.shop.categoryTiles"))} className="bg-brand-100 pb-16 pt-10 lg:pb-24 lg:pt-14">
         <nav className="container mx-auto max-w-[84rem] px-4">
           <div className="grid gap-[1.65rem] sm:grid-cols-3 sm:items-stretch sm:gap-[2.85rem]">
             {categories.map((cat, index) => (
@@ -327,7 +328,7 @@ export default async function ShopHubPage() {
           </div>
 
           {displayTestimonials.length > 0 && (
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
+            <div {...(await cmsAttr("page.shop.testimonials"))} className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
               {displayTestimonials.map((t) => (
                 <blockquote key={t.id} className="text-center">
                   <p className="text-base italic leading-relaxed text-brand-800">

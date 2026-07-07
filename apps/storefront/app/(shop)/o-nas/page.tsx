@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cmsAttr } from "@/lib/cms-preview/attr";
 
 import { AboutClosingSection } from "@/components/about/AboutClosingSection";
 import { ABOUT_PAGE_CLIP, ABOUT_PAGE_CONTENT_MOBILE_LOWER } from "@/components/about/about-media";
@@ -55,8 +56,10 @@ export default async function ONasPage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(aboutPageJsonLd) }}
       />
       <div className={cn("font-gilroy w-full max-lg:bg-brand-50", ABOUT_PAGE_CLIP, "[&_h1]:font-binerka [&_h2]:font-binerka")}>
-        <AboutHeroSection hero={about.hero} />
-        <div className={ABOUT_PAGE_CONTENT_MOBILE_LOWER}>
+        <div {...(await cmsAttr("page.o-nas.hero"))}>
+          <AboutHeroSection hero={about.hero} />
+        </div>
+        <div {...(await cmsAttr("page.o-nas.about"))} className={ABOUT_PAGE_CONTENT_MOBILE_LOWER}>
           <AboutIntroSection sections={about.sections} />
           <AboutMissionSection sections={about.sections} />
           <AboutClosingSection sections={about.sections} />

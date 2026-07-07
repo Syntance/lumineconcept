@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { cmsAttr } from "@/lib/cms-preview/attr";
 import { getGlobalContent, getSiteSettings } from "@/lib/content";
 import {
 	mapSalonLogosForMarquee,
@@ -14,7 +15,7 @@ export async function HomeTrustMarquee() {
 	const doubled = [...salons, ...salons];
 
 	return (
-		<div className="shrink-0 overflow-hidden bg-brand-50 pb-4 pt-4 md:pb-4 md:pt-5">
+		<div {...(await cmsAttr("settings.trustBar"))} className="shrink-0 overflow-hidden bg-brand-50 pb-4 pt-4 md:pb-4 md:pt-5">
 			<p className="mb-4 text-center text-sm font-medium uppercase tracking-[0.25em] text-brand-400">
 				Zaufały nam
 			</p>

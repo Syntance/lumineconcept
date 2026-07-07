@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cmsAttr } from "@/lib/cms-preview/attr";
 import Image from "next/image";
 import { getSiteSettings } from "@/lib/content";
 import { resolveFooterText, resolveSocialLinks } from "@/lib/content/cms-wiring";
@@ -29,7 +30,7 @@ export async function Footer() {
   const social = resolveSocialLinks(settings);
 
   return (
-    <footer className="relative z-10 bg-brand-800 text-brand-200" role="contentinfo">
+    <footer {...(await cmsAttr("settings.footer"))} className="relative z-10 bg-brand-800 text-brand-200" role="contentinfo">
       <div className="container mx-auto px-4 pb-2 pt-8 lg:px-8 lg:pb-3 lg:pt-10">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
           <div>

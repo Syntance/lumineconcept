@@ -16,19 +16,47 @@ export type CmsPreviewReloadMessage = {
   type: typeof CMS_PREVIEW_RELOAD;
 };
 
-/** Etykiety bloków/pól pokazywane w dymku nad podświetlonym elementem. */
-export const CMS_FIELD_LABELS: Record<string, string> = {
-  "page.home.hero": "Strona główna — Hero",
-  "page.home.bestsellers": "Strona główna — Bestsellery",
-  "page.home.testimonials": "Strona główna — Opinie",
-  "page.home.footerCta": "Strona główna — CTA stopki",
-  "settings.announcementBar": "Pasek ogłoszeń",
-  "settings.trustBar": "Pasek zaufania",
+/** Polskie nazwy bloków CMS (spójne z legendami edytorów magazynu). */
+const BLOCK_LABELS: Record<string, string> = {
+  hero: "Hero",
+  about: "Sekcje „O nas”",
+  brandingCta: "CTA brandingowe",
+  testimonials: "Opinie",
+  faq: "FAQ",
+  gallery: "Galeria",
+  categoryTiles: "Kafle kategorii",
+  bestsellers: "Bestsellery",
 };
 
+const PAGE_LABELS: Record<string, string> = {
+  home: "Strona główna",
+  shop: "Sklep",
+  "logo-3d": "Tablice z logo",
+  "gotowe-wzory": "Gotowe wzory",
+  certyfikaty: "Certyfikaty",
+  "o-nas": "O nas",
+};
+
+const SETTINGS_LABELS: Record<string, string> = {
+  announcementBar: "Pasek informacyjny",
+  trustBar: "Trust bar",
+  checkoutCallout: "Checkout callout",
+  footer: "Stopka i social media",
+};
+
+/** Etykieta dymka nad podświetlonym elementem — z konwencji ścieżki. */
 export function cmsFieldLabel(field: string): string {
-  if (CMS_FIELD_LABELS[field]) return CMS_FIELD_LABELS[field];
-  // Fallback: ostatni segment ścieżki, np. page.o-nas.hero.headline → headline
-  const parts = field.split(".");
-  return parts.slice(-2).join(" · ");
+  const [scope, second, third] = field.split(".");
+  if (scope === "page" && second) {
+    const page = PAGE_LABELS[second] ?? second;
+    const block = third ? (BLOCK_LABELS[third] ?? third) : "";
+    return block ? `${page} — ${block}` : page;
+  }
+  if (scope === "settings" && second) {
+    return SETTINGS_LABELS[second] ?? second;
+  }
+  if (scope === "global" && second) {
+    return second;
+  }
+  return field.split(".").slice(-2).join(" · ");
 }

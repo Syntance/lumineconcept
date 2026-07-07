@@ -29,6 +29,7 @@ export async function BestsellersSection() {
 		<BestsellersGrid
 			title={resolveBestsellersTitle(pageContent.bestsellers)}
 			products={products}
+			cmsField={await cmsAttr("page.home.bestsellers")}
 		/>
 	);
 }

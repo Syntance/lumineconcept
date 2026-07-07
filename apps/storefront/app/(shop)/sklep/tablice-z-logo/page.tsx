@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cmsAttr } from "@/lib/cms-preview/attr";
 import { LogoCategoryHeroSection } from "@/components/category/LogoCategoryHeroSection";
 import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
 import { buildMetadata } from "@/lib/content/metadata";
@@ -32,9 +33,13 @@ export default async function TablicaZLogoPage() {
 
   return (
     <div className="bg-brand-50">
-      <LogoCategoryHeroSection hero={pageContent.hero} />
+      <div {...(await cmsAttr("page.logo-3d.hero"))}>
+        <LogoCategoryHeroSection hero={pageContent.hero} />
+      </div>
       <CustomQuoteSection />
-      <LogoBoardRealizations items={realizations} />
+      <div {...(await cmsAttr("page.logo-3d.gallery"))}>
+        <LogoBoardRealizations items={realizations} />
+      </div>
     </div>
   );
 }

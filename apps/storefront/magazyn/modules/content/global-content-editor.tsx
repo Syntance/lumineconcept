@@ -20,9 +20,11 @@ const inputClass =
 type Props = {
 	siteSettings: SiteSettings;
 	globalContent: GlobalContent;
+	/** Podgląd „edycji na żywo": wywoływane po udanym zapisie (reload iframe). */
+	onSaved?: () => void;
 };
 
-export function GlobalContentEditor({ siteSettings: initialSettings, globalContent: initialGlobal }: Props) {
+export function GlobalContentEditor({ siteSettings: initialSettings, globalContent: initialGlobal, onSaved }: Props) {
 	const [settings, setSettings] = useState(initialSettings);
 	const [global, setGlobal] = useState(initialGlobal);
 	const [error, setError] = useState<string | null>(null);
@@ -52,12 +54,13 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 				return;
 			}
 			setSuccessMessage(cmsSaveSuccessMessage());
+			onSaved?.();
 		});
 	}
 
 	return (
 		<form onSubmit={onSubmit} className="flex max-w-3xl flex-col gap-6">
-			<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
+			<fieldset data-cms-input="settings.announcementBar" className="flex flex-col gap-3 rounded-xl border border-border p-4">
 				<legend className="px-1 text-sm font-medium">Pasek informacyjny</legend>
 				<p className="text-xs text-muted-foreground">
 					Tekst publikuje się od razu po zapisie. Zdjęcia — po przycisku Redeploy u góry.
@@ -97,14 +100,14 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 				/>
 			</fieldset>
 
-			<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
+			<fieldset data-cms-input="settings.trustBar" className="flex flex-col gap-3 rounded-xl border border-border p-4">
 				<legend className="px-1 text-sm font-medium">Trust bar</legend>
 				<Input value={settings.trustBar?.followers ?? ""} onChange={(e) => setSettings((s) => ({ ...s, trustBar: { ...s.trustBar, followers: e.target.value } }))} placeholder="Obserwujący" className="h-10" />
 				<Input value={settings.trustBar?.realizations ?? ""} onChange={(e) => setSettings((s) => ({ ...s, trustBar: { ...s.trustBar, realizations: e.target.value } }))} placeholder="Realizacje" className="h-10" />
 				<Input value={settings.trustBar?.shippingLabel ?? ""} onChange={(e) => setSettings((s) => ({ ...s, trustBar: { ...s.trustBar, shippingLabel: e.target.value } }))} placeholder="Label wysyłki" className="h-10" />
 			</fieldset>
 
-			<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
+			<fieldset data-cms-input="settings.checkoutCallout" className="flex flex-col gap-3 rounded-xl border border-border p-4">
 				<legend className="px-1 text-sm font-medium">Checkout callout (PDP)</legend>
 				<label className="flex items-center gap-2 text-sm">
 					<input type="checkbox" checked={settings.checkoutCallout?.enabled ?? false} onChange={(e) => setSettings((s) => ({ ...s, checkoutCallout: { ...s.checkoutCallout, enabled: e.target.checked } }))} className="size-4" />
@@ -114,7 +117,7 @@ export function GlobalContentEditor({ siteSettings: initialSettings, globalConte
 				<textarea value={settings.checkoutCallout?.message ?? ""} onChange={(e) => setSettings((s) => ({ ...s, checkoutCallout: { ...s.checkoutCallout, message: e.target.value } }))} rows={3} className={inputClass} placeholder="Treść" />
 			</fieldset>
 
-			<fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
+			<fieldset data-cms-input="settings.footer" className="flex flex-col gap-3 rounded-xl border border-border p-4">
 				<legend className="px-1 text-sm font-medium">Stopka i social media</legend>
 				<textarea
 					value={settings.footerText ?? ""}

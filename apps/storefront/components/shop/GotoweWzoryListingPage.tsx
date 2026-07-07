@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cmsAttr } from "@/lib/cms-preview/attr";
 import { Suspense } from "react";
 import {
   buildMedusaCategoryScopeMap,
@@ -185,7 +186,7 @@ export async function GotoweWzoryListingPage({
           </div>
 
           {displayTestimonials.length > 0 && (
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
+            <div {...(await cmsAttr("page.gotowe-wzory.testimonials"))} className="mt-10 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
               {displayTestimonials.map((t) => (
                 <blockquote key={t.id} className="rounded-xl bg-white p-6 text-left shadow-sm">
                   <p className="text-base italic text-brand-800 leading-relaxed">
@@ -201,7 +202,9 @@ export async function GotoweWzoryListingPage({
         </div>
       </section>
 
-      <PageFaqSection faq={pageContent.faq} />
+      <div {...(await cmsAttr("page.gotowe-wzory.faq"))}>
+        <PageFaqSection faq={pageContent.faq} />
+      </div>
     </ShopListingCategoryProvider>
   );
 }

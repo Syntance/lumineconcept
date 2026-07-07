@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { draftMode } from "next/headers";
 import { fetchStoreMetadataBlob } from "./admin-read";
 import { applyMediaUrlOverlay, normalizeMetadataBlobForOverlay } from "./media-overlay";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
@@ -45,7 +46,16 @@ async function getContentBlob() {
 	const live = await fetchStoreMetadataBlob();
 	if (!live) return null;
 	const map = getStaticMediaUrlMap();
-	return applyMediaUrlOverlay(normalizeMetadataBlobForOverlay(live), map);
+	// Tryb „edycji na żywo": nieopublikowane uploady widoczne od razu w podglądzie.
+	let disableGate = false;
+	try {
+		disableGate = (await draftMode()).isEnabled;
+	} catch {
+		/* poza request scope (build) — normalna bramka publikacji */
+	}
+	return applyMediaUrlOverlay(normalizeMetadataBlobForOverlay(live), map, {
+		disableGate,
+	});
 }
 
 export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
