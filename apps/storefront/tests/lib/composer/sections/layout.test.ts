@@ -8,6 +8,7 @@ import {
 	layoutSpacingSchema,
 	layoutVariantSchema,
 	resolveLayoutClasses,
+	sectionLayoutSchema,
 } from "@/lib/composer/sections/layout";
 
 describe("resolveLayoutClasses", () => {
@@ -60,5 +61,31 @@ describe("resolveLayoutClasses", () => {
 			mobile: { align: "left" },
 		});
 		expect(css).toContain("max-lg:");
+	});
+
+	it("Zod odrzuca align z XSS payload", () => {
+		const result = sectionLayoutSchema.safeParse({
+			align: '<script>alert(1)</script>',
+			size: "md",
+			columns: "1",
+			spacing: "md",
+			background: "none",
+			fullWidth: false,
+			variant: "light",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("resolveLayoutClasses — nieznany align w runtime → fallback center", () => {
+		const css = resolveLayoutClasses({
+			align: "center" as "left",
+			size: "md",
+			columns: "1",
+			spacing: "md",
+			background: "none",
+			fullWidth: false,
+			variant: "light",
+		});
+		expect(css).toContain("items-center");
 	});
 });

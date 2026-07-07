@@ -19,6 +19,7 @@ import {
 	CMS_PREVIEW_RELOAD,
 	CMS_PREVIEW_SELECT,
 	CMS_PREVIEW_INLINE,
+	CMS_PREVIEW_MEDIA,
 } from "@/lib/cms-preview/messages";
 import { PageContentEditor } from "./page-content-editor";
 import { GlobalContentEditor } from "./global-content-editor";
@@ -113,6 +114,19 @@ export function LivePreviewClient({
 					target.value = data.value;
 					target.dispatchEvent(new Event("input", { bubbles: true }));
 				}
+				return;
+			}
+			if (data?.type === CMS_PREVIEW_MEDIA && data.field) {
+				setTab("sections");
+				window.setTimeout(() => {
+					const column = editorColumnRef.current;
+					const fieldEl = column?.querySelector<HTMLElement>(
+						`[data-cms-input="${data.field}"]`,
+					);
+					fieldEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+					const fileInput = fieldEl?.querySelector<HTMLInputElement>('input[type="file"]');
+					fileInput?.click();
+				}, 120);
 				return;
 			}
 			if (data?.type !== CMS_PREVIEW_SELECT || !data.field) return;

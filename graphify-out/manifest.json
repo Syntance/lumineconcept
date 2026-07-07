@@ -815,8 +815,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/app/(shop)/sklep/page.tsx": {
-    "mtime": 1783443635.2091405,
-    "ast_hash": "609f3ff2d5da01ac8ca6367879b8c91d",
+    "mtime": 1783444028.546532,
+    "ast_hash": "286c9c0eab90096ff715d5330932db50",
     "semantic_hash": ""
   },
   "apps/storefront/app/(shop)/sklep/pakiety/page.tsx": {
@@ -3355,8 +3355,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/package.json": {
-    "mtime": 1783437105.7720294,
-    "ast_hash": "738e53a0fbf654fdcbde9bd4e9ed0881",
+    "mtime": 1783444050.4672136,
+    "ast_hash": "e15da5a6efe99e440adc234c7cfce2e8",
     "semantic_hash": ""
   },
   "apps/storefront/playwright.config.ts": {
@@ -4225,8 +4225,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/components/cms-preview/PreviewOverlay.tsx": {
-    "mtime": 1783438754.3939743,
-    "ast_hash": "b36f94001437689bfe9b806cf4996d9e",
+    "mtime": 1783444006.2791703,
+    "ast_hash": "3bb8053963a4822aaf76092e13ed7b92",
     "semantic_hash": ""
   },
   "apps/storefront/components/cms-preview/PreviewOverlayGate.tsx": {
@@ -4235,18 +4235,18 @@
     "semantic_hash": ""
   },
   "apps/storefront/lib/cms-preview/attr.ts": {
-    "mtime": 1783429009.6309435,
-    "ast_hash": "46a034cbc2ba4505c153c6873a218970",
+    "mtime": 1783444003.8918571,
+    "ast_hash": "22716f369f826635573709c138fcb134",
     "semantic_hash": ""
   },
   "apps/storefront/lib/cms-preview/messages.ts": {
-    "mtime": 1783438752.4041977,
-    "ast_hash": "15c9270e92f154362f34ef00fc2fe9f6",
+    "mtime": 1783444004.3625422,
+    "ast_hash": "33001c18ca8345eb1c0c6df47e46f5a3",
     "semantic_hash": ""
   },
   "apps/storefront/magazyn/modules/content/live-preview-client.tsx": {
-    "mtime": 1783438755.713561,
-    "ast_hash": "3e86df624b5d5315c7faae6ca365ddf0",
+    "mtime": 1783444008.8914952,
+    "ast_hash": "e2480449b48066d3cb716038655e6ebd",
     "semantic_hash": ""
   },
   "apps/storefront/magazyn/modules/content/live-preview-page.tsx": {
@@ -4295,8 +4295,8 @@
     "semantic_hash": ""
   },
   "docs/composer-test-plan.md": {
-    "mtime": 1783437360.7329137,
-    "ast_hash": "1b454b5d2a71656957a2425c5e425614",
+    "mtime": 1783444151.9349368,
+    "ast_hash": "30e1a7e9be29bba1a9ed49b595a02258",
     "semantic_hash": ""
   },
   "apps/storefront/app/api/composer/theme-tokens/route.ts": {
@@ -4430,8 +4430,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/components/composer/SectionsEditor.tsx": {
-    "mtime": 1783443642.5401728,
-    "ast_hash": "f18fbdbfdbc13b7ef909623e452d94f9",
+    "mtime": 1783444027.1825364,
+    "ast_hash": "b266d5e7131da13c49485cc4f8681bd2",
     "semantic_hash": ""
   },
   "apps/storefront/components/composer/sections/BestsellersSkeleton.tsx": {
@@ -4495,8 +4495,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/tests/lib/composer/sections/layout.test.ts": {
-    "mtime": 1783443655.5099788,
-    "ast_hash": "35334cf5b66272fcb2363e6696f6ee17",
+    "mtime": 1783444037.4800503,
+    "ast_hash": "ec4a41ab0814b2c212d35bf10b69a556",
     "semantic_hash": ""
   },
   "apps/storefront/tests/lib/composer/sections/migrate.test.ts": {
@@ -4555,8 +4555,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/components/composer/sections/ComposerTextImageSection.tsx": {
-    "mtime": 1783443487.4817238,
-    "ast_hash": "36b977d6ebba43bed8f59196f5fc6e5c",
+    "mtime": 1783444025.7280738,
+    "ast_hash": "f4c29d316e3ac22aa897d9ae2eb5aaff",
     "semantic_hash": ""
   },
   "apps/storefront/lib/composer/presets.ts": {
@@ -4565,18 +4565,28 @@
     "semantic_hash": ""
   },
   "apps/storefront/tests-e2e/composer-sections.e2e.spec.ts": {
-    "mtime": 1783443661.3895855,
-    "ast_hash": "8a1e3bd77f360273de7044df9511767e",
+    "mtime": 1783444137.2751231,
+    "ast_hash": "efb0bae8c0a1510257c568c92d18c684",
     "semantic_hash": ""
   },
   "apps/storefront/tests/lib/composer/sections/parse.test.ts": {
-    "mtime": 1783443648.1653788,
-    "ast_hash": "4309723941f4e20e1c8b4e52f4f7d9b2",
+    "mtime": 1783444056.9252424,
+    "ast_hash": "8732da92620f8a142db2f2b18618d661",
     "semantic_hash": ""
   },
   "apps/storefront/tests/lib/composer/sections/schema.test.ts": {
     "mtime": 1783443647.2426062,
     "ast_hash": "32a42fea9152b452effa8bcd36b5aa1c",
+    "semantic_hash": ""
+  },
+  "apps/storefront/lib/composer/inline-edit.ts": {
+    "mtime": 1783444002.691996,
+    "ast_hash": "dd0aee3953563516a56c233d504cfe8c",
+    "semantic_hash": ""
+  },
+  "apps/storefront/tests/lib/composer/inline-edit.test.ts": {
+    "mtime": 1783444034.455748,
+    "ast_hash": "66345324524eac2b7d80890ebca175e1",
     "semantic_hash": ""
   }
 }

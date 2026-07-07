@@ -16,7 +16,10 @@
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "test:e2e:composer-etap1": "playwright test tests-e2e/composer-theme.e2e.spec.ts",
+    "test:e2e:composer-sections": "playwright test tests-e2e/composer-sections.e2e.spec.ts",
+    "test:e2e:composer": "playwright test tests-e2e/composer-theme.e2e.spec.ts tests-e2e/composer-sections.e2e.spec.ts",
     "verify:composer-etap1": "node scripts/verify-composer-etap1.mjs",
+    "verify:composer": "node scripts/verify-composer-etap1.mjs",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:install": "playwright install --with-deps chromium",
     "clean": "rm -rf .next .turbo"

@@ -27,6 +27,7 @@ import type { SectionHistory } from "@/lib/composer/sections/schema";
 import { CMS_PREVIEW_RELOAD } from "@/lib/cms-preview/messages";
 import type { CmsProductOption } from "@/magazyn/modules/content/product-options";
 import { applyPreset, presetsForPage } from "@/lib/composer/presets";
+import { OgImageField } from "@/magazyn/modules/content/seo/og-image-field";
 
 type Props = {
 	pageId: ContentPageId;
@@ -500,11 +501,13 @@ function SectionFieldsEditor({
 					</label>
 					<label className="flex flex-col gap-1 text-sm">
 						URL obrazu
-						<input
-							className={inputClass}
-							value={section.props.imageUrl ?? ""}
-							onChange={(e) => onPropsChange({ imageUrl: e.target.value })}
-						/>
+						<div data-cms-input={`page.${pageId}.sections.${section.id}.imageUrl`}>
+							<OgImageField
+								label="Obraz sekcji"
+								value={section.props.imageUrl ?? ""}
+								onChange={(url) => onPropsChange({ imageUrl: url })}
+							/>
+						</div>
 					</label>
 					<label className="flex flex-col gap-1 text-sm">
 						Alt obrazu

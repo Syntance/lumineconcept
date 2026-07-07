@@ -5,6 +5,7 @@ import {
   CMS_PREVIEW_RELOAD,
   CMS_PREVIEW_SELECT,
   CMS_PREVIEW_INLINE,
+  CMS_PREVIEW_MEDIA,
   cmsFieldLabel,
 } from "@/lib/cms-preview/messages";
 
@@ -55,7 +56,14 @@ export function PreviewOverlay() {
       e.preventDefault();
       e.stopPropagation();
       const field = el.dataset.cms ?? "";
-      if (window.parent !== window) {
+      if (window.parent !== window && field) {
+        if (el.dataset.cmsInline === "image") {
+          window.parent.postMessage(
+            { type: CMS_PREVIEW_MEDIA, field },
+            window.location.origin,
+          );
+          return;
+        }
         window.parent.postMessage(
           { type: CMS_PREVIEW_SELECT, field },
           window.location.origin,

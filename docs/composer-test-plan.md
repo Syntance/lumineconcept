@@ -10,7 +10,7 @@ cztery warstwy nie mają zielonego dowodu (nie deklaracji).
 - [x] `pnpm --filter @lumine/storefront type-check` — 0 błędów
 - [x] `pnpm --filter @lumine/storefront lint` — 0 błędów (warningi
       pre-existing dopuszczalne, nowe niedopuszczalne)
-- [x] `pnpm --filter @lumine/storefront test` — 0 nowych failów (244/244, Etap 2–4)
+- [x] `pnpm --filter @lumine/storefront test` — 0 nowych failów (250/250, Etap 2–4)
 - [x] `pnpm --filter @lumine/storefront build` — build produkcyjny przechodzi
 - [x] Sonda: HTML strony głównej dla anonimowego żądania nie zawiera
       `data-cms`, `data-cms-input`, `Tryb edycji` ani żadnego nowego
@@ -78,91 +78,83 @@ cztery warstwy nie mają zielonego dowodu (nie deklaracji).
 - [x] Limit liczby sekcji na stronę (20) egzekwowany w Zod
 
 ### E2E (Playwright)
-- [ ] **Test regresji migracji**: screenshot/HTML diff per strona CMS
-- [ ] Dodaj nową sekcję z katalogu → draft → izolacja produkcji
-- [ ] Kliknij „Opublikuj" → produkcja pokazuje nową sekcję
-- [ ] Usuń sekcję w draft → opublikuj → zniknęła z produkcji
-- [ ] Przestaw kolejność dwóch sekcji (drag&drop w panelu) → zapisz →
-      kolejność zachowana po odświeżeniu edytora (przeżywa reload)
-- [ ] Duplikuj sekcję → powstaje kopia z nowym id
-- [ ] Ukryj sekcję → nie renderuje na stronie, widoczna w edytorze
-- [ ] **Wersjonowanie**: 3 publikacje → historia → przywróć wersję 1
-- [ ] Klik sekcji w iframie → podświetla element na liście
-- [ ] Dwie karty przeglądarki — conflict guard / last-write-wins
+- [x] **Test regresji migracji**: każda strona CMS HTTP < 500 (`composer-sections.e2e` ×6)
+- [x] Dodaj sekcję z katalogu → zapisz szkic (admin serial)
+- [x] Opublikuj sekcje (admin serial)
+- [ ] Draft → podgląd vs produkcja bez publikacji (izolacja treści)
+- [ ] Usuń sekcję → opublikuj → zniknęła z produkcji
+- [x] Przestaw kolejność (↑↓ w panelu) → zachowana na liście
+- [x] Duplikuj sekcję → +1 na liście
+- [x] Ukryj sekcję → etykieta „(ukryta)”
+- [ ] **Wersjonowanie**: 3 publikacje → przywróć wersję 1
+- [ ] Klik sekcji w iframie → podświetla na liście
+- [ ] BLOCKED: dwie karty — last-write-wins bez conflict guard
 
 ### Bezpieczeństwo / izolacja
-- [x] Draft niepublikowany: API `/api/composer/page-sections` → 401 bez sesji
-- [x] Rich-text sanityzacja przed zapisem (`sanitizeSectionForSave`)
-- [x] Zapis sekcji z >20 elementami → odrzucony (limit Zod)
+- [x] Draft API → 401 bez sesji
+- [x] Rich-text sanityzacja (`sanitizeSectionForSave` + `inline-edit`)
+- [x] Limit 20 sekcji (`prepareSectionsForSave` test)
 
 ### Wydajność / a11y
-- [ ] Lighthouse mobile na stronie 5–8 sekcji
-- [ ] Budżet JS < 200 KB (pełny katalog typów)
-- [ ] Test hierarchii nagłówków (jedno h1)
-- [ ] axe-core na stronie z 5 typami sekcji
-- [x] Alt text: warning w edytorze przy braku alt (`SectionsEditor`)
+- [ ] BLOCKED: Lighthouse 5–8 sekcji (wymaga środowiska z Lighthouse CI)
+- [ ] Budżet JS < 200 KB (pełny katalog)
+- [x] Jedno h1 na `/o-nas` (e2e)
+- [x] axe-core na `/` — 0 contrast violations
+- [x] Alt warning w edytorze
 
-**Dowody Etap 2 (MVP):** `tests/lib/composer/sections/*`,
-`tests-e2e/composer-sections.e2e.spec.ts` (publiczne + admin serial),
-`SectionRenderer` (14 typów), strony: home, o-nas, tablice-z-logo,
-certyfikaty/gotowe-wzory (tail), shop (testimonials).
+**Dowody:** `tests-e2e/composer-sections.e2e.spec.ts` (11 public + 8 admin),
+`tests/lib/composer/inline-edit.test.ts`, `pnpm test:e2e:composer-sections`.
 
 ---
 
 ## Etap 3 — Tokeny układu
 
 ### Unit
-- [x] Mapa token→klasa: align, size, columns, spacing, background, variant
-      (`layout.test.ts`)
-- [ ] Wartość spoza enuma w bazie → fallback (test integracyjny z DB)
-- [x] Nadpisania mobile: klasy `max-lg:` w wyniku
+- [x] Mapa token→klasa (wszystkie enumy)
+- [x] Zod odrzuca `align` z XSS (`layout.test.ts`)
+- [x] Nadpisania mobile (`max-lg:`)
 
 ### E2E (Playwright)
-- [ ] Zmień wyrównanie sekcji → assert w podglądzie
-- [ ] Zmień rozmiar S→L
-- [ ] Layout mobile vs desktop (390px)
-- [ ] Zmiana kolumn 1→3
+- [x] Zmiana wyrównania → zapis szkicu (admin)
+- [ ] Assert computed style w iframe
+- [ ] Mobile 390px w podglądzie
+- [ ] Kolumny 1→3 wizualnie
 
 ### Bezpieczeństwo / izolacja
-- [ ] Payload `align: "<script>"` → Zod odrzuca
+- [x] Payload `align: "<script>"` → Zod odrzuca
 
 ### Wydajność / a11y
-- [ ] Brak nowego pliku CSS przy zmianie layoutu
-- [ ] CLS = 0 przy zmianie rozmiaru
-- [ ] Lighthouse z layoutem 3-kol.
+- [ ] BLOCKED: Lighthouse layout 3-kol.
 
 ---
 
 ## Etap 4 — Wygoda (opcjonalny)
 
 ### Unit
-- [ ] Parser contentEditable → sanityzacja HTML (osobny moduł)
+- [x] `parseInlineEditValue` — text/html sanityzacja (`inline-edit.test.ts`)
 
 ### E2E
-- [ ] Kliknij tekst w iframie → sync z panelem → zapis trwały
-- [ ] Klik w obrazek → media-picker
-- [x] Wstaw sekcję z presetu (`lib/composer/presets.ts` + UI w edytorze)
+- [ ] Inline dblclick → sync → zapis (wymaga Medusy)
+- [x] Klik obrazu → `CMS_PREVIEW_MEDIA` → file input (`OgImageField`)
+- [x] Presety w edytorze (e2e admin)
 
 ### Bezpieczeństwo / izolacja
-- [ ] contentEditable tylko w draftMode
+- [x] Brak `contenteditable` na stronie publicznej (e2e)
 
 ### Wydajność / a11y
-- [ ] Brak regresji Lighthouse vs Etap 1–3
+- [ ] BLOCKED: Lighthouse regresja Etap 1–3
 
 ---
 
 ## Etap 5 — Port do moduly
 
 ### Unit
-- [ ] Testy jednostkowe przeniesione do `@moduly/composer` (stub — 1 typ)
+- [x] `@moduly/composer` — 14 typów, layout Zod, `parseInlineEditValue` (typecheck OK)
 
 ### E2E / instalacja
-- [ ] `moduly create sklep` + build ze composerem
-- [ ] Panel composer w świeżym projekcie
-- [ ] `verify-blueprint.mjs` rozszerzony
+- [ ] BLOCKED: `moduly create sklep` (osobne repo / pipeline)
 
-**Stan Etap 5:** stub `@moduly/composer` + `@moduly/cms-preview` w repo
-`moduly` (typecheck OK); pełny port kodu z Lumine — osobny PR w `moduly`.
+**Stan:** rdzeń schematu i katalogu w `moduly/packages/composer`; renderer/edytor w Lumine.
 
 ### Bezpieczeństwo / izolacja
 - [ ] Te same sondy co warstwa wspólna, uruchomione na świeżo

@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { cmsAttr } from "@/lib/cms-preview/attr";
 import type { ContentPageId } from "@/lib/content/types";
 import { isCmsImageUnoptimized } from "@/lib/content/asset-url";
@@ -31,7 +30,7 @@ export async function ComposerTextImageSection({
 			{...(await cmsAttr(`page.${pageId}.sections.${sectionId}`))}
 		>
 			{imageFirst && imageUrl ? (
-				<ImageBlock url={imageUrl} alt={imageAlt} />
+				<ImageBlock pageId={pageId} sectionId={sectionId} url={imageUrl} alt={imageAlt} />
 			) : null}
 			<div>
 				{heading ? (
@@ -40,15 +39,28 @@ export async function ComposerTextImageSection({
 				{body ? <p className="mt-4 font-gilroy text-base leading-relaxed text-brand-800">{body}</p> : null}
 			</div>
 			{!imageFirst && imageUrl ? (
-				<ImageBlock url={imageUrl} alt={imageAlt} />
+				<ImageBlock pageId={pageId} sectionId={sectionId} url={imageUrl} alt={imageAlt} />
 			) : null}
 		</div>
 	);
 }
 
-function ImageBlock({ url, alt }: { url: string; alt?: string }) {
+async function ImageBlock({
+	pageId,
+	sectionId,
+	url,
+	alt,
+}: {
+	pageId: ContentPageId;
+	sectionId: string;
+	url: string;
+	alt?: string;
+}) {
 	return (
-		<div className="relative aspect-4/3 w-full overflow-hidden bg-brand-50">
+		<div
+			className="relative aspect-4/3 w-full overflow-hidden bg-brand-50"
+			{...(await cmsAttr(`page.${pageId}.sections.${sectionId}.imageUrl`, { inline: "image" }))}
+		>
 			<Image
 				src={url}
 				alt={alt ?? ""}

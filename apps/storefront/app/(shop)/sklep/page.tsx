@@ -82,7 +82,12 @@ export default async function ShopHubPage() {
     getPageSections("shop"),
   ]);
 
-  const categories = mapShopCategoryTiles(pageContent.categoryTiles, FALLBACK_CATEGORIES);
+  const tilesSection = composerSections.find((s) => s.type === "categoryTiles");
+  const categoryTilesSource =
+    tilesSection?.type === "categoryTiles" && tilesSection.props.items.length > 0
+      ? tilesSection.props.items
+      : pageContent.categoryTiles;
+  const categories = mapShopCategoryTiles(categoryTilesSource, FALLBACK_CATEGORIES);
   const trustBar = resolveTrustBarDisplay(settings.trustBar);
   const composerTestimonials = composerSections.filter((s) => s.type === "testimonials");
 

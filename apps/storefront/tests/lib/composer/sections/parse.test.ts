@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { safeParseHistoryJson, safeParseSectionsJson } from "@/lib/composer/sections/parse";
+import { prepareSectionsForSave, safeParseHistoryJson, safeParseSectionsJson } from "@/lib/composer/sections/parse";
+import { createSection } from "@/lib/composer/registry";
+
+describe("prepareSectionsForSave", () => {
+	it("odrzuca więcej niż 20 sekcji", () => {
+		const sections = Array.from({ length: 21 }, () => createSection("richText"));
+		expect(() => prepareSectionsForSave(sections)).toThrow();
+	});
+});
+
 
 describe("safeParseSectionsJson", () => {
 	it("uszkodzony JSON string → []", () => {
