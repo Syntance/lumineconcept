@@ -11,6 +11,7 @@ import type {
 	PageContent,
 	SiteSettings,
 } from "@/lib/content/types";
+import type { ThemeTokens } from "@/lib/composer/theme";
 import {
 	CMS_PREVIEW_RELOAD,
 	CMS_PREVIEW_SELECT,
@@ -40,6 +41,7 @@ type Props = {
 	initial: PageContent;
 	siteSettings: SiteSettings;
 	globalContent: GlobalContent;
+	themeTokens: ThemeTokens;
 	productOptions: CmsProductOption[];
 };
 
@@ -58,6 +60,7 @@ export function LivePreviewClient({
 	initial,
 	siteSettings,
 	globalContent,
+	themeTokens,
 	productOptions,
 }: Props) {
 	const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -244,6 +247,7 @@ export function LivePreviewClient({
 							<GlobalContentEditor
 								siteSettings={siteSettings}
 								globalContent={globalContent}
+								themeTokens={themeTokens}
 								onSaved={reloadPreview}
 							/>
 						)}

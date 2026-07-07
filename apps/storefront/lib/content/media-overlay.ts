@@ -16,6 +16,7 @@ export function normalizeMetadataBlobForOverlay(blob: RawStoreMetadataBlob): Raw
 		pageSeo: parseMetadataJsonField(blob.pageSeo),
 		pageContent: parseMetadataJsonField(blob.pageContent),
 		globalContent: parseMetadataJsonField(blob.globalContent),
+		themeTokens: parseMetadataJsonField(blob.themeTokens),
 	};
 }
 import {
@@ -110,6 +111,7 @@ export function applyMediaUrlOverlay(
 		pageSeo: applyMediaGate(blob.pageSeo, urlMap, gateEnabled),
 		pageContent: applyMediaGate(blob.pageContent, urlMap, gateEnabled),
 		globalContent: applyMediaGate(blob.globalContent, urlMap, gateEnabled),
+		themeTokens: blob.themeTokens,
 	};
 }
 

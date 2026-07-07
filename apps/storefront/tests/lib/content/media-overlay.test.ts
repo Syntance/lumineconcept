@@ -18,6 +18,7 @@ describe("applyMediaUrlOverlay", () => {
 					},
 				},
 				globalContent: null,
+				themeTokens: null,
 			},
 			{ [remoteA]: localA },
 		);
@@ -41,6 +42,7 @@ describe("applyMediaUrlOverlay", () => {
 					},
 				},
 				globalContent: null,
+				themeTokens: null,
 			},
 			{ [remoteA]: localA },
 		);
@@ -61,6 +63,7 @@ describe("applyMediaUrlOverlay", () => {
 					},
 				},
 				globalContent: null,
+				themeTokens: null,
 			},
 			{},
 		);
@@ -80,6 +83,7 @@ describe("applyMediaUrlOverlay", () => {
 				},
 			}),
 			globalContent: null,
+			themeTokens: null,
 		};
 
 		const out = applyMediaUrlOverlay(normalizeMetadataBlobForOverlay(rawBlob), {

@@ -10,6 +10,7 @@ import {
 	saveGlobalContent,
 	savePageContent,
 	saveSiteSettingsPartial,
+	saveThemeTokens,
 } from "./content-store";
 import {
 	globalContentSchema,
@@ -18,6 +19,8 @@ import {
 	preparePageContentForSave,
 	siteSettingsSchema,
 } from "@/lib/content/parsers";
+import { prepareThemeTokensForSave, themeTokensSchema } from "@/lib/composer/theme";
+import type { ThemeTokens } from "@/lib/composer/theme";
 
 export type SaveContentState = {
 	ok: boolean;
@@ -90,6 +93,28 @@ export async function saveGlobalSiteSettingsAction(
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się zapisać ustawień." };
+	}
+
+	await revalidateContentCache(["/"]);
+	return { ok: true, error: null };
+}
+
+export async function saveThemeTokensAction(tokens: ThemeTokens): Promise<SaveContentState> {
+	const prepared = prepareThemeTokensForSave(tokens);
+	const parsed = themeTokensSchema.safeParse(prepared);
+	if (!parsed.success) {
+		return {
+			ok: false,
+			error: parsed.error.issues[0]?.message ?? "Błędne tokeny motywu.",
+		};
+	}
+
+	try {
+		await saveThemeTokens(parsed.data);
+	} catch (error) {
+		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
+		if (error instanceof AdminApiError) return { ok: false, error: error.message };
+		return { ok: false, error: "Nie udało się zapisać motywu." };
 	}
 
 	await revalidateContentCache(["/"]);

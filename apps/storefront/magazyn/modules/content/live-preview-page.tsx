@@ -28,6 +28,7 @@ export default async function CmsLivePreviewPage({ params }: Props) {
 			initial={bundle.pageContent[page.id as keyof PageContentMap] ?? {}}
 			siteSettings={bundle.siteSettings}
 			globalContent={bundle.globalContent}
+			themeTokens={bundle.themeTokens}
 			productOptions={productOptions}
 		/>
 	);

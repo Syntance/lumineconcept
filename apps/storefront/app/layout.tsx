@@ -5,6 +5,8 @@ import { Providers } from "@/providers/Providers";
 import { CookieConsent } from "@/components/common/CookieConsent";
 import { ConsentModeScript } from "@/components/analytics/ConsentModeScript";
 import { PreviewOverlayGate } from "@/components/cms-preview/PreviewOverlayGate";
+import { ThemeFontPreloads } from "@/components/composer/ThemeFontPreloads";
+import { ThemeStyles } from "@/components/composer/ThemeStyles";
 import { getSiteSettings } from "@/lib/content";
 import "@/styles/globals.css";
 
@@ -28,6 +30,7 @@ const gilroy = localFont({
   display: "swap",
   adjustFontFallback: "Arial",
   fallback: ['system-ui', '-apple-system', 'sans-serif'],
+  preload: false,
 });
 
 const chronicle = localFont({
@@ -126,6 +129,8 @@ export default async function RootLayout({
   return (
     <html lang="pl" className={`${gilroy.variable} ${chronicle.variable} ${binerka.variable}`}>
       <head>
+        <ThemeStyles />
+        <ThemeFontPreloads />
         {/* Hero preload AVIF — HeroSection (RSC hoist do <head>). */}
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <ConsentModeScript nonce={nonce} />

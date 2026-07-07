@@ -9,6 +9,7 @@ import {
 	MAGAZYN_PAGE_CONTENT_KEY,
 	MAGAZYN_PAGE_SEO_KEY,
 	MAGAZYN_SITE_SETTINGS_KEY,
+	MAGAZYN_THEME_TOKENS_KEY,
 	MAGAZYN_CONTENT_CACHE_TAG,
 } from "./metadata-keys";
 
@@ -17,6 +18,7 @@ export type RawStoreMetadataBlob = {
 	pageSeo: unknown;
 	pageContent: unknown;
 	globalContent: unknown;
+	themeTokens: unknown;
 };
 
 const REVALIDATE_SECONDS = 3600;
@@ -145,6 +147,7 @@ export const fetchStoreMetadataBlob = cache(async (): Promise<RawStoreMetadataBl
 			pageSeo: metadata[MAGAZYN_PAGE_SEO_KEY],
 			pageContent: metadata[MAGAZYN_PAGE_CONTENT_KEY],
 			globalContent: metadata[MAGAZYN_GLOBAL_CONTENT_KEY],
+			themeTokens: metadata[MAGAZYN_THEME_TOKENS_KEY],
 		};
 	} catch (e) {
 		console.error("[CMS] Błąd parsowania Store.metadata:", e);
