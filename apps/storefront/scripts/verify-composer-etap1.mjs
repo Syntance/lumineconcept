@@ -50,6 +50,16 @@ console.log(`\nComposer Etap 1 — sondy na ${BASE}\n`);
 	else fail(`POST /api/composer/theme-tokens → 401`, `otrzymano ${res.status}`);
 }
 
+{
+	const { res } = await fetchText("/api/composer/page-sections", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({}),
+	});
+	if (res.status === 401) pass(`POST /api/composer/page-sections → ${res.status}`);
+	else fail(`POST /api/composer/page-sections → 401`, `otrzymano ${res.status}`);
+}
+
 // --- HTML anonimowy ---
 {
 	const { res, text } = await fetchText("/");

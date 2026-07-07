@@ -62,4 +62,11 @@ export function composerEnabledForPage(pageId: ContentPageId): boolean {
 	return magazynConfig.content.pages.some((p) => p.id === pageId);
 }
 
+/** Czy strona ma opublikowane sekcje w metadata (nie migracja). */
+export async function hasLivePageSections(pageId: ContentPageId): Promise<boolean> {
+	const blob = await fetchStoreMetadataBlob();
+	if (!blob?.pageSectionsLive[pageId]) return false;
+	return safeParseSectionsJson(blob.pageSectionsLive[pageId]).length > 0;
+}
+
 export { parsePageSections };

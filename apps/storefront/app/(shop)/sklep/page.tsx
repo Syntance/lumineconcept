@@ -3,10 +3,10 @@ import { cmsAttr } from "@/lib/cms-preview/attr";
 import Link from "next/link";
 import Image from "next/image";
 import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { getPageSections } from "@/lib/content/sections";
 import { buildMetadata } from "@/lib/content/metadata";
 import {
 	mapShopCategoryTiles,
-	pickTestimonials,
 	resolveTrustBarDisplay,
 	type ShopCategoryCard,
 } from "@/lib/content/cms-wiring";
@@ -15,6 +15,7 @@ import { BRAND_BLUR_DATA_URL } from "@/lib/images/blur";
 import { SITE_URL, cn } from "@/lib/utils";
 import { serializeJsonLd } from "@/lib/seo/json-ld";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { SectionRenderer } from "@/components/composer/SectionRenderer";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PriceDisplay } from "@/components/product/PriceDisplay";
 import { PRODUCT_IMAGE_ASPECT_CLASS } from "@/lib/products/product-image-aspect";
@@ -74,15 +75,16 @@ const FALLBACK_CATEGORIES: readonly ShopCategoryCard[] = [
 ] as const;
 
 export default async function ShopHubPage() {
-  const [bestsellers, settings, pageContent] = await Promise.all([
+  const [bestsellers, settings, pageContent, composerSections] = await Promise.all([
     getProductsByTag("bestseller", 4).catch(() => []),
     getSiteSettings(),
     getPageContent("shop"),
+    getPageSections("shop"),
   ]);
 
   const categories = mapShopCategoryTiles(pageContent.categoryTiles, FALLBACK_CATEGORIES);
-  const displayTestimonials = pickTestimonials(pageContent.testimonials, 3);
   const trustBar = resolveTrustBarDisplay(settings.trustBar);
+  const composerTestimonials = composerSections.filter((s) => s.type === "testimonials");
 
   return (
     <>
@@ -327,21 +329,7 @@ export default async function ShopHubPage() {
             <span>{trustBar.shippingLabel}</span>
           </div>
 
-          {displayTestimonials.length > 0 && (
-            <div {...(await cmsAttr("page.shop.testimonials"))} className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl mx-auto">
-              {displayTestimonials.map((t) => (
-                <blockquote key={t.id} className="text-center">
-                  <p className="text-base italic leading-relaxed text-brand-800">
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-                  <footer className="mt-2 text-sm text-brand-400">
-                    — {t.name}{t.company ? `, ${t.company}` : ""}
-                  </footer>
-                </blockquote>
-              ))}
-            </div>
-          )}
-
+          <SectionRenderer pageId="shop" sections={composerTestimonials} />
         </div>
       </section>
     </>

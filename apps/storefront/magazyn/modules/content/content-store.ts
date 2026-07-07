@@ -26,7 +26,7 @@ import type { ContentPageId } from "@/lib/content/types";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import {
 	prepareSectionsForSave,
-	parseSectionHistory,
+	safeParseHistoryJson,
 	safeParseSectionsJson,
 } from "@/lib/composer/sections/parse";
 import type { PageSection, PageSections, SectionHistory } from "@/lib/composer/sections/schema";
@@ -121,9 +121,7 @@ export async function publishPageSections(
 	const parsed = prepareSectionsForSave(sections);
 
 	const historyRaw = readMetadataJson(store, pageSectionsHistoryKey(pageId));
-	const history = parseSectionHistory(
-		typeof historyRaw === "string" ? JSON.parse(historyRaw) : historyRaw,
-	);
+	const history = safeParseHistoryJson(historyRaw);
 	const liveRaw = readMetadataJson(store, pageSectionsLiveKey(pageId));
 	const currentLive = safeParseSectionsJson(liveRaw);
 	if (currentLive.length > 0) {
@@ -147,9 +145,7 @@ export async function restorePageSectionsVersion(
 ): Promise<PageSections | null> {
 	const store = await getMedusaStore();
 	const historyRaw = readMetadataJson(store, pageSectionsHistoryKey(pageId));
-	const history = parseSectionHistory(
-		typeof historyRaw === "string" ? JSON.parse(historyRaw) : historyRaw,
-	);
+	const history = safeParseHistoryJson(historyRaw);
 	const version = history.versions[versionIndex];
 	if (!version) return null;
 	const parsed = prepareSectionsForSave(version.sections);
@@ -165,7 +161,5 @@ export async function getPageSectionsHistoryForAdmin(
 ): Promise<SectionHistory> {
 	const store = await getMedusaStore();
 	const historyRaw = readMetadataJson(store, pageSectionsHistoryKey(pageId));
-	return parseSectionHistory(
-		typeof historyRaw === "string" ? JSON.parse(historyRaw) : historyRaw,
-	);
+	return safeParseHistoryJson(historyRaw);
 }

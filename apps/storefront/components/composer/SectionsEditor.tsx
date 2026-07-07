@@ -26,6 +26,7 @@ import {
 import type { SectionHistory } from "@/lib/composer/sections/schema";
 import { CMS_PREVIEW_RELOAD } from "@/lib/cms-preview/messages";
 import type { CmsProductOption } from "@/magazyn/modules/content/product-options";
+import { applyPreset, presetsForPage } from "@/lib/composer/presets";
 
 type Props = {
 	pageId: ContentPageId;
@@ -155,6 +156,29 @@ export function SectionsEditor({
 						</button>
 					))}
 				</div>
+			) : null}
+
+			{presetsForPage(pageId).length > 0 ? (
+				<fieldset className="rounded-xl border border-border p-3">
+					<legend className="px-1 text-sm font-medium">Presety strony</legend>
+					<div className="flex flex-wrap gap-2">
+						{presetsForPage(pageId).map((preset) => (
+							<Button
+								key={preset.id}
+								type="button"
+								size="sm"
+								variant="outline"
+								onClick={() => {
+									setSections(applyPreset(preset));
+									setSelectedId(null);
+									setMessage(`Zastosowano preset: ${preset.label}`);
+								}}
+							>
+								{preset.label}
+							</Button>
+						))}
+					</div>
+				</fieldset>
 			) : null}
 
 			<ul className="flex flex-col gap-2">
@@ -415,6 +439,106 @@ function SectionFieldsEditor({
 							</option>
 						))}
 					</select>
+				</label>
+			) : null}
+
+			{section.type === "cta" ? (
+				<>
+					<label className="flex flex-col gap-1 text-sm">
+						Nagłówek
+						<input
+							className={inputClass}
+							value={section.props.heading ?? ""}
+							onChange={(e) => onPropsChange({ heading: e.target.value })}
+						/>
+					</label>
+					<label className="flex flex-col gap-1 text-sm">
+						Podtytuł
+						<input
+							className={inputClass}
+							value={section.props.subheading ?? ""}
+							onChange={(e) => onPropsChange({ subheading: e.target.value })}
+						/>
+					</label>
+					<label className="flex flex-col gap-1 text-sm">
+						Etykieta CTA
+						<input
+							className={inputClass}
+							value={section.props.ctaLabel ?? ""}
+							onChange={(e) => onPropsChange({ ctaLabel: e.target.value })}
+						/>
+					</label>
+					<label className="flex flex-col gap-1 text-sm">
+						Link CTA
+						<input
+							className={inputClass}
+							value={section.props.ctaHref ?? ""}
+							onChange={(e) => onPropsChange({ ctaHref: e.target.value })}
+						/>
+					</label>
+				</>
+			) : null}
+
+			{section.type === "textImage" ? (
+				<>
+					<label className="flex flex-col gap-1 text-sm">
+						Nagłówek
+						<input
+							className={inputClass}
+							value={section.props.heading ?? ""}
+							onChange={(e) => onPropsChange({ heading: e.target.value })}
+						/>
+					</label>
+					<label className="flex flex-col gap-1 text-sm">
+						Treść
+						<textarea
+							className={inputClass}
+							rows={4}
+							value={section.props.body ?? ""}
+							onChange={(e) => onPropsChange({ body: e.target.value })}
+						/>
+					</label>
+					<label className="flex flex-col gap-1 text-sm">
+						URL obrazu
+						<input
+							className={inputClass}
+							value={section.props.imageUrl ?? ""}
+							onChange={(e) => onPropsChange({ imageUrl: e.target.value })}
+						/>
+					</label>
+					<label className="flex flex-col gap-1 text-sm">
+						Alt obrazu
+						<input
+							className={inputClass}
+							value={section.props.imageAlt ?? ""}
+							onChange={(e) => onPropsChange({ imageAlt: e.target.value })}
+						/>
+					</label>
+					{!section.props.imageAlt?.trim() && section.props.imageUrl ? (
+						<p role="status" className="text-xs text-amber-700">
+							Brak opisu alt — dodaj dla dostępności (WCAG).
+						</p>
+					) : null}
+				</>
+			) : null}
+
+			{section.type === "gallery" ? (
+				<p role="status" className="text-xs text-muted-foreground">
+					Galeria: {section.props.items.length} zdjęć.
+					{section.props.items.some((i) => !i.alt?.trim()) ? (
+						<span className="text-amber-700"> Niektóre zdjęcia bez alt.</span>
+					) : null}
+				</p>
+			) : null}
+
+			{section.type === "embedMap" ? (
+				<label className="flex flex-col gap-1 text-sm">
+					URL osadzenia mapy
+					<input
+						className={inputClass}
+						value={section.props.embedUrl}
+						onChange={(e) => onPropsChange({ embedUrl: e.target.value })}
+					/>
 				</label>
 			) : null}
 		</div>

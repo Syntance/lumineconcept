@@ -42,4 +42,15 @@ export function safeParseSectionsJson(json: unknown): PageSections {
 	return parsePageSections(json);
 }
 
+export function safeParseHistoryJson(json: unknown): SectionHistory {
+	if (typeof json === "string") {
+		try {
+			return parseSectionHistory(JSON.parse(json));
+		} catch {
+			return { versions: [] };
+		}
+	}
+	return parseSectionHistory(json);
+}
+
 export { pageSectionsArraySchema, sectionHistorySchema };

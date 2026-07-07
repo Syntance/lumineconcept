@@ -21,9 +21,12 @@ import { HeroPortalContent } from "./HeroPortalContent";
 export async function HeroSection({
 	hero,
 	children,
+	cmsField = "page.home.hero",
 }: {
 	hero?: HeroContent;
 	children?: React.ReactNode;
+	/** Pole CMS do inline edit (composer sekcji). */
+	cmsField?: string;
 }) {
 	const {
 		portal,
@@ -45,7 +48,7 @@ export async function HeroSection({
 	return (
 		<section
 			className="relative flex w-full flex-col overflow-x-hidden"
-			{...(await cmsAttr("page.home.hero"))}
+			{...(await cmsAttr(cmsField))}
 		>
 			{mobileAvifSrc && (
 				<link
