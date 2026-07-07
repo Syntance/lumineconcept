@@ -51,7 +51,7 @@ const binerka = localFont({
   display: "swap",
   adjustFontFallback: "Times New Roman",
   fallback: ['Georgia', 'serif'],
-  preload: true,
+  preload: false,
 });
 
 const SITE_URL =

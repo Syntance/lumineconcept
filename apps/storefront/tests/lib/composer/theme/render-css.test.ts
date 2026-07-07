@@ -5,6 +5,7 @@ import { renderThemeCss, renderThemeCssWithFallback } from "@/lib/composer/theme
 describe("renderThemeCss", () => {
 	it("generuje :root z kluczowymi zmiennymi CSS", () => {
 		const css = renderThemeCss(DEFAULT_THEME_TOKENS);
+		expect(css).toMatchSnapshot();
 		expect(css).toContain(":root {");
 		expect(css).toContain("--accent: oklch(0.627 0.089 52.3);");
 		expect(css).toContain("--font-sans: var(--font-gilroy), system-ui, sans-serif;");

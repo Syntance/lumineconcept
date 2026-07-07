@@ -40,8 +40,11 @@ export function collectActiveFontFiles(
 	body: FontTokenId,
 	display: FontTokenId,
 	serif: FontTokenId,
+	/** Binerka nad linią zgięcia (hero CONCEPT) — zawsze preload. */
+	alwaysInclude?: FontTokenId,
 ): Array<{ href: string; type: string }> {
 	const ids = new Set<FontTokenId>([body, display, serif]);
+	if (alwaysInclude) ids.add(alwaysInclude);
 	const files: Array<{ href: string; type: string }> = [];
 	for (const id of ids) {
 		if (id === "system") continue;
@@ -53,9 +56,9 @@ export function collectActiveFontFiles(
 	return files;
 }
 
-/** Ścieżki woff2 do `<link rel="preload">` — display + body z tokenów motywu. */
+/** Ścieżki woff2 do `<link rel="preload">` — display + body + binerka (hero LCP). */
 export function collectPreloadPaths(display: FontTokenId, body: FontTokenId): string[] {
-	return collectActiveFontFiles(body, display, display).map((f) => f.href);
+	return collectActiveFontFiles(body, display, display, "binerka").map((f) => f.href);
 }
 
 /** Aliasy zgodne z ThemeEditor i index. */

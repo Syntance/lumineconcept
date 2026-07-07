@@ -14,11 +14,16 @@ import {
  * a `lumine-cms:reload` z panelu odświeża podgląd po zapisie.
  */
 export function PreviewOverlay() {
+  const [pathname, setPathname] = useState("/");
   const [highlight, setHighlight] = useState<{
     rect: DOMRect;
     field: string;
   } | null>(null);
   const highlightedEl = useRef<Element | null>(null);
+
+  useEffect(() => {
+    setPathname(window.location.pathname);
+  }, []);
 
   useEffect(() => {
     function findTarget(target: EventTarget | null): HTMLElement | null {
@@ -108,9 +113,7 @@ export function PreviewOverlay() {
       >
         <span>Tryb edycji na żywo — kliknij element, aby edytować</span>
         <a
-          href={`/api/cms-preview/disable?path=${encodeURIComponent(
-            window.location.pathname,
-          )}`}
+          href={`/api/cms-preview/disable?path=${encodeURIComponent(pathname)}`}
           style={{ color: "#fbbf24", textDecoration: "underline" }}
         >
           Zakończ
