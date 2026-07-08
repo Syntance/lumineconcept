@@ -43,12 +43,10 @@ export function markPurchaseCustomer(args: {
       });
     }
   }
-  posthog.setUserProperties({
-    first_order_id: args.order_id,
-    total_spent: args.value,
-    orders_count: 1,
-    segment: ANALYTICS_SEGMENT,
-  });
+  posthog.setUserProperties({ segment: ANALYTICS_SEGMENT });
+  // set_once — klient nie zna pełnej historii zamówień; `orders_count`/`total_spent`
+  // agregowane server-side (subscriber order.placed), nie tutaj.
+  posthog.setUserPropertiesOnce({ first_order_id: args.order_id });
 }
 
 export function useAnalytics() {

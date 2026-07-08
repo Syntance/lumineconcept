@@ -8,10 +8,21 @@ export type CapiRateLimitResult = { ok: boolean; retryAfter?: number };
 /**
  * Rate limit /api/capi — 20 req/min/IP (Upstash REST, fail-open bez konfiguracji).
  */
+let missingConfigLogged = false;
+
 export async function checkCapiRateLimit(ip: string): Promise<CapiRateLimitResult> {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
-  if (!url || !token) return { ok: true };
+  if (!url || !token) {
+    // Fail-open bez limitera — na produkcji to incydent konfiguracyjny, nie tryb pracy.
+    if (process.env.NODE_ENV === "production" && !missingConfigLogged) {
+      missingConfigLogged = true;
+      console.error(
+        "[capi-rate-limit] UPSTASH_REDIS_REST_URL/TOKEN brak na produkcji — /api/capi działa bez rate limitu",
+      );
+    }
+    return { ok: true };
+  }
 
   const bucket = Math.floor(Date.now() / 1000 / WINDOW_SECONDS);
   const key = `capi:browser:${ip}:${bucket}`;

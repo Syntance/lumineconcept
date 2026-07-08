@@ -13,8 +13,11 @@ type Mode = "hidden" | "banner" | "preferences";
 
 export function CookieConsent() {
   const [mode, setMode] = useState<Mode>("hidden");
-  const [analytics, setAnalytics] = useState(true);
-  const [marketing, setMarketing] = useState(true);
+  // Domyślnie odznaczone — zgoda nie może być domyślnie zaznaczona (Planet49
+  // C-673/17, art. 173 PT). Nadpisywane wartością z getConsent() jeśli decyzja
+  // już istnieje (patrz efekty poniżej).
+  const [analytics, setAnalytics] = useState(false);
+  const [marketing, setMarketing] = useState(false);
   const [canShow, setCanShow] = useState(false);
 
   useEffect(() => {

@@ -8,7 +8,9 @@ const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "";
 const ACCESS_TOKEN = process.env.META_CAPI_ACCESS_TOKEN ?? "";
 
 function capiEnabled(): boolean {
-  return process.env.CAPI_ENABLED === "true";
+  // CAPI_ENABLED to override serwerowy; bez niego wystarczy jedna zmienna
+  // NEXT_PUBLIC_CAPI_ENABLED (współdzielona z klientem) — mniej pułapek konfiguracyjnych na Vercel.
+  return (process.env.CAPI_ENABLED ?? process.env.NEXT_PUBLIC_CAPI_ENABLED) === "true";
 }
 
 function normalizeOrigin(value: string): string {

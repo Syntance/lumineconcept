@@ -10,6 +10,7 @@ declare global {
 }
 
 let ga4ScriptLoaded = false;
+let consentDefaultSent = false;
 
 /** Kolejka dataLayer — działa przed i po załadowaniu gtag.js (Consent Mode). */
 function pushGACommand(...args: unknown[]): void {
@@ -41,12 +42,32 @@ export function loadGA4Script(): void {
   document.head.appendChild(s);
 
   pushGACommand("js", new Date());
-  pushGACommand("config", GA4_ID);
+  // send_page_view:false — page_view wysyłamy ręcznie z AnalyticsEffects,
+  // inaczej gtag dubluje go automatycznie przy każdym config().
+  pushGACommand("config", GA4_ID, { send_page_view: false });
+}
+
+/**
+ * Consent Mode v2 default — wysyłane raz, przed pierwszym `update`/`config`,
+ * żeby Google traktował brak decyzji jako "denied" (wymagane dla przyszłych
+ * kampanii Google Ads). Kolejne wywołania są no-opem.
+ */
+function ensureConsentDefault(): void {
+  if (typeof window === "undefined" || consentDefaultSent) return;
+  consentDefaultSent = true;
+  ensureGtagStub();
+  pushGACommand("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+  });
 }
 
 export function updateGA4Consent(analytics: boolean, marketing: boolean): void {
   if (typeof window === "undefined") return;
   ensureGtagStub();
+  ensureConsentDefault();
   pushGACommand("consent", "update", {
     analytics_storage: analytics ? "granted" : "denied",
     ad_storage: marketing ? "granted" : "denied",
@@ -139,9 +160,16 @@ export function sendGA4Event(
   if (!GA4_ID || typeof window === "undefined" || !ga4ScriptLoaded) return;
 
   if (name === "page_view") {
+    const fullUrl =
+      typeof payload.full_url === "string" ? payload.full_url : undefined;
     pushGACommand("event", "page_view", {
       page_path: payload.page_path,
       page_title: payload.title,
+      page_location: fullUrl
+        ? fullUrl.startsWith("http")
+          ? fullUrl
+          : `${window.location.origin}${fullUrl}`
+        : window.location.href,
     });
     return;
   }

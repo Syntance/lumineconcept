@@ -87,6 +87,11 @@ export function setUserProperties(properties: Record<string, unknown>): void {
   void ensurePostHog().then((ph) => ph?.people?.set?.(properties));
 }
 
+/** set_once — nie nadpisuje wartości przy kolejnych wywołaniach (np. first_order_id). */
+export function setUserPropertiesOnce(properties: Record<string, unknown>): void {
+  void ensurePostHog().then((ph) => ph?.people?.set_once?.(properties));
+}
+
 export function reset(): void {
   void ensurePostHog().then((ph) => ph?.reset());
 }

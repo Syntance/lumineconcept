@@ -62,11 +62,11 @@ Dane historyczne pod starymi nazwami **pozostają** — nowe insighty buduj na n
 ## Meta Events Manager
 
 - Test Events: po pierwszym zamówieniu sprawdź kolumnę **Deduplicated** (Pixel + CAPI, ten sam `event_id`).
-- Włącz CAPI dopiero po QA: `CAPI_ENABLED=true` (backend) + `NEXT_PUBLIC_CAPI_ENABLED=true` (storefront).
+- Włącz CAPI dopiero po QA: `NEXT_PUBLIC_CAPI_ENABLED=true` (storefront + backend `CAPI_ENABLED=true`). Na Vercel `CAPI_ENABLED` jest opcjonalny override — `/api/capi` spada na `NEXT_PUBLIC_CAPI_ENABLED` gdy go brak.
 
 ## Zmienne środowiskowe (prod)
 
-**Vercel (storefront):** `NEXT_PUBLIC_GA4_ID`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, `NEXT_PUBLIC_META_PIXEL_ID`, `META_CAPI_ACCESS_TOKEN`, `CAPI_ENABLED`, `NEXT_PUBLIC_CAPI_ENABLED`, `CAPI_ALLOWED_ORIGINS`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
+**Vercel (storefront):** `NEXT_PUBLIC_GA4_ID`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, `NEXT_PUBLIC_META_PIXEL_ID`, `META_CAPI_ACCESS_TOKEN`, `NEXT_PUBLIC_CAPI_ENABLED` (+ opcjonalnie `CAPI_ENABLED` jako override), `CAPI_ALLOWED_ORIGINS`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
 
 **Railway (Medusa worker):** `META_PIXEL_ID`, `META_CAPI_ACCESS_TOKEN`, `CAPI_ENABLED=true`, `POSTHOG_API_KEY` — subscriber `order.placed` wymaga async event bus (Redis).
 
