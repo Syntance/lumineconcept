@@ -14,13 +14,24 @@ import {
  * a `lumine-cms:reload` z panelu odświeża podgląd po zapisie.
  */
 export function PreviewOverlay() {
+  const [ready, setReady] = useState(false);
+  const [inIframe, setInIframe] = useState(false);
   const [highlight, setHighlight] = useState<{
     rect: DOMRect;
     field: string;
   } | null>(null);
   const highlightedEl = useRef<Element | null>(null);
 
+  // Nakładka edytora renderuje się WYŁĄCZNIE w iframie panelu CMS. Strona panelu
+  // (top-level) i bezpośrednie wejście na stronę z aktywnym draftem dostają
+  // `null` — edytor pojawia się tylko osadzony w podglądzie panelu.
   useEffect(() => {
+    setInIframe(window.parent !== window);
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!inIframe) return;
     function findTarget(target: EventTarget | null): HTMLElement | null {
       if (!(target instanceof Element)) return null;
       return target.closest<HTMLElement>("[data-cms]");
@@ -83,11 +94,14 @@ export function PreviewOverlay() {
       window.removeEventListener("scroll", onViewportChange);
       window.removeEventListener("resize", onViewportChange);
     };
-  }, []);
+  }, [inIframe]);
+
+  // Poza iframem panelu nie renderujemy nakładki edytora.
+  if (!ready || !inIframe) return null;
 
   return (
     <>
-      {/* Pasek statusu — widoczny też poza iframe (bezpośrednie wejście w draft). */}
+      {/* Pasek statusu podglądu — widoczny tylko w iframie panelu CMS. */}
       <div
         style={{
           position: "fixed",
