@@ -1310,23 +1310,23 @@
     "semantic_hash": ""
   },
   "apps/storefront/components/home/HeroPortalContent.tsx": {
-    "mtime": 1783326629.2770405,
-    "ast_hash": "77200bc84380163d98d4df23a4220df5",
+    "mtime": 1783444966.1384945,
+    "ast_hash": "84eacf85d0fd886f6dfd2e96721ccbcc",
     "semantic_hash": ""
   },
   "apps/storefront/components/home/HeroPortalDesktop.tsx": {
-    "mtime": 1783437105.7734704,
-    "ast_hash": "a0fcdea22e52f43d1132b80003a54bbc",
+    "mtime": 1783444999.4890707,
+    "ast_hash": "9bde1b3f4cf5adc092960098e9c20daa",
     "semantic_hash": ""
   },
   "apps/storefront/components/home/HeroPortalMobile.tsx": {
-    "mtime": 1783437105.7720294,
-    "ast_hash": "fe33bfb4ecbba7adb786f9440482c15b",
+    "mtime": 1783444967.4989438,
+    "ast_hash": "2aefae40775a80bba0207a14091239f4",
     "semantic_hash": ""
   },
   "apps/storefront/components/home/HeroSection.tsx": {
-    "mtime": 1783443580.7651439,
-    "ast_hash": "e01dde7ab13ba76e37e1cbb8018b2939",
+    "mtime": 1783444964.9454367,
+    "ast_hash": "79b52e33a5be345e1fe2d3efcd91014f",
     "semantic_hash": ""
   },
   "apps/storefront/components/home/HomeTrustMarquee.tsx": {
@@ -2680,8 +2680,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/magazyn/modules/content/content-actions.ts": {
-    "mtime": 1783438674.9597857,
-    "ast_hash": "42b4b79abc3156c9ef7d35ac51feb9aa",
+    "mtime": 1783445522.2550924,
+    "ast_hash": "3bb1468cc5e1e391c32f729bcc8e932f",
     "semantic_hash": ""
   },
   "apps/storefront/magazyn/modules/content/content-store.ts": {
@@ -4245,8 +4245,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/magazyn/modules/content/live-preview-client.tsx": {
-    "mtime": 1783444008.8914952,
-    "ast_hash": "e2480449b48066d3cb716038655e6ebd",
+    "mtime": 1783445230.592165,
+    "ast_hash": "416861681ddf050ab575d9ddec43be7a",
     "semantic_hash": ""
   },
   "apps/storefront/magazyn/modules/content/live-preview-page.tsx": {
@@ -4430,8 +4430,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/components/composer/SectionsEditor.tsx": {
-    "mtime": 1783444027.1825364,
-    "ast_hash": "b266d5e7131da13c49485cc4f8681bd2",
+    "mtime": 1783445517.4580464,
+    "ast_hash": "57781c29b5e7d251bb552dbec9efae35",
     "semantic_hash": ""
   },
   "apps/storefront/components/composer/sections/BestsellersSkeleton.tsx": {
@@ -4565,8 +4565,8 @@
     "semantic_hash": ""
   },
   "apps/storefront/tests-e2e/composer-sections.e2e.spec.ts": {
-    "mtime": 1783444137.2751231,
-    "ast_hash": "efb0bae8c0a1510257c568c92d18c684",
+    "mtime": 1783445503.17782,
+    "ast_hash": "707e858412655e73f8411340c007eb44",
     "semantic_hash": ""
   },
   "apps/storefront/tests/lib/composer/sections/parse.test.ts": {

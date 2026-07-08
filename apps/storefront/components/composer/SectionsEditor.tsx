@@ -115,6 +115,14 @@ export function SectionsEditor({
 			const res = await restorePageSectionsVersionAction(pageId, pagePath, versionIndex);
 			setMessage(res.ok ? "Przywrócono wersję." : (res.error ?? "Błąd przywracania."));
 			if (res.ok) {
+				if (res.sections) {
+					setSections(res.sections);
+					setSelectedId((current) =>
+						res.sections?.some((s) => s.id === current)
+							? current
+							: (res.sections?.[0]?.id ?? null),
+					);
+				}
 				notifyIframe();
 				onSaved?.();
 			}

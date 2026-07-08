@@ -27,9 +27,12 @@ import {
 import { prepareThemeTokensForSave, themeTokensSchema } from "@/lib/composer/theme";
 import type { ThemeTokens } from "@/lib/composer/theme";
 
+import type { PageSections } from "@/lib/composer/sections/schema";
+
 export type SaveContentState = {
 	ok: boolean;
 	error: string | null;
+	sections?: PageSections;
 };
 
 export async function savePageContentAction(
@@ -214,9 +217,10 @@ export async function restorePageSectionsVersionAction(
 	path: string,
 	versionIndex: number,
 ): Promise<SaveContentState> {
+	let restored: PageSections | null = null;
 	try {
 		await requireAdminSession();
-		const restored = await restorePageSectionsVersion(pageId, versionIndex);
+		restored = await restorePageSectionsVersion(pageId, versionIndex);
 		if (!restored) {
 			return { ok: false, error: "Nie znaleziono wersji do przywrócenia." };
 		}
@@ -227,5 +231,5 @@ export async function restorePageSectionsVersionAction(
 	}
 
 	await revalidateContentCache([path, `${magazynConfig.basePath}/panel/cms/podglad/${pageId}`]);
-	return { ok: true, error: null };
+	return { ok: true, error: null, sections: restored };
 }

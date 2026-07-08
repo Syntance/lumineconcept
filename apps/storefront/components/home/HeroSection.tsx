@@ -41,6 +41,7 @@ export async function HeroSection({
 
 	const mobileAvifSrc = mobileDisplayUrl ? toHeroAvifSrc(mobileDisplayUrl) : null;
 	const desktopAvifSrc = desktopImageUrl ? toHeroAvifSrc(desktopImageUrl) : null;
+	const headlineCmsAttrs = await cmsAttr(`${cmsField}.headline`, { inline: "text" });
 
 	// Determine which image to display
 	const displayImageUrl = desktopImageUrl || mobileDisplayUrl;
@@ -115,7 +116,7 @@ export async function HeroSection({
 					<div className="relative min-h-0 flex-1 bg-brand-800 lg:absolute lg:inset-0 lg:flex-none" aria-hidden />
 				)}
 
-				<HeroPortalContent content={portal} />
+				<HeroPortalContent content={portal} headlineCmsAttrs={headlineCmsAttrs} />
 			</div>
 
 			{children && (

@@ -156,13 +156,30 @@ export function LivePreviewClient({
 		return () => window.removeEventListener("message", onMessage);
 	}, [tab]);
 
-	// Po przełączeniu zakładki dokończ nawigację do klikniętego pola.
+	// Po przełączeniu zakładki dokończ nawigację do klikniętego pola (retry — mount edytora).
 	useEffect(() => {
 		const field = pendingFieldRef.current;
 		if (!field) return;
 		pendingFieldRef.current = null;
-		const t = window.setTimeout(() => scrollToField(field), 80);
-		return () => window.clearTimeout(t);
+
+		let attempts = 0;
+		let timer: ReturnType<typeof setTimeout> | undefined;
+
+		const tryScroll = () => {
+			if (scrollToField(field)) return;
+			attempts += 1;
+			if (attempts < 24) {
+				timer = setTimeout(tryScroll, 100);
+				return;
+			}
+			setUnmappedNotice(field);
+			setTimeout(() => setUnmappedNotice(null), 3200);
+		};
+
+		timer = setTimeout(tryScroll, 80);
+		return () => {
+			if (timer) window.clearTimeout(timer);
+		};
 	}, [tab]);
 
 	function reloadPreview() {
