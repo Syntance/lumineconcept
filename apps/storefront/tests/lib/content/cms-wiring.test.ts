@@ -134,7 +134,7 @@ describe("cms-wiring", () => {
 		).toBe("https://instagram.com/custom");
 	});
 
-	it("hero merge keeps copy; resolve pokazuje lokalne /images/cms/ lub fallback CDN hero", () => {
+	it("hero merge keeps copy; resolve pokazuje tylko opublikowane /images/cms/", () => {
 		const hero = mergeHeroWithDefaults(
 			{
 				headline: "Tablica z logo",
@@ -146,8 +146,7 @@ describe("cms-wiring", () => {
 			"logo-3d",
 		);
 		expect(hero?.desktopImageUrl).toBe("https://cdn.example/logo.webp");
-		// Hero resolver: fallback CDN gdy brak lokalnej kopii w /images/cms/
-		expect(resolveLogoHero(hero).desktopImageUrl).toBe("https://cdn.example/logo.webp");
+		expect(resolveLogoHero(hero).desktopImageUrl).toBeUndefined();
 
 		const published = mergeHeroWithDefaults(
 			{

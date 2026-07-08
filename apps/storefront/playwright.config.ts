@@ -1,22 +1,4 @@
-import { readFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
-
-function loadEnvLocal() {
-	const path = resolve(__dirname, ".env.local");
-	if (!existsSync(path)) return;
-	for (const line of readFileSync(path, "utf8").split("\n")) {
-		const t = line.trim();
-		if (!t || t.startsWith("#")) continue;
-		const eq = t.indexOf("=");
-		if (eq < 0) continue;
-		const key = t.slice(0, eq).trim();
-		const val = t.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-		if (key && process.env[key] === undefined) process.env[key] = val;
-	}
-}
-
-loadEnvLocal();
 
 /**
  * Konfiguracja e2e. Domyślnie odpalamy przeciw LOKALNEMU storefrontowi

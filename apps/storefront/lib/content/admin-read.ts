@@ -4,19 +4,11 @@ import { draftMode } from "next/headers";
 import { serverEnv } from "@magazyn/core/env";
 import { loginWithEmailPassword } from "@magazyn/core/medusa/client";
 import { isLocalCmsDirectMediaEnabled } from "./cms-media-gate";
-import { magazynConfig } from "@magazyn/magazyn.config";
-import {
-	pageSectionsDraftKey,
-	pageSectionsHistoryKey,
-	pageSectionsLiveKey,
-} from "@/lib/composer/sections/store-keys";
-import type { ContentPageId } from "./types";
 import {
 	MAGAZYN_GLOBAL_CONTENT_KEY,
 	MAGAZYN_PAGE_CONTENT_KEY,
 	MAGAZYN_PAGE_SEO_KEY,
 	MAGAZYN_SITE_SETTINGS_KEY,
-	MAGAZYN_THEME_TOKENS_KEY,
 	MAGAZYN_CONTENT_CACHE_TAG,
 } from "./metadata-keys";
 
@@ -25,11 +17,6 @@ export type RawStoreMetadataBlob = {
 	pageSeo: unknown;
 	pageContent: unknown;
 	globalContent: unknown;
-	themeTokens: unknown;
-	/** Composer — sekcje per strona (klucze pageSections:*). */
-	pageSectionsLive: Partial<Record<ContentPageId, unknown>>;
-	pageSectionsDraft: Partial<Record<ContentPageId, unknown>>;
-	pageSectionsHistory: Partial<Record<ContentPageId, unknown>>;
 };
 
 const REVALIDATE_SECONDS = 3600;
@@ -153,32 +140,11 @@ export const fetchStoreMetadataBlob = cache(async (): Promise<RawStoreMetadataBl
 		};
 		const metadata = data.stores[0]?.metadata ?? {};
 
-		const pageSectionsLive: Partial<Record<ContentPageId, unknown>> = {};
-		const pageSectionsDraft: Partial<Record<ContentPageId, unknown>> = {};
-		const pageSectionsHistory: Partial<Record<ContentPageId, unknown>> = {};
-
-		for (const page of magazynConfig.content.pages) {
-			const id = page.id as ContentPageId;
-			if (metadata[pageSectionsLiveKey(id)] != null) {
-				pageSectionsLive[id] = metadata[pageSectionsLiveKey(id)];
-			}
-			if (metadata[pageSectionsDraftKey(id)] != null) {
-				pageSectionsDraft[id] = metadata[pageSectionsDraftKey(id)];
-			}
-			if (metadata[pageSectionsHistoryKey(id)] != null) {
-				pageSectionsHistory[id] = metadata[pageSectionsHistoryKey(id)];
-			}
-		}
-
 		return {
 			siteSettings: metadata[MAGAZYN_SITE_SETTINGS_KEY],
 			pageSeo: metadata[MAGAZYN_PAGE_SEO_KEY],
 			pageContent: metadata[MAGAZYN_PAGE_CONTENT_KEY],
 			globalContent: metadata[MAGAZYN_GLOBAL_CONTENT_KEY],
-			themeTokens: metadata[MAGAZYN_THEME_TOKENS_KEY],
-			pageSectionsLive,
-			pageSectionsDraft,
-			pageSectionsHistory,
 		};
 	} catch (e) {
 		console.error("[CMS] Błąd parsowania Store.metadata:", e);

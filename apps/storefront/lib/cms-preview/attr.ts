@@ -14,14 +14,8 @@ import { draftMode } from "next/headers";
  *   settings.<sekcja>[.<pole>]       np. settings.announcementBar.text
  */
 export async function cmsAttr(
-	field: string,
-	options?: { inline?: "text" | "image" },
-): Promise<{ "data-cms"?: string; "data-cms-inline"?: string }> {
-	const { isEnabled } = await draftMode();
-	if (!isEnabled) return {};
-	const attrs: { "data-cms": string; "data-cms-inline"?: string } = {
-		"data-cms": field,
-	};
-	if (options?.inline) attrs["data-cms-inline"] = options.inline;
-	return attrs;
+  field: string,
+): Promise<{ "data-cms"?: string }> {
+  const { isEnabled } = await draftMode();
+  return isEnabled ? { "data-cms": field } : {};
 }

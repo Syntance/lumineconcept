@@ -16,10 +16,6 @@ export function normalizeMetadataBlobForOverlay(blob: RawStoreMetadataBlob): Raw
 		pageSeo: parseMetadataJsonField(blob.pageSeo),
 		pageContent: parseMetadataJsonField(blob.pageContent),
 		globalContent: parseMetadataJsonField(blob.globalContent),
-		themeTokens: parseMetadataJsonField(blob.themeTokens),
-		pageSectionsLive: blob.pageSectionsLive,
-		pageSectionsDraft: blob.pageSectionsDraft,
-		pageSectionsHistory: blob.pageSectionsHistory,
 	};
 }
 import {
@@ -114,10 +110,6 @@ export function applyMediaUrlOverlay(
 		pageSeo: applyMediaGate(blob.pageSeo, urlMap, gateEnabled),
 		pageContent: applyMediaGate(blob.pageContent, urlMap, gateEnabled),
 		globalContent: applyMediaGate(blob.globalContent, urlMap, gateEnabled),
-		themeTokens: blob.themeTokens,
-		pageSectionsLive: applyMediaGate(blob.pageSectionsLive, urlMap, gateEnabled) as RawStoreMetadataBlob["pageSectionsLive"],
-		pageSectionsDraft: applyMediaGate(blob.pageSectionsDraft, urlMap, gateEnabled) as RawStoreMetadataBlob["pageSectionsDraft"],
-		pageSectionsHistory: blob.pageSectionsHistory,
 	};
 }
 

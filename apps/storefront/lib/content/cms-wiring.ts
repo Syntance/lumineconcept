@@ -139,7 +139,7 @@ export const CMS_STOREFRONT_WIRING = {
 		popupBanners: "components/layout/PopupBannerLayer.tsx",
 	},
 	pages: {
-		home: { hero: "HeroSection", brandingCta: "FooterCTA", bestsellers: "BestsellersSection" },
+		home: { hero: "HeroSection", brandingCta: "FooterCTA" },
 		shop: { categoryTiles: "sklep/page.tsx", testimonials: "sklep/page.tsx" },
 		"logo-3d": { hero: "LogoCategoryHeroSection", gallery: "LogoBoardRealizations" },
 		"gotowe-wzory": { testimonials: "gotowe-wzory/page.tsx", faq: "PageFaqSection" },

@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   CMS_PREVIEW_RELOAD,
   CMS_PREVIEW_SELECT,
-  CMS_PREVIEW_INLINE,
-  CMS_PREVIEW_MEDIA,
   cmsFieldLabel,
 } from "@/lib/cms-preview/messages";
 
@@ -16,16 +14,11 @@ import {
  * a `lumine-cms:reload` z panelu odświeża podgląd po zapisie.
  */
 export function PreviewOverlay() {
-  const [pathname, setPathname] = useState("/");
   const [highlight, setHighlight] = useState<{
     rect: DOMRect;
     field: string;
   } | null>(null);
   const highlightedEl = useRef<Element | null>(null);
-
-  useEffect(() => {
-    setPathname(window.location.pathname);
-  }, []);
 
   useEffect(() => {
     function findTarget(target: EventTarget | null): HTMLElement | null {
@@ -56,42 +49,12 @@ export function PreviewOverlay() {
       e.preventDefault();
       e.stopPropagation();
       const field = el.dataset.cms ?? "";
-      if (window.parent !== window && field) {
-        if (el.dataset.cmsInline === "image") {
-          window.parent.postMessage(
-            { type: CMS_PREVIEW_MEDIA, field },
-            window.location.origin,
-          );
-          return;
-        }
+      if (window.parent !== window) {
         window.parent.postMessage(
           { type: CMS_PREVIEW_SELECT, field },
           window.location.origin,
         );
       }
-    }
-
-    function onDblClick(e: MouseEvent) {
-      const el = findTarget(e.target);
-      if (!el?.dataset.cmsInline) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const field = el.dataset.cms ?? "";
-      el.setAttribute("contenteditable", "true");
-      el.focus();
-
-      function onBlur() {
-        el?.removeAttribute("contenteditable");
-        const value = el?.textContent?.trim() ?? "";
-        if (window.parent !== window && field) {
-          window.parent.postMessage(
-            { type: CMS_PREVIEW_INLINE, field, value },
-            window.location.origin,
-          );
-        }
-        el?.removeEventListener("blur", onBlur);
-      }
-      el.addEventListener("blur", onBlur, { once: true });
     }
 
     function onMessage(e: MessageEvent) {
@@ -110,14 +73,12 @@ export function PreviewOverlay() {
 
     document.addEventListener("mousemove", onMouseMove, { passive: true });
     document.addEventListener("click", onClick, { capture: true });
-    document.addEventListener("dblclick", onDblClick, { capture: true });
     window.addEventListener("message", onMessage);
     window.addEventListener("scroll", onViewportChange, { passive: true });
     window.addEventListener("resize", onViewportChange);
     return () => {
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("click", onClick, { capture: true });
-      document.removeEventListener("dblclick", onDblClick, { capture: true });
       window.removeEventListener("message", onMessage);
       window.removeEventListener("scroll", onViewportChange);
       window.removeEventListener("resize", onViewportChange);
@@ -147,7 +108,9 @@ export function PreviewOverlay() {
       >
         <span>Tryb edycji na żywo — kliknij element, aby edytować</span>
         <a
-          href={`/api/cms-preview/disable?path=${encodeURIComponent(pathname)}`}
+          href={`/api/cms-preview/disable?path=${encodeURIComponent(
+            window.location.pathname,
+          )}`}
           style={{ color: "#fbbf24", textDecoration: "underline" }}
         >
           Zakończ

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import { getPageSeo, getSiteSettings } from "@/lib/content";
-import { getPageSections } from "@/lib/content/sections";
+import { cmsAttr } from "@/lib/cms-preview/attr";
+import { LogoCategoryHeroSection } from "@/components/category/LogoCategoryHeroSection";
+import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
 import { buildMetadata } from "@/lib/content/metadata";
-import { SectionRenderer } from "@/components/composer/SectionRenderer";
+import type { GalleryPhoto } from "@/lib/content/types";
 import { TablicaZLogoFormClient } from "./client";
 import { QuoteTitleBandMeasure } from "./QuoteTitleBandMeasure";
 import { QuoteImageCtaAlign } from "./QuoteImageCtaAlign";
 import { LogoQuoteArchImage } from "./LogoQuoteArchImage";
+import { LogoBoardRealizations } from "./LogoBoardRealizations";
 
 export async function generateMetadata(): Promise<Metadata> {
   const [seo, settings] = await Promise.all([
@@ -26,15 +28,18 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 60;
 
 export default async function TablicaZLogoPage() {
-  const sections = await getPageSections("logo-3d");
-  const heroSections = sections.filter((s) => s.type === "hero");
-  const gallerySections = sections.filter((s) => s.type === "gallery");
+  const pageContent = await getPageContent("logo-3d");
+  const realizations: GalleryPhoto[] = pageContent.gallery ?? [];
 
   return (
     <div className="bg-brand-50">
-      <SectionRenderer pageId="logo-3d" sections={heroSections} />
+      <div {...(await cmsAttr("page.logo-3d.hero"))}>
+        <LogoCategoryHeroSection hero={pageContent.hero} />
+      </div>
       <CustomQuoteSection />
-      <SectionRenderer pageId="logo-3d" sections={gallerySections} />
+      <div {...(await cmsAttr("page.logo-3d.gallery"))}>
+        <LogoBoardRealizations items={realizations} />
+      </div>
     </div>
   );
 }

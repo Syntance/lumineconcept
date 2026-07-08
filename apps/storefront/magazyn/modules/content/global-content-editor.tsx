@@ -13,8 +13,6 @@ import {
 import { cmsSaveSuccessMessage } from "./cms-save-feedback";
 import { SalonLogosEditor } from "./salon-logos-editor";
 import { InstagramTilesEditor } from "./instagram-tiles-editor";
-import { ThemeEditor } from "@/components/composer/ThemeEditor";
-import type { ThemeTokens } from "@/lib/composer/theme";
 
 const inputClass =
 	"w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -22,17 +20,11 @@ const inputClass =
 type Props = {
 	siteSettings: SiteSettings;
 	globalContent: GlobalContent;
-	themeTokens: ThemeTokens;
 	/** Podgląd „edycji na żywo": wywoływane po udanym zapisie (reload iframe). */
 	onSaved?: () => void;
 };
 
-export function GlobalContentEditor({
-	siteSettings: initialSettings,
-	globalContent: initialGlobal,
-	themeTokens: initialThemeTokens,
-	onSaved,
-}: Props) {
+export function GlobalContentEditor({ siteSettings: initialSettings, globalContent: initialGlobal, onSaved }: Props) {
 	const [settings, setSettings] = useState(initialSettings);
 	const [global, setGlobal] = useState(initialGlobal);
 	const [error, setError] = useState<string | null>(null);
@@ -67,10 +59,7 @@ export function GlobalContentEditor({
 	}
 
 	return (
-		<div className="flex max-w-3xl flex-col gap-6">
-			<ThemeEditor initial={initialThemeTokens} onSaved={onSaved} />
-
-			<form onSubmit={onSubmit} className="flex flex-col gap-6">
+		<form onSubmit={onSubmit} className="flex max-w-3xl flex-col gap-6">
 			<fieldset data-cms-input="settings.announcementBar" className="flex flex-col gap-3 rounded-xl border border-border p-4">
 				<legend className="px-1 text-sm font-medium">Pasek informacyjny</legend>
 				<p className="text-xs text-muted-foreground">
@@ -193,6 +182,5 @@ export function GlobalContentEditor({
 				Zapisz treści globalne
 			</Button>
 		</form>
-		</div>
 	);
 }

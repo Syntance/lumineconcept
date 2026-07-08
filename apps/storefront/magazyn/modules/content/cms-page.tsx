@@ -20,7 +20,6 @@ export default async function CmsPage() {
 				siteSettings={bundle.siteSettings}
 				pageContent={bundle.pageContent}
 				globalContent={bundle.globalContent}
-				themeTokens={bundle.themeTokens}
 				pages={magazynConfig.content.pages}
 				activeTab="global"
 			/>

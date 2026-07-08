@@ -4,18 +4,12 @@ import { redirect } from "next/navigation";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { AdminApiError, AdminUnauthorizedError } from "@magazyn/core/medusa/errors";
 import { requireAdminSession } from "@magazyn/core/auth/require-session";
-import type { GlobalContent, PageContent, SiteSettings, ContentPageId } from "@/lib/content/types";
-import type { PageSection } from "@/lib/composer/sections/schema";
-import { pageSectionsArraySchema } from "@/lib/composer/sections/parse";
+import type { GlobalContent, PageContent, SiteSettings } from "@/lib/content/types";
 import { revalidateContentCache, triggerCmsRedeploy } from "./revalidate-content";
 import {
 	saveGlobalContent,
 	savePageContent,
 	saveSiteSettingsPartial,
-	saveThemeTokens,
-	savePageSectionsDraft,
-	publishPageSections,
-	restorePageSectionsVersion,
 } from "./content-store";
 import {
 	globalContentSchema,
@@ -24,15 +18,10 @@ import {
 	preparePageContentForSave,
 	siteSettingsSchema,
 } from "@/lib/content/parsers";
-import { prepareThemeTokensForSave, themeTokensSchema } from "@/lib/composer/theme";
-import type { ThemeTokens } from "@/lib/composer/theme";
-
-import type { PageSections } from "@/lib/composer/sections/schema";
 
 export type SaveContentState = {
 	ok: boolean;
 	error: string | null;
-	sections?: PageSections;
 };
 
 export async function savePageContentAction(
@@ -107,28 +96,6 @@ export async function saveGlobalSiteSettingsAction(
 	return { ok: true, error: null };
 }
 
-export async function saveThemeTokensAction(tokens: ThemeTokens): Promise<SaveContentState> {
-	const prepared = prepareThemeTokensForSave(tokens);
-	const parsed = themeTokensSchema.safeParse(prepared);
-	if (!parsed.success) {
-		return {
-			ok: false,
-			error: parsed.error.issues[0]?.message ?? "Błędne tokeny motywu.",
-		};
-	}
-
-	try {
-		await saveThemeTokens(parsed.data);
-	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
-		if (error instanceof AdminApiError) return { ok: false, error: error.message };
-		return { ok: false, error: "Nie udało się zapisać motywu." };
-	}
-
-	await revalidateContentCache(["/"]);
-	return { ok: true, error: null };
-}
-
 export type RedeployContentState = {
 	ok: boolean;
 	error: string | null;
@@ -158,77 +125,4 @@ export async function triggerCmsRedeployAction(): Promise<RedeployContentState> 
 	}
 
 	return { ok: true, error: null, queued: true };
-}
-
-export async function savePageSectionsDraftAction(
-	pageId: ContentPageId,
-	path: string,
-	sections: PageSection[],
-): Promise<SaveContentState> {
-	const parsed = pageSectionsArraySchema.safeParse(sections);
-	if (!parsed.success) {
-		return {
-			ok: false,
-			error: parsed.error.issues[0]?.message ?? "Błędne sekcje strony.",
-		};
-	}
-
-	try {
-		await requireAdminSession();
-		await savePageSectionsDraft(pageId, parsed.data);
-	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
-		if (error instanceof AdminApiError) return { ok: false, error: error.message };
-		return { ok: false, error: "Nie udało się zapisać szkicu sekcji." };
-	}
-
-	await revalidateContentCache([path, `${magazynConfig.basePath}/panel/cms/podglad/${pageId}`]);
-	return { ok: true, error: null };
-}
-
-export async function publishPageSectionsAction(
-	pageId: ContentPageId,
-	path: string,
-	sections: PageSection[],
-): Promise<SaveContentState> {
-	const parsed = pageSectionsArraySchema.safeParse(sections);
-	if (!parsed.success) {
-		return {
-			ok: false,
-			error: parsed.error.issues[0]?.message ?? "Błędne sekcje strony.",
-		};
-	}
-
-	try {
-		await requireAdminSession();
-		await publishPageSections(pageId, parsed.data);
-	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
-		if (error instanceof AdminApiError) return { ok: false, error: error.message };
-		return { ok: false, error: "Nie udało się opublikować sekcji." };
-	}
-
-	await revalidateContentCache([path, `${magazynConfig.basePath}/panel/cms/podglad/${pageId}`]);
-	return { ok: true, error: null };
-}
-
-export async function restorePageSectionsVersionAction(
-	pageId: ContentPageId,
-	path: string,
-	versionIndex: number,
-): Promise<SaveContentState> {
-	try {
-		await requireAdminSession();
-		const restored = await restorePageSectionsVersion(pageId, versionIndex);
-		if (!restored) {
-			return { ok: false, error: "Nie znaleziono wersji do przywrócenia." };
-		}
-
-		await revalidateContentCache([path, `${magazynConfig.basePath}/panel/cms/podglad/${pageId}`]);
-		return { ok: true, error: null, sections: restored };
-	} catch (error) {
-		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
-		if (error instanceof AdminApiError) return { ok: false, error: error.message };
-		return { ok: false, error: "Nie udało się przywrócić wersji." };
-	}
 }
