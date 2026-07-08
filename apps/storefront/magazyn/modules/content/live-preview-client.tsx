@@ -10,10 +10,16 @@ import type {
 	GlobalContent,
 	PageContent,
 	SiteSettings,
+	ContentPageId,
 } from "@/lib/content/types";
+import type { ThemeTokens } from "@/lib/composer/theme";
+import { SectionsEditor } from "@/components/composer/SectionsEditor";
+import type { PageSections, SectionHistory } from "@/lib/composer/sections/schema";
 import {
 	CMS_PREVIEW_RELOAD,
 	CMS_PREVIEW_SELECT,
+	CMS_PREVIEW_INLINE,
+	CMS_PREVIEW_MEDIA,
 } from "@/lib/cms-preview/messages";
 import { PageContentEditor } from "./page-content-editor";
 import { GlobalContentEditor } from "./global-content-editor";
@@ -33,13 +39,16 @@ const DEVICE_META: Array<{ id: Device; label: string; icon: typeof Monitor }> = 
 	{ id: "mobile", label: "Mobile", icon: Smartphone },
 ];
 
-type EditorTab = "page" | "global";
+type EditorTab = "sections" | "page" | "global";
 
 type Props = {
 	page: ContentPageConfig;
 	initial: PageContent;
+	initialSections: PageSections;
+	sectionsHistory: SectionHistory;
 	siteSettings: SiteSettings;
 	globalContent: GlobalContent;
+	themeTokens: ThemeTokens;
 	productOptions: CmsProductOption[];
 };
 
@@ -56,14 +65,17 @@ type Props = {
 export function LivePreviewClient({
 	page,
 	initial,
+	initialSections,
+	sectionsHistory,
 	siteSettings,
 	globalContent,
+	themeTokens,
 	productOptions,
 }: Props) {
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const editorColumnRef = useRef<HTMLDivElement>(null);
 	const [device, setDevice] = useState<Device>("desktop");
-	const [tab, setTab] = useState<EditorTab>("page");
+	const [tab, setTab] = useState<EditorTab>("sections");
 	const [unmappedNotice, setUnmappedNotice] = useState<string | null>(null);
 	const pendingFieldRef = useRef<string | null>(null);
 
@@ -92,12 +104,41 @@ export function LivePreviewClient({
 	useEffect(() => {
 		function onMessage(e: MessageEvent) {
 			if (e.origin !== window.location.origin) return;
-			const data = e.data as { type?: string; field?: string } | null;
+			const data = e.data as { type?: string; field?: string; value?: string } | null;
+			if (data?.type === CMS_PREVIEW_INLINE && data.field && typeof data.value === "string") {
+				const column = editorColumnRef.current;
+				const target = column?.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+					`[data-cms-input="${data.field}"]`,
+				);
+				if (target) {
+					target.value = data.value;
+					target.dispatchEvent(new Event("input", { bubbles: true }));
+				}
+				return;
+			}
+			if (data?.type === CMS_PREVIEW_MEDIA && data.field) {
+				setTab("sections");
+				window.setTimeout(() => {
+					const column = editorColumnRef.current;
+					const fieldEl = column?.querySelector<HTMLElement>(
+						`[data-cms-input="${data.field}"]`,
+					);
+					fieldEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+					const fileInput = fieldEl?.querySelector<HTMLInputElement>('input[type="file"]');
+					fileInput?.click();
+				}, 120);
+				return;
+			}
 			if (data?.type !== CMS_PREVIEW_SELECT || !data.field) return;
 
 			const wantsGlobal =
 				data.field.startsWith("global.") || data.field.startsWith("settings.");
-			const targetTab: EditorTab = wantsGlobal ? "global" : "page";
+			const wantsSections = data.field.includes(".sections.");
+			const targetTab: EditorTab = wantsGlobal
+				? "global"
+				: wantsSections
+					? "sections"
+					: "page";
 
 			if (targetTab !== tab) {
 				// Edytor docelowej zakładki jeszcze nie jest w DOM — scroll po przełączeniu.
@@ -115,13 +156,30 @@ export function LivePreviewClient({
 		return () => window.removeEventListener("message", onMessage);
 	}, [tab]);
 
-	// Po przełączeniu zakładki dokończ nawigację do klikniętego pola.
+	// Po przełączeniu zakładki dokończ nawigację do klikniętego pola (retry — mount edytora).
 	useEffect(() => {
 		const field = pendingFieldRef.current;
 		if (!field) return;
 		pendingFieldRef.current = null;
-		const t = window.setTimeout(() => scrollToField(field), 80);
-		return () => window.clearTimeout(t);
+
+		let attempts = 0;
+		let timer: ReturnType<typeof setTimeout> | undefined;
+
+		const tryScroll = () => {
+			if (scrollToField(field)) return;
+			attempts += 1;
+			if (attempts < 24) {
+				timer = setTimeout(tryScroll, 100);
+				return;
+			}
+			setUnmappedNotice(field);
+			setTimeout(() => setUnmappedNotice(null), 3200);
+		};
+
+		timer = setTimeout(tryScroll, 80);
+		return () => {
+			if (timer) window.clearTimeout(timer);
+		};
 	}, [tab]);
 
 	function reloadPreview() {
@@ -209,7 +267,8 @@ export function LivePreviewClient({
 					<div className="flex shrink-0 gap-1 border-b border-border p-2">
 						{(
 							[
-								["page", `Strona: ${page.label}`],
+								["sections", "Sekcje"],
+								["page", `Legacy: ${page.label}`],
 								["global", "Globalne"],
 							] as Array<[EditorTab, string]>
 						).map(([id, label]) => (
@@ -231,7 +290,16 @@ export function LivePreviewClient({
 					</div>
 
 					<div ref={editorColumnRef} className="min-h-0 flex-1 overflow-y-auto p-4">
-						{tab === "page" ? (
+						{tab === "sections" ? (
+							<SectionsEditor
+								pageId={page.id as ContentPageId}
+								pagePath={page.path}
+								initialSections={initialSections}
+								history={sectionsHistory}
+								productOptions={productOptions}
+								onSaved={reloadPreview}
+							/>
+						) : tab === "page" ? (
 							<PageContentEditor
 								pageId={page.id}
 								path={page.path}
@@ -244,6 +312,7 @@ export function LivePreviewClient({
 							<GlobalContentEditor
 								siteSettings={siteSettings}
 								globalContent={globalContent}
+								themeTokens={themeTokens}
 								onSaved={reloadPreview}
 							/>
 						)}

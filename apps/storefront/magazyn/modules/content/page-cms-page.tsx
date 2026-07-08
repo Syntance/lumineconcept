@@ -41,6 +41,7 @@ export default async function CmsPageEditorPage({ params }: Props) {
 				siteSettings={bundle.siteSettings}
 				pageContent={bundle.pageContent}
 				globalContent={bundle.globalContent}
+				themeTokens={bundle.themeTokens}
 				pages={magazynConfig.content.pages}
 				activeTab={pageId}
 				productOptions={productOptions}

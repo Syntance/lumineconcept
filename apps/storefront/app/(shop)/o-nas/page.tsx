@@ -1,25 +1,26 @@
 import type { Metadata } from "next";
 import { cmsAttr } from "@/lib/cms-preview/attr";
 
-import { AboutClosingSection } from "@/components/about/AboutClosingSection";
-import { ABOUT_PAGE_CLIP, ABOUT_PAGE_CONTENT_MOBILE_LOWER } from "@/components/about/about-media";
-import { AboutHeroSection } from "@/components/about/AboutHeroSection";
-import { AboutIntroSection } from "@/components/about/AboutIntroSection";
-import { AboutMissionSection } from "@/components/about/AboutMissionSection";
+import { ABOUT_PAGE_CLIP } from "@/components/about/about-media";
 import { resolveAboutPage } from "@/lib/content/about";
-import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { getPageSeo, getSiteSettings } from "@/lib/content";
+import { getPageSections } from "@/lib/content/sections";
 import { buildMetadata } from "@/lib/content/metadata";
 import { ORGANIZATION_ID } from "@/lib/geo/organization";
 import { cn, SITE_URL } from "@/lib/utils";
 import { serializeJsonLd } from "@/lib/seo/json-ld";
+import { SectionRenderer } from "@/components/composer/SectionRenderer";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [seo, settings, pageContent] = await Promise.all([
+  const [seo, settings, sections] = await Promise.all([
     getPageSeo("o-nas"),
     getSiteSettings(),
-    getPageContent("o-nas"),
+    getPageSections("o-nas"),
   ]);
-  const about = resolveAboutPage(pageContent);
+  const aboutSection = sections.find((s) => s.type === "about");
+  const about = resolveAboutPage({
+    about: aboutSection?.type === "about" ? aboutSection.props : undefined,
+  });
 
   return buildMetadata({
     seo,
@@ -37,8 +38,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 60;
 
 export default async function ONasPage() {
-  const pageContent = await getPageContent("o-nas");
-  const about = resolveAboutPage(pageContent);
+  const sections = await getPageSections("o-nas");
+  const aboutSection = sections.find((s) => s.type === "about");
+  const about = resolveAboutPage({
+    about: aboutSection?.type === "about" ? aboutSection.props : undefined,
+  });
 
   const aboutPageJsonLd = {
     "@context": "https://schema.org",
@@ -55,15 +59,15 @@ export default async function ONasPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(aboutPageJsonLd) }}
       />
-      <div className={cn("font-gilroy w-full max-lg:bg-brand-50", ABOUT_PAGE_CLIP, "[&_h1]:font-binerka [&_h2]:font-binerka")}>
-        <div {...(await cmsAttr("page.o-nas.hero"))}>
-          <AboutHeroSection hero={about.hero} />
-        </div>
-        <div {...(await cmsAttr("page.o-nas.about"))} className={ABOUT_PAGE_CONTENT_MOBILE_LOWER}>
-          <AboutIntroSection sections={about.sections} />
-          <AboutMissionSection sections={about.sections} />
-          <AboutClosingSection sections={about.sections} />
-        </div>
+      <div
+        className={cn(
+          "font-gilroy w-full max-lg:bg-brand-50",
+          ABOUT_PAGE_CLIP,
+          "[&_h1]:font-binerka [&_h2]:font-binerka",
+        )}
+        {...(await cmsAttr("page.o-nas.sections"))}
+      >
+        <SectionRenderer pageId="o-nas" sections={sections} />
       </div>
     </>
   );

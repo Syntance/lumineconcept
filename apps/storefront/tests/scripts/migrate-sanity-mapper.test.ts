@@ -14,12 +14,12 @@ describe("migrate-sanity-mapper", () => {
 			title: "Lumine",
 			description: "Opis",
 			seo: { metaTitle: "SEO title" },
-			defaultOgImageUrl: "https://cdn.example/og.webp",
+			defaultOgImageUrl: "/images/cms/og.webp",
 		});
 		const parsed = parseSiteSettings(raw);
 		expect(parsed.title).toBe("Lumine");
 		expect(parsed.seo?.metaTitle).toBe("SEO title");
-		expect(parsed.defaultOgImageUrl).toBe("https://cdn.example/og.webp");
+		expect(parsed.defaultOgImageUrl).toBe("/images/cms/og.webp");
 	});
 
 	it("mapPageContentFromSanity groups testimonials and faqs per page", () => {
@@ -41,13 +41,13 @@ describe("migrate-sanity-mapper", () => {
 					answer: "A.",
 				},
 			],
-			galleryPhotos: [{ _key: "g1", imageUrl: "https://cdn.example/g.webp" }],
+			galleryPhotos: [{ _key: "g1", imageUrl: "/images/cms/g.webp" }],
 		});
 
 		const map = parsePageContentMap(JSON.stringify(pageContent));
 		expect(map.shop?.testimonials?.[0]?.name).toBe("Anna");
 		expect(map["gotowe-wzory"]?.faq?.[0]?.question).toBe("Q?");
-		expect(map["logo-3d"]?.gallery?.[0]?.imageUrl).toBe("https://cdn.example/g.webp");
+		expect(map["logo-3d"]?.gallery?.[0]?.imageUrl).toBe("/images/cms/g.webp");
 		expect(map.certyfikaty?.testimonials).toBeUndefined();
 	});
 
@@ -70,9 +70,9 @@ describe("migrate-sanity-mapper", () => {
 
 	it("mapGlobalContentToMetadata round-trips through parseGlobalContent", () => {
 		const raw = mapGlobalContentToMetadata({
-			salonLogos: [{ _id: "l1", name: "Salon", order: 0, logoUrl: "https://cdn.example/l.png" }],
+			salonLogos: [{ _id: "l1", name: "Salon", order: 0, logoUrl: "/images/cms/l.png" }],
 			instagramTiles: [
-				{ _key: "i1", postUrl: "https://instagram.com/p/1", imageUrl: "https://cdn.example/i.webp" },
+				{ _key: "i1", postUrl: "https://instagram.com/p/1", imageUrl: "/images/cms/i.webp" },
 			],
 		});
 		const parsed = parseGlobalContent(raw);

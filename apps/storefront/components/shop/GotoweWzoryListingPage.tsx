@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { cmsAttr } from "@/lib/cms-preview/attr";
 import { Suspense } from "react";
 import {
   buildMedusaCategoryScopeMap,
@@ -13,10 +12,11 @@ import {
 } from "@/lib/medusa/category-tree";
 import { categoryListingHref } from "@/lib/medusa/shop-breadcrumbs";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
-import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { getPageSeo, getSiteSettings } from "@/lib/content";
+import { getPageSections } from "@/lib/content/sections";
 import { buildMetadata } from "@/lib/content/metadata";
-import { pickTestimonials, resolveTrustBarDisplay } from "@/lib/content/cms-wiring";
-import { PageFaqSection } from "@/components/content/PageFaqSection";
+import { resolveTrustBarDisplay } from "@/lib/content/cms-wiring";
+import { SectionRenderer } from "@/components/composer/SectionRenderer";
 import { ShopListingBreadcrumbsClient } from "@/components/shop/ShopListingBreadcrumbsClient";
 import { ShopListingCategoryProvider } from "@/components/shop/ShopListingCategoryContext";
 import { medusaProductToSimple } from "@/lib/products/simple-product";
@@ -78,11 +78,15 @@ export async function GotoweWzoryListingPage({
     () => EMPTY_GLOBAL_CONFIG,
   );
 
-  const [allCategories, settings, pageContent] = await Promise.all([
+  const [allCategories, settings, tailSections] = await Promise.all([
     getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
     getSiteSettings(),
-    getPageContent("gotowe-wzory"),
+    getPageSections("gotowe-wzory"),
   ]);
+
+  const composerTail = tailSections.filter(
+    (s) => s.type === "testimonials" || s.type === "faq",
+  );
 
   const categoryTree = allCategories as unknown as CategoryTreeNode[];
   const defaultGotoweWzoryId = categoryIdByHandle(
@@ -124,7 +128,6 @@ export async function GotoweWzoryListingPage({
   const products = productsResponse?.products ?? [];
   const totalCount = productsResponse?.count ?? 0;
   const trustBar = resolveTrustBarDisplay(settings.trustBar);
-  const displayTestimonials = pickTestimonials(pageContent.testimonials, 2);
 
   const initialProducts = products.map((p) =>
     medusaProductToSimple(p as unknown as Record<string, unknown>),
@@ -184,26 +187,11 @@ export async function GotoweWzoryListingPage({
             <span className="text-brand-300">·</span>
             <span>{trustBar.shippingLabel}</span>
           </div>
-
-          {displayTestimonials.length > 0 && (
-            <div {...(await cmsAttr("page.gotowe-wzory.testimonials"))} className="mt-10 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
-              {displayTestimonials.map((t) => (
-                <blockquote key={t.id} className="rounded-xl bg-white p-6 text-left shadow-sm">
-                  <p className="text-base italic text-brand-800 leading-relaxed">
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-                  <footer className="mt-3 text-sm text-brand-500">
-                    — {t.name}{t.company ? `, ${t.company}` : ""}
-                  </footer>
-                </blockquote>
-              ))}
-            </div>
-          )}
         </div>
       </section>
 
-      <div {...(await cmsAttr("page.gotowe-wzory.faq"))}>
-        <PageFaqSection faq={pageContent.faq} />
+      <div className="border-t border-brand-100 bg-brand-50">
+        <SectionRenderer pageId="gotowe-wzory" sections={composerTail} />
       </div>
     </ShopListingCategoryProvider>
   );

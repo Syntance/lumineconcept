@@ -21,9 +21,12 @@ import { HeroPortalContent } from "./HeroPortalContent";
 export async function HeroSection({
 	hero,
 	children,
+	cmsField = "page.home.hero",
 }: {
 	hero?: HeroContent;
 	children?: React.ReactNode;
+	/** Pole CMS do inline edit (composer sekcji). */
+	cmsField?: string;
 }) {
 	const {
 		portal,
@@ -38,6 +41,7 @@ export async function HeroSection({
 
 	const mobileAvifSrc = mobileDisplayUrl ? toHeroAvifSrc(mobileDisplayUrl) : null;
 	const desktopAvifSrc = desktopImageUrl ? toHeroAvifSrc(desktopImageUrl) : null;
+	const headlineCmsAttrs = await cmsAttr(`${cmsField}.headline`, { inline: "text" });
 
 	// Determine which image to display
 	const displayImageUrl = desktopImageUrl || mobileDisplayUrl;
@@ -45,7 +49,7 @@ export async function HeroSection({
 	return (
 		<section
 			className="relative flex w-full flex-col overflow-x-hidden"
-			{...(await cmsAttr("page.home.hero"))}
+			{...(await cmsAttr(cmsField))}
 		>
 			{mobileAvifSrc && (
 				<link
@@ -112,7 +116,7 @@ export async function HeroSection({
 					<div className="relative min-h-0 flex-1 bg-brand-800 lg:absolute lg:inset-0 lg:flex-none" aria-hidden />
 				)}
 
-				<HeroPortalContent content={portal} />
+				<HeroPortalContent content={portal} headlineCmsAttrs={headlineCmsAttrs} />
 			</div>
 
 			{children && (

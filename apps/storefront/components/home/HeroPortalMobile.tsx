@@ -12,6 +12,7 @@ const SHOP_CTA_CLASS =
 
 type HeroPortalMobileProps = {
   content?: HeroPortalContentConfig;
+  headlineCmsAttrs?: Record<string, string>;
 };
 
 /**
@@ -19,6 +20,7 @@ type HeroPortalMobileProps = {
  */
 export function HeroPortalMobile({
   content = HOME_HERO_PORTAL,
+  headlineCmsAttrs,
 }: HeroPortalMobileProps) {
   return (
     <div className="shrink-0 bg-brand-800 px-5 py-6 text-center sm:px-8 sm:py-7">
@@ -26,6 +28,7 @@ export function HeroPortalMobile({
         <div className="flex w-full flex-col items-center gap-2.5">
           <h1
             className={`m-0 font-binerka text-[2rem] leading-none tracking-[0.06em] text-white sm:text-[2.35rem] ${content.headlineUppercase ? "uppercase" : ""}`}
+            {...headlineCmsAttrs}
           >
             {content.headline}
           </h1>

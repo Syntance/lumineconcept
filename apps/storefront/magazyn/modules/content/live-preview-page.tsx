@@ -3,6 +3,9 @@ import { magazynConfig } from "@magazyn/magazyn.config";
 import { notFound } from "next/navigation";
 import type { PageContentMap } from "@/lib/content/types";
 import { getContentBundle } from "./content-store";
+import { migratePageContentToSections } from "@/lib/composer/sections/migrate";
+import { getPageSectionsHistoryForAdmin } from "./content-store";
+import type { ContentPageId } from "@/lib/content/types";
 import { listProductOptionsForCms } from "./product-options";
 import { LivePreviewClient } from "./live-preview-client";
 
@@ -17,17 +20,28 @@ export default async function CmsLivePreviewPage({ params }: Props) {
 	if (!page) notFound();
 
 	const needsProducts = page.blocks.includes("bestsellers");
-	const [bundle, productOptions] = await Promise.all([
+	const [bundle, productOptions, sectionsHistory] = await Promise.all([
 		loadAdmin(getContentBundle),
 		needsProducts ? listProductOptionsForCms() : Promise.resolve([]),
+		loadAdmin(() => getPageSectionsHistoryForAdmin(page.id as ContentPageId)),
 	]);
+
+	const pageContent = bundle.pageContent[page.id as keyof PageContentMap] ?? {};
+	const draftSections = bundle.pageSectionsDraft[page.id as ContentPageId];
+	const initialSections =
+		draftSections?.length
+			? draftSections
+			: migratePageContentToSections(page.id as ContentPageId, pageContent);
 
 	return (
 		<LivePreviewClient
 			page={page}
-			initial={bundle.pageContent[page.id as keyof PageContentMap] ?? {}}
+			initial={pageContent}
+			initialSections={initialSections}
+			sectionsHistory={sectionsHistory}
 			siteSettings={bundle.siteSettings}
 			globalContent={bundle.globalContent}
+			themeTokens={bundle.themeTokens}
 			productOptions={productOptions}
 		/>
 	);

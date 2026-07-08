@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { cmsAttr } from "@/lib/cms-preview/attr";
 import { Suspense } from "react";
 import {
   buildMedusaCategoryScopeMap,
@@ -10,10 +9,11 @@ import {
   type CategoryTreeNode,
 } from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
-import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { getPageSeo, getSiteSettings } from "@/lib/content";
+import { getPageSections } from "@/lib/content/sections";
 import { buildMetadata } from "@/lib/content/metadata";
-import { pickTestimonials, resolveTrustBarDisplay } from "@/lib/content/cms-wiring";
-import { PageFaqSection } from "@/components/content/PageFaqSection";
+import { resolveTrustBarDisplay } from "@/lib/content/cms-wiring";
+import { SectionRenderer } from "@/components/composer/SectionRenderer";
 import { ShopListingBreadcrumbsClient } from "@/components/shop/ShopListingBreadcrumbsClient";
 import { ShopListingCategoryProvider } from "@/components/shop/ShopListingCategoryContext";
 import { medusaProductToSimple } from "@/lib/products/simple-product";
@@ -52,14 +52,16 @@ async function CertyfikatyListingWithSearchParams({
 
   const globalConfigPromise = getGlobalProductConfig().catch(() => EMPTY_GLOBAL_CONFIG);
 
-  const [allCategories, settings, pageContent] = await Promise.all([
+  const [allCategories, settings, tailSections] = await Promise.all([
     getProductCategories().catch(() => [] as Awaited<ReturnType<typeof getProductCategories>>),
     getSiteSettings(),
-    getPageContent("certyfikaty"),
+    getPageSections("certyfikaty"),
   ]);
 
   const trustBar = resolveTrustBarDisplay(settings?.trustBar);
-  const displayTestimonials = pickTestimonials(pageContent.testimonials, 2);
+  const composerTail = tailSections.filter(
+    (s) => s.type === "testimonials" || s.type === "faq",
+  );
 
   const tree = allCategories as unknown as CategoryTreeNode[];
   const defaultGotoweWzoryId = categoryIdByHandle(tree, LISTING_CATEGORY_HANDLE.gotoweWzory);
@@ -146,26 +148,11 @@ async function CertyfikatyListingWithSearchParams({
             <span className="text-brand-300">·</span>
             <span>{trustBar.shippingLabel}</span>
           </div>
-
-          {displayTestimonials.length > 0 && (
-            <div {...(await cmsAttr("page.certyfikaty.testimonials"))} className="mt-10 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
-              {displayTestimonials.map((t) => (
-                <blockquote key={t.id} className="rounded-xl bg-white p-6 text-left shadow-sm">
-                  <p className="text-base italic text-brand-800 leading-relaxed">
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-                  <footer className="mt-3 text-sm text-brand-500">
-                    — {t.name}{t.company ? `, ${t.company}` : ""}
-                  </footer>
-                </blockquote>
-              ))}
-            </div>
-          )}
         </div>
       </section>
 
-      <div {...(await cmsAttr("page.certyfikaty.faq"))}>
-        <PageFaqSection faq={pageContent.faq} />
+      <div className="border-t border-brand-100 bg-brand-50">
+        <SectionRenderer pageId="certyfikaty" sections={composerTail} />
       </div>
     </ShopListingCategoryProvider>
   );

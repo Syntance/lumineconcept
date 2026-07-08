@@ -69,6 +69,7 @@ type HeroPortalDesktopProps = {
   align?: HeroPortalAlign;
   content?: HeroPortalContentConfig;
   portalSize?: HeroPortalSize;
+  headlineCmsAttrs?: Record<string, string>;
 };
 
 function computePortalLayout(
@@ -109,6 +110,7 @@ type PortalContentBlockProps = {
   contentRef: RefObject<HTMLDivElement | null>;
   headlineRef: RefObject<HTMLHeadingElement | null>;
   ctaRef: RefObject<HTMLAnchorElement | null>;
+  headlineCmsAttrs?: Record<string, string>;
 };
 
 function PortalContentBlock({
@@ -118,6 +120,7 @@ function PortalContentBlock({
   contentRef,
   headlineRef,
   ctaRef,
+  headlineCmsAttrs,
 }: PortalContentBlockProps) {
   const isCenter = align === "center";
 
@@ -131,6 +134,7 @@ function PortalContentBlock({
         <h1
           ref={headlineRef}
           className={`m-0 font-binerka text-[58px] leading-none tracking-[0.06em] font-normal text-white ${isCenter ? "text-center" : "whitespace-nowrap text-left"} ${content.headlineUppercase ? "uppercase" : ""}`}
+          {...headlineCmsAttrs}
         >
           {content.headline}
         </h1>
@@ -174,6 +178,7 @@ export function HeroPortalDesktop({
   align = "left",
   content = HOME_HERO_PORTAL,
   portalSize = "content",
+  headlineCmsAttrs,
 }: HeroPortalDesktopProps) {
   const isCenter = align === "center";
   const useHomePortalSize = portalSize === "home";
@@ -310,6 +315,7 @@ export function HeroPortalDesktop({
             contentRef={contentRef}
             headlineRef={headlineRef}
             ctaRef={ctaRef}
+            headlineCmsAttrs={headlineCmsAttrs}
           />
         </div>
       </div>

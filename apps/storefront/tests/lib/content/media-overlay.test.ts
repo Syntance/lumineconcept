@@ -6,6 +6,12 @@ const remoteA = "https://cdn.example.com/cms/a.webp";
 const remoteB = "https://cdn.example.com/cms/b.webp";
 const localA = "/images/cms/a.webp";
 
+const emptySections = {
+	pageSectionsLive: {},
+	pageSectionsDraft: {},
+	pageSectionsHistory: {},
+} as const;
+
 describe("applyMediaUrlOverlay", () => {
 	it("mapuje znane URL-e na lokalne ścieżki", () => {
 		const out = applyMediaUrlOverlay(
@@ -18,6 +24,8 @@ describe("applyMediaUrlOverlay", () => {
 					},
 				},
 				globalContent: null,
+				themeTokens: null,
+				...emptySections,
 			},
 			{ [remoteA]: localA },
 		);
@@ -41,6 +49,8 @@ describe("applyMediaUrlOverlay", () => {
 					},
 				},
 				globalContent: null,
+				themeTokens: null,
+				...emptySections,
 			},
 			{ [remoteA]: localA },
 		);
@@ -61,6 +71,8 @@ describe("applyMediaUrlOverlay", () => {
 					},
 				},
 				globalContent: null,
+				themeTokens: null,
+				...emptySections,
 			},
 			{},
 		);
@@ -80,6 +92,8 @@ describe("applyMediaUrlOverlay", () => {
 				},
 			}),
 			globalContent: null,
+			themeTokens: null,
+			...emptySections,
 		};
 
 		const out = applyMediaUrlOverlay(normalizeMetadataBlobForOverlay(rawBlob), {
