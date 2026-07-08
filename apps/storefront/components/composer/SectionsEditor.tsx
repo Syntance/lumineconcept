@@ -15,7 +15,7 @@ import {
 import { Button } from "@magazyn/core/ui/button";
 import { cn } from "@magazyn/core/lib/cn";
 import type { ContentPageId } from "@/lib/content/types";
-import type { PageSection, SectionTypeId } from "@/lib/composer/sections/schema";
+import type { PageSection } from "@/lib/composer/sections/schema";
 import { SECTION_REGISTRY, SECTION_REGISTRY_MAP, createSection } from "@/lib/composer/registry";
 import { DEFAULT_SECTION_LAYOUT, type SectionLayout } from "@/lib/composer/sections/layout";
 import {

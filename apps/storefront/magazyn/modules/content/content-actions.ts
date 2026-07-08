@@ -217,19 +217,18 @@ export async function restorePageSectionsVersionAction(
 	path: string,
 	versionIndex: number,
 ): Promise<SaveContentState> {
-	let restored: PageSections | null = null;
 	try {
 		await requireAdminSession();
-		restored = await restorePageSectionsVersion(pageId, versionIndex);
+		const restored = await restorePageSectionsVersion(pageId, versionIndex);
 		if (!restored) {
 			return { ok: false, error: "Nie znaleziono wersji do przywrócenia." };
 		}
+
+		await revalidateContentCache([path, `${magazynConfig.basePath}/panel/cms/podglad/${pageId}`]);
+		return { ok: true, error: null, sections: restored };
 	} catch (error) {
 		if (error instanceof AdminUnauthorizedError) redirect(`${magazynConfig.basePath}/login`);
 		if (error instanceof AdminApiError) return { ok: false, error: error.message };
 		return { ok: false, error: "Nie udało się przywrócić wersji." };
 	}
-
-	await revalidateContentCache([path, `${magazynConfig.basePath}/panel/cms/podglad/${pageId}`]);
-	return { ok: true, error: null, sections: restored };
 }

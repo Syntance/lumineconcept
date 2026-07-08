@@ -123,6 +123,11 @@ export function resolveLayoutClasses(layout: SectionLayout | undefined): string 
 		parts.push(`grid ${LAYOUT_CLASSES.columns[columns]}`);
 	}
 
+	if (mColumns !== columns && mColumns !== "1") {
+		const mobileGrid = LAYOUT_CLASSES.columns[mColumns].replace(/ md:[^\s]+/g, "").replace(/ lg:[^\s]+/g, "");
+		parts.push(`max-lg:grid ${mobileGrid.replace(/^grid-cols-/, "max-lg:grid-cols-")}`);
+	}
+
 	if (mAlign !== align) {
 		parts.push(`max-lg:${LAYOUT_CLASSES.align[mAlign].replace(/ /g, " max-lg:")}`);
 	}

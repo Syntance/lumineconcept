@@ -9,7 +9,7 @@ import {
   type CategoryTreeNode,
 } from "@/lib/medusa/category-tree";
 import { getProducts, getProductCategories } from "@/lib/medusa/products";
-import { getPageContent, getPageSeo, getSiteSettings } from "@/lib/content";
+import { getPageSeo, getSiteSettings } from "@/lib/content";
 import { getPageSections } from "@/lib/content/sections";
 import { buildMetadata } from "@/lib/content/metadata";
 import { resolveTrustBarDisplay } from "@/lib/content/cms-wiring";
