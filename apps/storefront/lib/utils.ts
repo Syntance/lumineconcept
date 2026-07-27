@@ -68,5 +68,11 @@ export function truncate(text: string, maxLength: number): string {
   return text.slice(0, maxLength).trim() + "...";
 }
 
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumineconcept.pl";
+/**
+ * Env na Vercel bywa wklejony z końcowym CRLF/slashem — bez normalizacji
+ * sitemap.xml i JSON-LD (BreadcrumbList) serwują URL-e ze złamaniem linii
+ * w środku adresu, których Google nie parsuje.
+ */
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumineconcept.pl")
+  .trim()
+  .replace(/\/+$/, "");

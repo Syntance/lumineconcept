@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { SITE_URL } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Salony Beauty — W budowie",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
     follow: false,
   },
   alternates: {
-    canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumineconcept.pl"}/salony-beauty`,
+    canonical: `${SITE_URL}/salony-beauty`,
   },
 };
 
