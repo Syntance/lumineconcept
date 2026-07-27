@@ -3,6 +3,9 @@ import { medusa } from "@/lib/medusa/client";
 import { SITE_URL } from "@/lib/utils";
 import { canonicalProductPath, productTagValues } from "@/lib/products/product-canonical";
 
+/** ISR — nowe/zmienione produkty trafiają do sitemap.xml bez redeploya. */
+export const revalidate = 3600;
+
 /** Ile produktów pobieramy na stronę przy paginacji listy. */
 const PRODUCTS_PAGE_SIZE = 200;
 /** Twardy limit bezpieczeństwa, gdyby `count` był niewiarygodny. */

@@ -6,6 +6,7 @@ import { CookieConsent } from "@/components/common/CookieConsent";
 import { ConsentModeScript } from "@/components/analytics/ConsentModeScript";
 import { PreviewOverlayGate } from "@/components/cms-preview/PreviewOverlayGate";
 import { getSiteSettings } from "@/lib/content";
+import { SITE_URL } from "@/lib/utils";
 import "@/styles/globals.css";
 
 /**
@@ -50,9 +51,6 @@ const binerka = localFont({
   fallback: ['Georgia', 'serif'],
   preload: true,
 });
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumineconcept.pl";
 
 export const viewport: Viewport = {
   width: "device-width",
