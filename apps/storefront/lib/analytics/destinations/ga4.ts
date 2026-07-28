@@ -11,18 +11,24 @@ declare global {
 
 let ga4ScriptLoaded = false;
 
-/** Kolejka dataLayer — działa przed i po załadowaniu gtag.js (Consent Mode). */
+/**
+ * Kolejka dataLayer — działa przed i po załadowaniu gtag.js (Consent Mode).
+ * Komendy MUSZĄ trafiać do dataLayer jako obiekt `arguments` (jak w oficjalnym
+ * snippecie) — gtag.js po cichu ignoruje zwykłe tablice, przez co config/consent
+ * nie są przetwarzane i ŻADEN hit nie wychodzi (GA4 pokazuje zero).
+ */
 function pushGACommand(...args: unknown[]): void {
   if (typeof window === "undefined") return;
-  window.dataLayer = window.dataLayer ?? [];
-  window.dataLayer.push(args);
+  ensureGtagStub();
+  window.gtag?.(...args);
 }
 
 function ensureGtagStub(): void {
   if (typeof window.gtag === "function") return;
   window.dataLayer = window.dataLayer ?? [];
-  window.gtag = (...args: unknown[]) => {
-    pushGACommand(...args);
+  window.gtag = function gtagStub() {
+    // eslint-disable-next-line prefer-rest-params
+    (window.dataLayer = window.dataLayer ?? []).push(arguments);
   };
 }
 
@@ -41,7 +47,9 @@ export function loadGA4Script(): void {
   document.head.appendChild(s);
 
   pushGACommand("js", new Date());
-  pushGACommand("config", GA4_ID);
+  // send_page_view:false — page_view wysyłamy ręcznie w sendGA4Event,
+  // inaczej gtag dubluje go automatycznie przy config().
+  pushGACommand("config", GA4_ID, { send_page_view: false });
 }
 
 export function updateGA4Consent(analytics: boolean, marketing: boolean): void {
