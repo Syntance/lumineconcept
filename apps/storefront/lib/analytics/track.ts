@@ -21,6 +21,16 @@ const REFERRER_STORAGE_KEY = "lumine.referrer.v1";
  */
 const POSTHOG_SERVER_ONLY_EVENTS = new Set<AnalyticsEventName>(["purchase"]);
 
+/**
+ * Eventy wysyłane w momencie opuszczania strony — `sendBeacon` przeżywa
+ * zamknięcie karty, zwykły fetch/XHR jest ubijany w locie (szczególnie na
+ * mobile). Bez tego `checkout_abandon` łapał ułamek porzuceń.
+ */
+const UNLOAD_EVENTS = new Set<AnalyticsEventName>([
+  "checkout_abandon",
+  "form_abandon",
+]);
+
 interface StoredUtm {
   utm_source?: string | null;
   utm_medium?: string | null;
@@ -172,7 +182,7 @@ export function track<E extends AnalyticsEventName>(
   }
 
   if (consent?.analytics && !POSTHOG_SERVER_ONLY_EVENTS.has(name)) {
-    posthog.capture(name, enriched);
+    posthog.capture(name, enriched, UNLOAD_EVENTS.has(name) ? "sendBeacon" : undefined);
     // PostHog Web Analytics liczy tylko natywny $pageview — sklep wysyła własny page_view
     // (panel Magazyn, funnele). Bez $pageview widok Web Analytics pokazuje 0 mimo że Activity ma dane.
     if (name === "page_view") {
