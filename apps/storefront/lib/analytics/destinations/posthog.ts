@@ -69,11 +69,25 @@ export function optOut(): void {
   }
 }
 
+export type CaptureTransport = "sendBeacon" | "XHR";
+
 export function capture(
   name: string,
   payload: Record<string, unknown>,
+  transport?: CaptureTransport,
 ): void {
-  void ensurePostHog().then((ph) => ph?.capture(name, payload));
+  const options = transport ? { transport } : undefined;
+  /**
+   * Ścieżka synchroniczna dla eventów wysyłanych przy opuszczaniu strony
+   * (`pagehide`/`visibilitychange`): request musi wystartować w tym samym
+   * ticku co zdarzenie, zanim przeglądarka ubije kartę. Przejście przez
+   * promisę gubiło część `checkout_abandon`.
+   */
+  if (posthogInstance) {
+    posthogInstance.capture(name, payload, options);
+    return;
+  }
+  void ensurePostHog().then((ph) => ph?.capture(name, payload, options));
 }
 
 export function identify(

@@ -47,6 +47,57 @@ export function clearCheckoutAnalyticsContext(): void {
   }
 }
 
+/**
+ * Dedup eventów lejka „raz na koszyk" — sessionStorage przeżywa odświeżenie
+ * strony i powrót z bramki płatności (ref w komponencie nie przeżywa).
+ *
+ * Bez tego `begin_checkout` odpalał się przy każdym wejściu na /checkout
+ * (refresh, back, wejście z koszykiem odtworzonym z localStorage), przez co
+ * lejek pokazywał WIĘCEJ rozpoczętych checkoutów niż dodań do koszyka
+ * i zaniżał konwersję checkout → purchase.
+ */
+export const CHECKOUT_FUNNEL_ONCE_STORAGE_KEY = "lumine.checkout_funnel_once.v1";
+
+export type CheckoutFunnelOnceEvent = "begin_checkout" | "checkout_abandon";
+
+type FunnelOnceMap = Partial<Record<CheckoutFunnelOnceEvent, string>>;
+
+function readFunnelOnce(): FunnelOnceMap {
+  if (!isBrowser()) return {};
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_FUNNEL_ONCE_STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as FunnelOnceMap;
+  } catch {
+    return {};
+  }
+}
+
+/** Czy event poleciał już dla TEGO koszyka (nowy koszyk = liczymy od nowa). */
+export function hasFiredForCart(
+  event: CheckoutFunnelOnceEvent,
+  cartId: string,
+): boolean {
+  if (!cartId) return false;
+  return readFunnelOnce()[event] === cartId;
+}
+
+export function markFiredForCart(
+  event: CheckoutFunnelOnceEvent,
+  cartId: string,
+): void {
+  if (!isBrowser() || !cartId) return;
+  try {
+    const next: FunnelOnceMap = { ...readFunnelOnce(), [event]: cartId };
+    sessionStorage.setItem(
+      CHECKOUT_FUNNEL_ONCE_STORAGE_KEY,
+      JSON.stringify(next),
+    );
+  } catch {
+    /* prywatny tryb */
+  }
+}
+
 /** Czytelna etykieta metody płatności dla purchase (GA4 payment_type). */
 export function paymentMethodAnalyticsLabel(providerId: string): string {
   if (providerId === "pp_przelewy24_przelewy24") return "przelewy24";

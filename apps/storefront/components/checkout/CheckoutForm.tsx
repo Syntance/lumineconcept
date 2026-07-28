@@ -13,6 +13,8 @@ import {
 } from "@/lib/checkout/p24-circuit-breaker";
 import { cartToEcommercePayload } from "@/lib/analytics/medusa-items";
 import {
+  hasFiredForCart,
+  markFiredForCart,
   paymentMethodAnalyticsLabel,
   writeCheckoutAnalyticsContext,
 } from "@/lib/analytics/checkout-analytics-context";
@@ -344,11 +346,18 @@ export function CheckoutForm() {
    * Meta Pixel / PostHog: odpalamy `begin_checkout` raz, zaraz po tym jak
    * pojawią się itemy w koszyku. Wysyłamy to tu (a nie w `AddToCartButton`),
    * bo ludzie wchodzą na /checkout również z poziomu mini-koszyka.
+   *
+   * Dedup jest DWUPOZIOMOWY: ref chroni przed powtórką w obrębie mountu,
+   * a sessionStorage (per `cart_id`) przed powtórką po odświeżeniu strony
+   * i powrocie z bramki — inaczej lejek liczy więcej rozpoczętych checkoutów
+   * niż realnych dodań do koszyka.
    */
   useEffect(() => {
     if (beginCheckoutFiredRef.current) return;
     if (!cartId || items.length === 0) return;
     beginCheckoutFiredRef.current = true;
+    if (hasFiredForCart("begin_checkout", cartId)) return;
+    markFiredForCart("begin_checkout", cartId);
     checkoutStartTimeRef.current = Date.now();
     writeCheckoutAnalyticsContext({ startedAt: checkoutStartTimeRef.current });
     track(
@@ -416,11 +425,26 @@ export function CheckoutForm() {
     };
   }, [total, formData.email]);
 
+  /**
+   * `checkout_abandon` — sygnał „opuścił checkout bez zakupu".
+   *
+   * `beforeunload` bywa pomijany na mobile (iOS/Android ubijają kartę bez
+   * niego), a request wysłany zwykłym fetchem i tak nie zdąży wyjść — dlatego
+   * słuchamy też `visibilitychange → hidden` (jedyne zdarzenie gwarantowane
+   * przy zamknięciu karty / przełączeniu apki), a event leci `sendBeacon`
+   * (patrz UNLOAD_EVENTS w track.ts).
+   *
+   * Dedup per `cart_id` w sessionStorage jest tu KONIECZNY: bez niego każde
+   * przełączenie karty (np. wejście do apki banku w trakcie płatności)
+   * generowałoby kolejne porzucenie tego samego koszyka.
+   */
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const onUnload = () => {
+    const onLeave = () => {
       if (readCheckoutCompleted()) return;
       if (!cartId || items.length === 0) return;
+      if (hasFiredForCart("checkout_abandon", cartId)) return;
+      markFiredForCart("checkout_abandon", cartId);
       track("checkout_abandon", {
         last_step: lastStepRef.current,
         value: abandonSnapshotRef.current.cartValue,
@@ -428,11 +452,16 @@ export function CheckoutForm() {
         has_email: abandonSnapshotRef.current.hasEmail,
       });
     };
-    window.addEventListener("beforeunload", onUnload);
-    window.addEventListener("pagehide", onUnload);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") onLeave();
+    };
+    window.addEventListener("beforeunload", onLeave);
+    window.addEventListener("pagehide", onLeave);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      window.removeEventListener("beforeunload", onUnload);
-      window.removeEventListener("pagehide", onUnload);
+      window.removeEventListener("beforeunload", onLeave);
+      window.removeEventListener("pagehide", onLeave);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [cartId, items.length]);
 
