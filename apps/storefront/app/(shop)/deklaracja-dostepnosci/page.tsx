@@ -1,8 +1,16 @@
 import { Metadata } from "next";
+import { SITE_URL } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Deklaracja dostępności",
   description: "Deklaracja dostępności cyfrowej sklepu Lumineconcept",
+  robots: { index: true, follow: true },
+  // Bez własnego canonicala strona dziedziczyła `alternates` z root layoutu
+  // i kanonizowała się na stronę główną — a jest w sitemapie, więc Google
+  // widział „Strona alternatywna ze znacznikiem canonical" i jej nie indeksował.
+  alternates: {
+    canonical: `${SITE_URL}/deklaracja-dostepnosci`,
+  },
 };
 
 export default function AccessibilityDeclarationPage() {
