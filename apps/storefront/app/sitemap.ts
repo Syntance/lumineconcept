@@ -1,73 +1,75 @@
 import type { MetadataRoute } from "next";
-import { medusa } from "@/lib/medusa/client";
+import {
+  collectIndexableProducts,
+  collectListingCategoryPaths,
+} from "@/lib/seo/indexable-urls";
 import { SITE_URL } from "@/lib/utils";
-import { canonicalProductPath, productTagValues } from "@/lib/products/product-canonical";
 
 /** ISR — nowe/zmienione produkty trafiają do sitemap.xml bez redeploya. */
 export const revalidate = 3600;
 
-/** Ile produktów pobieramy na stronę przy paginacji listy. */
-const PRODUCTS_PAGE_SIZE = 200;
-/** Twardy limit bezpieczeństwa, gdyby `count` był niewiarygodny. */
-const MAX_PRODUCT_PAGES = 100;
+/** Strony stałe — ścieżka → parametry wpisu. Kolejność = kolejność w XML. */
+const STATIC_ENTRIES: ReadonlyArray<{
+  path: string;
+  changeFrequency: NonNullable<MetadataRoute.Sitemap[number]["changeFrequency"]>;
+  priority: number;
+}> = [
+  { path: "", changeFrequency: "daily", priority: 1.0 },
+  { path: "/sklep", changeFrequency: "daily", priority: 0.9 },
+  { path: "/sklep/gotowe-wzory", changeFrequency: "daily", priority: 0.85 },
+  { path: "/sklep/tablice-z-logo", changeFrequency: "daily", priority: 0.85 },
+  { path: "/sklep/certyfikaty", changeFrequency: "daily", priority: 0.85 },
+  // Strony informacyjne / prawne (indeksowalne). `salony-beauty` jest `noindex` (w budowie).
+  { path: "/o-nas", changeFrequency: "monthly", priority: 0.65 },
+  { path: "/kontakt", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/dostawa-i-platnosci", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/zwroty", changeFrequency: "yearly", priority: 0.4 },
+  { path: "/regulamin", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/polityka-prywatnosci", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/deklaracja-dostepnosci", changeFrequency: "yearly", priority: 0.3 },
+];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  const staticPages: MetadataRoute.Sitemap = [
-    { url: SITE_URL, changeFrequency: "daily", priority: 1.0, lastModified: now },
-    { url: `${SITE_URL}/sklep`, changeFrequency: "daily", priority: 0.9, lastModified: now },
-    { url: `${SITE_URL}/sklep/gotowe-wzory`, changeFrequency: "daily", priority: 0.85, lastModified: now },
-    { url: `${SITE_URL}/sklep/tablice-z-logo`, changeFrequency: "daily", priority: 0.85, lastModified: now },
-    { url: `${SITE_URL}/sklep/certyfikaty`, changeFrequency: "daily", priority: 0.85, lastModified: now },
-    // Strony informacyjne / prawne (indeksowalne). `salony-beauty` jest `noindex` (w budowie).
-    { url: `${SITE_URL}/o-nas`, changeFrequency: "monthly", priority: 0.65, lastModified: now },
-    { url: `${SITE_URL}/kontakt`, changeFrequency: "monthly", priority: 0.6, lastModified: now },
-    { url: `${SITE_URL}/dostawa-i-platnosci`, changeFrequency: "monthly", priority: 0.6, lastModified: now },
-    { url: `${SITE_URL}/zwroty`, changeFrequency: "yearly", priority: 0.4, lastModified: now },
-    { url: `${SITE_URL}/regulamin`, changeFrequency: "yearly", priority: 0.3, lastModified: now },
-    { url: `${SITE_URL}/polityka-prywatnosci`, changeFrequency: "yearly", priority: 0.3, lastModified: now },
-    { url: `${SITE_URL}/deklaracja-dostepnosci`, changeFrequency: "yearly", priority: 0.3, lastModified: now },
-  ];
+  // Równolegle — obie listy idą do Medusy, a sitemap i tak czeka na obie.
+  const [products, listingPaths] = await Promise.all([
+    collectIndexableProducts(),
+    collectListingCategoryPaths(),
+  ]);
 
-  const productPages = await collectProductPages();
-  return [...staticPages, ...productPages];
-}
-
-async function collectProductPages(): Promise<MetadataRoute.Sitemap> {
   const seen = new Set<string>();
-  const pages: MetadataRoute.Sitemap = [];
+  const entries: MetadataRoute.Sitemap = [];
 
-  try {
-    for (let page = 0; page < MAX_PRODUCT_PAGES; page++) {
-      const offset = page * PRODUCTS_PAGE_SIZE;
-      const { products, count } = await medusa.store.product.list({
-        limit: PRODUCTS_PAGE_SIZE,
-        offset,
-      });
+  const push = (entry: MetadataRoute.Sitemap[number]) => {
+    if (seen.has(entry.url)) return;
+    seen.add(entry.url);
+    entries.push(entry);
+  };
 
-      for (const product of products) {
-        if (!product.handle || seen.has(product.handle)) continue;
-        seen.add(product.handle);
-
-        // Jeden kanoniczny URL na produkt — bez duplikatów ścieżek kategorii.
-        const path = canonicalProductPath(product.handle, productTagValues(product));
-        pages.push({
-          url: `${SITE_URL}${path}`,
-          lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
-          changeFrequency: "weekly",
-          priority: 0.8,
-        });
-      }
-
-      const fetched = offset + products.length;
-      if (products.length === 0 || (typeof count === "number" && fetched >= count)) {
-        break;
-      }
-    }
-  } catch {
-    // Medusa niedostępna podczas builda — zwracamy to, co zebrane (może być puste).
+  for (const { path, changeFrequency, priority } of STATIC_ENTRIES) {
+    push({ url: `${SITE_URL}${path}`, changeFrequency, priority, lastModified: now });
   }
 
-  return pages;
+  // Listingi podkategorii, np. `/sklep/gotowe-wzory/cenniki` — własne strony
+  // z osobnym canonicalem, więc bez nich Google musi je odkryć tylko z linków.
+  for (const path of listingPaths) {
+    push({
+      url: `${SITE_URL}${path}`,
+      changeFrequency: "daily",
+      priority: 0.8,
+      lastModified: now,
+    });
+  }
+
+  for (const product of products) {
+    push({
+      url: `${SITE_URL}${product.path}`,
+      lastModified: product.lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    });
+  }
+
+  return entries;
 }
