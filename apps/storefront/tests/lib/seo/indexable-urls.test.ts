@@ -16,6 +16,8 @@ import {
 	collectListingCategoryPaths,
 } from "@/lib/seo/indexable-urls";
 
+const SITE = "http://localhost:3000";
+
 const CERT = {
 	handle: "dyplom-premium",
 	title: "Dyplom premium",
@@ -50,16 +52,72 @@ describe("collectIndexableProducts", () => {
 		);
 	});
 
+	it("prosi o metadata — inaczej nie widzi SEO ustawionego w panelu", async () => {
+		productList.mockResolvedValue({ products: [], count: 0 });
+
+		await collectIndexableProducts();
+
+		expect(productList).toHaveBeenCalledWith(
+			expect.objectContaining({ fields: expect.stringContaining("+metadata") }),
+		);
+	});
+
 	it("mapuje produkt na jego kanoniczną ścieżkę wg tagów", async () => {
 		productList.mockResolvedValue({ products: [CERT, LOGO, PLAIN], count: 3 });
 
 		const products = await collectIndexableProducts();
 
-		expect(products.map((p) => p.path)).toEqual([
-			"/sklep/certyfikaty/dyplom-premium",
-			"/sklep/tablice-z-logo/tablica-logo-led",
-			"/sklep/gotowe-wzory/cennik-a4",
+		expect(products.map((p) => p.url)).toEqual([
+			`${SITE}/sklep/certyfikaty/dyplom-premium`,
+			`${SITE}/sklep/tablice-z-logo/tablica-logo-led`,
+			`${SITE}/sklep/gotowe-wzory/cennik-a4`,
 		]);
+	});
+
+	it("pomija produkty z „nie indeksuj” z panelu magazynu", async () => {
+		productList.mockResolvedValue({
+			products: [{ ...CERT, metadata: { seo_no_index: "true" } }, PLAIN],
+			count: 2,
+		});
+
+		const products = await collectIndexableProducts();
+
+		// Zgłoszenie noindex w sitemapie = błąd „Przesłany adres URL
+		// oznaczony jako noindex" w Search Console.
+		expect(products.map((p) => p.url)).toEqual([`${SITE}/sklep/gotowe-wzory/cennik-a4`]);
+	});
+
+	it("respektuje seo_canonical_url ustawiony na produkcie", async () => {
+		productList.mockResolvedValue({
+			products: [
+				{ ...PLAIN, metadata: { seo_canonical_url: `${SITE}/sklep/gotowe-wzory/inny-wariant` } },
+			],
+			count: 1,
+		});
+
+		const products = await collectIndexableProducts();
+
+		expect(products[0]?.url).toBe(`${SITE}/sklep/gotowe-wzory/inny-wariant`);
+	});
+
+	it("pomija produkt kanonizowany na obcą domenę", async () => {
+		productList.mockResolvedValue({
+			products: [{ ...PLAIN, metadata: { seo_canonical_url: "https://inna-domena.pl/produkt" } }],
+			count: 1,
+		});
+
+		await expect(collectIndexableProducts()).resolves.toEqual([]);
+	});
+
+	it("przy niepoprawnym canonicalu wraca do ścieżki domyślnej", async () => {
+		productList.mockResolvedValue({
+			products: [{ ...PLAIN, metadata: { seo_canonical_url: "   " } }],
+			count: 1,
+		});
+
+		const products = await collectIndexableProducts();
+
+		expect(products[0]?.url).toBe(`${SITE}/sklep/gotowe-wzory/cennik-a4`);
 	});
 
 	it("paginuje i odfiltrowuje duplikaty handle", async () => {
@@ -70,7 +128,7 @@ describe("collectIndexableProducts", () => {
 		const products = await collectIndexableProducts();
 
 		expect(products).toHaveLength(3);
-		expect(new Set(products.map((p) => p.path)).size).toBe(3);
+		expect(new Set(products.map((p) => p.url)).size).toBe(3);
 	});
 
 	it("ponawia błędy przejściowe (cold start Railway), potem rzuca", async () => {

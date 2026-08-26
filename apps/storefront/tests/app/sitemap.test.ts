@@ -54,7 +54,7 @@ describe("sitemap.xml", () => {
 		collectIndexableProducts.mockResolvedValue([
 			{
 				title: "Dyplom",
-				path: "/sklep/certyfikaty/dyplom",
+				url: `${SITE}/sklep/certyfikaty/dyplom`,
 				lastModified: new Date("2026-02-01T00:00:00.000Z"),
 			},
 		]);
@@ -79,8 +79,8 @@ describe("sitemap.xml", () => {
 
 	it("nie zwraca zduplikowanych URL-i", async () => {
 		collectIndexableProducts.mockResolvedValue([
-			{ title: "A", path: "/sklep/gotowe-wzory/a", lastModified: new Date() },
-			{ title: "A", path: "/sklep/gotowe-wzory/a", lastModified: new Date() },
+			{ title: "A", url: `${SITE}/sklep/gotowe-wzory/a`, lastModified: new Date() },
+			{ title: "A", url: `${SITE}/sklep/gotowe-wzory/a`, lastModified: new Date() },
 		]);
 
 		const urls = (await sitemap()).map((e) => e.url);

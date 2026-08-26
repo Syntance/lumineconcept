@@ -59,7 +59,7 @@ export async function GET() {
 		sections.push(
 			"",
 			"## Produkty",
-			...products.map(({ title, path }) => `- [${title}](${origin}${path})`),
+			...products.map(({ title, url }) => `- [${title}](${url})`),
 		);
 	}
 

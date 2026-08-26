@@ -62,9 +62,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
+  // `product.url` jest już absolutny — może pochodzić z per-produktowego
+  // `seo_canonical_url` ustawionego w panelu, nie tylko ze ścieżki domyślnej.
   for (const product of products) {
     push({
-      url: `${SITE_URL}${product.path}`,
+      url: product.url,
       lastModified: product.lastModified,
       changeFrequency: "weekly",
       priority: 0.8,

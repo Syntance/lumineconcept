@@ -6,9 +6,11 @@ import {
 } from "@/lib/medusa/category-tree";
 import { getProductCategories } from "@/lib/medusa/products";
 import { categoryListingHref } from "@/lib/medusa/shop-breadcrumbs";
+import { parseProductSeoFromMetadata } from "@/lib/content/parsers";
 import { isProductionBuild, isTransientMedusaError, sleep } from "@/lib/medusa/transient-error";
 import { withMedusaTimeout } from "@/lib/medusa/with-timeout";
 import { canonicalProductPath, productTagValues } from "@/lib/products/product-canonical";
+import { SITE_URL } from "@/lib/utils";
 
 /**
  * Jedno źródło prawdy dla URL-i podawanych robotom (`sitemap.xml`, `llms.txt`).
@@ -30,19 +32,52 @@ const PRODUCTS_PAGE_SIZE = 200;
 const MAX_PRODUCT_PAGES = 100;
 
 /**
- * `tags` to relacja — Store API NIE zwraca jej domyślnie. Bez `+tags`
- * `productTagValues()` zawsze zwraca `[]` i kanonizacja produktu się rozjeżdża.
+ * Obie relacje Store API pomija domyślnie:
+ * - bez `+tags` `productTagValues()` zwraca `[]` i kanonizacja się rozjeżdża,
+ * - bez `+metadata` nie widać per-produktowego SEO z panelu magazynu
+ *   (`seo_no_index`, `seo_canonical_url`).
  */
-const PRODUCT_FIELDS = "+tags";
+const PRODUCT_FIELDS = "+tags,+metadata";
 
 /** Railway usypia backend — pierwszy strzał po wybudzeniu potrafi dać 502/504. */
 const RETRY_DELAYS = [0, 1200, 2500, 4000];
 
+const SITE_ORIGIN = new URL(SITE_URL).origin;
+
 export interface IndexableProduct {
 	title: string;
-	/** Kanoniczna ścieżka produktu, np. `/sklep/certyfikaty/<handle>`. */
-	path: string;
+	/** Absolutny URL kanoniczny — dokładnie ten, który PDP wystawia w `rel="canonical"`. */
+	url: string;
 	lastModified: Date;
+}
+
+/**
+ * URL kanoniczny produktu — musi być IDENTYCZNY z tym, co `buildMetadata`
+ * ustawia na stronie produktu (`seo?.canonicalUrl || SITE_URL + path`).
+ * Rozjazd tych dwóch miejsc to dokładnie ta klasa błędu, przez którą
+ * certyfikaty wypadły z indeksu.
+ *
+ * `null` = produkt kanonizowany na obcą domenę; w naszej sitemapie nie ma
+ * czego szukać (Google i tak zignoruje taki wpis).
+ */
+function canonicalUrlFor(
+	handle: string,
+	tags: string[],
+	canonicalOverride: string | undefined,
+): string | null {
+	const fallback = `${SITE_URL}${canonicalProductPath(handle, tags)}`;
+	const override = canonicalOverride?.trim();
+	if (!override) return fallback;
+
+	let parsed: URL;
+	try {
+		parsed = new URL(override, SITE_URL);
+	} catch {
+		return fallback;
+	}
+
+	if (parsed.origin !== SITE_ORIGIN) return null;
+	return `${parsed.origin}${parsed.pathname.replace(/\/+$/, "")}${parsed.search}`;
 }
 
 type MedusaProductPage = Awaited<ReturnType<typeof medusa.store.product.list>>;
@@ -98,9 +133,23 @@ export async function collectIndexableProducts(): Promise<IndexableProduct[]> {
 				if (!product.handle || seen.has(product.handle)) continue;
 				seen.add(product.handle);
 
+				// Ten sam parser, którego używa PDP — sitemapa nie może „widzieć"
+				// innego SEO niż strona produktu.
+				const seo = parseProductSeoFromMetadata(
+					product.metadata as Record<string, unknown> | null | undefined,
+				);
+
+				// Panel magazynu ma per-produktowy checkbox „nie indeksuj".
+				// Zgłoszenie takiego URL-a w sitemapie to błąd w Search Console
+				// („Przesłany adres URL oznaczony jako noindex").
+				if (seo?.noIndex) continue;
+
+				const url = canonicalUrlFor(product.handle, productTagValues(product), seo?.canonicalUrl);
+				if (!url) continue;
+
 				products.push({
 					title: product.title ?? product.handle,
-					path: canonicalProductPath(product.handle, productTagValues(product)),
+					url,
 					lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
 				});
 			}
