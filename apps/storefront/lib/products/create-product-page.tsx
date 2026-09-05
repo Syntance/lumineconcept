@@ -8,6 +8,7 @@ import { parseProductSeoFromMetadata } from "@/lib/content/parsers";
 import { getSiteSettings } from "@/lib/content";
 import { SITE_URL } from "@/lib/utils";
 import { canonicalProductPath, productTagValues } from "@/lib/products/product-canonical";
+import { toMetaDescription } from "@/lib/seo/meta-description";
 import { ProductPageClient } from "@/app/(shop)/sklep/gotowe-wzory/[slug]/client";
 
 /**
@@ -58,7 +59,9 @@ export function createProductPage(options: CreateProductPageOptions) {
     return buildMetadata({
       seo: seo ?? undefined,
       fallbackTitle: product.title ?? "Produkt",
-      fallbackDescription: product.description ?? undefined,
+      // Opis z Medusy jest HTML-em — do `<meta name="description">`
+      // i `og:description` idzie czysty tekst przycięty do snippetu.
+      fallbackDescription: toMetaDescription(product.description),
       fallbackImage: product.thumbnail ?? `${SITE_URL}/images/logo.png`,
       siteSettings: settings,
       path: canonicalPath,

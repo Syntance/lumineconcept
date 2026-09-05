@@ -105,9 +105,13 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: "/favicon.ico",
     },
-    alternates: {
-      canonical: SITE_URL,
-    },
+    // ŚWIADOMIE bez `alternates.canonical` — metadane Next dziedziczą się
+    // po segmentach, więc blankietowy canonical w root layoucie sprawiał, że
+    // KAŻDA podstrona bez własnego canonicala kanonizowała się na stronę
+    // główną (tak wypadła z indeksu `/deklaracja-dostepnosci`). Bez niego
+    // strona, która o canonicalu zapomni, po prostu nie ma tagu — Google
+    // kanonizuje ją wtedy po własnym URL-u, co jest poprawnym domyślnym
+    // zachowaniem. Strona główna ustawia swój canonical sama (`path: "/"`).
     ...(settings?.googleSiteVerification
       ? { verification: { google: settings.googleSiteVerification } }
       : {}),

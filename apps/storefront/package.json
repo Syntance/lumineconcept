@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
+    "verify:seo": "node scripts/verify-seo-indexing.mjs",
     "test:watch": "vitest",
     "migrate:sanity": "tsx scripts/migrate-sanity-to-medusa.ts",
     "test:ui": "vitest --ui",
