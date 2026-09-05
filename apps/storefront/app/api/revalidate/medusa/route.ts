@@ -1,4 +1,4 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { syncAllProductHandles } from "@/magazyn/modules/products/sync-handles";
 
@@ -11,7 +11,8 @@ import { syncAllProductHandles } from "@/magazyn/modules/products/sync-handles";
  *   { tags?: string[], paths?: string[], syncHandles?: boolean }
  *
  * Jeżeli body jest puste — revaliduje domyślny zestaw tagów Medusy, żeby
- * subscribery backendowe mogły po prostu zrobić POST bez body.
+ * subscribery backendowe mogły po prostu zrobić POST bez body. `paths` jest
+ * dokładane do stałego zestawu powierzchni SEO, nie zastępuje go.
  *
  * `syncHandles: true` — masowo ustawia slugi w Medusie z aktualnych tytułów
  * (bez ręcznego zapisywania każdego produktu w magazynie).
@@ -25,6 +26,18 @@ const DEFAULT_TAGS = [
   "magazyn-content",
   "site-settings",
 ];
+
+/**
+ * Powierzchnie SEO budowane z listy produktów. Nie mają tagu cache — same
+ * `revalidate = 3600` — więc bez tego nowy albo odznaczony jako `noindex`
+ * produkt czekałby do godziny na wejście do sitemapy albo wyjście z niej.
+ */
+const DEFAULT_PATHS = ["/sitemap.xml", "/llms.txt"];
+
+/** Webhook jest chroniony sekretem, ale ścieżkę i tak przyjmujemy tylko lokalną. */
+function isLocalPath(value: unknown): value is string {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//");
+}
 
 export async function POST(request: NextRequest) {
   const secret = request.headers.get("x-webhook-secret");
@@ -60,14 +73,24 @@ export async function POST(request: NextRequest) {
   const tags =
     Array.isArray(body.tags) && body.tags.length > 0 ? body.tags : DEFAULT_TAGS;
 
+  const requestedPaths = Array.isArray(body.paths) ? body.paths.filter(isLocalPath) : [];
+  // Sitemapa i llms.txt odświeżają się przy każdym webhooku produktowym, także
+  // gdy wołający poda własne `paths` — inaczej wystarczyłoby jedno wywołanie
+  // z wąską listą, żeby indeks znowu rozjechał się z katalogiem.
+  const paths = [...new Set([...DEFAULT_PATHS, ...requestedPaths])];
+
   try {
     for (const tag of tags) {
       revalidateTag(tag, "max");
+    }
+    for (const path of paths) {
+      revalidatePath(path);
     }
 
     return NextResponse.json({
       revalidated: true,
       tags,
+      paths,
       now: Date.now(),
     });
   } catch (error) {
