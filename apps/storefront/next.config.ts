@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import { legacyHostRedirects } from "./lib/seo/legacy-redirects";
 
 const MEDUSA_BACKEND_URL =
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "http://localhost:9000";
@@ -75,6 +76,9 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      // `www.` → domena główna, `/index(.php)` → `/`. Reszta starych adresów
+      // (WordPress, wycofane handle) siedzi w middleware (`resolveLegacyPath`).
+      ...legacyHostRedirects(),
       {
         source: "/produkty",
         destination: "/sklep",

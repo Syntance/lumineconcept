@@ -2,6 +2,20 @@ import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/utils";
 import type { SeoMeta, SiteSettings } from "./types";
 
+const DEFAULT_SITE_NAME = "Lumine Concept";
+
+/**
+ * Root layout dokleja do każdego tytułu szablon `%s | <nazwa sklepu>`.
+ * Meta title z panelu (produkt, podstrona CMS) często zawiera już nazwę
+ * sklepu — bez tej reguły `<title>` kończył się na
+ * „… | Lumine Concept | Lumine Concept" (tak wyglądały PDP na produkcji).
+ * Tytuł, który już zawiera nazwę sklepu, idzie jako `absolute` (bez szablonu).
+ */
+function resolveTitle(title: string, siteName: string): Metadata["title"] {
+	const normalized = title.toLowerCase();
+	return normalized.includes(siteName.toLowerCase()) ? { absolute: title } : title;
+}
+
 interface BuildMetadataOptions {
 	seo?: SeoMeta;
 	fallbackTitle: string;
@@ -24,6 +38,7 @@ export function buildMetadata({
 	publishedTime,
 }: BuildMetadataOptions): Metadata {
 	const title = seo?.metaTitle || fallbackTitle;
+	const siteName = siteSettings?.title?.trim() || DEFAULT_SITE_NAME;
 	const description =
 		seo?.metaDescription ||
 		fallbackDescription ||
@@ -44,7 +59,7 @@ export function buildMetadata({
 	};
 
 	return {
-		title,
+		title: resolveTitle(title, siteName),
 		description,
 		// hreflang: na razie jednojęzyczny PL (przygotowanie pod i18n — przy
 		// dodaniu locale rozszerzamy mapę `languages`).
@@ -56,7 +71,7 @@ export function buildMetadata({
 			title: ogTitle,
 			description: ogDescription,
 			type,
-			siteName: "Lumine Concept",
+			siteName,
 			locale: "pl_PL",
 			...(canonical ? { url: canonical } : {}),
 			...(publishedTime && type === "article" ? { publishedTime } : {}),

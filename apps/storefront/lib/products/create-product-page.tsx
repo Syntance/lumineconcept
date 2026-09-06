@@ -8,6 +8,7 @@ import { parseProductSeoFromMetadata } from "@/lib/content/parsers";
 import { getSiteSettings } from "@/lib/content";
 import { SITE_URL } from "@/lib/utils";
 import { canonicalProductPath, productTagValues } from "@/lib/products/product-canonical";
+import { collectProductImages } from "@/lib/products/product-images";
 import { toMetaDescription } from "@/lib/seo/meta-description";
 import { ProductPageClient } from "@/app/(shop)/sklep/gotowe-wzory/[slug]/client";
 
@@ -62,7 +63,12 @@ export function createProductPage(options: CreateProductPageOptions) {
       // Opis z Medusy jest HTML-em — do `<meta name="description">`
       // i `og:description` idzie czysty tekst przycięty do snippetu.
       fallbackDescription: toMetaDescription(product.description),
-      fallbackImage: product.thumbnail ?? `${SITE_URL}/images/logo.png`,
+      // Część produktów nie ma `thumbnail`, ale ma galerię — OG/Twitter
+      // biorą wtedy pierwsze zdjęcie, a nie logo sklepu.
+      fallbackImage:
+        product.thumbnail ??
+        collectProductImages(product)[0]?.url ??
+        `${SITE_URL}/images/logo.png`,
       siteSettings: settings,
       path: canonicalPath,
     });
