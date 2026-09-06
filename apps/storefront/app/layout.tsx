@@ -102,8 +102,16 @@ export async function generateMetadata(): Promise<Metadata> {
         "max-snippet": -1,
       },
     },
+    // `/favicon.ico` przez długi czas zwracał 404 — Google pokazuje wtedy w
+    // wynikach domyślny glob zamiast ikony sklepu. Zestaw: ICO (16/32/48,
+    // Google wymaga wielokrotności 48 px) + PNG 192/512 + apple-touch-icon.
     icons: {
-      icon: "/favicon.ico",
+      icon: [
+        { url: "/favicon.ico", sizes: "48x48" },
+        { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+        { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+      ],
+      apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
     },
     // ŚWIADOMIE bez `alternates.canonical` — metadane Next dziedziczą się
     // po segmentach, więc blankietowy canonical w root layoucie sprawiał, że

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest, type NextFetchEvent } from "next/server";
 import { magazynConfig } from "@magazyn/magazyn.config";
 import { buildContentSecurityPolicy } from "@/lib/security/csp";
+import { resolveLegacyPath } from "@/lib/seo/legacy-redirects";
 
 /**
  * Ochrona panelu „magazyn" + nagłówki bezpieczeństwa (CSP nonce, COOP) dla całego storefrontu.
@@ -65,6 +66,38 @@ export function middleware(request: NextRequest, event: NextFetchEvent): NextRes
 	requestHeaders.set("x-nonce", nonce);
 
 	const { pathname } = request.nextUrl;
+
+	// Stare adresy (WordPress `/index.php/...`, wycofane handle produktów,
+	// pliki motywu) → 308 na obecny odpowiednik albo 410 Gone. Host `www.`
+	// i `/index(.php)` załatwia wcześniej `redirects()` z next.config.
+	const legacy = resolveLegacyPath(pathname);
+	if (legacy?.kind === "gone") {
+		const gone = new NextResponse("Gone", {
+			status: 410,
+			headers: { "content-type": "text/plain; charset=utf-8" },
+		});
+		applySecurityHeaders(gone, nonce);
+		return gone;
+	}
+	if (legacy?.kind === "redirect") {
+		// Bez query — `?per_page=`, `?add-to-cart=` starego sklepu nic tu nie znaczą.
+		const redirect = NextResponse.redirect(new URL(legacy.destination, request.url), 308);
+		applySecurityHeaders(redirect, nonce);
+		return redirect;
+	}
+
+	// `skipTrailingSlashRedirect` (proxy PostHog) wyłącza wbudowane 308
+	// `/sklep/` → `/sklep`, więc każda strona istniała pod dwoma adresami.
+	if (pathname.length > 1 && pathname.endsWith("/") && !pathname.startsWith("/ingest")) {
+		// Zwykły `URL`, nie `nextUrl.clone()` — NextURL zapamiętuje końcowy slash
+		// z oryginalnego żądania i dokleja go z powrotem przy serializacji
+		// (przekierowanie na ten sam adres = pętla 308).
+		const url = new URL(request.url);
+		url.pathname = pathname.replace(/\/+$/, "");
+		const redirect = NextResponse.redirect(url, 308);
+		applySecurityHeaders(redirect, nonce);
+		return redirect;
+	}
 
 	const isPanel = pathname === PANEL_PREFIX || pathname.startsWith(`${PANEL_PREFIX}/`);
 	if (isPanel) {
