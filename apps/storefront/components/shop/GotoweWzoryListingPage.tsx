@@ -22,8 +22,9 @@ import { ShopListingCategoryProvider } from "@/components/shop/ShopListingCatego
 import { medusaProductToSimple } from "@/lib/products/simple-product";
 import { getGlobalProductConfig, EMPTY_GLOBAL_CONFIG } from "@/lib/products/global-config";
 import { ShopGridClient } from "@/app/(shop)/sklep/gotowe-wzory/client";
+import { LISTING_INITIAL_PAGE_SIZE } from "@/lib/shop/listing-page-size";
 
-const INITIAL_PAGE_SIZE = 12;
+const INITIAL_PAGE_SIZE = LISTING_INITIAL_PAGE_SIZE;
 const LISTING_BASE_PATH = "/sklep/gotowe-wzory";
 
 export type GotoweWzoryListingSearchParams = {
