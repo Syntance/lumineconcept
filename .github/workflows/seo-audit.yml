@@ -1,0 +1,87 @@
+name: Audyt SEO (na żądanie)
+
+# Uruchamiany ręcznie, nie na push. Oba skrypty pytają ŻYWĄ stronę, więc
+# wynik zależy od stanu produkcji, nie od zawartości commita — w CI na każdym
+# pushu byłby to test, który potrafi zmienić wynik bez zmiany kodu.
+#
+# Runner GitHuba ma nieograniczoną sieć wychodzącą, więc to jedyne miejsce w
+# tym repo, z którego da się sprawdzić produkcję bez ręcznego odpalania
+# czegokolwiek lokalnie. Log zostaje w Actions i można go potem przeczytać.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Adres do sprawdzenia (bez ukośnika na końcu)"
+        required: false
+        default: "https://lumineconcept.pl"
+      fail_on_error:
+        description: "Czy czerwony wynik ma wywalić workflow"
+        type: boolean
+        required: false
+        default: true
+
+concurrency:
+  group: seo-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: indeksowalność · stare adresy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      TURBO_TELEMETRY_DISABLED: "1"
+      DO_NOT_TRACK: "1"
+      BASE_URL: ${{ inputs.base_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Oba kroki lecą nawet gdy pierwszy jest czerwony — chcemy pełny obraz
+      # w jednym przebiegu, a nie tylko pierwszej awarii.
+      - name: Indeksowalność (sitemap, canonical, noindex, sieroty)
+        id: indexing
+        continue-on-error: true
+        working-directory: apps/storefront
+        run: node scripts/verify-seo-indexing.mjs "$BASE_URL"
+
+      - name: Stare adresy (przekierowania, 410, host www)
+        id: legacy
+        continue-on-error: true
+        working-directory: apps/storefront
+        run: node --experimental-strip-types scripts/verify-legacy-redirects.mjs "$BASE_URL"
+
+      - name: Podsumowanie
+        run: |
+          {
+            echo "## Audyt SEO — $BASE_URL"
+            echo ""
+            echo "| Kontrola | Wynik |"
+            echo "| :--- | :--- |"
+            echo "| Indeksowalność | ${{ steps.indexing.outcome == 'success' && '✅ bez zarzutu' || '❌ są błędy' }} |"
+            echo "| Stare adresy | ${{ steps.legacy.outcome == 'success' && '✅ bez zarzutu' || '❌ są błędy' }} |"
+            echo ""
+            echo "Szczegóły w logach kroków powyżej."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ inputs.fail_on_error }}" = "true" ] \
+            && { [ "${{ steps.indexing.outcome }}" != "success" ] || [ "${{ steps.legacy.outcome }}" != "success" ]; }; then
+            echo "::error::Audyt SEO znalazł błędy — rozwiń logi kroków powyżej."
+            exit 1
+          fi
