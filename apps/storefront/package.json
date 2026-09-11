@@ -12,6 +12,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "verify:seo": "node scripts/verify-seo-indexing.mjs",
+    "verify:seo:legacy": "node --experimental-strip-types scripts/verify-legacy-redirects.mjs",
+    "verify:seo:all": "pnpm verify:seo && pnpm verify:seo:legacy",
     "test:watch": "vitest",
     "migrate:sanity": "tsx scripts/migrate-sanity-to-medusa.ts",
     "test:ui": "vitest --ui",
